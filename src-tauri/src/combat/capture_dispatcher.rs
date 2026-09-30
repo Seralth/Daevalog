@@ -197,6 +197,9 @@ impl CaptureDispatcher {
 
             // Log raw packet if packet logging is enabled
             crate::logging::logger::log_packet(&cap);
+            // And keep it in memory for a while, so a boss fight can be shared
+            // without packet logging having been on. See `share::ring`.
+            crate::share::ring::record(cap.src_port, &cap.data);
 
             // Get or create assembler
             let a = cap.src_port.min(cap.dst_port);

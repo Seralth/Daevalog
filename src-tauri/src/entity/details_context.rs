@@ -18,6 +18,21 @@ pub struct DetailsActorSummary {
     pub damage_received: i64,
     #[serde(default)]
     pub hits_received: i32,
+    /// Roster id for this actor, or 0 when the party roster never named them
+    /// (solo play, or a player who joined before the roster packet arrived).
+    ///
+    /// Local-only. It is deliberately *not* what goes on the wire when a fight
+    /// is shared: uploads carry `sha256(dbid)` so the server can tell two rows
+    /// apart without learning who they are. See `docs/PRIVACY.md`.
+    #[serde(default)]
+    pub dbid: u64,
+    /// World/server id, the top 16 bits of `dbid`. 0 when unknown.
+    #[serde(default)]
+    pub server_id: u16,
+    /// Renders this name gold in the Details party bars. See
+    /// `crate::supporters`; cosmetic only.
+    #[serde(default)]
+    pub is_supporter: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

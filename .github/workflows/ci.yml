@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  desktop:
+    name: Desktop build and tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Test
+        working-directory: src-tauri
+        # The replay tests skip without A2_REPLAY_CAPTURE, which is a real packet
+        # capture and not something to commit — it is a recording of five real
+        # people playing. They run locally; everything else runs here.
+        run: cargo test --all-targets
+      - name: Build binaries
+        working-directory: src-tauri
+        run: cargo build --bins
+
+  parser-wasm:
+    name: Parser compiles to wasm32
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      # This is not a nice-to-have. The log service re-derives an uploaded fight
+      # by running this parser compiled to wasm32, rather than trusting the
+      # numbers a client sent — that is what makes it safe for the client to be
+      # open source. If a Tauri, pcap, HTTP or Windows dependency creeps into the
+      # parser core, this job fails here instead of the divergence surfacing
+      # later as a log whose numbers nobody can reproduce.
+      - name: Check parser core
+        working-directory: src-tauri
+        run: cargo check --lib --no-default-features --target wasm32-unknown-unknown
+
+# No `cargo fmt --check` job. The codebase predates one and is currently about
+# 3,700 diff lines away from rustfmt's opinion; adding the check without doing
+# the reformat would mean a permanently red build, and doing the reformat would
+# bury every real change under it. Worth doing deliberately, on its own, as a
+# single commit — not smuggled in beside a feature.

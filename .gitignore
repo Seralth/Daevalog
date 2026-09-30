@@ -46,3 +46,9 @@ settings.properties
 # Debug binaries
 /src-tauri/src/bin/
 .claude/
+
+# log service build output
+/log-service/target/
+/log-service/build/
+/log-service/.dev.vars
+/log-service/.wrangler/

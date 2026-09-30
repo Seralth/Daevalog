@@ -1,15 +1,13 @@
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use super::special_damage::SpecialDamage;
 
 static ID_GEN: AtomicI64 = AtomicI64::new(0);
 
+/// See `crate::clock`. A packet parsed from a replay is stamped with the time it
+/// was captured, not the time it was re-read.
 fn now_ms() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as i64
+    crate::clock::now_ms()
 }
 
 #[derive(Debug, Clone)]

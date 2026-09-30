@@ -6,6 +6,14 @@ use tracing::info;
 
 use crate::entity::fight_record::{FightRecord, FightSummary};
 
+/// How many fights to keep on disk.
+///
+/// Records average around 73 KB — they carry a timestamp per hit — so this is
+/// roughly 35 MB of history, and it is the first limit this directory has ever
+/// had. Generous on purpose: someone who has been playing for months should not
+/// find their history quietly truncated because a number was chosen tightly.
+const MAX_HISTORY_FIGHTS: usize = 500;
+
 /// Cheap fingerprint of the history directory: how many fight files there are
 /// and the newest write among them. Comparing this costs a directory scan;
 /// rebuilding the summaries costs reading and parsing every file.
@@ -70,7 +78,53 @@ impl FightHistoryManager {
             .map_err(|e| format!("Write error: {}", e))?;
         self.invalidate();
         info!("Fight saved: {}", record.id);
+        self.prune(MAX_HISTORY_FIGHTS);
         Ok(())
+    }
+
+    /// Delete the oldest fights beyond `keep`.
+    ///
+    /// Fights are auto-saved and, until this existed, never removed: a dev
+    /// machine had 327 of them and 24 MB. Records average ~73 KB because they
+    /// carry a timestamp per hit, so this grows without limit for anyone who
+    /// plays regularly and never opens the delete mode.
+    ///
+    /// Oldest by fight start time rather than file mtime, so re-saving an
+    /// in-progress fight (the auto-save runs every 30s while a boss is alive)
+    /// cannot make an old fight look new and push out a recent one.
+    fn prune(&self, keep: usize) {
+        // Cheap guard first. This runs on every auto-save, which fires every 30s
+        // while a boss is alive, and the scan below reads and parses every file
+        // — the ~350ms cost the summary cache exists to avoid paying twice.
+        // Counting directory entries costs a stat each; parsing costs the file.
+        if self.stamp().count <= keep {
+            return;
+        }
+        let Ok(entries) = std::fs::read_dir(&self.history_dir) else {
+            return;
+        };
+        let mut fights: Vec<(i64, std::path::PathBuf)> = entries
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|e| e == "json"))
+            .filter_map(|p| {
+                let text = std::fs::read_to_string(&p).ok()?;
+                let summary: FightSummary = serde_json::from_str(&text).ok()?;
+                Some((summary.start_time_ms, p))
+            })
+            .collect();
+        if fights.len() <= keep {
+            return;
+        }
+        fights.sort_by_key(|(start, _)| *start);
+        let doomed = fights.len() - keep;
+        for (_, path) in fights.into_iter().take(doomed) {
+            match std::fs::remove_file(&path) {
+                Ok(()) => info!("Pruned old fight {}", path.display()),
+                Err(e) => tracing::warn!("Could not prune {}: {e}", path.display()),
+            }
+        }
+        self.invalidate();
     }
 
     pub fn load_fight(&self, id: &str) -> Result<FightRecord, String> {

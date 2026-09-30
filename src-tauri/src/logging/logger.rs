@@ -155,30 +155,109 @@ pub fn is_debug_enabled() -> bool {
 static PACKET_LOG_ENABLED: AtomicBool = AtomicBool::new(false);
 static PACKET_LOGGER: Mutex<Option<PacketFileLogger>> = Mutex::new(None);
 
+/// Roll over to a new capture file past this size.
+///
+/// Captures run about 14 MB an hour, so this is a couple of hours of play in one
+/// file — enough that a fight and its lead-in are never split, and small enough
+/// to attach to a bug report.
+const MAX_PACKET_FILE_SIZE: u64 = 32 * 1024 * 1024;
+
+/// How many capture files to keep. Everything older is deleted when a new
+/// capture starts.
+///
+/// There used to be no limit at all in either direction: no cap on the file and
+/// no cap on how many accumulated. A dev machine that had been running the meter
+/// for a few months held 71 files and 153 MB of them, none of which anything
+/// would ever have removed. Five files at 32 MB bounds that at 160 MB, which is
+/// a lot to leave on someone's disk but is at least a number.
+const KEEP_PACKET_FILES: usize = 5;
+
 struct PacketFileLogger {
     writer: std::io::BufWriter<std::fs::File>,
     path: PathBuf,
+    bytes_written: u64,
+    log_dir: PathBuf,
+}
+
+/// Open a fresh capture file and write its header.
+fn open_packet_file(log_dir: &std::path::Path) -> Option<(std::io::BufWriter<std::fs::File>, PathBuf)> {
+    let now = chrono::Local::now();
+    let stamp = now.format("%Y%m%d_%H%M%S");
+    // A rollover can land in the same second as the file it replaces.
+    let mut path = log_dir.join(format!("packets_{}.txt", stamp));
+    let mut nth = 1;
+    while path.exists() && nth < 100 {
+        path = log_dir.join(format!("packets_{}_{}.txt", stamp, nth));
+        nth += 1;
+    }
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(&path)
+        .ok()?;
+    let mut writer = std::io::BufWriter::new(file);
+    let header = format!(
+        "# Packet capture started at {}\n# Format: TIMESTAMP|STREAMKEY|HEX_DATA\n\n",
+        now.format("%+")
+    );
+    writer.write_all(header.as_bytes()).ok()?;
+    let _ = writer.flush();
+    Some((writer, path))
+}
+
+/// Delete all but the newest `KEEP_PACKET_FILES` captures.
+///
+/// Only touches `packets_*.txt` in the app's own data directory — files this
+/// module wrote. It runs when a capture *starts*, not on shutdown, so a capture
+/// you meant to keep survives until you deliberately turn logging on again;
+/// copy it out before then if it matters.
+fn prune_packet_logs(log_dir: &std::path::Path, keep: usize) {
+    let Ok(entries) = std::fs::read_dir(log_dir) else {
+        return;
+    };
+    let mut files: Vec<PathBuf> = entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with("packets_") && n.ends_with(".txt"))
+        })
+        .collect();
+    if files.len() <= keep {
+        return;
+    }
+    // Names are timestamped, so lexicographic order is chronological.
+    files.sort();
+    let doomed = files.len() - keep;
+    for path in files.into_iter().take(doomed) {
+        let bytes = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+        match std::fs::remove_file(&path) {
+            Ok(()) => tracing::info!(
+                "Removed old packet capture {} ({} bytes)",
+                path.display(),
+                bytes
+            ),
+            Err(e) => tracing::warn!("Could not remove {}: {e}", path.display()),
+        }
+    }
 }
 
 pub fn set_packet_log_enabled(enabled: bool, log_dir: &std::path::Path) {
     let prev = PACKET_LOG_ENABLED.swap(enabled, Ordering::SeqCst);
     if enabled && !prev {
-        let now = chrono::Local::now();
-        let stamp = now.format("%Y%m%d_%H%M%S");
-        let path = log_dir.join(format!("packets_{}.txt", stamp));
-        if let Ok(file) = std::fs::OpenOptions::new()
-            .create(true).write(true).open(&path)
-        {
-            let mut writer = std::io::BufWriter::new(file);
-            let header = format!(
-                "# Packet capture started at {}\n# Format: TIMESTAMP|STREAMKEY|HEX_DATA\n\n",
-                now.format("%+")
-            );
-            let _ = writer.write_all(header.as_bytes());
-            let _ = writer.flush();
+        // Before opening a new one, so the new capture is never the thing pruned.
+        prune_packet_logs(log_dir, KEEP_PACKET_FILES.saturating_sub(1));
+        if let Some((writer, path)) = open_packet_file(log_dir) {
             {
                 let mut guard = PACKET_LOGGER.lock();
-                *guard = Some(PacketFileLogger { writer, path: path.clone() });
+                *guard = Some(PacketFileLogger {
+                    writer,
+                    path: path.clone(),
+                    bytes_written: 0,
+                    log_dir: log_dir.to_path_buf(),
+                });
             }
             tracing::info!("Raw packet logging started: {}", path.display());
         }
@@ -208,7 +287,111 @@ pub fn log_packet(cap: &CapturedPayload) {
         let hex: String = cap.data.iter().map(|b| format!("{:02X}", b)).collect();
         let line = format!("{}|{}|{}\n", ts, key, hex);
         if logger.writer.write_all(line.as_bytes()).is_ok() {
+            // Flushed per packet on purpose: a capture is usually being taken
+            // because something is going wrong, and the tail is the part that
+            // matters when it does.
             let _ = logger.writer.flush();
+            logger.bytes_written += line.len() as u64;
         }
+
+        if logger.bytes_written >= MAX_PACKET_FILE_SIZE {
+            let log_dir = logger.log_dir.clone();
+            let finished = logger.path.clone();
+            if let Some((writer, path)) = open_packet_file(&log_dir) {
+                *logger = PacketFileLogger {
+                    writer,
+                    path: path.clone(),
+                    bytes_written: 0,
+                    log_dir,
+                };
+                tracing::info!(
+                    "Packet capture rolled over: {} -> {}",
+                    finished.display(),
+                    path.display()
+                );
+            } else {
+                // Could not open a replacement — stop rather than grow without
+                // limit, which is the bug this whole path exists to fix.
+                tracing::warn!("Could not roll over packet capture; stopping capture");
+                PACKET_LOG_ENABLED.store(false, Ordering::SeqCst);
+                *guard = None;
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod packet_log_tests {
+    use super::*;
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("a2tools-logtest-{name}"));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn touch(dir: &std::path::Path, name: &str) {
+        std::fs::write(dir.join(name), b"x").unwrap();
+    }
+
+    #[test]
+    fn prune_keeps_the_newest_and_removes_the_rest() {
+        let dir = temp_dir("prune");
+        for stamp in [
+            "packets_20260101_000000.txt",
+            "packets_20260102_000000.txt",
+            "packets_20260103_000000.txt",
+            "packets_20260104_000000.txt",
+        ] {
+            touch(&dir, stamp);
+        }
+        prune_packet_logs(&dir, 2);
+
+        assert!(!dir.join("packets_20260101_000000.txt").exists());
+        assert!(!dir.join("packets_20260102_000000.txt").exists());
+        assert!(dir.join("packets_20260103_000000.txt").exists());
+        assert!(dir.join("packets_20260104_000000.txt").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn prune_leaves_files_it_did_not_write() {
+        let dir = temp_dir("prune-foreign");
+        touch(&dir, "packets_20260101_000000.txt");
+        touch(&dir, "packets_20260102_000000.txt");
+        touch(&dir, "packets_20260103_000000.txt");
+        // Not ours: the promiscuous diagnostic dump, a user's notes, the debug log.
+        touch(&dir, "rawpackets_20260101_000000.txt");
+        touch(&dir, "my-important-capture.txt");
+        touch(&dir, "debug.log");
+
+        prune_packet_logs(&dir, 1);
+
+        assert!(dir.join("rawpackets_20260101_000000.txt").exists());
+        assert!(dir.join("my-important-capture.txt").exists());
+        assert!(dir.join("debug.log").exists());
+        assert!(dir.join("packets_20260103_000000.txt").exists());
+        assert!(!dir.join("packets_20260101_000000.txt").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn prune_does_nothing_when_under_the_limit() {
+        let dir = temp_dir("prune-under");
+        touch(&dir, "packets_20260101_000000.txt");
+        prune_packet_logs(&dir, 5);
+        assert!(dir.join("packets_20260101_000000.txt").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_new_capture_file_never_collides_with_an_existing_one() {
+        let dir = temp_dir("collide");
+        let (_w1, p1) = open_packet_file(&dir).expect("first");
+        let (_w2, p2) = open_packet_file(&dir).expect("second in the same second");
+        assert_ne!(p1, p2, "rolling over within one second must not reuse a path");
+        assert!(p1.exists() && p2.exists());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

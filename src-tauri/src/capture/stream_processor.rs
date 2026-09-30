@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use lz4_flex::decompress;
 
 use crate::combat::data_storage::DataStorage;
 use crate::entity::damage_packet::ParsedDamagePacket;
@@ -90,68 +89,35 @@ impl StreamProcessor {
 
     /// Set an override timestamp for all packets created by this processor.
     /// Used in replay mode to use capture-time timestamps instead of wall clock.
+    ///
+    /// This also pins the thread's clock (`crate::clock`), because the processor
+    /// is not the only thing that reads "now" while consuming a packet:
+    /// `DataStorage` makes idle-reset and zone-reset decisions against it. Those
+    /// used to be taken against the replaying machine's wall clock, so a replay
+    /// of the same capture could produce different fights depending on when it
+    /// was run. The override is thread-local, so a replay on a blocking thread
+    /// cannot disturb a live capture running alongside it.
     pub fn set_override_timestamp(&mut self, ts: Option<i64>) {
         self.override_timestamp = ts;
+        crate::clock::set_override(ts);
     }
 
     /// Parse as many complete packets as possible from the buffer.
     /// Returns the number of bytes consumed.
     pub fn consume_stream(&mut self, buffer: &[u8]) -> usize {
-        let mut offset = 0;
+        // Framing lives in `capture::framing` so the Evidence Slice builder can
+        // split a capture the same way this does. See that module.
+        let framing = super::framing::walk(buffer);
+        let offset = framing.consumed;
 
-        while offset < buffer.len() {
-            // 1. Skip zero padding
-            if buffer[offset] == 0x00 {
-                offset += 1;
-                continue;
-            }
-
-            let length_info = read_varint(buffer, offset);
-            if length_info.length <= 0 || length_info.value <= 0 {
-                if offset + 5 > buffer.len() {
-                    break;
+        for frame in &framing.frames {
+            match frame.kind {
+                super::framing::FrameKind::Bundle => {
+                    self.unwrap_bundle(frame.payload(buffer));
                 }
-                offset += 1;
-                continue;
-            }
-
-            // 2. AION 2 quirk: length - 3 == physical size
-            let total_packet_bytes = (length_info.value - 3) as usize;
-
-            // Resync on invalid sizes
-            if total_packet_bytes == 0 || total_packet_bytes > 65535 {
-                offset += 1;
-                continue;
-            }
-
-            // 3. TCP fragmentation check (anti-stall gate)
-            if offset + total_packet_bytes > buffer.len() {
-                if total_packet_bytes > 16384 {
-                    offset += 1;
-                    continue;
+                super::framing::FrameKind::Packet => {
+                    self.parse_perfect_packet(frame.bytes(buffer));
                 }
-                break; // Legitimate fragment
-            }
-
-            // 4. Check for FF FF compressed bundle
-            let payload_start = length_info.length as usize;
-            let is_bundle = offset + total_packet_bytes <= buffer.len()
-                && payload_start + 1 < total_packet_bytes
-                && buffer[offset + payload_start] == 0xFF
-                && buffer[offset + payload_start + 1] == 0xFF;
-
-            if is_bundle {
-                let bundle_size = total_packet_bytes + 1;
-                if offset + bundle_size > buffer.len() {
-                    break;
-                }
-                let bundle_payload = &buffer[offset + payload_start..offset + bundle_size];
-                self.unwrap_bundle(bundle_payload);
-                offset += bundle_size;
-            } else {
-                let full_packet = &buffer[offset..offset + total_packet_bytes];
-                self.parse_perfect_packet(full_packet);
-                offset += total_packet_bytes;
             }
         }
 
@@ -192,65 +158,29 @@ impl StreamProcessor {
             return;
         }
 
-        let decompressed_size = u32::from_le_bytes([
-            payload[2], payload[3], payload[4], payload[5],
-        ]) as usize;
-
-        if decompressed_size == 0 || decompressed_size > 1_000_000 {
-            return;
-        }
-
-        let compressed = &payload[6..];
-        let decompressed = match decompress(compressed, decompressed_size) {
-            Ok(d) => d,
-            Err(_) => return,
+        let decompressed = match super::framing::decompress_bundle(payload) {
+            Some(d) => d,
+            None => return,
         };
 
-        // Walk decompressed data as varint-framed inner packets
+        // Walk decompressed data as varint-framed inner packets. The walk lives
+        // in `capture::framing` so the Evidence Slice builder splits a bundle
+        // exactly the way this does.
         self.pending_compact_skill_context = None;
-        let mut offset = 0;
 
-        while offset < decompressed.len() {
-            if decompressed[offset] == 0x00 {
-                offset += 1;
-                continue;
-            }
-
-            let length_info = read_varint(&decompressed, offset);
-            if length_info.length <= 0 || length_info.value <= 0 {
-                break;
-            }
-
-            if length_info.value <= 3 {
-                offset += 1;
-                continue;
-            }
-            let inner_total_bytes = (length_info.value - 3) as usize;
-
-            let inner_packet_end = offset + inner_total_bytes;
-            if inner_packet_end > decompressed.len() {
-                break;
-            }
-
-            let inner_packet = &decompressed[offset..inner_packet_end];
-
-            // Check for nested FF-FF bundle
-            let inner_payload_start = length_info.length as usize;
-            let is_nested_bundle = inner_packet.len() > inner_payload_start + 1
-                && inner_packet[inner_payload_start] == 0xFF
-                && inner_packet[inner_payload_start + 1] == 0xFF;
-
-            if is_nested_bundle {
-                let nested_payload = &inner_packet[inner_payload_start..];
-                self.unwrap_bundle(nested_payload);
-            } else {
-                if let Some(ctx) = self.extract_pending_compact_skill_context(inner_packet) {
-                    self.pending_compact_skill_context = Some(ctx);
+        for frame in &super::framing::walk_inner(&decompressed).frames {
+            match frame.kind {
+                super::framing::FrameKind::Bundle => {
+                    self.unwrap_bundle(frame.payload(&decompressed));
                 }
-                self.parse_perfect_packet(inner_packet);
+                super::framing::FrameKind::Packet => {
+                    let inner_packet = frame.bytes(&decompressed);
+                    if let Some(ctx) = self.extract_pending_compact_skill_context(inner_packet) {
+                        self.pending_compact_skill_context = Some(ctx);
+                    }
+                    self.parse_perfect_packet(inner_packet);
+                }
             }
-
-            offset += inner_total_bytes;
         }
 
         // Scan for embedded 04 8D and 40 36 in decompressed data
@@ -962,12 +892,14 @@ impl StreamProcessor {
                 continue;
             }
             match parse_party_roster_at(data, i + 2) {
-                Some((members, complete)) => {
+                Some((members, complete, dungeon_id)) => {
                     tracing::debug!(
-                        "Party roster: {} members (complete={})",
+                        "Party roster: {} members (complete={}, dungeon={})",
                         members.len(),
-                        complete
+                        complete,
+                        dungeon_id
                     );
+                    self.data_storage.set_current_dungeon(dungeon_id);
                     self.data_storage.set_party_roster(members, complete);
                     i += 2;
                 }
@@ -1044,7 +976,7 @@ impl StreamProcessor {
     /// record instead).
     ///
     /// ```text
-    /// 41 36 <entity_id varint> <mask u16 LE> <subtree…> ×3 … [mask & 0x0010] <parent_key u32 LE>
+    /// 41 36 <entity_id varint> <mask u32 LE> <subtree…> ×3 … [mask & 0x0010] <parent_key u32 LE>
     /// ```
     ///
     /// The low byte of `mask` doubles as the entity kind: `0x0C`/`0x0D` = NPC,
@@ -1081,27 +1013,56 @@ impl StreamProcessor {
             self.extract_and_register_mob_type(packet, offset, real_actor_id);
             return false;
         }
-        let mask = u16::from_le_bytes([packet[offset], packet[offset + 1]]);
+        // Read the mask as a u32 regardless of which width the server sent. The
+        // two fields we test live in the low half either way — `kind` is the low
+        // byte and `parent_key` is gated by bit 4 — so a wide read is correct for
+        // both formats and only picks up bytes we never look at.
+        let mask = u32::from_le_bytes([
+            packet[offset],
+            packet[offset + 1],
+            *packet.get(offset + 2).unwrap_or(&0),
+            *packet.get(offset + 3).unwrap_or(&0),
+        ]);
         let kind = packet[offset];
-        let sub_mask2 = packet[offset + 2];
 
-        // Optional inline name, gated by bit 0 of the first subtree's mask byte.
-        let mut cursor = offset + 3;
-        let mut spawn_name: Option<String> = None;
-        if sub_mask2 & 0x01 != 0 && cursor < packet.len() {
-            let name_len = packet[cursor] as usize;
-            if (1..=36).contains(&name_len)
-                && cursor + 1 + name_len <= packet.len()
-                && let Ok(raw) = std::str::from_utf8(&packet[cursor + 1..cursor + 1 + name_len])
-                && let Some(sanitized) = sanitize_nickname(raw)
-                // A shorter result means sanitising trimmed something, i.e. this
-                // is not cleanly a name field.
-                && sanitized.len() == name_len
-            {
-                spawn_name = Some(sanitized);
-                cursor += 1 + name_len;
+        // The mask width changed from u16 to u32, which moves the subtree byte
+        // that gates the inline name. Nothing else in this record is sensitive to
+        // it: `find_spawn_parent_key` scans forward rather than indexing, and the
+        // mob-type scan anchors on `offset`. So rather than version-sniffing the
+        // stream, try both positions and keep whichever actually yields a name.
+        //
+        // Getting this wrong is not cosmetic. For a summon the inline name is the
+        // *owner's* character name, and it is the fallback that attributes a pet's
+        // damage to its player when no parent_key is present. A silently
+        // mispositioned gate shows up as summons drifting back into their own rows.
+        const MASK_U16_SUBTREE: usize = 2;
+        const MASK_U32_SUBTREE: usize = 4;
+
+        let read_name_at = |sub_offset: usize| -> Option<(String, usize)> {
+            let gate = *packet.get(offset + sub_offset)?;
+            if gate & 0x01 == 0 {
+                return None;
             }
-        }
+            let cursor = offset + sub_offset + 1;
+            let name_len = *packet.get(cursor)? as usize;
+            if !(1..=36).contains(&name_len) || cursor + 1 + name_len > packet.len() {
+                return None;
+            }
+            let raw = std::str::from_utf8(&packet[cursor + 1..cursor + 1 + name_len]).ok()?;
+            let sanitized = sanitize_nickname(raw)?;
+            // A shorter result means sanitising trimmed something, i.e. this is
+            // not cleanly a name field. This check is what makes trying two
+            // positions safe: a wrong guess almost never decodes cleanly.
+            (sanitized.len() == name_len).then(|| (sanitized, cursor + 1 + name_len))
+        };
+
+        // Current format first, so a live stream never depends on the fallback.
+        let (spawn_name, cursor) = match read_name_at(MASK_U32_SUBTREE)
+            .or_else(|| read_name_at(MASK_U16_SUBTREE))
+        {
+            Some((name, next)) => (Some(name), next),
+            None => (None, offset + MASK_U32_SUBTREE + 1),
+        };
 
         // Mob type / boss flag / HP still come from the existing scan, which
         // anchors on the model field this cursor now sits on.
@@ -2311,7 +2272,7 @@ fn should_use_repeated_hit_damage(switch_value: i32, encoded_damage: i32, multi_
 fn parse_party_roster_at(
     data: &[u8],
     at: usize,
-) -> Option<(Vec<(String, crate::combat::data_storage::PartyMember)>, bool)> {
+) -> Option<(Vec<(String, crate::combat::data_storage::PartyMember)>, bool, i32)> {
     use crate::combat::data_storage::PartyMember;
 
     let mut o = at.checked_add(4)?; // party_key u32
@@ -2328,6 +2289,10 @@ fn parse_party_roster_at(
     if !(1..=12).contains(&party_size) {
         return None;
     }
+    // The instance the party is queued for / inside. Identifies both the dungeon
+    // and its difficulty tier: Ferocious Horn Den is 600091/600092/600093 for
+    // Exploration / Conquest [Normal] / Conquest [Hard].
+    let dungeon_id = parse_u32_le(data.get(o..o + 4)?, 0) as i32;
     o += 4 + 2 + 8 + 3; // dungeon_id, 2 pad, leader_dbid, 3 pad
     let count_info = read_varint(data, o);
     if count_info.length <= 0 || !(1..=12).contains(&count_info.value) {
@@ -2401,6 +2366,7 @@ fn parse_party_roster_at(
                 gear_score,
                 combat_power: combat_power as i64,
                 server_id,
+                dbid,
             },
         ));
 
@@ -2419,7 +2385,7 @@ fn parse_party_roster_at(
     if members.is_empty() {
         return None;
     }
-    Some((members, complete))
+    Some((members, complete, dungeon_id))
 }
 
 /// Find a little-endian `u16` equal to `wanted` in `data[from..to]`.

@@ -28,6 +28,15 @@ pub struct FightRecord {
     /// NPC mob type code for i18n boss name resolution (new field).
     #[serde(default)]
     pub mob_code: i32,
+    /// The instance this was fought in, identifying both the dungeon and its
+    /// difficulty tier (Ferocious Horn Den is 600091/600092/600093 for
+    /// Exploration / Conquest [Normal] / Conquest [Hard]). 0 in the open world.
+    ///
+    /// Already parsed from the party roster packet and kept in `DataStorage`;
+    /// recorded here so a shared fight can say which tier it was, and so
+    /// leaderboards do not rank a Normal clear against a Hard one.
+    #[serde(default)]
+    pub dungeon_id: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -170,6 +170,10 @@
     window._dpsApp?.applyRemoteSettingChange?.(key, String(value));
   });
 
+  listen("account-changed", (event) => {
+    window._dpsApp?.refreshAccountPanel?.(event?.payload);
+  });
+
   listen("npcap-missing", () => {
     const msg = "Npcap is required for packet capture but is not installed.\n\nWould you like to download it now?";
     if (confirm(msg)) {
@@ -526,6 +530,38 @@
     getFightDetails(id) {
       // Async — returns a promise
       return invoke("load_fight", { id }).then((r) => JSON.stringify(r)).catch(() => null);
+    },
+
+    accountStatus() {
+      return invoke("account_status");
+    },
+
+    // Starts the device grant and opens the browser. Resolves with the code to
+    // show; completion arrives later on the "account-changed" event.
+    accountBeginLink() {
+      return invoke("account_begin_link");
+    },
+
+    accountSignOut() {
+      return invoke("account_sign_out").catch(() => {});
+    },
+
+    // Writes the two files an upload would send and returns a summary.
+    // Deliberately does NOT upload — see docs/PRIVACY.md and the
+    // `preview_share` command. Rejects with a message the UI shows verbatim.
+    previewShare(id) {
+      return invoke("preview_share", { fightId: id });
+    },
+
+    // Uploads the fight's Evidence Slice to a2tools.app and resolves with
+    // { url, visibility, duplicate }. Rejects with a message to show as is.
+    uploadFight(id) {
+      return invoke("upload_fight", { fightId: id });
+    },
+
+    // { fightId: { hasSlice, url } } for every fight that can be, or was, uploaded.
+    shareStatus() {
+      return invoke("share_status").catch(() => ({}));
     },
 
     deleteFight(id) {

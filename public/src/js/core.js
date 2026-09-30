@@ -8,6 +8,7 @@ const REMOTE_APPLIED_SETTING_CONTROLS = {
   "dpsMeter.mainPlayerDpsBold": ".playerDpsBoldCheckbox",
   "dpsMeter.showPing": ".showPingCheckbox",
   "dpsMeter.bossNameSize": ".bossNameSizeInput",
+  "dpsMeter.showSupporterColors": ".showSupporterColorsCheckbox",
 };
 
 class DpsApp {
@@ -22,6 +23,7 @@ class DpsApp {
     this.pinMeToTop = false;
     this.slimMode = false;
     this.mainPlayerNamesBold = true;
+    this.showSupporterColors = true;
     this.mainPlayerDpsBold = true;
     this.includeMainMeterScreenshot = false;
     this.saveScreenshotToFolder = false;
@@ -48,6 +50,7 @@ class DpsApp {
       debugLogging: "dpsMeter.debugLoggingEnabled",
       pinMeToTop: "dpsMeter.pinMeToTop",
       mainPlayerNamesBold: "dpsMeter.mainPlayerNamesBold",
+      showSupporterColors: "dpsMeter.showSupporterColors",
       mainPlayerDpsBold: "dpsMeter.mainPlayerDpsBold",
       showPing: "dpsMeter.showPing",
       showTotalDps: "dpsMeter.showTotalDps",
@@ -757,8 +760,12 @@ class DpsApp {
 
     const tooltipName = String(row?.name || "-").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const tooltipClassIcon = row?.job ? `<img class="hoverDetailsTooltipClassIcon" src="./assets/${row.job}.png" alt="" onerror="this.style.display='none'">` : "";
+    // Wrapped rather than styled on the header, so the icon keeps its own colour.
+    const tooltipNameHtml = row?.isSupporter
+      ? `<span class="isSupporter">${tooltipName}</span>`
+      : tooltipName;
     this.hoverTooltipEl.innerHTML = `
-      <div class="hoverDetailsTooltipHeader">${tooltipClassIcon}${tooltipName}</div>
+      <div class="hoverDetailsTooltipHeader">${tooltipClassIcon}${tooltipNameHtml}</div>
       <div class="hoverDetailsTooltipStats">
         <span>${this.i18n?.t("header.display.dps", "DPS") ?? "DPS"}: ${dpsText}</span>
         <span>${this.i18n?.t("details.stats.totalDamage", "Total Damage") ?? "Total Damage"}: ${totalDamageText}</span>
@@ -902,6 +909,7 @@ class DpsApp {
       targetMaxHp,
       targetTotalDamage,
       targetCurrentHp,
+      dungeonId,
     } = this.buildRowsFromPayload(raw);
     if (this.refreshPending) {
       const pendingAgeMs = Math.max(0, now - (Number(this.refreshPendingStartedAt) || 0));
@@ -1019,7 +1027,8 @@ class DpsApp {
       rowsToRender = rowsToRender.filter((row) => row.name === this.USER_NAME);
     }
     // render
-    const nextTargetLabel = this.getTargetLabel({ targetId, targetName, targetMode });
+    this.lastDungeonId = dungeonId;
+    const nextTargetLabel = this.getTargetLabel({ targetId, targetName, targetMode, dungeonId });
     if (this.elBossName) {
       if (this.elBossName.textContent !== nextTargetLabel) {
         this.elBossName.textContent = nextTargetLabel;
@@ -1086,6 +1095,7 @@ class DpsApp {
     const targetTotalDamage = Number.isFinite(Number(payload?.targetTotalDamage))
       ? Number(payload.targetTotalDamage)
       : 0;
+    const dungeonId = Math.trunc(Number(payload?.dungeonId)) || 0;
     const targetCurrentHp = Number.isFinite(Number(payload?.targetCurrentHp))
       ? Number(payload.targetCurrentHp)
       : -1;
@@ -1100,6 +1110,7 @@ class DpsApp {
       targetMaxHp,
       targetTotalDamage,
       targetCurrentHp,
+      dungeonId,
     };
   }
 
@@ -1148,6 +1159,9 @@ class DpsApp {
         combatPower,
         isUser: name === this.USER_NAME,
         isIdentifying,
+        // Resolved in Rust against a downloaded roster; the frontend only
+        // renders it. Cosmetic only — it must not reach sorting or bar colour.
+        isSupporter: !!(isObj && value.isSupporter) && this.showSupporterColors !== false,
       });
     }
 
@@ -1872,6 +1886,58 @@ class DpsApp {
     }
   }
 
+  setAccountState(text) {
+    if (this.accountStateEl) this.accountStateEl.textContent = text;
+  }
+
+  // Reflects whatever the backend reports. Called on open, after sign-out, and
+  // from the "account-changed" event the device-grant poll emits when the
+  // player approves or declines in the browser.
+  async refreshAccountPanel(result) {
+    if (!this.accountStateEl) return;
+    if (result && result.connected === false && result.error) {
+      const msg = String(result.error);
+      this.setAccountState(
+        window.i18n?.format?.("settings.account.failed", { error: msg }, `Sign-in failed: ${msg}`)
+      );
+      if (this.accountCodeBox) this.accountCodeBox.style.display = "none";
+      if (this.accountConnectBtn) this.accountConnectBtn.disabled = false;
+      return;
+    }
+
+    let who = null;
+    try {
+      who = await window.javaBridge?.accountStatus?.();
+    } catch {
+      who = null;
+    }
+
+    const signedIn = !!who;
+    if (this.accountCodeBox && signedIn) this.accountCodeBox.style.display = "none";
+    if (this.accountConnectBtn) {
+      this.accountConnectBtn.disabled = false;
+      this.accountConnectBtn.style.display = signedIn ? "none" : "";
+    }
+    if (this.accountSignOutBtn) {
+      this.accountSignOutBtn.style.display = signedIn ? "" : "none";
+    }
+
+    if (!signedIn) {
+      this.setAccountState(window.i18n?.t?.("settings.account.signedOut", "Not signed in"));
+      return;
+    }
+    const name = who.displayName || who.display_name || "";
+    let label = window.i18n?.format?.(
+      "settings.account.signedIn",
+      { name },
+      `Signed in as ${name}`
+    );
+    if (who.supporter) {
+      label += " · " + window.i18n?.t?.("settings.account.supporter", "Supporter");
+    }
+    this.setAccountState(label);
+  }
+
   setupSettingsPanel() {
     this.settingsPanel = document.querySelector(".settingsPanel");
     this.settingsClose = document.querySelector(".settingsClose");
@@ -1904,6 +1970,13 @@ class DpsApp {
     this.meterLayoutDropdownBtn = document.querySelector(".meterLayoutDropdownBtn");
     this.meterLayoutDropdownMenu = document.querySelector(".meterLayoutDropdownMenu");
     this.playerNamesBoldCheckbox = document.querySelector(".playerNamesBoldCheckbox");
+    this.showSupporterColorsCheckbox = document.querySelector(".showSupporterColorsCheckbox");
+    this.accountStateEl = document.querySelector(".accountState");
+    this.accountHintEl = document.querySelector(".accountHint");
+    this.accountConnectBtn = document.querySelector(".accountConnectBtn");
+    this.accountSignOutBtn = document.querySelector(".accountSignOutBtn");
+    this.accountCodeBox = document.querySelector(".accountCodeBox");
+    this.accountCodeEl = document.querySelector(".accountCode");
     this.playerDpsBoldCheckbox = document.querySelector(".playerDpsBoldCheckbox");
     this.meterOpacityInput = document.querySelector(".meterOpacityInput");
     this.meterOpacityValue = document.querySelector(".meterOpacityValue");
@@ -1958,6 +2031,10 @@ class DpsApp {
     }
     const storedDebugLogging = this.safeGetSetting(this.storageKeys.debugLogging) === "true";
     const storedPinMeToTop = this.safeGetSetting(this.storageKeys.pinMeToTop) === "true";
+    // Default on: a supporter's gold name is the thing they paid for, so it
+    // should be visible unless a viewer has deliberately turned it off.
+    this.showSupporterColors =
+      this.safeGetSetting(this.storageKeys.showSupporterColors) !== "false";
     const mainPlayerNamesBoldSetting = this.safeGetSetting(this.storageKeys.mainPlayerNamesBold);
     const storedMainPlayerNamesBold = mainPlayerNamesBoldSetting !== "false";
     const mainPlayerDpsBoldSetting = this.safeGetSetting(this.storageKeys.mainPlayerDpsBold);
@@ -2133,6 +2210,47 @@ class DpsApp {
       this.pinMeToTopCheckbox.addEventListener("change", (event) => {
         const isChecked = !!event.target?.checked;
         this.setPinMeToTop(isChecked, { persist: true });
+      });
+    }
+    if (this.accountConnectBtn) {
+      this.accountConnectBtn.addEventListener("click", async () => {
+        this.accountConnectBtn.disabled = true;
+        try {
+          const prompt = await window.javaBridge?.accountBeginLink?.();
+          if (prompt?.userCode) {
+            // Shown, not hidden: the browser may have failed to open, and the
+            // code is the only way back into the flow if it did.
+            if (this.accountCodeEl) this.accountCodeEl.textContent = prompt.userCode;
+            if (this.accountCodeBox) this.accountCodeBox.style.display = "block";
+            this.setAccountState(
+              window.i18n?.t?.("settings.account.working", "Waiting for approval…")
+            );
+          }
+        } catch (err) {
+          const msg = typeof err === "string" ? err : err?.message || String(err);
+          this.setAccountState(
+            window.i18n?.format?.("settings.account.failed", { error: msg }, `Sign-in failed: ${msg}`)
+          );
+          this.accountConnectBtn.disabled = false;
+        }
+      });
+    }
+    if (this.accountSignOutBtn) {
+      this.accountSignOutBtn.addEventListener("click", async () => {
+        await window.javaBridge?.accountSignOut?.();
+        this.refreshAccountPanel();
+      });
+    }
+    this.refreshAccountPanel();
+
+    if (this.showSupporterColorsCheckbox) {
+      this.showSupporterColorsCheckbox.checked = this.showSupporterColors;
+      this.showSupporterColorsCheckbox.addEventListener("change", (event) => {
+        this.showSupporterColors = !!event.target?.checked;
+        this.safeSetSetting(
+          this.storageKeys.showSupporterColors,
+          String(this.showSupporterColors)
+        );
       });
     }
     if (this.playerNamesBoldCheckbox) {
@@ -2568,7 +2686,13 @@ class DpsApp {
 
     const languageOptions = [
       { value: "en", label: "English" },
+      { value: "de", label: "Deutsch" },
+      { value: "es", label: "Español" },
+      { value: "fr", label: "Français" },
+      { value: "ja", label: "日本語" },
       { value: "ko", label: "한국어" },
+      { value: "pt", label: "Português" },
+      { value: "ru", label: "Русский" },
       { value: "zh-Hant", label: "繁體中文" },
       { value: "zh-Hans", label: "简体中文" },
     ];
@@ -4356,7 +4480,14 @@ class DpsApp {
     return this.i18n?.t("header.title", "A2Tools DPS Meter") ?? "A2Tools DPS Meter";
   }
 
-  getTargetLabel({ targetId = 0, targetName = "", targetMode = "" } = {}) {
+  getTargetLabel({ targetId = 0, targetName = "", targetMode = "", dungeonId = 0 } = {}) {
+    // In a party instance the title names the dungeon rather than whatever mob
+    // happens to be selected — it is the more useful heading, and it is stable
+    // across pulls. Falls back to the target label outside a dungeon.
+    const dungeonLabel = Number(dungeonId) > 0
+      ? (this.i18n?.getDungeonLabel?.(Number(dungeonId)) ?? "")
+      : "";
+    if (dungeonLabel) return dungeonLabel;
     if (targetMode === "trainTargets" && !this.isLocalUserIdentified()) {
       return this.i18n?.t("target.identifying", "Identifying you...") ?? "Identifying you...";
     }
@@ -4414,6 +4545,7 @@ class DpsApp {
       targetMode: this.lastTargetMode,
       targetId: this.lastTargetId,
       targetName: this.lastTargetName,
+      dungeonId: this.lastDungeonId,
     });
     this.elBossName.classList.toggle("isAllTargets", this.lastTargetMode === "allTargets");
   }

@@ -1,6 +1,5 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use parking_lot::RwLock;
 
@@ -19,11 +18,11 @@ const ZONE_RESET_LULL_MS: i64 = 1_500;
 /// Minimum spacing between two zone-change resets (debounce).
 const ZONE_RESET_DEBOUNCE_MS: i64 = 4_000;
 
+/// Capture time while replaying, wall clock while capturing. See `crate::clock`
+/// — the idle-reset and zone-reset decisions below are timing decisions, so
+/// reading the replaying machine's clock made replays non-deterministic.
 fn now_ms() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
+    crate::clock::now_ms()
 }
 
 // ───── Aggregate data structures ─────
@@ -133,7 +132,18 @@ pub struct PartyMember {
     /// Combat power — the number the game shows on the character sheet.
     pub combat_power: i64,
     /// World/server id (the bracket tag next to a cross-server player's name).
+    /// This is the top `u16` of `dbid`, kept separately because the roster parse
+    /// anchors on it.
     pub server_id: u16,
+    /// The roster's own id for this member, server-assigned and stable across
+    /// renames — the whole 64 bits, of which `server_id` is the top sixteen.
+    ///
+    /// Kept because it is the only identifier here that is *not* a name. Log
+    /// sharing needs to say "this row is the same person as that row" without
+    /// putting a character name on the wire, and a name cannot do that job: it
+    /// changes on rename, and it is re-usable by a stranger once freed, which
+    /// would silently hand them the previous owner's consent.
+    pub dbid: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -242,6 +252,9 @@ struct Inner {
     low_id_entities: HashSet<i32>,
     /// Party roster from the `0x9702` packet, keyed by character name.
     party_members: HashMap<String, PartyMember>,
+    /// Instance id the party is in, from the same packet. Encodes the dungeon and
+    /// its difficulty tier; resolved to a name by the frontend's dungeon table.
+    current_dungeon_id: i32,
     /// Power-scalar values observed per actor in its damage records. A summon
     /// inherits its owner's, so this links the two when no spawn packet (and
     /// therefore no `parent_key`) ever arrives — the case for a Cleric's Divine
@@ -259,6 +272,9 @@ struct Inner {
 
     // Local player
     local_player_id: Option<i64>,
+    /// Behind an Arc because `get_dps` reads it every 500ms and the set can hold
+    /// thousands of entries; cloning it on each tick would be pure waste.
+    supporters: std::sync::Arc<crate::supporters::Roster>,
     local_character_name: Option<String>,
 }
 
@@ -282,6 +298,7 @@ impl DataStorage {
                 summon_spawn_ids: HashSet::new(),
                 low_id_entities: HashSet::new(),
                 party_members: HashMap::new(),
+                current_dungeon_id: 0,
                 actor_power_scalars: HashMap::new(),
                 hostile_target_ids: HashSet::new(),
                 dead_entity_ids: HashSet::new(),
@@ -289,6 +306,7 @@ impl DataStorage {
                 has_boss_in_segment: false,
                 current_target: 0,
                 local_player_id: None,
+                supporters: std::sync::Arc::new(crate::supporters::Roster::default()),
                 local_character_name: None,
             }),
             damage_generation: AtomicI64::new(0),
@@ -343,6 +361,15 @@ impl DataStorage {
 
     pub fn local_character_name(&self) -> Option<String> {
         self.inner.read().local_character_name.clone()
+    }
+
+    /// Replace the supporter roster. Called after each download.
+    pub fn set_supporters(&self, roster: crate::supporters::Roster) {
+        self.inner.write().supporters = std::sync::Arc::new(roster);
+    }
+
+    pub fn supporters(&self) -> std::sync::Arc<crate::supporters::Roster> {
+        self.inner.read().supporters.clone()
     }
 
     pub fn set_local_player_id(&self, id: Option<i64>) {
@@ -625,12 +652,50 @@ impl DataStorage {
             return;
         }
         let mut inner = self.inner.write();
+
+        // Leaving, being kicked, or the party disbanding all show up the same way:
+        // the next complete roster has you on your own. Going from a real party
+        // down to one member means the party is over, so drop the roster rows and
+        // ask for a combat reset — otherwise the meter keeps showing teammates who
+        // are no longer with you.
+        let was_in_party = inner.party_members.len() >= 2;
+        let now_alone = complete && members.len() <= 1;
+        let local_name = inner.local_character_name.clone();
+        let dropped_self = complete
+            && local_name.as_ref().is_some_and(|n| {
+                !n.trim().is_empty() && !members.iter().any(|(name, _)| name.trim() == n.trim())
+            });
+
+        if was_in_party && (now_alone || dropped_self) {
+            tracing::info!(
+                "Party ended ({} -> {} members) — clearing party rows",
+                inner.party_members.len(),
+                members.len()
+            );
+            inner.party_members.clear();
+            inner.current_dungeon_id = 0;
+            drop(inner);
+            self.flush_combat_only();
+            self.combat_reset_requested.store(true, Ordering::Relaxed);
+            return;
+        }
+
         if complete {
             inner.party_members.clear();
         }
         for (name, member) in members {
             inner.party_members.insert(name, member);
         }
+    }
+
+    pub fn set_current_dungeon(&self, dungeon_id: i32) {
+        if dungeon_id > 0 {
+            self.inner.write().current_dungeon_id = dungeon_id;
+        }
+    }
+
+    pub fn current_dungeon_id(&self) -> i32 {
+        self.inner.read().current_dungeon_id
     }
 
     pub fn get_party_members(&self) -> HashMap<String, PartyMember> {

@@ -214,6 +214,116 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     });
   };
 
+  // Status line for the dry run. Created lazily so the panel markup does not
+  // have to carry an element that is empty almost always.
+  const showNote = (text, isError) => {
+    const panel = document.querySelector(".historyPanel");
+    if (!panel) return;
+    let note = panel.querySelector(".historyPreviewNote");
+    if (!note) {
+      note = document.createElement("div");
+      note.className = "historyPreviewNote";
+      const filters = panel.querySelector(".historyFilters");
+      if (filters && filters.parentNode) {
+        filters.parentNode.insertBefore(note, filters.nextSibling);
+      } else {
+        panel.appendChild(note);
+      }
+    }
+    note.textContent = text;
+    note.classList.toggle("isError", !!isError);
+    note.style.display = text ? "block" : "none";
+  };
+
+  // Which fights have packets behind them, and which already have a link.
+  // Loaded when the panel opens; a fight missing from it simply has no slice.
+  let shareStatus = {};
+
+  const UPLOAD_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 13v8"/><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="m8 17 4-4 4 4"/></svg>`;
+  const LINK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>`;
+
+  const paintUploadBtn = (btn, fight) => {
+    const url = shareStatus[fight.id]?.url;
+    btn.classList.toggle("isUploaded", !!url);
+    btn.innerHTML = url ? LINK_ICON : UPLOAD_ICON;
+    const label = url
+      ? t("history.uploadOpen", "Open this fight's log on a2tools.app")
+      : t("history.uploadTip", "Upload this fight to a2tools.app and get a link to share");
+    btn.title = label;
+    btn.setAttribute("aria-label", label);
+  };
+
+  const runUpload = async (fight, btn) => {
+    if (btn.disabled) return;
+    const existing = shareStatus[fight.id]?.url;
+    if (existing) {
+      window.javaBridge?.openBrowser?.(existing);
+      return;
+    }
+    btn.disabled = true;
+    showNote(t("history.uploadWorking", "Uploading..."), false);
+    try {
+      const r = await window.javaBridge?.uploadFight?.(fight.id);
+      if (!r?.url) throw new Error("no result");
+      shareStatus[fight.id] = { hasSlice: true, url: r.url };
+      paintUploadBtn(btn, fight);
+      try { await navigator.clipboard?.writeText?.(r.url); } catch {}
+      const isPrivate = r.visibility === "private";
+      showNote(
+        window.i18n?.format?.(
+          isPrivate ? "history.uploadDonePrivate" : "history.uploadDonePublic",
+          { url: r.url },
+          isPrivate
+            ? `Uploaded as private. Link copied: ${r.url}`
+            : `Uploaded. Link copied: ${r.url}`
+        ),
+        false
+      );
+    } catch (err) {
+      const msg = typeof err === "string" ? err : err?.message || String(err);
+      showNote(msg, true);
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  const runPreview = async (fight, btn) => {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    showNote(t("history.previewWorking", "Building the preview..."), false);
+    try {
+      const r = await window.javaBridge?.previewShare?.(fight.id);
+      if (!r) throw new Error("no result");
+      const kb = Math.max(1, Math.round(r.sliceBytes / 1024));
+      // What an upload would actually put on the wire, which is the number
+      // people care about — not the size on disk.
+      const sentKb = Math.max(1, Math.round((r.sliceCompressedBytes ?? r.sliceBytes) / 1024));
+      showNote(
+        window.i18n?.format?.(
+          "history.previewDone",
+          {
+            slice: kb,
+            sent: sentKb,
+            kept: r.packetsKept,
+            seen: r.packetsSeen,
+            blinded: r.namesBlinded,
+            dir: r.outDir,
+          },
+          `Wrote ${kb} KB (${sentKb} KB compressed — what an upload would send). Kept ${r.packetsKept} of ${r.packetsSeen} packets, blinded ${r.namesBlinded} names. Nothing was uploaded. Saved to ${r.outDir}`
+        ),
+        false
+      );
+      // Open the folder so the files are one click away rather than a path to
+      // copy out of a status line.
+      window.javaBridge?.openBrowser?.(r.outDir);
+    } catch (err) {
+      const msg = typeof err === "string" ? err : err?.message || String(err);
+      showNote(msg, true);
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
   const buildRow = (fight, { grouped = false } = {}) => {
     const row = document.createElement("div");
     row.className = grouped ? "historyRow historyRowChild" : "historyRow";
@@ -285,6 +395,38 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
     const actionsEl = document.createElement("div");
     actionsEl.className = "historyRowActions";
+
+    // Training dummies are not logs, and a fight still in progress has no end.
+    if (!fight.isLive && !fight.isTrain) {
+      const uploadBtn = document.createElement("button");
+      uploadBtn.className = "historyPreviewBtn historyUploadBtn";
+      uploadBtn.type = "button";
+      paintUploadBtn(uploadBtn, fight);
+      uploadBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        runUpload(fight, uploadBtn);
+      });
+      actionsEl.appendChild(uploadBtn);
+    }
+
+    if (!fight.isLive) {
+      const previewBtn = document.createElement("button");
+      previewBtn.className = "historyPreviewBtn";
+      previewBtn.type = "button";
+      previewBtn.setAttribute("aria-label", t("history.previewUpload", "Preview upload"));
+      previewBtn.title = t(
+        "history.previewUploadTip",
+        "Write what sharing this fight would upload. Nothing is sent."
+      );
+      previewBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>`;
+      previewBtn.addEventListener("click", (e) => {
+        // The row itself opens the fight; without this the details window
+        // opens behind the preview.
+        e.stopPropagation();
+        runPreview(fight, previewBtn);
+      });
+      actionsEl.appendChild(previewBtn);
+    }
 
     if (!fight.isLive) {
       const deleteBtn = document.createElement("button");
@@ -454,6 +596,13 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     }
     populateDropdowns(allFights);
     renderList(allFights);
+    // Links for fights already uploaded arrive a moment later; the buttons
+    // work without them, so the list does not wait.
+    Promise.resolve(window.javaBridge?.shareStatus?.()).then((status) => {
+      if (!status || typeof status !== "object") return;
+      shareStatus = status;
+      if (Object.values(status).some((s) => s?.url)) renderList(allFights);
+    }).catch(() => {});
   };
 
   // Load more rows when scrolled near the bottom (flat list only; grouped renders sections eagerly)

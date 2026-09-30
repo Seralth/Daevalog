@@ -681,6 +681,38 @@
               </div>
             </section>
             <section class="settingsGroup">
+              <div class="settingsMiniTitle" data-i18n="settings.account.title">A2 Tools Account</div>
+              <div class="settingsGroupBody">
+                <div class="settingsRow settingsRowStacked">
+                  <div class="settingsInfo">
+                    <div class="settingsLabel accountState" data-i18n="settings.account.signedOut">Not signed in</div>
+                    <div class="settingsHint accountHint" data-i18n="settings.account.hint">Sign in to sync characters and settings with a2tools.app.</div>
+                  </div>
+                  <div class="settingsRowEnd">
+                    <button class="settingsAction accountConnectBtn" type="button" data-i18n="settings.account.connect">Sign in</button>
+                    <button class="settingsAction settingsActionDanger accountSignOutBtn" type="button" style="display:none" data-i18n="settings.account.signOut">Sign out</button>
+                  </div>
+                </div>
+                <div class="accountCodeBox" style="display:none">
+                  <div class="accountCodeLabel" data-i18n="settings.account.codePrompt">Approve this code in your browser:</div>
+                  <div class="accountCode"></div>
+                  <div class="accountCodeHint" data-i18n="settings.account.codeHint">The page should have opened already. The code expires in 10 minutes.</div>
+                </div>
+              </div>
+            </section>
+            <section class="settingsGroup">
+              <div class="settingsGroupBody">
+                <label class="settingsToggle">
+                  <span class="settingsToggleLabel settingsLabel" data-i18n="settings.showSupporterColors">Show supporter colours</span>
+                  <span class="settingsToggleControl">
+                    <input type="checkbox" class="showSupporterColorsCheckbox" />
+                    <span class="settingsToggleTrack" aria-hidden="true"></span>
+                  </span>
+                </label>
+                <div class="settingsHint" data-i18n="settings.showSupporterColorsHint">Supporters' names render gold. Cosmetic only — it never changes any number.</div>
+              </div>
+            </section>
+            <section class="settingsGroup">
               <div class="settingsMiniTitle" data-i18n="settings.diagnostics">Diagnostics</div>
               <div class="settingsGroupBody settingsGroupSplit">
                 <label class="settingsToggle">

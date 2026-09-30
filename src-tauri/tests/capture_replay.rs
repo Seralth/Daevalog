@@ -139,6 +139,45 @@ fn resolves_party_identities_and_summon_owners() {
     }
 }
 
+/// The roster id every party member carries, which log sharing uses instead of a
+/// character name.
+///
+/// Two properties matter and neither is obvious from the parse: `dbid` must be
+/// populated for everyone (it was read and thrown away before), and `server_id`
+/// must really be its top sixteen bits. The second is a self-check on the
+/// plumbing — the roster parse *anchors* on `server_id` to find combat power, so
+/// if these two ever disagreed the anchor would be searching for the wrong value
+/// and the numbers past it would be silently wrong.
+#[test]
+fn party_roster_carries_a_stable_id_per_member() {
+    let Ok(path) = std::env::var("A2_REPLAY_CAPTURE") else {
+        eprintln!("A2_REPLAY_CAPTURE unset — skipping");
+        return;
+    };
+    let storage = replay(&path, "2026-08-15T18:47:30");
+    let party = storage.get_party_members();
+    assert_eq!(party.len(), 5, "party roster members: {party:?}");
+
+    let mut seen = std::collections::HashSet::new();
+    for (name, m) in &party {
+        assert_ne!(m.dbid, 0, "{name} has no dbid");
+        assert_eq!(
+            (m.dbid >> 48) as u16,
+            m.server_id,
+            "{name}: server_id {} is not the top 16 bits of dbid {:#x}",
+            m.server_id,
+            m.dbid
+        );
+        assert!(seen.insert(m.dbid), "{name} shares a dbid with another member");
+    }
+
+    // All five are on one world, so the ids differ only below the server half —
+    // i.e. the low 48 bits are what actually identifies a person.
+    let low_bits: std::collections::HashSet<u64> =
+        party.values().map(|m| m.dbid & 0x0000_FFFF_FFFF_FFFF).collect();
+    assert_eq!(low_bits.len(), 5, "low 48 bits should be distinct per member");
+}
+
 /// What the meter actually puts on screen: five named rows, no leftover `#id`
 /// rows for the pets, and a combat power on every one of them.
 #[test]
@@ -221,4 +260,161 @@ fn divine_auras_collapse_onto_an_unnamed_cleric() {
         assert!(!ids.contains(&aura), "aura #{aura} still has its own row: {ids:?}");
     }
     assert!(ids.contains(&5492), "the Cleric (5492) should be a row: {ids:?}");
+}
+
+#[test]
+#[ignore = "diagnostic"]
+fn dump_party_roster() {
+    let Ok(path) = std::env::var("A2_REPLAY_PARTY_CAPTURE") else { return };
+    let storage = replay(&path, "");
+    let party = storage.get_party_members();
+    println!("roster members: {}", party.len());
+    let mut v: Vec<_> = party.iter().collect();
+    v.sort_by_key(|(_, m)| m.slot);
+    for (name, m) in v {
+        println!(
+            "  slot={} {:<18} lvl={} gear={} cp={} srv={} dbid={:#018x} low48={:#014x} ({})",
+            m.slot, name, m.level, m.gear_score, m.combat_power, m.server_id,
+            m.dbid, m.dbid & 0x0000_FFFF_FFFF_FFFF, m.dbid & 0x0000_FFFF_FFFF_FFFF
+        );
+    }
+    println!("local player id: {:?}  name: {:?}", storage.local_player_id(), storage.local_character_name());
+
+    let mut calc = DpsCalculator::new(
+        storage.clone(),
+        Arc::new(SkillLookup::new()),
+        Arc::new(NpcLookup::new()),
+        Arc::new(PingTracker::new()),
+    );
+    calc.set_target_selection_mode("allTargets");
+    let dps = calc.get_dps();
+    println!("meter rows: {}", dps.map.len());
+    let mut rows: Vec<_> = dps.map.iter().collect();
+    rows.sort_by(|a, b| b.1.amount.total_cmp(&a.1.amount));
+    for (id, d) in rows {
+        println!("  #{id:<7} {:<18} job={:<8} dmg={:>10.0} cp={}", d.nickname, d.job, d.amount, d.combat_power);
+    }
+}
+
+/// A supporter's name renders gold on everyone's meter — including the meters of
+/// people who are not supporters, which is the whole requirement.
+///
+/// Uses the real capture so the join it exercises is the real one: meter row ->
+/// character name -> party roster -> `dbid` -> hashed roster entry. A unit test
+/// with a synthetic row would not touch any of that.
+#[test]
+fn a_supporter_in_the_party_is_flagged_on_the_local_players_meter() {
+    let Ok(path) = std::env::var("A2_REPLAY_CAPTURE") else {
+        eprintln!("A2_REPLAY_CAPTURE unset — skipping");
+        return;
+    };
+    let storage = replay(&path, "2026-08-15T18:47:30");
+
+    // Grandine is a supporter; the local player (Misti) is not. Gold has to
+    // appear for someone else, on this machine.
+    use a2tools_dps_meter_lib::supporters::{self, KeyKind};
+    let roster = supporters::Roster::parse(&supporters::build(
+        KeyKind::Name,
+        b"test-salt",
+        &["Grandine".to_string()],
+    ))
+    .expect("roster parses");
+    storage.set_supporters(roster);
+
+    let mut calc = DpsCalculator::new(
+        storage.clone(),
+        Arc::new(SkillLookup::new()),
+        Arc::new(NpcLookup::new()),
+        Arc::new(PingTracker::new()),
+    );
+    calc.set_target_selection_mode("allTargets");
+    let dps = calc.get_dps();
+
+    let flagged: Vec<&str> = dps
+        .map
+        .values()
+        .filter(|d| d.is_supporter)
+        .map(|d| d.nickname.as_str())
+        .collect();
+    assert_eq!(
+        flagged,
+        vec!["Grandine"],
+        "exactly the supporter should be flagged; got {flagged:?}"
+    );
+
+    // And it is cosmetic. Compared against a *separate* calculator over the same
+    // storage with no roster, rather than by resetting this one — resetting
+    // clears the damage, which would make this pass by comparing zero to zero.
+    let before: Vec<(i32, f64)> = dps.map.iter().map(|(&id, d)| (id, d.amount)).collect();
+    assert!(!before.is_empty(), "no rows to compare");
+
+    storage.set_supporters(supporters::Roster::default());
+    let mut plain_calc = DpsCalculator::new(
+        storage.clone(),
+        Arc::new(SkillLookup::new()),
+        Arc::new(NpcLookup::new()),
+        Arc::new(PingTracker::new()),
+    );
+    plain_calc.set_target_selection_mode("allTargets");
+    let plain = plain_calc.get_dps();
+
+    assert!(
+        plain.map.values().all(|d| !d.is_supporter),
+        "clearing the roster must clear the flag"
+    );
+    for (id, amount) in before {
+        let row = plain.map.get(&id).expect("the same rows without a roster");
+        assert_eq!(row.amount, amount, "damage changed when the roster did");
+    }
+}
+
+/// Check a capture for who the local supporter roster would gild.
+///
+/// A one-off for testing the gold name against your own play: point it at a
+/// capture and a name, and it reports whether that row comes back flagged. Saves
+/// having to get in game, zone, and squint at the overlay.
+///
+///   A2_REPLAY_CAPTURE=<capture> A2_SUPPORTER=<name> \
+///     cargo test --test capture_replay who_would_be_gold -- --ignored --nocapture
+#[test]
+#[ignore = "diagnostic"]
+fn who_would_be_gold() {
+    let (Ok(path), Ok(name)) = (
+        std::env::var("A2_REPLAY_CAPTURE"),
+        std::env::var("A2_SUPPORTER"),
+    ) else {
+        eprintln!("A2_REPLAY_CAPTURE and A2_SUPPORTER must both be set — skipping");
+        return;
+    };
+    let storage = replay(&path, "");
+
+    use a2tools_dps_meter_lib::supporters::{self, KeyKind};
+    let roster = supporters::Roster::parse(&supporters::build(
+        KeyKind::Name,
+        b"a2tools-supporters-v1",
+        &[name.clone()],
+    ))
+    .expect("roster");
+    println!("roster: {} entry for {name:?}", roster.len());
+    storage.set_supporters(roster);
+
+    let mut calc = DpsCalculator::new(
+        storage.clone(),
+        Arc::new(SkillLookup::new()),
+        Arc::new(NpcLookup::new()),
+        Arc::new(PingTracker::new()),
+    );
+    calc.set_target_selection_mode("allTargets");
+    let dps = calc.get_dps();
+
+    println!("meter rows:");
+    let mut rows: Vec<_> = dps.map.iter().collect();
+    rows.sort_by(|a, b| b.1.amount.total_cmp(&a.1.amount));
+    for (id, d) in rows {
+        println!(
+            "  #{id:<7} {:<20} {}",
+            d.nickname,
+            if d.is_supporter { "GOLD" } else { "-" }
+        );
+    }
 }

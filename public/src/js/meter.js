@@ -58,6 +58,19 @@ const createMeterUI = ({
     const nameEl = document.createElement("div");
     nameEl.className = "name";
 
+    // Supporter badge. Sits between the name and the combat power, hidden
+    // unless the roster names this player. Inline SVG rather than a lucide
+    // `data-lucide` element because rows are built and rebuilt constantly and
+    // lucide only swaps placeholders when createIcons() runs.
+    const supporterBadgeEl = document.createElement("span");
+    supporterBadgeEl.className = "supporterBadge";
+    supporterBadgeEl.style.display = "none";
+    supporterBadgeEl.setAttribute("aria-hidden", "true");
+    supporterBadgeEl.innerHTML =
+      '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ' +
+      'aria-hidden="true"><path d="M3 7l4.2 3L12 4l4.8 6L21 7l-1.8 10H4.8L3 7z"/>' +
+      '</svg>';
+
     // Party combat power, shown beside the name. Hidden unless the party roster
     // packet supplied a value for this player.
     const combatPowerEl = document.createElement("span");
@@ -76,6 +89,7 @@ const createMeterUI = ({
     contentEl.appendChild(rankEl);
     contentEl.appendChild(classIconEl);
     contentEl.appendChild(nameEl);
+    contentEl.appendChild(supporterBadgeEl);
     contentEl.appendChild(combatPowerEl);
     contentEl.appendChild(dpsContainer);
     rowEl.appendChild(fillTrackEl);
@@ -86,6 +100,7 @@ const createMeterUI = ({
       rowEl,
       prevContribClass: "",
       nameEl,
+      supporterBadgeEl,
       combatPowerEl,
       rankEl,
       dpsContainer,
@@ -100,6 +115,7 @@ const createMeterUI = ({
       lastNameText: "",
       lastCombatPowerText: "",
       lastIsCjk: false,
+      lastIsSupporter: false,
       lastMetricText: "",
       lastContributionText: "",
       lastRankText: "",
@@ -273,6 +289,16 @@ const createMeterUI = ({
       }
 
       const isCjk = cjkRegex.test(nameText);
+      // Its own cached field rather than folded into the name: lastNameText
+      // short-circuits when the text is unchanged, so a supporter whose name
+      // stays the same would never get the class applied.
+      const isSupporter = !!row.isSupporter;
+      if (view.lastIsSupporter !== isSupporter) {
+        view.nameEl.classList.toggle("isSupporter", isSupporter);
+        view.supporterBadgeEl.style.display = isSupporter ? "inline-flex" : "none";
+        view.lastIsSupporter = isSupporter;
+      }
+
       if (view.lastIsCjk !== isCjk) {
         view.nameEl.classList.toggle("isCjk", isCjk);
         view.lastIsCjk = isCjk;

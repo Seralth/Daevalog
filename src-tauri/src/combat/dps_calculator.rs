@@ -11,6 +11,11 @@ use crate::entity::personal_data::PersonalData;
 use crate::entity::summon_resolver;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
+/// Synthetic row ids for party members whose entity id we do not know yet. Sits
+/// above the entity-id range (real ids top out at 9,999,999) so it can never
+/// collide, and stays positive because the frontend discards non-positive ids.
+const PARTY_ROW_ID_BASE: i32 = 90_000_000;
+
 /// Train mob NPC type codes.
 const TRAIN_MOB_CODES: &[i32] = &[
     2300229, 2300919, 2310229, 2310919, 2320229, 2320919,
@@ -152,6 +157,7 @@ impl DpsCalculator {
 
         let mut dps_data = DpsData::new();
         dps_data.local_player_id = current_local_id;
+        dps_data.dungeon_id = self.data_storage.current_dungeon_id();
 
         // Decide target
         let (target_ids, target_name, tracking_id) = self.decide_target(&combat_data, &nickname_data, &summon_data);
@@ -221,8 +227,12 @@ impl DpsCalculator {
                 snapshot.target_max_hp = target_max_hp;
                 snapshot.target_total_damage = 0;
                 snapshot.target_current_hp = target_current_hp;
-                return snapshot.clone();
+                snapshot.dungeon_id = dps_data.dungeon_id;
+                let mut snap = snapshot.clone();
+                self.finalize_rows(&mut snap);
+                return snap;
             }
+            self.finalize_rows(&mut dps_data);
             self.last_dps_snapshot = Some(dps_data.clone());
             return dps_data;
         }
@@ -378,11 +388,17 @@ impl DpsCalculator {
                 }
             }
             data.dps = data.amount / bt as f64 * 1000.0;
-            data.damage_contribution = data.amount / total_damage * 100.0;
+            data.damage_contribution = if total_damage > 0.0 {
+                data.amount / total_damage * 100.0
+            } else {
+                0.0
+            };
         }
         for uid in to_remove {
             dps_data.map.remove(&uid);
         }
+
+        self.finalize_rows(&mut dps_data);
 
         dps_data.battle_time = battle_time;
         // total_damage here is the cumulative damage to the selected target(s).
@@ -400,6 +416,72 @@ impl DpsCalculator {
         }
         self.last_dps_snapshot = Some(dps_data.clone());
         dps_data
+    }
+
+    /// Give every party member a row as soon as they join, damage or not, so the
+    /// meter shows the group you are actually in rather than only whoever has
+    /// swung. The roster is keyed by character name — its `dbid` is an account
+    /// id, unrelated to the session entity ids used everywhere else — so bind to
+    /// the entity id when it is known and otherwise use a synthetic key placed
+    /// above the entity-id range (ids top out at 9,999,999), so it cannot collide
+    /// with a real one. The placeholder disappears on its own once real damage
+    /// arrives under the player's true id. Not a negative key: the frontend drops
+    /// non-positive ids as junk.
+    /// Everything that has to happen to a row set before it goes on screen,
+    /// in one place so a new return path cannot quietly skip half of it.
+    fn finalize_rows(&self, dps_data: &mut DpsData) {
+        self.add_party_rows(dps_data);
+        self.mark_supporters(dps_data);
+    }
+
+    /// Flag supporters so the UI can render their names gold.
+    ///
+    /// Resolved here rather than in the frontend because the roster is hashed
+    /// and the join needs `dbid`, which the frontend never sees. Runs on the
+    /// 500ms tick, so it returns immediately when there is no roster — which is
+    /// the normal case until one is published.
+    fn mark_supporters(&self, dps_data: &mut DpsData) {
+        let roster = self.data_storage.supporters();
+        if roster.is_empty() {
+            return;
+        }
+        let party = self.data_storage.get_party_members();
+        for row in dps_data.map.values_mut() {
+            let name = row.nickname.trim();
+            if name.is_empty() {
+                continue;
+            }
+            let dbid = party.get(name).map(|m| m.dbid).unwrap_or(0);
+            row.is_supporter = roster.contains(name, dbid);
+        }
+    }
+
+    fn add_party_rows(&self, dps_data: &mut DpsData) {
+        let party_members = self.data_storage.get_party_members();
+        if party_members.is_empty() {
+            return;
+        }
+        let present: HashSet<String> = dps_data
+            .map
+            .values()
+            .map(|d| d.nickname.trim().to_string())
+            .collect();
+        for (name, member) in &party_members {
+            if present.contains(name.trim()) {
+                continue;
+            }
+            let uid = self
+                .data_storage
+                .find_id_by_nickname(name)
+                .filter(|id| !dps_data.map.contains_key(id))
+                .unwrap_or(PARTY_ROW_ID_BASE + member.slot.min(64) as i32);
+            let mut entry = PersonalData::new(name.clone());
+            // The row filter drops anything without a job; these have not
+            // attacked yet, so mark them the way the local player is marked.
+            entry.job = "Unknown".to_string();
+            entry.combat_power = member.combat_power;
+            dps_data.map.entry(uid).or_insert(entry);
+        }
     }
 
     fn decide_target(
@@ -566,10 +648,12 @@ impl DpsCalculator {
         // Light snapshot: only used for target filtering + per-actor aggregate
         // stats here; the saved record's timestamps come from get_target_details.
         let combat_data = self.data_storage.get_combat_snapshot_light();
-        let now_ms = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_millis() as i64)
-            .unwrap_or(0);
+        // Once per snapshot rather than once per actor: the roster is a clone
+        // behind a lock, and it does not change between targets here.
+        let party_members = self.data_storage.get_party_members();
+        let supporters = self.data_storage.supporters();
+        let dungeon_id = self.data_storage.current_dungeon_id();
+        let now_ms = crate::clock::now_ms();
 
         let mut records = Vec::new();
 
@@ -653,6 +737,10 @@ impl DpsCalculator {
                             hits_recv += ad.hits_received;
                         }
                     }
+                    // Joined on the unobscured nickname: the roster is keyed by
+                    // name, and `display_nick` above has already been masked for
+                    // everyone but the local player.
+                    let roster = party_members.get(nick.as_str());
                     DetailsActorSummary {
                         actor_id: id,
                         nickname: display_nick,
@@ -662,6 +750,10 @@ impl DpsCalculator {
                         regen,
                         damage_received: dmg_recv,
                         hits_received: hits_recv,
+                        dbid: roster.map(|m| m.dbid).unwrap_or(0),
+                        server_id: roster.map(|m| m.server_id).unwrap_or(0),
+                        is_supporter: supporters
+                            .contains(nick, roster.map(|m| m.dbid).unwrap_or(0)),
                     }
                 })
                 .collect();
@@ -699,6 +791,7 @@ impl DpsCalculator {
                 is_train,
                 app_version: crate::entity::fight_record::APP_VERSION.to_string(),
                 mob_code,
+                dungeon_id,
             };
 
             if is_ended {
@@ -716,6 +809,7 @@ impl DpsCalculator {
         let combat_data = self.data_storage.get_combat_snapshot_light();
         let nickname_data = self.data_storage.get_nicknames();
         let summon_data = self.data_storage.get_summon_data();
+        let supporters = self.data_storage.supporters();
         let mob_hp_data = self.data_storage.get_mob_hp_data();
         let mob_data = self.data_storage.get_mob_data();
 
@@ -835,6 +929,15 @@ impl DpsCalculator {
                     regen,
                     damage_received: dmg_recv,
                     hits_received: hits_recv,
+                    // The live view is never uploaded, and this runs on every
+                    // refresh — not worth taking the roster lock for identity
+                    // nothing here reads.
+                    dbid: 0,
+                    server_id: 0,
+                    // By name only, for the same reason: a name-keyed roster
+                    // needs no dbid, and a dbid-keyed one is a later state that
+                    // will come with the party join it needs.
+                    is_supporter: supporters.contains(nick, 0),
                 }
             })
             .collect();
