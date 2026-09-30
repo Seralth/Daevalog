@@ -98,22 +98,26 @@ fn run(packets: &[Packet], server_port: u16, requests: bool) -> Outcome {
             continue;
         }
 
-        let before = tracker.current_ping_ms();
+        let recorded = || tracker.get_ping_history(i64::MIN, i64::MAX).len();
+        let before = recorded();
         tracker.on_packet(&cap(p), server_port);
         let Some(client_time) = echoed_client_time(&p.data) else { continue };
         o.responses += 1;
 
+        // Same priority as the tracker: the request when it was seen, since
+        // that needs no clock; the wall-clock reading otherwise.
         let wall_clock_rtt = p.at_ms - (client_time - DOTNET_EPOCH_OFFSET_MS);
-        let expected = if (1..=9999).contains(&wall_clock_rtt) {
+        let wall_clock = (1..=9999).contains(&wall_clock_rtt);
+        if wall_clock {
             o.wall_clock_format += 1;
-            Some(wall_clock_rtt)
-        } else {
-            last_request.map(|t| p.at_ms - t)
-        };
-        let now = tracker.current_ping_ms();
-        if now.is_some() && (now != before || expected.map(|e| e as i32) == now) {
+        }
+        let expected = last_request
+            .map(|t| p.at_ms - t)
+            .filter(|rtt| (0..=9999).contains(rtt))
+            .or(wall_clock.then_some(wall_clock_rtt));
+        if recorded() > before {
             o.reported += 1;
-            if let (Some(n), Some(e)) = (now, expected) {
+            if let (Some(n), Some(e)) = (tracker.current_ping_ms(), expected) {
                 o.worst_error_ms = o.worst_error_ms.max((n as i64 - e).abs());
             }
         }
