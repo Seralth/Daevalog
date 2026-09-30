@@ -431,6 +431,13 @@
       invoke("get_available_devices").then((d) => { window._cachedDevices = d; }).catch(() => {});
       return JSON.stringify(window._cachedDevices);
     },
+    // The same list, for a caller that can wait for it.
+    loadAvailableDevices() {
+      return invoke("get_available_devices").then((d) => {
+        window._cachedDevices = d;
+        return d;
+      });
+    },
     setManualDevice(device) {
       invoke("set_manual_device", { device: device || "" }).catch(() => {});
     },

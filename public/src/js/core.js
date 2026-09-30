@@ -2408,6 +2408,8 @@ class DpsApp {
         if (this._autoDetectDevice) {
           window.javaBridge?.setManualDevice?.("");
           this.refreshConnectionInfo();
+        } else {
+          this._loadDeviceDropdown();
         }
       });
     }
@@ -3426,9 +3428,7 @@ class DpsApp {
       this.detailsUI?.close?.({ keepPinned: false });
       this.refreshConnectionInfo();
       this.refreshKeybindLabels?.();
-      // Populate device dropdown with current list of available devices
-      const savedDevice = this.safeGetSetting("dpsMeter.manualDevice");
-      this._populateDeviceDropdown(savedDevice || null);
+      this._loadDeviceDropdown();
     }
   }
 
@@ -3634,6 +3634,7 @@ class DpsApp {
   enterSettingsWindowMode() {
     document.body.classList.add("isSettingsWindow");
     this.refreshMonitorList().then(() => this.initializeSettingsDropdowns());
+    this._loadDeviceDropdown();
     this.settingsPanel?.classList.add("isOpen");
     const close = () => window.javaBridge?.closeSettingsWindow?.();
     this.settingsClose?.addEventListener("click", close);
@@ -4132,7 +4133,9 @@ class DpsApp {
     }
 
     btn.addEventListener("click", () => {
-      menu.style.display = menu.style.display === "none" ? "flex" : "none";
+      // The menu starts hidden by the stylesheet with no inline display, so
+      // test for "open" rather than "closed" or the first click does nothing.
+      menu.style.display = menu.style.display === "flex" ? "none" : "flex";
     });
     document.addEventListener("click", (e) => {
       if (!wrapper.contains(e.target)) menu.style.display = "none";
@@ -4270,6 +4273,19 @@ class DpsApp {
     if (disabled && this.deviceDropdownMenu) this.deviceDropdownMenu.classList.remove("isOpen");
   }
 
+  // The device list comes from the backend asynchronously, so fill the dropdown
+  // once it has arrived rather than from whatever the cache held at the time.
+  _loadDeviceDropdown() {
+    const populate = () =>
+      this._populateDeviceDropdown(this.safeGetSetting("dpsMeter.manualDevice") || null);
+    const load = window.javaBridge?.loadAvailableDevices?.();
+    if (!load) {
+      populate();
+      return;
+    }
+    load.then(populate, populate);
+  }
+
   _populateDeviceDropdown(currentDevice) {
     if (!this.deviceDropdownBtn || !this.deviceDropdownMenu) return;
     const raw = window.javaBridge?.getAvailableDevices?.();
@@ -4280,7 +4296,11 @@ class DpsApp {
     const connRaw = window.javaBridge?.getConnectionInfo?.();
     const connInfo = typeof connRaw === "string" ? this.safeParseJSON(connRaw, {}) : {};
     const lockedDevice = typeof connInfo?.device === "string" && connInfo.device.trim() ? connInfo.device : "";
-    const selected = this._autoDetectDevice ? (lockedDevice || currentDevice || devices[0]) : (currentDevice || devices[0]);
+    // Unticking auto-detect leaves capture where it is until a device is picked,
+    // so show that device rather than whichever happens to be listed first.
+    const selected = this._autoDetectDevice
+      ? (lockedDevice || currentDevice || devices[0])
+      : (currentDevice || lockedDevice || devices[0]);
     this.deviceDropdownMenu.innerHTML = "";
     options.forEach((opt) => {
       const item = document.createElement("button");

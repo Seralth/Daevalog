@@ -165,9 +165,9 @@ impl CaptureDispatcher {
             }
 
             // Feed to ping tracker — also marks connection alive to prevent stale reset
-            if current_port.is_some() {
+            if let Some(port) = current_port {
                 let had_ping_before = self.ping_tracker.current_ping_ms();
-                self.ping_tracker.on_packet(&cap);
+                self.ping_tracker.on_packet(&cap, port);
                 let has_ping_now = self.ping_tracker.current_ping_ms();
                 // If a new ping was received, mark the connection as active
                 if has_ping_now != had_ping_before {
