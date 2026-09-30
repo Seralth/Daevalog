@@ -273,7 +273,9 @@
       "codeHint": "頁面應該已經開啟。代碼將在 10 分鐘後失效。",
       "working": "等待確認…",
       "failed": "登入失敗：{error}",
-      "supporter": "贊助者"
+      "supporter": "贊助者",
+      "autoUpload": "自動上傳首領戰",
+      "autoUploadHint": "首領戰結束時會以你在 a2tools.app 選擇的公開設定上傳到你的帳號。其他玩家的名稱會被遮蔽。木樁戰鬥不會上傳。"
     }
   },
   "support": {

@@ -273,7 +273,9 @@
       "codeHint": "The page should have opened already. The code expires in 10 minutes.",
       "working": "Waiting for approval…",
       "failed": "Sign-in failed: {error}",
-      "supporter": "Supporter"
+      "supporter": "Supporter",
+      "autoUpload": "Upload boss fights automatically",
+      "autoUploadHint": "When a boss fight ends it is uploaded to your account, with the visibility you chose on a2tools.app. Other players stay masked. Training dummies are never uploaded."
     }
   },
   "support": {

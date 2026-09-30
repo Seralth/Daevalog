@@ -622,6 +622,26 @@ pub fn prune_slices(app_data_dir: &Path) {
     }
 }
 
+/// The setting that turns automatic uploads on. Off unless the player turns
+/// it on: an upload publishes a fight, and that is theirs to decide.
+pub const AUTO_UPLOAD_KEY: &str = "dpsMeter.autoUpload";
+
+/// How long after the last hit a fight counts as over. The same rule the
+/// snapshot uses to stop re-saving a boss.
+const ENDED_AFTER_MS: i64 = 10_000;
+
+/// Should the auto-save upload this fight now?
+///
+/// Only a finished fight, once, with its packets behind it. A boss still being
+/// fought is re-saved every 30 seconds, and uploading those partial records
+/// would publish a fight that has not happened yet.
+pub fn wants_auto_upload(app_data_dir: &Path, record: &FightRecord, now_ms: i64) -> bool {
+    !record.is_train
+        && now_ms - (record.start_time_ms + record.duration_ms) >= ENDED_AFTER_MS
+        && slice_path(app_data_dir, &record.id).exists()
+        && read_meta(app_data_dir, &record.id).url.is_none()
+}
+
 /// Which saved fights can be uploaded, and which already were.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -759,6 +779,39 @@ fn base64(data: &[u8]) -> String {
 #[cfg(test)]
 mod upload_tests {
     use super::*;
+
+    fn fight(id: &str, start: i64, duration: i64, is_train: bool) -> FightRecord {
+        let mut r: FightRecord = serde_json::from_value(serde_json::json!({
+            "id": id, "bossName": "B", "targetId": 1, "startTimeMs": start,
+            "durationMs": duration, "totalDamage": 1, "jobs": [],
+            "details": {"targetId": 1, "maxHp": 0, "totalTargetDamage": 1, "battleTime": duration,
+                        "startTime": 0, "skills": [], "pingHistory": [], "healSkills": []},
+            "actors": []
+        }))
+        .unwrap();
+        r.is_train = is_train;
+        r
+    }
+
+    #[test]
+    fn auto_upload_waits_for_the_end_and_fires_once() {
+        let dir = std::env::temp_dir().join(format!("a2t-auto-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(slices_dir(&dir)).unwrap();
+        let boss = fight("auto_9_1000", 1_000, 60_000, false);
+        let ended = 1_000 + 60_000 + ENDED_AFTER_MS;
+
+        assert!(!wants_auto_upload(&dir, &boss, ended), "no slice, nothing to send");
+        std::fs::write(slice_path(&dir, &boss.id), b"x").unwrap();
+        assert!(!wants_auto_upload(&dir, &boss, ended - 1), "still being fought");
+        assert!(wants_auto_upload(&dir, &boss, ended));
+        assert!(!wants_auto_upload(&dir, &fight("auto_9_1000", 1_000, 60_000, true), ended),
+                "a training dummy is never a log");
+        write_meta(&dir, &boss.id, &SliceMeta { uploader_actor_id: None,
+                   url: Some("https://a2tools.app/logs/x".into()), visibility: None });
+        assert!(!wants_auto_upload(&dir, &boss, ended), "already uploaded");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn base64_matches_the_standard_vectors() {

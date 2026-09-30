@@ -273,7 +273,9 @@
       "codeHint": "页面应该已经打开。代码将在 10 分钟后失效。",
       "working": "等待确认…",
       "failed": "登录失败：{error}",
-      "supporter": "赞助者"
+      "supporter": "赞助者",
+      "autoUpload": "自动上传首领战",
+      "autoUploadHint": "首领战结束时会以你在 a2tools.app 选择的公开设置上传到你的账号。其他玩家的名称会被遮蔽。木桩战斗不会上传。"
     }
   },
   "support": {

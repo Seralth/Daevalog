@@ -4,8 +4,9 @@ This document is written to be checkable. Everything in the "today" section can
 be verified against the source in this repository, and the evidence for the
 claims about packet captures is a test you can run yourself.
 
-Status: **the meter uploads a fight only when you press Upload on it.** Nothing
-about your fights is sent at any other time. This document says what the meter
+Status: **the meter uploads a fight when you press Upload on it, or, if you
+turned on automatic uploads, when a boss fight ends.** Nothing about your fights
+is sent at any other time. This document says what the meter
 sends, what it keeps, and what an upload contains.
 
 ---
@@ -28,7 +29,14 @@ these calls.
 
 **A fight, when you upload it.** The cloud button on a fight in Battle History
 sends that one fight. What exactly is described under "What an upload
-contains". There is no automatic upload and no setting that turns one on.
+contains".
+
+**Every boss fight, if you turn that on.** *Settings → A2 Tools Account →
+Upload boss fights automatically* is **off unless you turn it on**. With it on
+and an account connected, each boss fight is uploaded once it has ended (never
+while it is still being fought), with the visibility you chose on a2tools.app.
+Training dummies are never uploaded. Turning it off stops it immediately; it
+does not remove logs already uploaded, which you manage from your account.
 
 Nothing is transmitted when you fight, log in, or close the app.
 

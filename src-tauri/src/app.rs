@@ -142,6 +142,26 @@ async fn upload_fight(
     share::upload(&state.http, &state.app_data_dir, &record).await
 }
 
+/// Upload a finished fight in the background, and tell every window.
+///
+/// Failure is quiet on purpose: not being signed in, or being offline, is not
+/// something to interrupt a fight about. The fight keeps its slice, and the
+/// upload button in History still works.
+fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
+    tauri::async_runtime::spawn(async move {
+        let Some(state) = app.try_state::<AppState>() else { return };
+        match share::upload(&state.http, &state.app_data_dir, &record).await {
+            Ok(result) => {
+                tracing::info!("Auto-uploaded {} -> {}", record.id, result.url);
+                let _ = app.emit("fight-uploaded", serde_json::json!({
+                    "fightId": record.id, "url": result.url, "visibility": result.visibility,
+                }));
+            }
+            Err(e) => tracing::info!("Auto-upload of {} skipped: {e}", record.id),
+        }
+    });
+}
+
 /// Which fights have a slice to upload, and which already have a link.
 #[tauri::command]
 async fn share_status(
@@ -1968,6 +1988,14 @@ pub fn run() {
                                 }
                                 if !records.is_empty() {
                                     share::prune_slices(&state.app_data_dir);
+                                }
+                                if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
+                                    let now = crate::clock::now_ms();
+                                    for record in records.into_iter()
+                                        .filter(|r| share::wants_auto_upload(&state.app_data_dir, r, now))
+                                    {
+                                        auto_upload(handle_save.clone(), record);
+                                    }
                                 }
                             }
                         }

@@ -61,6 +61,7 @@ class DpsApp {
       autoHideMeter: "dpsMeter.autoHideMeter",
       bossLogs: "dpsMeter.bossLogsEnabled",
       saveRawPackets: "dpsMeter.saveRawPackets",
+      autoUpload: "dpsMeter.autoUpload",
       windowOpacity: "dpsMeter.windowOpacity",
       bossNameSize: "dpsMeter.bossNameSize",
       betaUi: "dpsMeter.betaUi",
@@ -1971,6 +1972,7 @@ class DpsApp {
     this.meterLayoutDropdownMenu = document.querySelector(".meterLayoutDropdownMenu");
     this.playerNamesBoldCheckbox = document.querySelector(".playerNamesBoldCheckbox");
     this.showSupporterColorsCheckbox = document.querySelector(".showSupporterColorsCheckbox");
+    this.autoUploadCheckbox = document.querySelector(".autoUploadCheckbox");
     this.accountStateEl = document.querySelector(".accountState");
     this.accountHintEl = document.querySelector(".accountHint");
     this.accountConnectBtn = document.querySelector(".accountConnectBtn");
@@ -2242,6 +2244,15 @@ class DpsApp {
       });
     }
     this.refreshAccountPanel();
+
+    if (this.autoUploadCheckbox) {
+      // Off unless turned on: an upload publishes a fight.
+      this.autoUploadCheckbox.checked =
+        this.safeGetSetting(this.storageKeys.autoUpload) === "true";
+      this.autoUploadCheckbox.addEventListener("change", (event) => {
+        this.safeSetSetting(this.storageKeys.autoUpload, String(!!event.target?.checked));
+      });
+    }
 
     if (this.showSupporterColorsCheckbox) {
       this.showSupporterColorsCheckbox.checked = this.showSupporterColors;

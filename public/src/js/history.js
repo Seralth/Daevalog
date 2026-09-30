@@ -605,6 +605,15 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     }).catch(() => {});
   };
 
+  // A fight uploaded in the background (Settings -> upload automatically) gets
+  // its "open log" button without reopening the panel.
+  window.__TAURI__?.event?.listen?.("fight-uploaded", (event) => {
+    const p = event?.payload || {};
+    if (!p.fightId || !p.url) return;
+    shareStatus[p.fightId] = { hasSlice: true, url: p.url };
+    if (panel.classList.contains("open")) renderList(allFights);
+  });
+
   // Load more rows when scrolled near the bottom (flat list only; grouped renders sections eagerly)
   listEl?.addEventListener("scroll", () => {
     if (viewMode !== "list") return;

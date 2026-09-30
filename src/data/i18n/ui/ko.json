@@ -273,7 +273,9 @@
       "codeHint": "페이지가 이미 열렸을 것입니다. 코드는 10분 후 만료됩니다.",
       "working": "승인을 기다리는 중…",
       "failed": "로그인 실패: {error}",
-      "supporter": "후원자"
+      "supporter": "후원자",
+      "autoUpload": "보스전 자동 업로드",
+      "autoUploadHint": "보스전이 끝나면 a2tools.app에서 선택한 공개 설정으로 계정에 업로드됩니다. 다른 플레이어의 이름은 가려집니다. 허수아비 전투는 업로드되지 않습니다."
     }
   },
   "support": {
