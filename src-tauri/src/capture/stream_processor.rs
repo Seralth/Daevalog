@@ -702,6 +702,13 @@ impl StreamProcessor {
     /// `<id u32-LE> <name_len> <name>` shape directly and let the exact
     /// character-name match reject false positives.
     fn scan_char_list_self(&self, data: &[u8]) {
+        // Once the game has sent its self record this list has nothing to add,
+        // and its ids are the list's own, not in-world entities: at character
+        // select after playing Spirtmasta (entity 10044) it listed her as 7796,
+        // and binding that moved "you" onto an entity that never fights.
+        if self.data_storage.local_identity_from_game() {
+            return;
+        }
         let local_name = match self.data_storage.local_character_name() {
             Some(n) => n.trim().to_string(),
             None => return,
@@ -808,6 +815,18 @@ impl StreamProcessor {
                     continue;
                 }
             };
+            // A new character plays the tutorial before it has a name; until
+            // then the game calls it `$` plus random letters and digits (seen:
+            // `$Kc03nyeQHr4`, entity 3877, on 2026-10-01). It is still you, so
+            // bind the entity, but with no name: a placeholder would be noise,
+            // and keeping the previous character's name would be wrong.
+            if is_self && is_placeholder_name(raw) {
+                if self.data_storage.set_local_identity_from_game(id.value as i64, None) {
+                    tracing::info!("self record: unnamed tutorial character -> entity {}", id.value);
+                }
+                i = mask2_idx + 2 + name_len;
+                continue;
+            }
             let sanitized = match sanitize_nickname(raw) {
                 Some(s) => s,
                 None => {
@@ -827,18 +846,17 @@ impl StreamProcessor {
             self.data_storage
                 .append_nickname_authoritative(id.value, &sanitized);
             if is_self {
-                self.data_storage.set_local_player_id(Some(id.value as i64));
-                // Adopt the name as the configured character name when the user
-                // hasn't set one, so every "is this me?" check downstream lines up.
+                // The game's word on who you are replaces whatever name was
+                // configured. That name comes from the window title or the last
+                // session, and both go stale: the title does not change when a
+                // new character is created, and switching character or server
+                // leaves the previous name behind.
                 if self
                     .data_storage
-                    .local_character_name()
-                    .is_none_or(|n| n.trim().is_empty())
+                    .set_local_identity_from_game(id.value as i64, Some(sanitized.clone()))
                 {
-                    self.data_storage
-                        .set_local_character_name(Some(sanitized.clone()));
+                    tracing::info!("self record: local player '{}' -> entity {}", sanitized, id.value);
                 }
-                tracing::info!("self record: local player '{}' -> entity {}", sanitized, id.value);
             } else {
                 tracing::debug!("player record: '{}' -> entity {}", sanitized, id.value);
             }
@@ -2470,6 +2488,13 @@ fn to_hex_range(bytes: &[u8], start: usize, end: usize) -> String {
 
 fn to_hex(bytes: &[u8]) -> String {
     to_hex_range(bytes, 0, bytes.len())
+}
+
+/// The name the game gives a character that has not been named yet: `$` then
+/// letters and digits.
+fn is_placeholder_name(raw: &str) -> bool {
+    raw.strip_prefix('$')
+        .is_some_and(|rest| rest.len() >= 4 && rest.chars().all(|c| c.is_ascii_alphanumeric()))
 }
 
 fn sanitize_nickname(nickname: &str) -> Option<String> {

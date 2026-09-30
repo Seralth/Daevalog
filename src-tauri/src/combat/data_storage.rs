@@ -276,6 +276,13 @@ struct Inner {
     /// thousands of entries; cloning it on each tick would be pure waste.
     supporters: std::sync::Arc<crate::supporters::Roster>,
     local_character_name: Option<String>,
+    /// Set once the game itself has said who the local player is (the `33 36`
+    /// self record). That outranks the window title and any name the UI has
+    /// remembered, which can be a different character entirely. While set,
+    /// `local_character_name` is the game's; `None` there means a tutorial
+    /// character, which the game names with a `$`-prefixed placeholder until
+    /// the player picks a name.
+    local_identity_from_game: bool,
 }
 
 impl DataStorage {
@@ -308,6 +315,7 @@ impl DataStorage {
                 local_player_id: None,
                 supporters: std::sync::Arc::new(crate::supporters::Roster::default()),
                 local_character_name: None,
+                local_identity_from_game: false,
             }),
             damage_generation: AtomicI64::new(0),
             last_damage_ms: AtomicI64::new(0),
@@ -361,6 +369,25 @@ impl DataStorage {
 
     pub fn local_character_name(&self) -> Option<String> {
         self.inner.read().local_character_name.clone()
+    }
+
+    /// Record who the game says the local player is. `name` is `None` for a
+    /// tutorial character. Returns whether anything changed.
+    pub fn set_local_identity_from_game(&self, id: i64, name: Option<String>) -> bool {
+        let mut inner = self.inner.write();
+        let changed = !inner.local_identity_from_game
+            || inner.local_player_id != Some(id)
+            || inner.local_character_name != name;
+        inner.local_identity_from_game = true;
+        inner.local_player_id = Some(id);
+        inner.local_character_name = name;
+        changed
+    }
+
+    /// Whether the local player's identity came from the game rather than from
+    /// the UI (window title, settings, a remembered name).
+    pub fn local_identity_from_game(&self) -> bool {
+        self.inner.read().local_identity_from_game
     }
 
     /// Replace the supporter roster. Called after each download.

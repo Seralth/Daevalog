@@ -614,7 +614,14 @@ class DpsApp {
       this.updateConnectionStatusUi();
     }
     if (!running) return;
+    this.syncCharacterNameFromGame();
     const detectedName = this.parseCharacterNameFromWindowTitle(title);
+    // Act on the title only when it changes. It is not kept current (a new
+    // character keeps the title of the session it was created in), so a title
+    // that merely disagrees with the game's own record of who is playing is
+    // stale, and acting on it every poll would reset the meter every poll.
+    if (detectedName === this._lastTitleName) return;
+    this._lastTitleName = detectedName;
     if (!detectedName || detectedName === this.USER_NAME) return;
     const hadPreviousName = !!this.USER_NAME;
     if (hadPreviousName) {
@@ -626,6 +633,32 @@ class DpsApp {
     if (this.characterNameInput && document.activeElement !== this.characterNameInput) {
       this.characterNameInput.value = detectedName;
     }
+  }
+
+  // Once the game has sent its self record the backend knows who is playing,
+  // and that beats both the window title and the name remembered from last
+  // time. Adopt it quietly: this is not a character switch, so none of
+  // setUserName's resets apply. Returns whether the game has named the local
+  // player (a name of "" is an unnamed tutorial character).
+  syncCharacterNameFromGame() {
+    const raw = window.javaBridge?.getConnectionInfo?.();
+    const info = typeof raw === "string" ? this.safeParseJSON(raw, {}) : {};
+    if (!info?.characterNameFromGame) return false;
+    const name = String(info.characterName ?? "").trim();
+    if (name === this.USER_NAME) return true;
+    this.USER_NAME = name;
+    if (this.characterNameInput && document.activeElement !== this.characterNameInput) {
+      this.characterNameInput.value = name;
+    }
+    // A tutorial character's missing name is not worth remembering over the
+    // last real one.
+    if (name) {
+      this.safeSetStorage(this.storageKeys.userName, name);
+      const id = Number(info.localPlayerId);
+      if (Number.isFinite(id) && id > 0) this.rememberLocalIdForName(name, id);
+    }
+    this.renderCurrentRows();
+    return true;
   }
 
   stopPolling() {
@@ -1385,7 +1418,9 @@ class DpsApp {
     this.localPlayerId = actorId;
     window.javaBridge?.bindLocalActorId?.(String(actorId));
     window.javaBridge?.setLocalPlayerId?.(String(actorId));
-    if (this.USER_NAME) {
+    // When the game has named the local player the backend already holds the
+    // right name; pushing ours could stamp another character's on this row.
+    if (this.USER_NAME && !this.syncCharacterNameFromGame()) {
       window.javaBridge?.bindLocalNickname?.(String(actorId), this.USER_NAME);
       this.setUserName(this.USER_NAME, { persist: true, syncBackend: true });
       this.rememberLocalIdForName(this.USER_NAME, actorId);

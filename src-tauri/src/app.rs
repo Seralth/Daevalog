@@ -309,6 +309,9 @@ fn get_capture_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
         "ip": device.unwrap_or_else(|| "127.0.0.1".to_string()),
         "localPlayerId": local_id,
         "characterName": char_name,
+        // When true, characterName is the game's (null = an unnamed tutorial
+        // character) and the UI should adopt it rather than push its own.
+        "characterNameFromGame": state.data_storage.local_identity_from_game(),
     })
 }
 
@@ -319,6 +322,11 @@ fn set_target_mode(state: tauri::State<'_, AppState>, mode: String) {
 
 #[tauri::command]
 fn set_character_name(state: tauri::State<'_, AppState>, name: String) {
+    // The game has said who is playing; a name from the window title or the
+    // last session is at best the same and at worst another character.
+    if state.data_storage.local_identity_from_game() {
+        return;
+    }
     let trimmed = name.trim().to_string();
     state.data_storage.set_local_character_name(Some(name));
     // If an actor ID was already bound, propagate the new character name
@@ -365,6 +373,12 @@ fn bind_local_nickname(state: tauri::State<'_, AppState>, actor_id: i64, nicknam
     let current = state.data_storage.get_nickname(actor_id as i32);
     if state.data_storage.local_player_id() == Some(actor_id)
         && current.as_deref() == Some(nickname.as_str())
+    {
+        return;
+    }
+    // Same as set_character_name: the game's name for the local player wins.
+    if state.data_storage.local_identity_from_game()
+        && state.data_storage.local_character_name().as_deref() != Some(nickname.trim())
     {
         return;
     }
