@@ -6835,6 +6835,16 @@ html.settingsWindow .settingsPanel {
 }
 html.settingsWindow .settingsPanel.isOpen { display: flex; }
 
+/* The panel's type was sized for a flyout beside the meter. In a window of
+   its own it reads small, so scale the whole panel, controls with the text,
+   rather than retuning every size in it. Zoom goes on the children: on the
+   panel itself it would also scale the 100% height and push the bottom of
+   the scroll area out of the window. */
+html.settingsWindow .settingsHeader,
+html.settingsWindow .settingsBody {
+  zoom: 1.2;
+}
+
 /* Frameless, so the panel header is the drag surface. */
 html.settingsWindow .settingsHeader {
   -webkit-app-region: drag;
