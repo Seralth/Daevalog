@@ -58,7 +58,7 @@ The meter is in your application menu, as A2Tools DPS Meter. To start it from a 
 a2tools-dps-meter 2>&1 | tee ~/meter-console.log
 ```
 
-To remove it, use your package manager: `sudo apt remove a2tools-dps-meter`, `sudo dnf remove a2tools-dps-meter`, `sudo zypper remove a2tools-dps-meter` or `sudo pacman -R a2tools-dps-meter`.
+To remove it, use your package manager. The .deb and .rpm are named `a2-tools-dps-meter`, the Arch package `a2tools-dps-meter`: `sudo apt remove a2-tools-dps-meter`, `sudo dnf remove a2-tools-dps-meter`, `sudo zypper remove a2-tools-dps-meter` or `sudo pacman -R a2tools-dps-meter`.
 
 ## Updates
 
