@@ -14,6 +14,12 @@
 //
 // Go fight something for ~30s, then press Ctrl+C. Send me the printed
 // summary and the dump file path.
+//
+// Also the server-collection tool: every game server the client is sent to
+// (enter each server, an empty character select is enough) is printed and
+// kept in game_servers.json beside the dump; flows_<stamp>.txt logs each new
+// connection with a timestamp, plus HTTPS hostnames. Picking a region at the
+// region selector shows its login server there (port 13700).
 
 use std::collections::HashMap;
 use std::io::Write;
@@ -76,6 +82,72 @@ fn contains(data: &[u8], needle: &[u8]) -> bool {
     data.windows(needle.len()).any(|w| w == needle)
 }
 
+/// The body of the game's `0F 39 00 00` server-connect record, which the
+/// server sends the moment the client enters a server (even to an empty
+/// character select; not for a full server, which refuses first):
+///
+/// ```text
+/// 0F 39 00 00 <server id u16 LE> <n u8> <IPv4 as ASCII, n bytes> <port u16 LE>
+/// ```
+///
+/// The id keys the game's string table (`ServerName_<id>_desc`). Requiring a
+/// whole dotted IPv4 and a non-zero port keeps chance matches out.
+fn parse_server_connect(body: &[u8]) -> Option<(u16, std::net::Ipv4Addr, u16)> {
+    let id = u16::from_le_bytes([*body.first()?, *body.get(1)?]);
+    let n = *body.get(2)? as usize;
+    if !(7..=15).contains(&n) {
+        return None;
+    }
+    let address: std::net::Ipv4Addr = std::str::from_utf8(body.get(3..3 + n)?).ok()?.parse().ok()?;
+    let port = u16::from_le_bytes([*body.get(3 + n)?, *body.get(4 + n)?]);
+    (id != 0 && port != 0).then_some((id, address, port))
+}
+
+/// Keep every server seen in `game_servers.json` beside the dump, keyed by id.
+fn record_game_server(flow_path: &std::path::Path, id: u16, address: &std::net::Ipv4Addr, port: u16) {
+    let path = flow_path.with_file_name("game_servers.json");
+    let mut all: serde_json::Map<String, serde_json::Value> = std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or_default();
+    let now = chrono::Local::now().to_rfc3339();
+    let entry = all.entry(id.to_string()).or_insert_with(|| serde_json::json!({ "firstSeen": now }));
+    entry["address"] = serde_json::json!(address.to_string());
+    entry["port"] = serde_json::json!(port);
+    entry["lastSeen"] = serde_json::json!(now);
+    if let Ok(text) = serde_json::to_string_pretty(&all) {
+        let _ = std::fs::write(&path, text);
+    }
+}
+
+/// The server name from a TLS ClientHello, if this payload is one.
+fn tls_sni(d: &[u8]) -> Option<String> {
+    // record: 16 03 xx len(2) | handshake: 01 len(3) ver(2) random(32)
+    if d.len() < 44 || d[0] != 0x16 || d[1] != 0x03 || d[5] != 0x01 {
+        return None;
+    }
+    let mut p = 5 + 4 + 2 + 32;
+    let sid = *d.get(p)? as usize;
+    p += 1 + sid;
+    let cs = u16::from_be_bytes([*d.get(p)?, *d.get(p + 1)?]) as usize;
+    p += 2 + cs;
+    let cm = *d.get(p)? as usize;
+    p += 1 + cm;
+    let ext_end = p + 2 + u16::from_be_bytes([*d.get(p)?, *d.get(p + 1)?]) as usize;
+    p += 2;
+    while p + 4 <= ext_end.min(d.len()) {
+        let ty = u16::from_be_bytes([d[p], d[p + 1]]);
+        let len = u16::from_be_bytes([d[p + 2], d[p + 3]]) as usize;
+        if ty == 0 {
+            // server_name list: len(2) type(1)=0 name_len(2) name
+            let n = u16::from_be_bytes([*d.get(p + 7)?, *d.get(p + 8)?]) as usize;
+            return std::str::from_utf8(d.get(p + 9..p + 9 + n)?).ok().map(str::to_string);
+        }
+        p += 4 + len;
+    }
+    None
+}
+
 fn to_hex(bytes: &[u8]) -> String {
     let mut s = String::with_capacity(bytes.len() * 2);
     for b in bytes {
@@ -105,6 +177,9 @@ async fn main() {
         }
     };
     let mut dump = std::io::BufWriter::new(file);
+    let flow_path = dump_path.with_file_name(format!("flows_{}.txt", stamp));
+    let mut flow_log = std::fs::File::create(&flow_path).expect("flow log");
+    println!(" Flow log:  {}", flow_path.display());
     let _ = writeln!(
         dump,
         "# A2Tools raw packet dump {}\n# Format: TIMESTAMP_MS|SRCIP:SRCPORT->DSTIP:DSTPORT|DEV|TLS/PLAIN|LEN|HEX\n",
@@ -159,6 +234,27 @@ async fn main() {
         let is_tls = looks_like_tls(&cap.data);
 
         let key = (src_ip.clone(), cap.src_port, dst_ip.clone(), cap.dst_port);
+        // One timestamped line per new connection (and per TLS hostname), so
+        // connections can be matched to what the player was doing at the time.
+        if !flows.contains_key(&key) {
+            let _ = writeln!(
+                flow_log,
+                "{} NEWFLOW {}:{} -> {}:{} dev={} tls={} len={} head={}",
+                chrono::Local::now().format("%H:%M:%S%.3f"),
+                src_ip, cap.src_port, dst_ip, cap.dst_port, dev, is_tls, cap.data.len(),
+                to_hex(&cap.data[..cap.data.len().min(24)])
+            );
+            let _ = flow_log.flush();
+        }
+        if let Some(host) = tls_sni(&cap.data) {
+            let _ = writeln!(
+                flow_log,
+                "{} SNI {} ({}:{} -> {}:{})",
+                chrono::Local::now().format("%H:%M:%S%.3f"),
+                host, src_ip, cap.src_port, dst_ip, cap.dst_port
+            );
+            let _ = flow_log.flush();
+        }
         let st = flows.entry(key).or_insert_with(|| {
             let mut s = FlowStats::default();
             s.device = dev.clone();
@@ -180,8 +276,27 @@ async fn main() {
             if contains(&cap.data, &SIG_BUNDLE) { st.has_bundle += 1; }
         }
 
+        // The game's server-connect record, wherever it turns up.
+        if let Some(at) = cap.data.windows(4).position(|w| w == [0x0F, 0x39, 0x00, 0x00]) {
+            let _ = writeln!(
+                flow_log,
+                "{} SERVERCONNECT {}:{} -> {}:{} {}",
+                chrono::Local::now().format("%H:%M:%S%.3f"),
+                src_ip, cap.src_port, dst_ip, cap.dst_port,
+                to_hex(&cap.data[at..cap.data.len().min(at + 32)])
+            );
+            let _ = flow_log.flush();
+            if let Some((id, address, port)) = parse_server_connect(&cap.data[at + 4..]) {
+                println!("game server: id {} at {}:{}", id, address, port);
+                record_game_server(&flow_path, id, &address, port);
+            }
+        }
+
         // Dump non-TLS payloads (TLS is encrypted = useless hex, only count it).
-        if !is_tls && !dump_capped {
+        // Web ports are skipped outright: TLS continuation segments don't start
+        // with a record header, and browser traffic filled the cap in minutes.
+        let web = [80u16, 443].iter().any(|p| cap.src_port == *p || cap.dst_port == *p);
+        if !is_tls && !web && !dump_capped {
             let line = format!(
                 "{}|{}:{}->{}:{}|{}|PLAIN|{}|{}\n",
                 cap.captured_at_ms,
@@ -268,3 +383,22 @@ fn install_ctrlc_handler() {
 
 #[cfg(not(windows))]
 fn install_ctrlc_handler() {}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_server_connect;
+
+    fn hex(s: &str) -> Vec<u8> {
+        s.split_whitespace().map(|b| u8::from_str_radix(b, 16).unwrap()).collect()
+    }
+
+    #[test]
+    fn reads_the_server_connect_records_seen_on_2026_10_01() {
+        let ariel = hex("1A 05 0E 31 39 33 2E 32 30 32 2E 31 31 32 2E 39 39 10 34 17 03");
+        assert_eq!(parse_server_connect(&ariel), Some((1306, "193.202.112.99".parse().unwrap(), 13328)));
+        let nezekan = hex("DE 05 0F 31 39 33 2E 32 30 32 2E 31 31 32 2E 32 30 30 10 34 9A 02");
+        assert_eq!(parse_server_connect(&nezekan), Some((1502, "193.202.112.200".parse().unwrap(), 13328)));
+        assert_eq!(parse_server_connect(&hex("1A 05 0E 31 39 33 2E 32 30 32 2E 31 31 32 2E 39 39 00 00")), None);
+        assert_eq!(parse_server_connect(&hex("1A 05 0E 41 42 43")), None);
+    }
+}
