@@ -4,14 +4,14 @@ The meter runs natively on Linux while AION 2 runs under Proton. On Arch and its
 
 ## Install on CachyOS, Arch, Manjaro or EndeavourOS
 
-Download the package first (pacman refuses unsigned packages straight from a URL), then install the file:
+Download the latest package first (pacman refuses unsigned packages straight from a URL), then install the file:
 
 ```bash
-curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-2.0.34-1-x86_64.pkg.tar.zst
+curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest-x86_64.pkg.tar.zst
 ```
 
 ```bash
-sudo pacman -U a2tools-dps-meter-2.0.34-1-x86_64.pkg.tar.zst
+sudo pacman -U a2tools-dps-meter-latest-x86_64.pkg.tar.zst
 ```
 
 The install should end with "A2Tools DPS Meter may now capture packets": the package grants the packet-capture permission itself, so you never need `setcap`. The program is `/usr/bin/a2tools-dps-meter`, and it is in your application menu. To start it from a terminal with its output saved:
@@ -51,7 +51,7 @@ pacman -Q a2tools-dps-meter
 | Finding the game | Looks for the running AION2.exe process under Proton |
 | A2 Tools account sign-in | Works in the package from 2.0.33: kept in KWallet or GNOME Keyring, which may ask to create or unlock a wallet the first time |
 | Automatic updates | Works in the package from 2.0.33; builds from source update with `git pull` |
-| Class icons | Missing in the 2.0.34 package and in builds from source before 2026-10-02 (cosmetic); fixed in the next release |
+| Class icons | Works (missing in the 2.0.34 package and earlier; fixed in 2.0.35) |
 | Global hotkeys | Not yet |
 | Screenshots | Not yet |
 | Auto-hide when the game loses focus | Not yet (the meter stays visible) |
