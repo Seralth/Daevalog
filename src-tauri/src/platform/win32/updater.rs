@@ -3,7 +3,14 @@
 use std::path::Path;
 
 /// Updates install themselves here (the MSI).
-pub const SUPPORTED: bool = true;
+pub fn supported() -> bool {
+    true
+}
+
+/// The manifest's package for this platform.
+pub fn package_url<'a>(msi_url: &'a str, _arch_url: &'a str) -> &'a str {
+    msi_url
+}
 
 /// Start the MSI installer over the current install and return; the caller
 /// exits so the installer can replace the running files.

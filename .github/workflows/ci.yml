@@ -64,13 +64,25 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev \
-            libssl-dev libayatana-appindicator3-dev librsvg2-dev
-      # Nothing ships for Linux yet. This builds platform/linux/ (capture, game
-      # detection; the rest borrowed from unsupported/) and keeps it in step
-      # with platform/win32/ (same functions, same signatures).
+            libssl-dev libayatana-appindicator3-dev librsvg2-dev \
+            gnome-keyring dbus-daemon
+      # Builds platform/linux/ and keeps it in step with platform/win32/ (same
+      # functions, same signatures).
       - name: Test
         working-directory: src-tauri
         run: cargo test --all-targets --no-default-features --features desktop
+      # The account token lives in the desktop keyring on Linux, and the step
+      # above has none, so its tests skip there. Here they run against a real
+      # GNOME Keyring in a private D-Bus session.
+      - name: Keyring
+        working-directory: src-tauri
+        env:
+          A2_REQUIRE_KEYRING: "1"
+        run: |
+          dbus-run-session -- sh -c '
+            printf "ci" | gnome-keyring-daemon --unlock --components=secrets >/dev/null
+            cargo test --no-default-features --features desktop --lib secret -- --nocapture
+          '
 
   parser-wasm:
     name: Parser compiles to wasm32

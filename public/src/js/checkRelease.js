@@ -51,7 +51,8 @@
           const m = JSON.parse(raw);
           console.log("[A2Tools] Update manifest:", JSON.stringify(m));
           const v = m.version?.startsWith("v") ? m.version : "v" + m.version;
-          result = { latest: v, msi: m.msiUrl || "" };
+          // One package per platform; the backend picks the one it can install.
+          result = { latest: v, msi: m.msiUrl || "", arch: m.archUrl || "" };
         } catch (e) {
           console.error("[A2Tools] Update check failed:", e);
           return;
@@ -73,6 +74,7 @@
           current,
           latest,
           msiUrl: result.msi,
+          archUrl: result.arch,
         });
       } catch (e) {
         console.error("[A2Tools] Update check error:", e);

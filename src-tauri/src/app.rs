@@ -468,11 +468,19 @@ fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, data: Strin
 
 
 #[tauri::command]
-async fn show_update_window(app: tauri::AppHandle, current: String, latest: String, msi_url: String) -> Result<bool, String> {
-    // The manifest's installer is the Windows MSI. Elsewhere the meter is
-    // updated through its package, so there is nothing to offer here.
-    if !platform::updater::SUPPORTED {
-        tracing::info!("Update {} available (running {}); update through your package", latest, current);
+async fn show_update_window(
+    app: tauri::AppHandle,
+    current: String,
+    latest: String,
+    msi_url: String,
+    arch_url: Option<String>,
+) -> Result<bool, String> {
+    // The manifest names a package per platform (the MSI, the Arch package).
+    // Where this install cannot update itself, or the manifest has nothing
+    // for this platform, there is nothing to offer.
+    let package_url = platform::updater::package_url(&msi_url, arch_url.as_deref().unwrap_or("")).to_string();
+    if !platform::updater::supported() || package_url.is_empty() {
+        tracing::info!("Update {} available (running {}); this install updates through its package manager", latest, current);
         return Ok(false);
     }
     let msg = format!("A new update is available!\n\nCurrent: {}\nLatest: {}\n\nDownload and install now?", current, latest);
@@ -481,12 +489,12 @@ async fn show_update_window(app: tauri::AppHandle, current: String, latest: Stri
         platform::dialog::ask_yes_no("A2Tools - Update Available", &msg)
     }).await.unwrap_or(false);
 
-    if accepted && !msi_url.is_empty() {
+    if accepted {
         // Download and install in background
         let app2 = app.clone();
-        let url = msi_url.clone();
+        let url = package_url;
         tauri::async_runtime::spawn(async move {
-            if let Err(e) = download_and_install_msi_inner(&app2, &url).await {
+            if let Err(e) = download_and_install_update(&app2, &url).await {
                 tracing::error!("Update download failed: {}", e);
                 // Show error dialog
                 let _ = tokio::task::spawn_blocking(move || {
@@ -497,15 +505,12 @@ async fn show_update_window(app: tauri::AppHandle, current: String, latest: Stri
                 }).await;
             }
         });
-    } else if accepted {
-        // No MSI URL, open releases page
-        platform::shell::open_url("https://github.com/taengu/A2Tools-DPS-Meter/releases");
     }
 
     Ok(accepted)
 }
 
-async fn download_and_install_msi_inner(app: &tauri::AppHandle, url: &str) -> Result<(), String> {
+async fn download_and_install_update(app: &tauri::AppHandle, url: &str) -> Result<(), String> {
     use tokio::io::AsyncWriteExt;
     use futures_util::StreamExt;
 
@@ -518,7 +523,7 @@ async fn download_and_install_msi_inner(app: &tauri::AppHandle, url: &str) -> Re
         return Err(format!("HTTP {}", response.status()));
     }
     let total_size = response.content_length().unwrap_or(0);
-    let file_name = url_owned.rsplit('/').next().unwrap_or("update.msi");
+    let file_name = url_owned.rsplit('/').next().unwrap_or("update");
     let msi_path = std::env::temp_dir().join(file_name);
 
     let mut file = tokio::fs::File::create(&msi_path).await.map_err(|e| e.to_string())?;

@@ -7,7 +7,12 @@ use windows::Win32::Security::Cryptography::{
 };
 
 /// This OS has a per-user secret store, so tokens can be kept.
-pub const AVAILABLE: bool = true;
+pub fn available() -> bool {
+    true
+}
+
+/// The protected blob is the whole secret here; deleting the file is enough.
+pub fn forget(_sealed: &[u8]) {}
 
 fn blob(bytes: &mut [u8]) -> CRYPT_INTEGER_BLOB {
     CRYPT_INTEGER_BLOB {

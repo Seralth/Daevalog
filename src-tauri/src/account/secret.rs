@@ -27,7 +27,8 @@ pub fn token_path(app_data_dir: &Path) -> PathBuf {
 /// application's folder cannot be decrypted by ours even under the same user.
 const ENTROPY: &[u8] = b"a2tools.account.v1";
 
-/// The OS's per-user encryption (DPAPI on Windows). Where an OS has none,
+/// The OS's per-user secret store (DPAPI on Windows, the desktop keyring on
+/// Linux). Where an OS has none,
 /// `platform::secret` refuses rather than degrading quietly: storing a token in
 /// the clear would be worse than not storing one.
 use crate::platform::secret as imp;
@@ -40,8 +41,17 @@ pub fn save(app_data_dir: &Path, token: &str) -> bool {
         tracing::error!("Could not encrypt the account token; refusing to store it");
         return false;
     };
-    match std::fs::write(token_path(app_data_dir), &sealed) {
-        Ok(()) => true,
+    let path = token_path(app_data_dir);
+    let previous = std::fs::read(&path).ok();
+    match std::fs::write(&path, &sealed) {
+        Ok(()) => {
+            // Where the OS keeps the secret itself (a Linux keyring), the old
+            // one would otherwise stay there after the file stops naming it.
+            if let Some(previous) = previous {
+                imp::forget(&previous);
+            }
+            true
+        }
         Err(e) => {
             tracing::error!("Could not write the account token: {e}");
             false
@@ -59,6 +69,9 @@ pub fn load(app_data_dir: &Path) -> Option<String> {
     let sealed = std::fs::read(&path).ok()?;
     match imp::unprotect(&sealed, ENTROPY).and_then(|b| String::from_utf8(b).ok()) {
         Some(token) if !token.is_empty() => Some(token),
+        // A Linux keyring that is not running yet (the meter can start before
+        // it at login) is not a dead token: keep the file for next time.
+        _ if !imp::available() => None,
         _ => {
             tracing::warn!(
                 "{} could not be decrypted for this user; removing it",
@@ -73,6 +86,9 @@ pub fn load(app_data_dir: &Path) -> Option<String> {
 /// Forget the token. Used on sign-out and whenever the server says it is dead.
 pub fn clear(app_data_dir: &Path) {
     let path = token_path(app_data_dir);
+    if let Ok(sealed) = std::fs::read(&path) {
+        imp::forget(&sealed);
+    }
     if path.exists() {
         if let Err(e) = std::fs::remove_file(&path) {
             tracing::warn!("Could not remove {}: {e}", path.display());
@@ -84,9 +100,15 @@ pub fn clear(app_data_dir: &Path) {
 mod tests {
     use super::*;
 
-    // Nothing to test where the OS keeps no secrets: every save refuses.
+    // Nothing to test where the OS keeps no secrets: every save refuses. CI
+    // sets A2_REQUIRE_KEYRING where it has started one, so a keyring that
+    // failed to come up fails the tests instead of skipping them.
     fn skip() -> bool {
-        !crate::platform::secret::AVAILABLE
+        let available = crate::platform::secret::available();
+        if !available && std::env::var_os("A2_REQUIRE_KEYRING").is_some() {
+            panic!("A2_REQUIRE_KEYRING is set but no secret store is available");
+        }
+        !available
     }
 
     fn temp(name: &str) -> PathBuf {

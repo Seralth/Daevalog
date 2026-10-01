@@ -1,7 +1,13 @@
 use std::path::Path;
 
 /// Updates come through the platform's own package, not from the meter.
-pub const SUPPORTED: bool = false;
+pub fn supported() -> bool {
+    false
+}
+
+pub fn package_url<'a>(_msi_url: &'a str, _arch_url: &'a str) -> &'a str {
+    ""
+}
 
 /// There is no installer format for this platform yet.
 pub fn run_installer(_package: &Path, _install_dir: &str) -> Result<(), String> {

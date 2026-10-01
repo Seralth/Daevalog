@@ -1,0 +1,122 @@
+//! Keeping the account token in the desktop keyring (KWallet, GNOME Keyring,
+//! KeePassXC…) through the Secret Service D-Bus API. See `account::secret` for
+//! what this does and does not protect against; the keyring is unlocked with
+//! the user's login, so it protects against the same things DPAPI does.
+//!
+//! DPAPI hands back ciphertext for the caller to write to a file. The keyring
+//! holds the secret itself, so what goes in the file here is only a reference
+//! to the keyring item (`REFERENCE` plus a per-save id), and `forget` deletes
+//! the item when the token is cleared.
+
+use std::collections::HashMap;
+
+use secret_service::blocking::{Collection, SecretService};
+use secret_service::EncryptionType;
+
+const REFERENCE: &[u8] = b"secret-service:";
+const APPLICATION: &str = "a2tools-dps-meter";
+
+/// Whether a keyring answers on this desktop. Without one (no KWallet or
+/// GNOME Keyring running) the token is not kept, rather than kept in the clear.
+pub fn available() -> bool {
+    connect().is_some()
+}
+
+fn connect<'a>() -> Option<SecretService<'a>> {
+    // Dh: the secret crosses the bus encrypted, not as plain bytes.
+    match SecretService::connect(EncryptionType::Dh) {
+        Ok(ss) => Some(ss),
+        Err(e) => {
+            tracing::warn!("No desktop keyring (Secret Service) available: {e}");
+            None
+        }
+    }
+}
+
+fn collection<'a>(ss: &'a SecretService<'a>) -> Option<Collection<'a>> {
+    let collection = ss.get_any_collection().ok()?;
+    // A locked keyring asks the user for its password here.
+    collection.ensure_unlocked().ok()?;
+    Some(collection)
+}
+
+fn attributes<'a>(entropy: &'a str, id: &'a str) -> HashMap<&'a str, &'a str> {
+    HashMap::from([("application", APPLICATION), ("purpose", entropy), ("id", id)])
+}
+
+/// A fresh id for each save, so saves never overwrite each other's items.
+/// It only has to be unique, not secret.
+fn new_id() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or_default();
+    format!("{nanos:x}-{:x}-{:x}", std::process::id(), COUNTER.fetch_add(1, Ordering::Relaxed))
+}
+
+fn parse_reference(sealed: &[u8]) -> Option<&str> {
+    let id = std::str::from_utf8(sealed.strip_prefix(REFERENCE)?).ok()?;
+    (!id.is_empty()).then_some(id)
+}
+
+pub fn protect(plaintext: &[u8], entropy: &[u8]) -> Option<Vec<u8>> {
+    let entropy = std::str::from_utf8(entropy).ok()?;
+    let ss = connect()?;
+    let collection = collection(&ss)?;
+    let id = new_id();
+    if let Err(e) = collection.create_item(
+        "A2Tools DPS Meter account",
+        attributes(entropy, &id),
+        plaintext,
+        true,
+        "text/plain",
+    ) {
+        tracing::error!("Could not store the account token in the keyring: {e}");
+        return None;
+    }
+    Some([REFERENCE, id.as_bytes()].concat())
+}
+
+pub fn unprotect(sealed: &[u8], entropy: &[u8]) -> Option<Vec<u8>> {
+    let id = parse_reference(sealed)?;
+    let entropy = std::str::from_utf8(entropy).ok()?;
+    let ss = connect()?;
+    let found = ss.search_items(attributes(entropy, id)).ok()?;
+    let item = match (found.unlocked.into_iter().next(), found.locked.into_iter().next()) {
+        (Some(item), _) => item,
+        (None, Some(item)) => {
+            item.unlock().ok()?;
+            item
+        }
+        (None, None) => return None,
+    };
+    item.get_secret().ok()
+}
+
+pub fn forget(sealed: &[u8]) {
+    let Some(id) = parse_reference(sealed) else { return };
+    let Some(ss) = connect() else { return };
+    // Every purpose: the reference alone identifies the item.
+    let attrs = HashMap::from([("application", APPLICATION), ("id", id)]);
+    let Ok(found) = ss.search_items(attrs) else { return };
+    for item in found.unlocked.into_iter().chain(found.locked) {
+        if let Err(e) = item.delete() {
+            tracing::warn!("Could not remove the account token from the keyring: {e}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn references_are_recognised_and_nothing_else_is() {
+        assert_eq!(parse_reference(b"secret-service:abc-1-0"), Some("abc-1-0"));
+        assert_eq!(parse_reference(b"secret-service:"), None);
+        assert_eq!(parse_reference(b"not dpapi output"), None);
+        assert_ne!(new_id(), new_id());
+    }
+}

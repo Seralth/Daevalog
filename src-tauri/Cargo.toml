@@ -108,5 +108,13 @@ windows = { version = "0.59", features = [
     "Win32_UI_Shell_Common",
 ] }
 
+# The desktop keyring (KWallet, GNOME Keyring) for the account token, over the
+# Secret Service D-Bus API. async-io matches the zbus the opener plugin
+# already brings in, so this adds no second D-Bus stack.
+[target.'cfg(target_os = "linux")'.dependencies]
+secret-service = { version = "5.2", features = ["rt-async-io-crypto-rust"] }
+# Native dialogs (the update prompt, errors). The same GTK Tauri runs on.
+gtk = "0.18"
+
 [dev-dependencies]
 flate2 = "1"
