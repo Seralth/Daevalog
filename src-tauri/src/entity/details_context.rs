@@ -33,6 +33,19 @@ pub struct DetailsActorSummary {
     /// `crate::supporters`; cosmetic only.
     #[serde(default)]
     pub is_supporter: bool,
+    /// Character level, gear score and combat power from the party roster, as
+    /// the game reported them for this fight. 0 when the roster never named
+    /// the actor: only your own party's members are on it.
+    ///
+    /// Saved with the fight because they change: a gear score from today says
+    /// nothing about a fight from last month, and the class statistics compare
+    /// players at like strength.
+    #[serde(default)]
+    pub level: i32,
+    #[serde(default)]
+    pub gear_score: i32,
+    #[serde(default)]
+    pub combat_power: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
