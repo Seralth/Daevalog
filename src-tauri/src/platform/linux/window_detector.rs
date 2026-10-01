@@ -37,3 +37,23 @@ pub fn find_aion2_window() -> bool {
 pub fn is_aion2_foreground() -> bool {
     true
 }
+
+/// Processes that mention "aion" in their name or first argument, for the log
+/// when the game is not recognised.
+pub fn describe_candidates() -> Vec<String> {
+    let Ok(entries) = std::fs::read_dir("/proc") else { return Vec::new() };
+    let mut out = Vec::new();
+    for entry in entries.flatten() {
+        let pid_dir = entry.path();
+        let comm = std::fs::read_to_string(pid_dir.join("comm")).unwrap_or_default();
+        let cmdline = std::fs::read(pid_dir.join("cmdline")).unwrap_or_default();
+        let argv0 = String::from_utf8_lossy(cmdline.split(|&b| b == 0).next().unwrap_or(&[])).to_string();
+        if comm.to_lowercase().contains("aion") || argv0.to_lowercase().contains("aion") {
+            out.push(format!("comm={:?} argv0={argv0:?}", comm.trim()));
+            if out.len() >= 8 {
+                break;
+            }
+        }
+    }
+    out
+}

@@ -11,3 +11,8 @@ pub fn find_aion2_window() -> bool {
 pub fn is_aion2_foreground() -> bool {
     false
 }
+
+/// Nothing to list without a way to find the game.
+pub fn describe_candidates() -> Vec<String> {
+    Vec::new()
+}

@@ -83,6 +83,16 @@ impl UnlockedStats {
         if self.no_window > 0 {
             out += &format!(", {} packets ignored for that", self.no_window);
         }
+        if !window_found {
+            // What might have been the game, so the next log says why it was
+            // not recognised (a localised title, a launcher, ...).
+            let candidates = window_detector::describe_candidates();
+            if candidates.is_empty() {
+                out += " (no window or program mentions \"aion\")";
+            } else {
+                out += &format!(" (look-alikes: {})", candidates.join(" | "));
+            }
+        }
         for (device, (packets, marked)) in devices.iter().take(8) {
             out += &format!("; {}: {} packets, {} with game markers", device, packets, marked);
         }
@@ -164,7 +174,7 @@ impl CaptureDispatcher {
                     match &title {
                         Some(t) => info!("AION2 window found: {:?}", t),
                         None => info!(
-                            "No AION2 window found (looking for a title starting with \"AION2\"); packets are ignored until there is one"
+                            "No AION2 window found (looking for a title starting with \"AION2\", or a window owned by AION2.exe); packets are ignored until there is one"
                         ),
                     }
                     window_logged = Some(running);
