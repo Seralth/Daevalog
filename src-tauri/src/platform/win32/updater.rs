@@ -2,6 +2,9 @@
 
 use std::path::Path;
 
+/// Updates install themselves here (the MSI).
+pub const SUPPORTED: bool = true;
+
 /// Start the MSI installer over the current install and return; the caller
 /// exits so the installer can replace the running files.
 ///

@@ -469,6 +469,12 @@ fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, data: Strin
 
 #[tauri::command]
 async fn show_update_window(app: tauri::AppHandle, current: String, latest: String, msi_url: String) -> Result<bool, String> {
+    // The manifest's installer is the Windows MSI. Elsewhere the meter is
+    // updated through its package, so there is nothing to offer here.
+    if !platform::updater::SUPPORTED {
+        tracing::info!("Update {} available (running {}); update through your package", latest, current);
+        return Ok(false);
+    }
     let msg = format!("A new update is available!\n\nCurrent: {}\nLatest: {}\n\nDownload and install now?", current, latest);
 
     let accepted = tokio::task::spawn_blocking(move || {
