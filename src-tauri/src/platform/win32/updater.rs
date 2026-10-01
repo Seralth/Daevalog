@@ -8,8 +8,8 @@ pub fn supported() -> bool {
 }
 
 /// The manifest's package for this platform.
-pub fn package_url<'a>(msi_url: &'a str, _arch_url: &'a str) -> &'a str {
-    msi_url
+pub fn package_url<'a>(packages: &crate::platform::UpdatePackages<'a>) -> &'a str {
+    packages.msi
 }
 
 /// Start the MSI installer over the current install and return; the caller

@@ -1,16 +1,22 @@
-name: Arch package
+name: Linux packages
 
-# Run by hand (Actions tab, or `gh workflow run arch-package.yml`). Builds
-# packaging/arch/PKGBUILD with makepkg in an Arch container and keeps the
-# .pkg.tar.zst as a download. Players on Arch and derivatives (CachyOS,
-# Manjaro, EndeavourOS) install it with `sudo pacman -U <file or URL>`; its
-# install script grants packet-capture permission, so the meter never runs as
-# root. Nothing here publishes anything: the file goes to the CDN by hand.
+# Run by hand (Actions tab, or `gh workflow run arch-package.yml`). Builds the
+# meter's Linux packages and keeps them as downloads:
+#
+# - the Arch package (packaging/arch/PKGBUILD, makepkg in an Arch container),
+#   for Arch, CachyOS, Manjaro, EndeavourOS;
+# - the .deb (Debian, Ubuntu, Mint, Pop!_OS) and .rpm (Fedora, openSUSE),
+#   built by Tauri on Ubuntu 22.04 so they run on that and anything newer,
+#   then installed on clean Ubuntu, Debian and Fedora to prove they work.
+#
+# Every package's install script grants packet-capture permission, so the
+# meter never runs as root. Nothing here publishes anything: the files go to
+# the CDN by hand.
 #
 # For a release, run it on the release tag (`gh workflow run arch-package.yml
-# -f ref=v2.0.33`): the package is then plain 2.0.33, and goes to the CDN with
-# the MSI before the manifest names it (archUrl), which is what Linux meters
-# update from.
+# -f ref=v2.0.36`): the packages are then plain 2.0.36, and go to the CDN with
+# the MSI before the manifest names them (archUrl, debUrl, rpmUrl), which is
+# what Linux meters update from.
 on:
   workflow_dispatch:
     inputs:
@@ -29,7 +35,7 @@ jobs:
       - name: Build dependencies
         run: |
           pacman -Syu --noconfirm --needed git rust nodejs npm pkgconf \
-            webkit2gtk-4.1 gtk3 libpcap libcap xdotool hicolor-icon-theme
+            webkit2gtk-4.1 gtk3 libpcap libcap hicolor-icon-theme
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
@@ -49,3 +55,85 @@ jobs:
           name: arch-package
           path: packaging/arch/*.pkg.tar.zst
           if-no-files-found: error
+
+  deb-rpm:
+    name: .deb and .rpm
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev rpm
+      # Files a clean checkout lacks (gitignored mirrors of src/data), as in
+      # the PKGBUILD's build().
+      - name: Frontend data
+        run: |
+          mkdir -p public/i18n public/data public/src/data
+          cp -r src/data/i18n/* public/i18n/
+          cp src/data/skill_icons.json src/data/dot_skill_ids.json public/data/
+          cp src/data/skill_icons.json src/data/dot_skill_ids.json public/src/data/
+      - name: Build
+        run: |
+          npm ci
+          npx tauri build --bundles deb,rpm
+      # Tauri names them after the product ("A2Tools DPS Meter_2.0.36_amd64.deb");
+      # the CDN and the updater use the package name instead.
+      - name: Name the packages
+        run: |
+          version=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2)
+          mkdir -p out
+          cp src-tauri/target/release/bundle/deb/*.deb "out/a2tools-dps-meter_${version}_amd64.deb"
+          cp src-tauri/target/release/bundle/rpm/*.rpm "out/a2tools-dps-meter-${version}-1.x86_64.rpm"
+          ls -la out
+      - name: What is in them
+        run: |
+          dpkg-deb --info out/*.deb
+          dpkg-deb --contents out/*.deb | grep -v '/$'
+          rpm -qp --requires out/*.rpm
+          rpm -qp --scripts out/*.rpm
+          rpm -qlp out/*.rpm | grep -E '^/usr/(bin|share/applications)/'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-rpm-packages
+          path: out/*
+          if-no-files-found: error
+
+  install-test:
+    name: Install on ${{ matrix.image }}
+    needs: deb-rpm
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:24.04
+            install: apt-get update && apt-get install -y ./a2tools-dps-meter_*_amd64.deb
+          - image: debian:12
+            install: apt-get update && apt-get install -y ./a2tools-dps-meter_*_amd64.deb
+          - image: fedora:41
+            install: dnf install -y ./a2tools-dps-meter-*.x86_64.rpm
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: deb-rpm-packages
+      # Dependencies resolve, the install script grants capture permission,
+      # and every library the meter links against is there.
+      - name: Install
+        run: ${{ matrix.install }}
+      - name: Check
+        run: |
+          set -e
+          test -x /usr/bin/a2tools-dps-meter
+          getcap /usr/bin/a2tools-dps-meter | tee /dev/stderr | grep -q cap_net_raw
+          if ldd /usr/bin/a2tools-dps-meter | grep 'not found'; then exit 1; fi
+          ldconfig -p | grep -q 'libpcap.so.1' || { echo "libpcap.so.1 missing"; exit 1; }
+          ls /usr/share/applications/ | grep -i a2tools

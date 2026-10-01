@@ -5,7 +5,7 @@ pub fn supported() -> bool {
     false
 }
 
-pub fn package_url<'a>(_msi_url: &'a str, _arch_url: &'a str) -> &'a str {
+pub fn package_url<'a>(_packages: &crate::platform::UpdatePackages<'a>) -> &'a str {
     ""
 }
 

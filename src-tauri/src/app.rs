@@ -475,11 +475,19 @@ async fn show_update_window(
     latest: String,
     msi_url: String,
     arch_url: Option<String>,
+    deb_url: Option<String>,
+    rpm_url: Option<String>,
 ) -> Result<bool, String> {
-    // The manifest names a package per platform (the MSI, the Arch package).
-    // Where this install cannot update itself, or the manifest has nothing
-    // for this platform, there is nothing to offer.
-    let package_url = platform::updater::package_url(&msi_url, arch_url.as_deref().unwrap_or("")).to_string();
+    // The manifest names a package per platform (the MSI; the Arch, Debian
+    // and RPM packages). Where this install cannot update itself, or the
+    // manifest has nothing for it, there is nothing to offer.
+    let packages = platform::UpdatePackages {
+        msi: &msi_url,
+        arch: arch_url.as_deref().unwrap_or(""),
+        deb: deb_url.as_deref().unwrap_or(""),
+        rpm: rpm_url.as_deref().unwrap_or(""),
+    };
+    let package_url = platform::updater::package_url(&packages).to_string();
     if !platform::updater::supported() || package_url.is_empty() {
         tracing::info!("Update {} available (running {}); this install updates through its package manager", latest, current);
         return Ok(false);

@@ -52,7 +52,7 @@
           console.log("[A2Tools] Update manifest:", JSON.stringify(m));
           const v = m.version?.startsWith("v") ? m.version : "v" + m.version;
           // One package per platform; the backend picks the one it can install.
-          result = { latest: v, msi: m.msiUrl || "", arch: m.archUrl || "" };
+          result = { latest: v, msi: m.msiUrl || "", arch: m.archUrl || "", deb: m.debUrl || "", rpm: m.rpmUrl || "" };
         } catch (e) {
           console.error("[A2Tools] Update check failed:", e);
           return;
@@ -75,6 +75,8 @@
           latest,
           msiUrl: result.msi,
           archUrl: result.arch,
+          debUrl: result.deb,
+          rpmUrl: result.rpm,
         });
       } catch (e) {
         console.error("[A2Tools] Update check error:", e);
