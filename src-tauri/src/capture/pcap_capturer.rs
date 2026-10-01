@@ -104,16 +104,27 @@ struct PcapLib {
 
 impl PcapLib {
     fn load() -> Result<Self, String> {
-        let lib = unsafe {
-            Library::new(crate::platform::pcap::LIBRARY).map_err(|e| {
-                format!(
-                    "Failed to load {}. {}\nError: {}",
-                    crate::platform::pcap::LIBRARY,
-                    crate::platform::pcap::MISSING_HELP,
-                    e
-                )
-            })?
-        };
+        // The first of the OS's names for the library that loads.
+        let mut errors = Vec::new();
+        let mut loaded = None;
+        for name in crate::platform::pcap::LIBRARIES {
+            // SAFETY: loading libpcap runs no initialisation we depend on not running.
+            match unsafe { Library::new(name) } {
+                Ok(lib) => {
+                    loaded = Some(lib);
+                    break;
+                }
+                Err(e) => errors.push(format!("{name}: {e}")),
+            }
+        }
+        let lib = loaded.ok_or_else(|| {
+            format!(
+                "Failed to load {}. {}\nError: {}",
+                crate::platform::pcap::LIBRARIES.join(" or "),
+                crate::platform::pcap::MISSING_HELP,
+                errors.join("; ")
+            )
+        })?;
 
         unsafe {
             let findalldevs: Symbol<unsafe extern "C" fn(*mut PcapIfT, *mut c_char) -> c_int> =
@@ -221,7 +232,7 @@ unsafe impl Send for PcapLib {}
 unsafe impl Sync for PcapLib {}
 
 /// Manages pcap device handles and captures TCP traffic from network interfaces.
-/// Loads the OS's pcap library at runtime (`platform::pcap::LIBRARY`) — no SDK
+/// Loads the OS's pcap library at runtime (`platform::pcap::LIBRARIES`) — no SDK
 /// needed at compile time.
 pub struct PcapCapturer {
     running: Arc<AtomicBool>,

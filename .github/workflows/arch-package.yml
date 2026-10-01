@@ -135,5 +135,6 @@ jobs:
           test -x /usr/bin/a2tools-dps-meter
           getcap /usr/bin/a2tools-dps-meter | tee /dev/stderr | grep -q cap_net_raw
           if ldd /usr/bin/a2tools-dps-meter | grep 'not found'; then exit 1; fi
-          ldconfig -p | grep -q 'libpcap.so.1' || { echo "libpcap.so.1 missing"; exit 1; }
+          # Under one of the names platform/linux/pcap.rs loads it by.
+          ldconfig -p | grep -qE 'libpcap\.so\.(1|0\.8) ' || { echo "libpcap missing"; exit 1; }
           ls /usr/share/applications/ | grep -i a2tools
