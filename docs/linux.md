@@ -1,10 +1,46 @@
 # A2Tools DPS Meter on Linux (Proton)
 
-The meter runs natively on Linux while AION 2 runs under Proton. On Arch and its derivatives (CachyOS, Manjaro, EndeavourOS) install the ready-made package; on any other distribution, build it from source. Linux support is new, so your logs help: see [Sending us your logs](#sending-us-your-logs).
+The meter runs natively on Linux while AION 2 runs under Proton. Install the package for your distribution below: it sets up everything, packet-capture permission included, and updates itself. On a distribution with no package, [build it from source](#build-from-source-other-distributions). Linux support is new, so your logs help: see [Sending us your logs](#sending-us-your-logs).
 
-## Install on CachyOS, Arch, Manjaro or EndeavourOS
+Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, Debian 12, Fedora 39 or newer, or any current Arch.
 
-Download the latest package first (pacman refuses unsigned packages straight from a URL), then install the file:
+## Install
+
+Download the package first, then install the file. The install should end with "A2Tools DPS Meter may now capture packets": the package grants that permission itself, so you never need `setcap`.
+
+### Ubuntu, Debian, Linux Mint, Pop!_OS
+
+```bash
+curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest_amd64.deb
+```
+
+```bash
+sudo apt install ./a2tools-dps-meter-latest_amd64.deb
+```
+
+### Fedora
+
+```bash
+curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest.x86_64.rpm
+```
+
+```bash
+sudo dnf install ./a2tools-dps-meter-latest.x86_64.rpm
+```
+
+### openSUSE
+
+```bash
+curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest.x86_64.rpm
+```
+
+```bash
+sudo zypper install --allow-unsigned-rpm ./a2tools-dps-meter-latest.x86_64.rpm
+```
+
+### CachyOS, Arch, Manjaro, EndeavourOS
+
+pacman refuses unsigned packages straight from a URL, hence the download first:
 
 ```bash
 curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest-x86_64.pkg.tar.zst
@@ -14,33 +50,27 @@ curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest-x86_64.pkg.tar.z
 sudo pacman -U a2tools-dps-meter-latest-x86_64.pkg.tar.zst
 ```
 
-The install should end with "A2Tools DPS Meter may now capture packets": the package grants the packet-capture permission itself, so you never need `setcap`. The program is `/usr/bin/a2tools-dps-meter`, and it is in your application menu. To start it from a terminal with its output saved:
+### Starting it
+
+The meter is in your application menu, as A2Tools DPS Meter. To start it from a terminal with its output saved, which helps if you send us logs:
 
 ```bash
 a2tools-dps-meter 2>&1 | tee ~/meter-console.log
 ```
 
-To remove it:
-
-```bash
-sudo pacman -R a2tools-dps-meter
-```
+To remove it, use your package manager: `sudo apt remove a2tools-dps-meter`, `sudo dnf remove a2tools-dps-meter`, `sudo zypper remove a2tools-dps-meter` or `sudo pacman -R a2tools-dps-meter`.
 
 ## Updates
 
-From 2.0.33 the package updates itself. When a new version is out, the meter asks "A new update is available! … Download and install now?" shortly after it starts:
+The packages update themselves (the Arch package from 2.0.33, the .deb and .rpm from their first release, 2.0.36). When a new version is out, the meter asks "A new update is available! … Download and install now?" shortly after it starts:
 
 1. Click **Yes**. The meter downloads the update and closes.
 2. Your desktop asks for your password, the same prompt as for other system changes. Enter it.
 3. The meter starts again by itself, on the new version.
 
-If you cancel the password prompt, the meter restarts on the old version and asks again next time. To check which version you have:
+If you cancel the password prompt, the meter restarts on the old version and asks again next time. To install an update by hand instead, run the commands under [Install](#install) again.
 
-```bash
-pacman -Q a2tools-dps-meter
-```
-
-**If it says `2.0.30.r70.g0ac3fb6-1`** (the first test package): that version cannot update itself. Install the current package by hand once, with the two commands under [Install](#install-on-cachyos-arch-manjaro-or-endeavouros); every later version then arrives on its own.
+**On Arch, if `pacman -Q a2tools-dps-meter` says `2.0.30.r70.g0ac3fb6-1`** (the first test package): that version cannot update itself. Install the current package by hand once; every later version then arrives on its own.
 
 ## What works on Linux
 
@@ -49,8 +79,8 @@ pacman -Q a2tools-dps-meter
 | Damage meter, Details, History | Works |
 | Ping | Works |
 | Finding the game | Looks for the running AION2.exe process under Proton |
-| A2 Tools account sign-in | Works in the package from 2.0.33: kept in KWallet or GNOME Keyring, which may ask to create or unlock a wallet the first time |
-| Automatic updates | Works in the package from 2.0.33; builds from source update with `git pull` |
+| A2 Tools account sign-in | Works: kept in KWallet or GNOME Keyring, which may ask to create or unlock a wallet the first time |
+| Automatic updates | Works for the packages; builds from source update with `git pull` |
 | Class icons | Works (missing in the 2.0.34 package and earlier; fixed in 2.0.35) |
 | Global hotkeys | Not yet |
 | Screenshots | Not yet |
@@ -179,11 +209,11 @@ The logs contain character names, yours and those of players near you, so send t
 
 | What you see | What to do |
 | --- | --- |
-| No update question, though a new version is out | Updates come only to the package installed by pacman. A build from source updates with `git pull` and a rebuild. |
-| The update asked for no password, or the meter did not come back | Install the current package by hand with the commands under [Install](#install-on-cachyos-arch-manjaro-or-endeavouros). |
+| No update question, though a new version is out | Updates come only to an installed package. A build from source updates with `git pull` and a rebuild. |
+| The update asked for no password, or the meter did not come back | Install the current package by hand with the commands under [Install](#install). |
 | Sign-in says the token could not be stored securely | No keyring is running. Install and enable KWallet (KDE) or GNOME Keyring, then sign in again. |
 | Build fails mentioning `webkit2gtk-4.1`, `pkg-config` or a missing library | Re-run the install line for your distribution. Distributions older than Ubuntu 22.04 lack `webkit2gtk-4.1` and cannot build it. |
-| `debug.log` says it failed to load `libpcap.so.1` | Install libpcap, then start the meter again. |
+| `debug.log` says it failed to load libpcap | Install libpcap (`libpcap0.8` on Debian and Ubuntu, `libpcap` elsewhere), then start the meter again. |
 | The meter warns it is not running as admin, or `debug.log` has no `Capture active` lines | The capture permission is missing. Package: reinstall it. Build from source: run the `setcap` line again (a rebuild loses it). |
 | `debug.log` says `No AION2 window found` while the game is running | The meter did not find the game process. Send us the output of `ps aux \| grep -i aion` along with your logs. |
 | `debug.log` says `Not locked yet` with `0 with game markers` while you fight | Capture sees traffic but not the game's. Tell us if you use a VPN or ping reducer. |
