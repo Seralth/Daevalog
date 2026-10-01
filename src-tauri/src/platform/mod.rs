@@ -8,10 +8,10 @@
 //! own folder and exposes the **same modules, functions and signatures**:
 //!
 //! - `win32/` — Windows, the platform the meter ships on.
+//! - `linux/` — Linux, for players running the game under Proton. Partly
+//!   ported; what is not ported yet is borrowed from `unsupported/`.
 //! - `unsupported/` — every other target. It compiles, and does the safe
 //!   nothing: no capture library, no screenshots, no hotkeys, no stored token.
-//!   A Linux port replaces it for `target_os = "linux"` with a `linux/` folder,
-//!   leaving `win32/` untouched.
 //!
 //! OS-neutral helpers that only *support* platform code (the screenshot rect
 //! maths and PNG encoder, hotkey-label parsing) live beside this file and
@@ -24,11 +24,16 @@
 #[path = "win32/mod.rs"]
 mod os;
 
-#[cfg(not(windows))]
+#[cfg(target_os = "linux")]
+#[path = "linux/mod.rs"]
+mod os;
+
+#[cfg(not(any(windows, target_os = "linux")))]
 #[path = "unsupported/mod.rs"]
 mod os;
 
 pub mod hotkeys;
+pub mod procfs;
 pub mod screenshot;
 
 pub use os::{admin, clock, dialog, pcap, secret, shell, updater, window, window_detector};

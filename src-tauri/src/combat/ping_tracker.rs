@@ -25,6 +25,13 @@ const OFFSET_TOLERANCE_MS: i64 = 15;
 /// by Karim; checked 2026-10-01 against a captured request: exact to the ms).
 const UNREAL_CLOCK_OFFSET_MS: i64 = 16_777_216 * 1000;
 
+/// How far the counter's reading may differ from request timing before it is
+/// counted as a disagreement. Both are exact to a few ms when the counter is the
+/// game's own.
+const PERF_AGREEMENT_MS: i64 = 25;
+/// Disagreements in a row before the counter stops being trusted.
+const PERF_MISSES_TO_DISTRUST: u8 = 2;
+
 /// Reads the performance counter (ms since boot) and the wall clock (Unix ms)
 /// together. The OS supplies it (`platform::clock::perf_clock`); this module
 /// only uses it, so it stays OS-neutral and builds for wasm32.
@@ -48,6 +55,12 @@ struct Inner {
     clock_offset: Option<i64>,
     /// Offsets the previous response's candidate requests implied.
     prev_offsets: Vec<i64>,
+    /// Consecutive pings where the counter disagreed with request timing.
+    perf_misses: u8,
+    /// Set once the counter has disagreed too often: the OS's clock is not the
+    /// one the game stamps with (possible under Wine), so stop using it for the
+    /// rest of the session. Never trips where the clock is right.
+    perf_distrusted: bool,
 }
 
 impl PingTracker {
@@ -67,6 +80,8 @@ impl PingTracker {
                 requests: VecDeque::new(),
                 clock_offset: None,
                 prev_offsets: Vec::new(),
+                perf_misses: 0,
+                perf_distrusted: false,
             }),
             perf_clock,
         }
@@ -134,9 +149,33 @@ impl PingTracker {
                 // rather than the reverse.
                 let wall_clock_rtt = arrival_ms
                     .wrapping_sub(client_sent_raw.wrapping_sub(DOTNET_EPOCH_OFFSET_MS));
-                let rtt_ms = self
-                    .rtt_from_perf_clock(client_sent_raw, arrival_ms)
-                    .or_else(|| inner.rtt_from_request(client_sent_raw, arrival_ms))
+                let perf_rtt = if inner.perf_distrusted {
+                    None
+                } else {
+                    self.rtt_from_perf_clock(client_sent_raw, arrival_ms)
+                };
+                let paired_rtt = inner.rtt_from_request(client_sent_raw, arrival_ms);
+                // Where both exist they should agree to a few ms. The counter
+                // is only assumed to be the game's clock (not verified on every
+                // OS), so a disagreement means trusting the request instead,
+                // and repeated ones mean dropping the counter altogether.
+                let mut perf_rtt = perf_rtt;
+                if let (Some(perf), Some(paired)) = (perf_rtt, paired_rtt) {
+                    if (perf - paired).abs() > PERF_AGREEMENT_MS {
+                        perf_rtt = None;
+                        inner.perf_misses += 1;
+                        if inner.perf_misses >= PERF_MISSES_TO_DISTRUST && !inner.perf_distrusted {
+                            inner.perf_distrusted = true;
+                            tracing::warn!(
+                                "Ping: the performance counter disagrees with request timing ({perf} ms vs {paired} ms); timing requests instead"
+                            );
+                        }
+                    } else {
+                        inner.perf_misses = 0;
+                    }
+                }
+                let rtt_ms = perf_rtt
+                    .or(paired_rtt)
                     .or_else(|| is_valid_rtt(wall_clock_rtt).then_some(wall_clock_rtt))
                     .or_else(|| inner.rtt_from_known_offset(client_sent_raw, arrival_ms));
 
@@ -454,5 +493,22 @@ mod tests {
         let t = PingTracker::with_perf_clock(Some(clock));
         t.on_packet(&response(1_790_798_497_088, 17_564_790_334), SERVER);
         assert_eq!(t.current_ping_ms(), Some(170), "170 ms, as timed against the request");
+    }
+
+    /// Under Wine the counter is assumed, not verified. A wrong one is caught by
+    /// request timing and dropped, so it cannot report a wrong ping for long.
+    #[test]
+    fn a_counter_that_disagrees_with_requests_is_dropped() {
+        // The counter reads 500 ms ahead of the clock the game stamped with.
+        let t = PingTracker::with_perf_clock(Some(fake_perf_clock));
+        let base = 1_789_999_990_000; // wall time of counter 990_000
+        for n in 0..3 {
+            let sent_wall = base + n * 10_000;
+            t.on_packet(&request(sent_wall), SERVER);
+            let sent_counter = 990_000 + n * 10_000 - 500;
+            t.on_packet(&response(sent_wall + 70, sent_counter + UNREAL_CLOCK_OFFSET_MS), SERVER);
+            assert_eq!(t.current_ping_ms(), Some(70), "ping {n} follows the request, not the counter");
+        }
+        assert!(t.inner.lock().perf_distrusted);
     }
 }

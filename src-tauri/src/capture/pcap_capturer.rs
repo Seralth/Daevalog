@@ -1,4 +1,4 @@
-use std::ffi::{c_char, c_int, c_uint, CStr, CString};
+use std::ffi::{c_char, c_int, c_long, c_uint, CStr, CString};
 use std::ptr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -46,10 +46,13 @@ struct SockAddr {
     sa_data: [u8; 14],
 }
 
+/// `struct pcap_pkthdr`. The timestamp is a C `struct timeval`, two `long`s:
+/// 32-bit on Windows, 64-bit on 64-bit Linux. Declaring them `i32` (as this
+/// once did) reads `caplen` from the middle of the timestamp on Linux.
 #[repr(C)]
 struct PcapPkthdr {
-    ts_sec: i32,
-    ts_usec: i32,
+    ts_sec: c_long,
+    ts_usec: c_long,
     caplen: c_uint,
     len: c_uint,
 }
@@ -96,6 +99,7 @@ struct PcapLib {
     open_live: unsafe extern "C" fn(*const c_char, c_int, c_int, c_int, *mut c_char) -> PcapT,
     close: unsafe extern "C" fn(PcapT),
     next_ex: unsafe extern "C" fn(PcapT, *mut *mut PcapPkthdr, *mut *const u8) -> c_int,
+    datalink: unsafe extern "C" fn(PcapT) -> c_int,
 }
 
 impl PcapLib {
@@ -124,6 +128,8 @@ impl PcapLib {
             let next_ex: Symbol<
                 unsafe extern "C" fn(PcapT, *mut *mut PcapPkthdr, *mut *const u8) -> c_int,
             > = lib.get(b"pcap_next_ex").map_err(|e| format!("pcap_next_ex: {}", e))?;
+            let datalink: Symbol<unsafe extern "C" fn(PcapT) -> c_int> =
+                lib.get(b"pcap_datalink").map_err(|e| format!("pcap_datalink: {}", e))?;
 
             Ok(Self {
                 findalldevs: *findalldevs,
@@ -131,6 +137,7 @@ impl PcapLib {
                 open_live: *open_live,
                 close: *close,
                 next_ex: *next_ex,
+                datalink: *datalink,
                 _lib: lib,
             })
         }
@@ -252,8 +259,12 @@ impl PcapCapturer {
             }
         };
 
-        // Only capture on devices that have addresses
-        let devices: Vec<_> = devices.into_iter().filter(|d| d.has_addresses).collect();
+        // Only capture on devices that have addresses, and that this OS does not
+        // rule out (Linux's catch-all "any" would duplicate every packet).
+        let devices: Vec<_> = devices
+            .into_iter()
+            .filter(|d| d.has_addresses && !crate::platform::pcap::skip_device(&d.name))
+            .collect();
 
         if devices.is_empty() {
             error!("No capture devices found with addresses");
@@ -333,7 +344,7 @@ pub fn list_device_labels() -> Result<Vec<String>, String> {
     let devices = pcap.find_all_devs().map_err(|e| e.to_string())?;
     Ok(devices
         .into_iter()
-        .filter(|d| d.has_addresses)
+        .filter(|d| d.has_addresses && !crate::platform::pcap::skip_device(&d.name))
         .map(|d| d.label().to_string())
         .collect())
 }
@@ -356,7 +367,8 @@ fn start_capture_thread(
             }
         };
 
-        info!("Capture active on {}", label);
+        let link_type = unsafe { (pcap.datalink)(handle) };
+        info!("Capture active on {} (link type {})", label, link_type);
 
         while running.load(Ordering::SeqCst) {
             let mut header: *mut PcapPkthdr = ptr::null_mut();
@@ -377,7 +389,7 @@ fn start_capture_thread(
                         now_ms()
                     };
                     let frame = unsafe { std::slice::from_raw_parts(data, len) };
-                    if let Some(mut payload) = parse_tcp_payload(frame, &label) {
+                    if let Some(mut payload) = parse_tcp_payload(frame, link_type, &label) {
                         payload.captured_at_ms = ts;
                         let _ = sender.try_send(payload);
                     }
@@ -396,32 +408,67 @@ fn start_capture_thread(
     });
 }
 
-/// Parse raw captured frame to extract TCP payload.
-/// Handles three link-layer formats:
-/// - Ethernet (14-byte header, ether_type 0x0800 for IPv4)
-/// - NULL/Loopback (4-byte header used by Npcap loopback adapter: AF_INET = 2)
-/// - Raw IPv4 (no link-layer header, first nibble = 4)
-fn parse_tcp_payload(frame: &[u8], device_name: &str) -> Option<CapturedPayload> {
+/// Where IPv4 starts in a frame of pcap link type `link_type`, or `None` if this
+/// frame is not IPv4 under that type. Link types are libpcap's (DLT_*/LINKTYPE_*),
+/// the same on every OS.
+fn link_header_len(link_type: c_int, frame: &[u8]) -> Option<usize> {
+    let be16 = |at: usize| frame.get(at..at + 2).map(|b| u16::from_be_bytes([b[0], b[1]]));
+    match link_type {
+        // Ethernet, with up to two 802.1Q / 802.1ad VLAN tags (some NICs, e.g.
+        // Realtek with "Priority & VLAN" on, tag every frame).
+        1 => {
+            let mut at = 12;
+            for _ in 0..2 {
+                match be16(at)? {
+                    0x8100 | 0x88A8 => at += 4,
+                    _ => break,
+                }
+            }
+            (be16(at)? == 0x0800).then_some(at + 2)
+        }
+        // BSD loopback / Npcap loopback: 4-byte address family, AF_INET = 2.
+        0 => (frame.get(..4)? == [2, 0, 0, 0]).then_some(4),
+        // Raw IP (VPN and tunnel adapters, WireGuard).
+        12 | 14 | 101 | 228 => Some(0),
+        // Linux "cooked" capture v1: protocol at bytes 14-15, 16-byte header.
+        113 => (be16(14)? == 0x0800).then_some(16),
+        // Linux "cooked" capture v2: protocol at bytes 0-1, 20-byte header.
+        276 => (be16(0)? == 0x0800).then_some(20),
+        _ => None,
+    }
+}
+
+/// The original guess at the link layer, from the frame alone. Kept as the
+/// fallback so nothing that parsed before the link type was consulted can stop
+/// parsing now.
+fn guess_link_header_len(frame: &[u8]) -> Option<usize> {
+    if frame.len() >= 14 {
+        let ether_type = u16::from_be_bytes([frame[12], frame[13]]);
+        if ether_type == 0x0800 {
+            Some(14) // Standard Ethernet
+        } else if frame[0] == 2 && frame[1] == 0 && frame[2] == 0 && frame[3] == 0 {
+            Some(4) // NULL/Loopback: AF_INET (little-endian 2) = IPv4
+        } else if (frame[0] >> 4) == 4 {
+            Some(0) // Raw IPv4
+        } else {
+            None
+        }
+    } else if (frame[0] >> 4) == 4 {
+        Some(0) // Raw IPv4 (short frame)
+    } else {
+        None
+    }
+}
+
+/// Parse raw captured frame to extract TCP payload. The link type says where
+/// IPv4 starts; when it does not fit, the frame-only guess gets a chance.
+fn parse_tcp_payload(frame: &[u8], link_type: c_int, device_name: &str) -> Option<CapturedPayload> {
     if frame.len() < 4 {
         return None;
     }
-
-    let ip_offset = if frame.len() >= 14 {
-        let ether_type = u16::from_be_bytes([frame[12], frame[13]]);
-        if ether_type == 0x0800 {
-            14 // Standard Ethernet
-        } else if frame[0] == 2 && frame[1] == 0 && frame[2] == 0 && frame[3] == 0 {
-            4 // NULL/Loopback: AF_INET (little-endian 2) = IPv4
-        } else if (frame[0] >> 4) == 4 {
-            0 // Raw IPv4
-        } else {
-            return None;
-        }
-    } else if (frame[0] >> 4) == 4 {
-        0 // Raw IPv4 (short frame)
-    } else {
-        return None;
-    };
+    let ip_offset = link_header_len(link_type, frame)
+        .filter(|&at| frame.get(at).is_some_and(|b| b >> 4 == 4))
+        .or_else(|| guess_link_header_len(frame))?;
 
     if frame.len() < ip_offset + 20 {
         return None;
@@ -476,4 +523,57 @@ fn parse_tcp_payload(frame: &[u8], device_name: &str) -> Option<CapturedPayload>
         tcp_seq,
         tcp_ack,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// IPv4 + TCP from 10.0.0.2:51000 to 193.202.112.99:13328, payload "hi".
+    fn ipv4_tcp() -> Vec<u8> {
+        let mut ip = vec![0x45, 0, 0, 42, 0, 0, 0, 0, 64, 6, 0, 0, 10, 0, 0, 2, 193, 202, 112, 99];
+        let tcp = [0xC7, 0x38, 0x34, 0x10, 0, 0, 0, 1, 0, 0, 0, 0, 0x50, 0x18, 0, 0, 0, 0, 0, 0];
+        ip.extend_from_slice(&tcp);
+        ip.extend_from_slice(b"hi");
+        ip
+    }
+
+    fn check(link_type: c_int, header: &[u8]) {
+        let frame = [header, &ipv4_tcp()].concat();
+        let p = parse_tcp_payload(&frame, link_type, "dev").expect("parsed");
+        assert_eq!((p.src_port, p.dst_port), (51000, 13328), "link type {link_type}");
+        assert_eq!(p.dst_ip.as_deref(), Some("193.202.112.99"));
+        assert_eq!(p.data, b"hi");
+    }
+
+    #[test]
+    fn reads_every_link_layer_the_meter_meets() {
+        let ether = [[0u8; 12].as_slice(), &[0x08, 0x00]].concat();
+        check(1, &ether); // Ethernet / Wi-Fi
+        let vlan = [[0u8; 12].as_slice(), &[0x81, 0x00, 0x00, 0x05, 0x08, 0x00]].concat();
+        check(1, &vlan); // Ethernet with an 802.1Q tag
+        check(0, &[2, 0, 0, 0]); // Npcap / BSD loopback
+        check(12, &[]); // raw IP (VPN, WireGuard)
+        check(101, &[]);
+        let sll = [[0u8; 14].as_slice(), &[0x08, 0x00]].concat();
+        check(113, &sll); // Linux cooked v1
+        let sll2 = [[0x08u8, 0x00].as_slice(), &[0u8; 18]].concat();
+        check(276, &sll2); // Linux cooked v2
+    }
+
+    #[test]
+    fn an_unknown_or_mismatched_link_type_still_gets_the_old_guess() {
+        // Ethernet framing reported as some other link type: guessed as before.
+        let ether = [[0u8; 12].as_slice(), &[0x08, 0x00]].concat();
+        check(999, &ether);
+        // Raw IP on a device that claims Ethernet: the exact read fails, the
+        // guess finds IPv4 at 0, as it always did.
+        check(1, &[]);
+    }
+
+    #[test]
+    fn non_ipv4_frames_are_ignored() {
+        let arp = [[0u8; 12].as_slice(), &[0x08, 0x06], &[0u8; 28]].concat();
+        assert!(parse_tcp_payload(&arp, 1, "dev").is_none());
+    }
 }

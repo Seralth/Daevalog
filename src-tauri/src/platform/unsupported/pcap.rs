@@ -7,3 +7,8 @@ pub const MISSING_HELP: &str = "Packet capture is not supported on this platform
 pub fn library_available() -> bool {
     false
 }
+
+/// Devices not worth opening on this OS. None here.
+pub fn skip_device(_name: &str) -> bool {
+    false
+}

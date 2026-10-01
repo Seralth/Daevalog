@@ -12,3 +12,8 @@ pub fn library_available() -> bool {
     // SAFETY: loading Npcap runs no initialisation we depend on not running.
     unsafe { libloading::Library::new(LIBRARY).is_ok() }
 }
+
+/// Devices not worth opening on this OS. None here.
+pub fn skip_device(_name: &str) -> bool {
+    false
+}
