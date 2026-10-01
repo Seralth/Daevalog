@@ -35,6 +35,9 @@ desktop = [
     "dep:futures-util",
     "dep:urlencoding",
     "dep:flate2",
+    # Linux only (see the target section below); ignored elsewhere.
+    "dep:secret-service",
+    "dep:gtk",
 ]
 
 # Both binaries are declared rather than left to auto-discovery, so adding the
@@ -108,13 +111,16 @@ windows = { version = "0.59", features = [
     "Win32_UI_Shell_Common",
 ] }
 
+# Desktop-only, so optional and enabled by `desktop`: the log service builds
+# this crate without it and must not pull them in.
+#
 # The desktop keyring (KWallet, GNOME Keyring) for the account token, over the
 # Secret Service D-Bus API. async-io matches the zbus the opener plugin
 # already brings in, so this adds no second D-Bus stack.
 [target.'cfg(target_os = "linux")'.dependencies]
-secret-service = { version = "5.2", features = ["rt-async-io-crypto-rust"] }
+secret-service = { version = "5.2", features = ["rt-async-io-crypto-rust"], optional = true }
 # Native dialogs (the update prompt, errors). The same GTK Tauri runs on.
-gtk = "0.18"
+gtk = { version = "0.18", optional = true }
 
 [dev-dependencies]
 flate2 = "1"
