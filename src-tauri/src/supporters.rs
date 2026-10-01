@@ -326,6 +326,9 @@ mod tests {
                     // Deliberately wrong, so the tests show it being recomputed
                     // rather than carried through.
                     is_supporter: true,
+                    level: 0,
+                    gear_score: 0,
+                    combat_power: 0,
                 })
                 .collect(),
             is_train: false,

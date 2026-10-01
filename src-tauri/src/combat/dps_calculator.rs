@@ -457,6 +457,9 @@ impl DpsCalculator {
     }
 
     fn add_party_rows(&self, dps_data: &mut DpsData) {
+        if !self.data_storage.party_placeholders_wanted() {
+            return;
+        }
         let party_members = self.data_storage.get_party_members();
         if party_members.is_empty() {
             return;
@@ -754,6 +757,9 @@ impl DpsCalculator {
                         server_id: roster.map(|m| m.server_id).unwrap_or(0),
                         is_supporter: supporters
                             .contains(nick, roster.map(|m| m.dbid).unwrap_or(0)),
+                        level: roster.map(|m| m.level).unwrap_or(0),
+                        gear_score: roster.map(|m| m.gear_score).unwrap_or(0),
+                        combat_power: roster.map(|m| m.combat_power).unwrap_or(0),
                     }
                 })
                 .collect();
@@ -938,6 +944,12 @@ impl DpsCalculator {
                     // needs no dbid, and a dbid-keyed one is a later state that
                     // will come with the party join it needs.
                     is_supporter: supporters.contains(nick, 0),
+                    // Same reason again: the live rows already show combat
+                    // power from the roster; the saved record is where it
+                    // has to persist.
+                    level: 0,
+                    gear_score: 0,
+                    combat_power: 0,
                 }
             })
             .collect();

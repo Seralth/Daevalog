@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # By hand, for a branch: gh workflow run ci.yml --ref <branch>
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
