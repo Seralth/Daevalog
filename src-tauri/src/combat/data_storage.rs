@@ -283,6 +283,21 @@ struct Inner {
     /// character, which the game names with a `$`-prefixed placeholder until
     /// the player picks a name.
     local_identity_from_game: bool,
+    /// Who the loot records (`04 8d` after a kill) say owns the drops, and
+    /// what that has been used for. See `note_loot_owner`.
+    loot_identity: LootIdentity,
+}
+
+#[derive(Default)]
+struct LootIdentity {
+    /// The one name the loot records have named so far this session.
+    owner: Option<String>,
+    /// They have named two different players, so they say nothing about who
+    /// "you" are.
+    conflicted: bool,
+    /// The local identity currently in force came from them, not from the
+    /// self record.
+    applied: bool,
 }
 
 impl DataStorage {
@@ -316,6 +331,7 @@ impl DataStorage {
                 supporters: std::sync::Arc::new(crate::supporters::Roster::default()),
                 local_character_name: None,
                 local_identity_from_game: false,
+                loot_identity: LootIdentity::default(),
             }),
             damage_generation: AtomicI64::new(0),
             last_damage_ms: AtomicI64::new(0),
@@ -377,11 +393,61 @@ impl DataStorage {
         let mut inner = self.inner.write();
         let changed = !inner.local_identity_from_game
             || inner.local_player_id != Some(id)
-            || inner.local_character_name != name;
-        inner.local_identity_from_game = true;
-        inner.local_player_id = Some(id);
-        inner.local_character_name = name;
+            || inner.local_character_name != name
+            || inner.loot_identity.applied;
+        inner.loot_identity.applied = false;
+        set_game_identity(&mut inner, id, name);
         changed
+    }
+
+    /// The loot from a mob that just died belongs to `owner_id`, named `name`.
+    ///
+    /// The self record that names you arrives on login and zone loads, so a
+    /// meter started mid-session can go a long while without it. Loot records
+    /// fill that gap: in every capture so far (2026-10, global servers) they
+    /// have named only the player whose meter it was, once per kill. Until the
+    /// self record arrives, the owner is taken as you, with two checks: if
+    /// they ever name a second player (a party kill, say) they are ignored
+    /// from then on, and a configured name already matched to a player in the
+    /// world is kept. Returns whether the local identity changed.
+    pub fn note_loot_owner(&self, owner_id: i32, name: &str) -> bool {
+        let mut inner = self.inner.write();
+        let loot = &mut inner.loot_identity;
+        if loot.conflicted {
+            return false;
+        }
+        if loot.owner.as_deref().is_some_and(|known| known != name) {
+            loot.conflicted = true;
+            let was_applied = std::mem::take(&mut loot.applied);
+            tracing::info!("loot records name a second player ('{}'); not using them to identify you", name);
+            if was_applied {
+                // Back to not knowing: the UI's name and the self record decide.
+                inner.local_identity_from_game = false;
+                inner.local_player_id = None;
+                return true;
+            }
+            return false;
+        }
+        loot.owner = Some(name.to_string());
+        if inner.local_identity_from_game && !inner.loot_identity.applied {
+            return false; // the self record has spoken
+        }
+        let configured_and_found = inner.local_player_id.is_some_and(|id| {
+            let configured = inner.local_character_name.as_deref().map(str::trim);
+            configured.is_some() && inner.nickname_storage.get(&(id as i32)).map(String::as_str) == configured
+        });
+        if configured_and_found && inner.local_character_name.as_deref().map(str::trim) != Some(name) {
+            return false;
+        }
+        if inner.local_identity_from_game
+            && inner.local_player_id == Some(owner_id as i64)
+            && inner.local_character_name.as_deref() == Some(name)
+        {
+            return false;
+        }
+        inner.loot_identity.applied = true;
+        set_game_identity(&mut inner, owner_id as i64, Some(name.to_string()));
+        true
     }
 
     /// Whether the local player's identity came from the game rather than from
@@ -1086,6 +1152,12 @@ fn has_cjk(s: &str) -> bool {
     })
 }
 
+fn set_game_identity(inner: &mut Inner, id: i64, name: Option<String>) {
+    inner.local_identity_from_game = true;
+    inner.local_player_id = Some(id);
+    inner.local_character_name = name;
+}
+
 fn append_nickname_inner(inner: &mut Inner, uid: i32, nickname: &str) {
     append_nickname_inner_with_force(inner, uid, nickname, false);
 }
@@ -1216,4 +1288,47 @@ pub fn is_player_skill(skill_code: i32) -> bool {
     (11_000_000..=19_999_999).contains(&skill_code)
         || (3_000_000..=3_999_999).contains(&skill_code)
         || (100_000..=199_999).contains(&skill_code)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn who(s: &DataStorage) -> (Option<i64>, Option<String>, bool) {
+        (s.local_player_id(), s.local_character_name(), s.local_identity_from_game())
+    }
+
+    #[test]
+    fn loot_owner_is_you_until_the_self_record_says_otherwise() {
+        let s = DataStorage::new();
+        s.set_local_character_name(Some("Aveline".into()));
+        assert!(s.note_loot_owner(1454, "ApexZ"));
+        assert_eq!(who(&s), (Some(1454), Some("ApexZ".into()), true));
+        assert!(!s.note_loot_owner(1454, "ApexZ"), "same owner again changes nothing");
+
+        // A zone load brings the self record, which wins.
+        assert!(s.set_local_identity_from_game(2001, Some("ApexZ".into())));
+        assert!(!s.note_loot_owner(1454, "ApexZ"));
+        assert_eq!(who(&s), (Some(2001), Some("ApexZ".into()), true));
+    }
+
+    #[test]
+    fn loot_naming_two_players_is_ignored_from_then_on() {
+        let s = DataStorage::new();
+        s.note_loot_owner(1454, "ApexZ");
+        assert!(s.note_loot_owner(3583, "Galaaadriel"), "the guess is withdrawn");
+        assert_eq!(who(&s), (None, Some("ApexZ".into()), false));
+        assert!(!s.note_loot_owner(1454, "ApexZ"));
+        assert_eq!(s.local_player_id(), None);
+    }
+
+    #[test]
+    fn a_configured_name_found_in_the_world_is_kept() {
+        let s = DataStorage::new();
+        s.set_local_character_name(Some("Misti".into()));
+        s.append_nickname_authoritative(4099, "Misti");
+        assert_eq!(s.local_player_id(), Some(4099));
+        assert!(!s.note_loot_owner(1454, "ApexZ"));
+        assert_eq!(who(&s), (Some(4099), Some("Misti".into()), false));
+    }
 }

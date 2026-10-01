@@ -129,8 +129,8 @@ fn character_select_and_a_server_switch() {
 /// `packets_20261001_212712.txt` (A2_IDENTITY_CAPTURE_MIDSESSION): a player's
 /// meter started while they were already in the world as ApexZ, a Sorcerer on
 /// Ventus (EU), so the login self record never went past it. Their name only
-/// arrives in the `04 8d` records sent as each mob they kill dies, which tag the
-/// killer, entity 1454, with server id 1305 and the name.
+/// arrives in the `04 8d` loot records sent as each mob they kill dies, which
+/// tag the owner, entity 1454, with server id 1305 and the name.
 #[test]
 fn meter_started_mid_session() {
     let Ok(path) = std::env::var("A2_IDENTITY_CAPTURE_MIDSESSION") else {
@@ -138,17 +138,18 @@ fn meter_started_mid_session() {
         return;
     };
 
-    // Without a configured name the row still gets the right name.
-    let mut r = Replay::new(&path);
-    r.storage.set_local_character_name(None);
-    let s = r.until("");
-    assert_eq!(row_name(s, 1454).as_deref(), Some("ApexZ"));
-
-    // With it, the meter knows that row is you.
-    let mut r = Replay::new(&path);
-    r.storage.set_local_character_name(Some("ApexZ".to_string()));
-    let s = r.until("2026-10-01T21:27:23");
-    assert_eq!(s.local_player_id(), Some(1454), "first kill names you");
+    // The first kill says who you are, whatever name the meter started with.
+    for start_name in [None, Some(STALE_NAME), Some("ApexZ")] {
+        let mut r = Replay::new(&path);
+        r.storage.set_local_character_name(start_name.map(str::to_string));
+        let s = r.until("2026-10-01T21:27:22");
+        assert_eq!(s.local_player_id(), None, "{start_name:?}: before the first kill");
+        let s = r.until("2026-10-01T21:27:23");
+        assert_eq!(who(s), (Some(1454), Some("ApexZ".into()), true), "{start_name:?}");
+        let s = r.until("");
+        assert_eq!(who(s), (Some(1454), Some("ApexZ".into()), true), "{start_name:?}");
+        assert_eq!(row_name(s, 1454).as_deref(), Some("ApexZ"));
+    }
 }
 
 fn decode_hex(hex: &str) -> Option<Vec<u8>> {

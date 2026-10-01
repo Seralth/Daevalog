@@ -621,6 +621,14 @@ impl StreamProcessor {
                 self.data_storage.append_summon(owner_id, summon_id);
             }
             self.data_storage.append_nickname(owner_id, &name);
+            // For a mob that was fought (it follows the mob's `35 38` despawn)
+            // this is the loot owner, which so far has always been you.
+            if !self.data_storage.is_confirmed_summon(summon_id)
+                && self.data_storage.is_damage_target(summon_id)
+                && self.data_storage.note_loot_owner(owner_id, &name)
+            {
+                tracing::info!("loot record: local player '{}' -> entity {}", name, owner_id);
+            }
             found_any = true;
 
             search_offset = name_end;
