@@ -21,6 +21,10 @@ const ZONE_RESET_DEBOUNCE_MS: i64 = 4_000;
 /// Capture time while replaying, wall clock while capturing. See `crate::clock`
 /// — the idle-reset and zone-reset decisions below are timing decisions, so
 /// reading the replaying machine's clock made replays non-deterministic.
+/// How long party members who have not fought stay on the meter after the
+/// last roster. See `DataStorage::party_placeholders_wanted`.
+const PARTY_PLACEHOLDER_MS: i64 = 10 * 60 * 1000;
+
 fn now_ms() -> i64 {
     crate::clock::now_ms()
 }
@@ -252,6 +256,10 @@ struct Inner {
     low_id_entities: HashSet<i32>,
     /// Party roster from the `0x9702` packet, keyed by character name.
     party_members: HashMap<String, PartyMember>,
+    /// When the last roster arrived, and whether its members who have not
+    /// fought should still get rows. See `party_placeholders_wanted`.
+    party_roster_at_ms: i64,
+    party_placeholders_hidden: bool,
     /// Instance id the party is in, from the same packet. Encodes the dungeon and
     /// its difficulty tier; resolved to a name by the frontend's dungeon table.
     current_dungeon_id: i32,
@@ -320,6 +328,8 @@ impl DataStorage {
                 summon_spawn_ids: HashSet::new(),
                 low_id_entities: HashSet::new(),
                 party_members: HashMap::new(),
+                party_roster_at_ms: 0,
+                party_placeholders_hidden: false,
                 current_dungeon_id: 0,
                 actor_power_scalars: HashMap::new(),
                 hostile_target_ids: HashSet::new(),
@@ -745,6 +755,8 @@ impl DataStorage {
             return;
         }
         let mut inner = self.inner.write();
+        inner.party_roster_at_ms = now_ms();
+        inner.party_placeholders_hidden = false;
 
         // Leaving, being kicked, or the party disbanding all show up the same way:
         // the next complete roster has you on your own. Going from a real party
@@ -793,6 +805,27 @@ impl DataStorage {
 
     pub fn get_party_members(&self) -> HashMap<String, PartyMember> {
         self.inner.read().party_members.clone()
+    }
+
+    /// Whether party members who have not fought should still be shown, with
+    /// 0 damage, as a reminder of who is in the party.
+    ///
+    /// The game sends a roster on every party change, but nothing reliable
+    /// when you go off on your own afterwards, so a dungeon party could stay
+    /// on the meter long after (a player saw theirs 15 minutes on, through
+    /// resets). These rows are for the start of a run: they show for
+    /// `PARTY_PLACEHOLDER_MS` after the last roster, and a manual reset clears
+    /// them until the next one. Members who fight are shown regardless.
+    pub fn party_placeholders_wanted(&self) -> bool {
+        let inner = self.inner.read();
+        !inner.party_placeholders_hidden
+            && now_ms() - inner.party_roster_at_ms < PARTY_PLACEHOLDER_MS
+    }
+
+    /// The player reset the meter: stop showing party members who have not
+    /// fought, until the game sends the next roster.
+    pub fn hide_party_placeholders(&self) {
+        self.inner.write().party_placeholders_hidden = true;
     }
 
     /// Record a power-scalar reading for an actor. See `Inner::actor_power_scalars`.
@@ -1320,6 +1353,29 @@ mod tests {
         assert_eq!(who(&s), (None, Some("ApexZ".into()), false));
         assert!(!s.note_loot_owner(1454, "ApexZ"));
         assert_eq!(s.local_player_id(), None);
+    }
+
+    fn member(slot: u8) -> PartyMember {
+        PartyMember { slot, level: 45, gear_score: 3000, combat_power: 39_000, ..Default::default() }
+    }
+
+    #[test]
+    fn party_members_who_have_not_fought_are_shown_for_a_while() {
+        let s = DataStorage::new();
+        assert!(!s.party_placeholders_wanted(), "no roster yet");
+        s.set_party_roster(vec![("Prenses".into(), member(2)), ("adam".into(), member(3))], true);
+        assert!(s.party_placeholders_wanted());
+
+        // A reset clears them until the next roster.
+        s.hide_party_placeholders();
+        assert!(!s.party_placeholders_wanted());
+        s.set_party_roster(vec![("Prenses".into(), member(2)), ("adam".into(), member(3))], true);
+        assert!(s.party_placeholders_wanted());
+
+        // And they expire: a dungeon party 15 minutes on is not "your party".
+        s.inner.write().party_roster_at_ms -= 15 * 60 * 1000;
+        assert!(!s.party_placeholders_wanted());
+        assert_eq!(s.get_party_members().len(), 2, "the roster itself is kept, for combat power");
     }
 
     #[test]

@@ -396,6 +396,7 @@ fn reset_combat(state: tauri::State<'_, AppState>) {
     // Don't reset port detector or ping — keep the network connection alive
     // Only clear combat data and re-learn nicknames from future packets
     state.data_storage.reset_nicknames();
+    state.data_storage.hide_party_placeholders();
 }
 
 #[tauri::command]
