@@ -575,74 +575,55 @@ impl StreamProcessor {
                 continue;
             }
 
-            // Scan for E0/E2 07 anchor
+            // The owner follows: `<owner varint> <server id u16 LE> <len><name>`.
+            // The server id was once matched as the literal bytes `E0 07` /
+            // `E2 07` (servers 2016 and 2018), which skipped every other server:
+            // a Sorcerer on Ventus (1305, bytes `19 05`) never got a name. Any id
+            // in the servers' 1000–2999 range is accepted now, and a candidate
+            // only counts when the owner id sits wholly after the fixed field and
+            // the whole name field is a name.
             let after_fixed = fixed_field_start + 4;
-            let scan_end = std::cmp::min(data.len() - 1, after_fixed + 128);
-            let mut anchor_idx = None;
-            for i in after_fixed..scan_end {
-                if (data[i] == 0xE0 || data[i] == 0xE2) && data[i + 1] == 0x07 {
-                    anchor_idx = Some(i);
+            let scan_end = std::cmp::min(data.len().saturating_sub(2), after_fixed + 128);
+            let mut found = None;
+            for server_idx in after_fixed + 1..scan_end {
+                let server_id = u16::from_le_bytes([data[server_idx], data[server_idx + 1]]);
+                if !(1000..=2999).contains(&server_id) {
+                    continue;
+                }
+                let owner_id = (1..=3usize).find_map(|v_len| {
+                    let v_start = server_idx.checked_sub(v_len)?;
+                    if v_start < after_fixed || !can_read_varint(data, v_start) {
+                        return None;
+                    }
+                    let v = read_varint(data, v_start);
+                    (v.length == v_len as i32 && (100..=99_999).contains(&v.value))
+                        .then_some(v.value)
+                });
+                let Some(owner_id) = owner_id.filter(|&id| id != summon_id) else {
+                    continue;
+                };
+                let name_len_idx = server_idx + 2;
+                let name_len = data[name_len_idx] as usize;
+                let name_end = name_len_idx + 1 + name_len;
+                if !NAME_FIELD_BYTES.contains(&name_len) || name_end > data.len() {
+                    continue;
+                }
+                if let Some(name) = exact_name(&data[name_len_idx + 1..name_end]) {
+                    found = Some((owner_id, name, name_end));
                     break;
                 }
             }
-
-            let anchor_idx = match anchor_idx {
-                Some(i) => i,
-                None => continue,
+            let Some((owner_id, name, name_end)) = found else {
+                continue;
             };
-
-            // Read owner ID backward from anchor
-            let mut owner_id: i32 = -1;
-            for v_len in 1..=3usize {
-                if anchor_idx < v_len {
-                    continue;
-                }
-                let v_start = anchor_idx - v_len;
-                if v_start < after_fixed && v_start > 0 {
-                    // skip if out of range but allow 0
-                }
-                if !can_read_varint(data, v_start) {
-                    continue;
-                }
-                let v = read_varint(data, v_start);
-                if v.length == v_len as i32 && (100..=99_999).contains(&v.value) {
-                    owner_id = v.value;
-                    break;
-                }
-            }
-            if owner_id == -1 || owner_id == summon_id {
-                continue;
-            }
-
-            // Read owner name
-            let name_len_idx = anchor_idx + 2;
-            if name_len_idx >= data.len() {
-                continue;
-            }
-            let name_len = data[name_len_idx] as usize;
-            if !(2..=36).contains(&name_len) || name_len_idx + 1 + name_len > data.len() {
-                continue;
-            }
-            let name_bytes = &data[name_len_idx + 1..name_len_idx + 1 + name_len];
-            let name = match std::str::from_utf8(name_bytes) {
-                Ok(s) => s,
-                Err(_) => continue,
-            };
-            let sanitized = match sanitize_nickname(name) {
-                Some(s) => s,
-                None => continue,
-            };
-            if sanitized.len() < 2 {
-                continue;
-            }
 
             if self.data_storage.is_confirmed_summon(summon_id) {
                 self.data_storage.append_summon(owner_id, summon_id);
             }
-            self.data_storage.append_nickname(owner_id, &sanitized);
+            self.data_storage.append_nickname(owner_id, &name);
             found_any = true;
 
-            search_offset = name_len_idx + 1 + name_len;
+            search_offset = name_end;
         }
 
         found_any
@@ -725,7 +706,7 @@ impl StreamProcessor {
                 continue;
             }
             let name_len = data[i + 4] as usize;
-            if !(2..=36).contains(&name_len) {
+            if !NAME_FIELD_BYTES.contains(&name_len) {
                 i += 1;
                 continue;
             }
@@ -735,17 +716,15 @@ impl StreamProcessor {
                 i += 1;
                 continue;
             }
-            if let Ok(name) = std::str::from_utf8(&data[name_start..name_end]) {
-                if let Some(sanitized) = sanitize_nickname(name) {
-                    if sanitized.trim() == local_name {
-                        self.data_storage.append_nickname_authoritative(entity_id as i32, &sanitized);
-                        tracing::info!(
-                            "char-list: bound local player '{}' -> entity {}",
-                            sanitized,
-                            entity_id
-                        );
-                        return;
-                    }
+            if let Some(name) = exact_name(&data[name_start..name_end]) {
+                if name == local_name {
+                    self.data_storage.append_nickname_authoritative(entity_id as i32, &name);
+                    tracing::info!(
+                        "char-list: bound local player '{}' -> entity {}",
+                        name,
+                        entity_id
+                    );
+                    return;
                 }
             }
             i += 1;
@@ -804,11 +783,12 @@ impl StreamProcessor {
                 continue;
             }
             let name_len = data[mask2_idx + 1] as usize;
-            if !(2..=36).contains(&name_len) || mask2_idx + 2 + name_len > data.len() {
+            if !NAME_FIELD_BYTES.contains(&name_len) || mask2_idx + 2 + name_len > data.len() {
                 i += 1;
                 continue;
             }
-            let raw = match std::str::from_utf8(&data[mask2_idx + 2..mask2_idx + 2 + name_len]) {
+            let field = &data[mask2_idx + 2..mask2_idx + 2 + name_len];
+            let raw = match std::str::from_utf8(field) {
                 Ok(s) => s,
                 Err(_) => {
                     i += 1;
@@ -827,20 +807,12 @@ impl StreamProcessor {
                 i = mask2_idx + 2 + name_len;
                 continue;
             }
-            let sanitized = match sanitize_nickname(raw) {
-                Some(s) => s,
-                None => {
-                    i += 1;
-                    continue;
-                }
-            };
-            // Require the whole field to be one clean name: sanitize_nickname
-            // stops at the first non-name character, so a shorter result means we
-            // landed mid-record rather than on a real name string.
-            if sanitized.len() != name_len {
+            // The whole field must be one clean name; otherwise we landed
+            // mid-record rather than on a real name string.
+            let Some(sanitized) = exact_name(field) else {
                 i += 1;
                 continue;
-            }
+            };
 
             self.data_storage.note_low_id_entity(id.value);
             self.data_storage
@@ -945,18 +917,12 @@ impl StreamProcessor {
             return;
         }
         let name_len = data[mask2_idx + 1] as usize;
-        if !(2..=36).contains(&name_len) || mask2_idx + 2 + name_len > data.len() {
+        if !NAME_FIELD_BYTES.contains(&name_len) || mask2_idx + 2 + name_len > data.len() {
             return;
         }
-        let Ok(raw) = std::str::from_utf8(&data[mask2_idx + 2..mask2_idx + 2 + name_len]) else {
+        let Some(sanitized) = exact_name(&data[mask2_idx + 2..mask2_idx + 2 + name_len]) else {
             return;
         };
-        let Some(sanitized) = sanitize_nickname(raw) else {
-            return;
-        };
-        if sanitized.len() != name_len {
-            return;
-        }
         // 45/44 36 player spawn is an authoritative id↔name source.
         self.data_storage.note_low_id_entity(actor_id);
         self.data_storage
@@ -1063,15 +1029,13 @@ impl StreamProcessor {
             }
             let cursor = offset + sub_offset + 1;
             let name_len = *packet.get(cursor)? as usize;
-            if !(1..=36).contains(&name_len) || cursor + 1 + name_len > packet.len() {
+            if !NAME_FIELD_BYTES.contains(&name_len) || cursor + 1 + name_len > packet.len() {
                 return None;
             }
-            let raw = std::str::from_utf8(&packet[cursor + 1..cursor + 1 + name_len]).ok()?;
-            let sanitized = sanitize_nickname(raw)?;
-            // A shorter result means sanitising trimmed something, i.e. this is
-            // not cleanly a name field. This check is what makes trying two
-            // positions safe: a wrong guess almost never decodes cleanly.
-            (sanitized.len() == name_len).then(|| (sanitized, cursor + 1 + name_len))
+            // The whole field must be a name. This check is what makes trying
+            // two positions safe: a wrong guess almost never decodes cleanly.
+            let name = exact_name(&packet[cursor + 1..cursor + 1 + name_len])?;
+            Some((name, cursor + 1 + name_len))
         };
 
         // Current format first, so a live stream never depends on the fallback.
@@ -2497,6 +2461,26 @@ fn is_placeholder_name(raw: &str) -> bool {
         .is_some_and(|rest| rest.len() >= 4 && rest.chars().all(|c| c.is_ascii_alphanumeric()))
 }
 
+/// Byte lengths a length-prefixed name field can have: 1 to 12 characters of
+/// up to 4 UTF-8 bytes each.
+const NAME_FIELD_BYTES: std::ops::RangeInclusive<usize> = 1..=48;
+
+/// A character name read from a field whose length the packet states.
+///
+/// Names are 1 to 12 characters: letters in any script (Latin with accents,
+/// Japanese, Hangul, Han…) and digits, with at least one letter. The whole
+/// field must be the name; anything else means we are not on a name field.
+/// Unlike `sanitize_nickname`, a one-character name is fine here: the stated
+/// length is what guards against picking up junk.
+fn exact_name(field: &[u8]) -> Option<String> {
+    let name = std::str::from_utf8(field).ok()?;
+    let chars = name.chars().count();
+    let valid = (1..=12).contains(&chars)
+        && name.chars().all(char::is_alphanumeric)
+        && name.chars().any(char::is_alphabetic);
+    valid.then(|| name.to_string())
+}
+
 fn sanitize_nickname(nickname: &str) -> Option<String> {
     let trimmed = nickname.split('\0').next().unwrap_or("").trim();
     if trimmed.is_empty() {
@@ -2573,5 +2557,56 @@ fn unicode_script(ch: char) -> UnicodeScript {
         UnicodeScript::Hangul
     } else {
         UnicodeScript::Other
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn names_are_one_to_twelve_letters_or_digits_in_any_script() {
+        for name in ["A", "é", "あ", "ApexZ", "Amber1", "Zoë", "Ñandú", "さくら", "桜子", "전사", "Abcdefghijkl"] {
+            assert_eq!(exact_name(name.as_bytes()).as_deref(), Some(name), "{name}");
+        }
+        for field in [
+            &b"Abcdefghijklm"[..], // 13 characters
+            b"12345",              // no letter
+            b"Apex Z",
+            b"ApexZ\x06",
+            b"\x05ApexZ",
+            b"",
+            &[0xC3][..], // cut-off UTF-8
+        ] {
+            assert_eq!(exact_name(field), None, "{field:?}");
+        }
+    }
+
+    /// A Sorcerer on Ventus (server 1305) killing a mob, from a player's log
+    /// (2026-10-01): `04 8d <mob> <4 bytes> <owner 1454> <server 1305> <name>
+    /// <server name>`. The server id used to be matched only as `E0 07` /
+    /// `E2 07`, so this owner never got a name. (Whether the name is then bound
+    /// depends on 1454 having been seen in combat; `identity_replay` covers that.)
+    #[test]
+    fn kill_record_names_its_owner_on_any_server() {
+        let processor = StreamProcessor::new(
+            Arc::new(DataStorage::new()),
+            Arc::new(SkillLookup::new()),
+            Arc::new(NpcLookup::new()),
+        );
+        let record = [
+            &[0x04, 0x8d, 0xec, 0xde, 0x02, 0x72, 0x28, 0xe9, 0x00, 0xae, 0x0b, 0x19, 0x05, 0x05][..],
+            b"ApexZ",
+            &[0x06],
+            b"Ventus",
+            &[0x01, 0x00, 0x00, 0x00],
+        ]
+        .concat();
+        assert!(processor.scan_for_embedded_04_8d(&record));
+
+        // The same record with a name that runs into the next field is not one.
+        let mut garbled = record.clone();
+        garbled[13] = 0x07;
+        assert!(!processor.scan_for_embedded_04_8d(&garbled));
     }
 }
