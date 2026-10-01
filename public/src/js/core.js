@@ -401,66 +401,54 @@ class DpsApp {
     });
     if (this.detailsScreenshotBtn) {
       let screenshotNoteTimer = null;
-      this.detailsScreenshotBtn.addEventListener("click", () => {
+      this.detailsScreenshotBtn.addEventListener("click", async () => {
         const tooltipText =
           this.i18n?.t("details.screenshot.captured", "Captured Screenshot") ?? "Captured Screenshot";
-        const meterRect = document.querySelector(".meter")?.getBoundingClientRect?.();
         const detailsRect = this.detailsPanel?.classList?.contains("open")
           ? this.detailsPanel.getBoundingClientRect()
           : null;
         const includeMeter = !!this.includeMainMeterScreenshot;
-        const baseRect = includeMeter ? meterRect || detailsRect : detailsRect;
-        if (!baseRect) return;
-        const minX = includeMeter && meterRect && detailsRect
-          ? Math.min(meterRect.left, detailsRect.left)
-          : baseRect.left;
-        const minY = includeMeter && meterRect && detailsRect
-          ? Math.min(meterRect.top, detailsRect.top)
-          : baseRect.top;
-        const maxX = includeMeter && meterRect && detailsRect
-          ? Math.max(meterRect.right, detailsRect.right)
-          : baseRect.right;
-        const maxY = includeMeter && meterRect && detailsRect
-          ? Math.max(meterRect.bottom, detailsRect.bottom)
-          : baseRect.bottom;
-        const rectWidth = Math.max(1, maxX - minX);
-        const rectHeight = Math.max(1, maxY - minY);
-        const scale = window.devicePixelRatio || 1;
-        const clipboardSuccess = window.javaBridge?.captureScreenshotToClipboard?.(
-          minX,
-          minY,
-          rectWidth,
-          rectHeight,
-          scale
-        );
-        let fileSuccess = false;
-        if (this.saveScreenshotToFolder && this.screenshotFolder) {
-          const filename = this.buildScreenshotFilename();
-          fileSuccess = !!window.javaBridge?.captureScreenshotToFile?.(
-            minX,
-            minY,
-            rectWidth,
-            rectHeight,
-            scale,
-            this.screenshotFolder,
-            filename
-          );
-        }
-        if ((!clipboardSuccess && !fileSuccess) || !this.detailsScreenshotNote) return;
-        this.detailsScreenshotBtn.setAttribute("title", tooltipText);
-        if (clipboardSuccess && fileSuccess) {
+        // In its own window, Details cannot measure the meter (a different
+        // window), so the backend adds the meter window to the capture. When
+        // Details is a panel beside the meter, both are measured here.
+        const ownWindow = document.documentElement.classList.contains("detailsWindow");
+        const meterRect = !ownWindow ? document.querySelector(".meter")?.getBoundingClientRect?.() : null;
+        const rects = [detailsRect, includeMeter ? meterRect : null].filter(Boolean);
+        if (!rects.length) return;
+        const left = Math.min(...rects.map((r) => r.left));
+        const top = Math.min(...rects.map((r) => r.top));
+        const right = Math.max(...rects.map((r) => r.right));
+        const bottom = Math.max(...rects.map((r) => r.bottom));
+        const saveFile = !!this.saveScreenshotToFolder;
+        const result = await window.javaBridge?.captureScreenshot?.({
+          x: left,
+          y: top,
+          width: Math.max(1, right - left),
+          height: Math.max(1, bottom - top),
+          scale: window.devicePixelRatio || 1,
+          includeMeter: includeMeter && ownWindow,
+          saveFile,
+          folder: saveFile ? this.screenshotFolder : null,
+          filename: saveFile ? this.buildScreenshotFilename() : null,
+        });
+        const clipboardSuccess = !!result?.clipboard;
+        const fileSuccess = !!result?.file;
+        if (!this.detailsScreenshotNote) return;
+        if (!clipboardSuccess && !fileSuccess) {
+          this.detailsScreenshotNote.textContent = this.i18n?.t("details.screenshot.failed", "Screenshot failed") ?? "Screenshot failed";
+        } else if (clipboardSuccess && fileSuccess) {
           this.detailsScreenshotNote.textContent = "Saved to clipboard + file";
         } else if (fileSuccess) {
           this.detailsScreenshotNote.textContent = "Saved to file";
         } else {
-          this.detailsScreenshotNote.textContent = "Saved to clipboard";
+          this.detailsScreenshotNote.textContent = saveFile ? "Saved to clipboard (file failed)" : "Saved to clipboard";
         }
+        this.detailsScreenshotBtn.setAttribute("title", fileSuccess ? `${tooltipText}: ${result.file}` : tooltipText);
         this.detailsScreenshotNote.classList.add("isVisible");
-        if (this.detailsPanel) {
-          this.triggerDetailsFlash();
-        }
-        if (includeMeter && meterRect) {
-          this.triggerMeterFlash();
+        // Flash after the capture, so the flash is not in the picture.
+        if (clipboardSuccess || fileSuccess) {
+          if (this.detailsPanel) this.triggerDetailsFlash();
+          if (includeMeter && meterRect) this.triggerMeterFlash();
         }
         if (screenshotNoteTimer) window.clearTimeout(screenshotNoteTimer);
         screenshotNoteTimer = window.setTimeout(() => {
@@ -3013,8 +3001,10 @@ class DpsApp {
       });
     }
     if (this.detailsScreenshotFolderBtn) {
-      this.detailsScreenshotFolderBtn.addEventListener("click", () => {
-        const selected = window.javaBridge?.chooseScreenshotFolder?.(this.screenshotFolder);
+      this.detailsScreenshotFolderBtn.addEventListener("click", async () => {
+        const selected = await window.javaBridge?.chooseScreenshotFolder?.(
+          this.screenshotFolder || this.getDefaultScreenshotFolder()
+        );
         if (!selected || typeof selected !== "string") return;
         this.screenshotFolder = selected;
         this.safeSetSetting(this.storageKeys.detailsScreenshotFolder, this.screenshotFolder);
@@ -3283,7 +3273,8 @@ class DpsApp {
     if (!this.detailsScreenshotFolderRow) return;
     this.detailsScreenshotFolderRow.classList.toggle("isHidden", !this.saveScreenshotToFolder);
     if (this.detailsScreenshotFolderPath) {
-      this.detailsScreenshotFolderPath.textContent = this.screenshotFolder || "-";
+      this.detailsScreenshotFolderPath.textContent =
+        this.screenshotFolder || this.getDefaultScreenshotFolder() || "-";
     }
   }
 

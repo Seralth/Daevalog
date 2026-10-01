@@ -446,20 +446,32 @@
     },
 
     // --- Screenshots ---
-    captureScreenshotToClipboard(x, y, w, h) {
-      try {
-        invoke("capture_screenshot", {
-          x: Math.round(x), y: Math.round(y),
-          width: Math.round(w), height: Math.round(h),
-        }).catch(() => {});
-        return true;
-      } catch {
-        return false;
-      }
+    // Screenshots. The backend measures against whichever window calls, so the
+    // Details window captures (and saves) itself. Coordinates are the page's
+    // CSS pixels; `scale` is devicePixelRatio, which the backend needs to map
+    // them onto the screen at 125%/150% display scaling.
+    // Resolves to { clipboard: bool, file: path | null }.
+    captureScreenshot({ x, y, width, height, scale, includeMeter, saveFile, folder, filename }) {
+      return invoke("capture_screenshot", {
+        x, y, width, height,
+        scale: scale || window.devicePixelRatio || 1,
+        includeMeter: !!includeMeter,
+        saveFile: !!saveFile,
+        folder: folder || null,
+        filename: filename || null,
+      }).catch(() => ({ clipboard: false, file: null }));
     },
-    captureScreenshotToFile() { return false; },
-    chooseScreenshotFolder() { return null; },
-    getDefaultScreenshotFolder() { return ""; },
+    captureScreenshotToClipboard(x, y, w, h, scale) {
+      this.captureScreenshot({ x, y, width: w, height: h, scale });
+      return true;
+    },
+    // Resolves to the chosen folder, or null if the player cancels.
+    chooseScreenshotFolder(current) {
+      return invoke("choose_screenshot_folder", { current: current || null }).catch(() => null);
+    },
+    getDefaultScreenshotFolder() {
+      return window._defaultScreenshotFolder || "";
+    },
 
     // --- Hotkeys ---
     getCurrentHotKey() {
@@ -753,6 +765,12 @@
   // Pre-fetch device list and fight history so they're ready when panels open
   invoke("get_available_devices").then((d) => { window._cachedDevices = d; }).catch(() => {});
   invoke("get_fight_history").then((h) => { window._cachedFightHistory = h; }).catch(() => {});
+  invoke("default_screenshot_folder")
+    .then((f) => {
+      window._defaultScreenshotFolder = f || "";
+      window._dpsApp?.updateScreenshotFolderDisplay?.();
+    })
+    .catch(() => {});
   // Refresh fight history periodically (picks up auto-saved fights)
   setInterval(() => {
     invoke("get_fight_history").then((h) => { window._cachedFightHistory = h; }).catch(() => {});

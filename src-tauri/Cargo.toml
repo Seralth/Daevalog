@@ -102,6 +102,10 @@ windows = { version = "0.59", features = [
     # DPAPI, for encrypting the account token at rest.
     "Win32_Security_Cryptography",
     "Win32_System_Threading",
+    # Screenshots: the folder picker (IFileOpenDialog) and the Pictures folder.
+    "Win32_System_Com",
+    "Win32_UI_Shell",
+    "Win32_UI_Shell_Common",
 ] }
 
 [dev-dependencies]
