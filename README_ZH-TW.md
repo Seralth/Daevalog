@@ -42,6 +42,8 @@
 
 以**系統管理員身分**執行 A2Tools DPS Meter。
 
+**Linux**（透過 Proton 遊玩）：Arch 系發行版（CachyOS、Manjaro、EndeavourOS）可使用套件，其他發行版需從原始碼建構 — 請參閱 **[Linux 指南](docs/linux.md)**（英文）。
+
 ## 從原始碼建構
 
 ```bash

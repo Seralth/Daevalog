@@ -31,12 +31,16 @@ Real-time DPS meter overlay for AION 2. Captures game network packets to display
   - During Npcap installation, check **"Install Npcap in WinPcap API-compatible Mode"**
 - **Administrator privileges** — required for raw packet capture
 
+On **Linux** (playing through Proton), see the **[Linux guide](docs/linux.md)** instead.
+
 ## Installation
 
 1. Install [Npcap](https://npcap.com) with WinPcap API-compatible mode enabled
 2. Download the latest MSI installer from [Releases](https://github.com/taengu/A2Tools-DPS-Meter/releases)
 3. Run the installer
 4. Launch A2Tools DPS Meter (run as Administrator)
+
+**Linux:** a package for Arch and its derivatives (CachyOS, Manjaro, EndeavourOS), or a build from source on other distributions — see the **[Linux guide](docs/linux.md)**.
 
 ## Building from Source
 

@@ -38,6 +38,8 @@ AION 2 실시간 DPS 미터 오버레이. 게임 네트워크 패킷을 캡처�
 3. 설치 프로그램 실행
 4. A2Tools DPS Meter 실행 (관리자 권한으로)
 
+**Linux** (Proton으로 플레이): Arch 계열(CachyOS, Manjaro, EndeavourOS)용 패키지 또는 소스 빌드 — **[Linux 가이드](docs/linux.md)** (영어)를 참고하세요.
+
 ## 빌드
 
 ### 필수 구성 요소

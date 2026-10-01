@@ -51,7 +51,7 @@ pacman -Q a2tools-dps-meter
 | Finding the game | Looks for the running AION2.exe process under Proton |
 | A2 Tools account sign-in | Works in the package from 2.0.33: kept in KWallet or GNOME Keyring, which may ask to create or unlock a wallet the first time |
 | Automatic updates | Works in the package from 2.0.33; builds from source update with `git pull` |
-| Class icons | Missing in builds from source (cosmetic) |
+| Class icons | Missing in the 2.0.34 package and in builds from source before 2026-10-02 (cosmetic); fixed in the next release |
 | Global hotkeys | Not yet |
 | Screenshots | Not yet |
 | Auto-hide when the game loses focus | Not yet (the meter stays visible) |
