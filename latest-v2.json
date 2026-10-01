@@ -1,6 +1,6 @@
 {
-  "version": "2.0.34",
-  "msiUrl": "https://cdn.a2tools.app/A2Tools-DPS-Meter_2.0.34_x64_en-US.msi",
-  "archUrl": "https://cdn.a2tools.app/linux/a2tools-dps-meter-2.0.34-1-x86_64.pkg.tar.zst",
-  "releaseNotesUrl": "https://github.com/taengu/A2Tools-DPS-Meter/releases/tag/v2.0.34"
+  "version": "2.0.35",
+  "msiUrl": "https://cdn.a2tools.app/A2Tools-DPS-Meter_2.0.35_x64_en-US.msi",
+  "archUrl": "https://cdn.a2tools.app/linux/a2tools-dps-meter-2.0.35-1-x86_64.pkg.tar.zst",
+  "releaseNotesUrl": "https://github.com/taengu/A2Tools-DPS-Meter/releases/tag/v2.0.35"
 }
