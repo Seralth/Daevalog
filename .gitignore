@@ -52,3 +52,8 @@ settings.properties
 /log-service/build/
 /log-service/.dev.vars
 /log-service/.wrangler/
+
+# makepkg output (packaging/arch)
+/packaging/arch/src/
+/packaging/arch/pkg/
+/packaging/arch/*.pkg.tar.zst

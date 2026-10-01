@@ -1,0 +1,40 @@
+name: Arch package (Linux test build)
+
+# Run by hand (Actions tab, or `gh workflow run arch-package.yml`). Builds
+# packaging/arch/PKGBUILD with makepkg in an Arch container and keeps the
+# .pkg.tar.zst as a download. Players on Arch and derivatives (CachyOS,
+# Manjaro, EndeavourOS) install it with `sudo pacman -U <file or URL>`; its
+# install script grants packet-capture permission, so the meter never runs as
+# root. Nothing here publishes anything: the file goes to the CDN by hand.
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    name: makepkg
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      # git first, so checkout keeps the history pkgver() reads.
+      - name: Build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed git rust nodejs npm pkgconf \
+            webkit2gtk-4.1 gtk3 libpcap libcap xdotool hicolor-icon-theme
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # makepkg refuses to run as root.
+      - name: makepkg
+        run: |
+          useradd -m builder
+          chown -R builder "$GITHUB_WORKSPACE"
+          su builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && makepkg --noconfirm"
+      - name: What it links against
+        run: |
+          ldd "$GITHUB_WORKSPACE/src-tauri/target/release/a2tools-dps-meter" | sort
+          ls -la "$GITHUB_WORKSPACE"/packaging/arch/*.pkg.tar.zst
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: packaging/arch/*.pkg.tar.zst
+          if-no-files-found: error
