@@ -350,8 +350,10 @@
     setTargetSelection(mode) {
       invoke("set_target_mode", { mode }).catch(() => {});
     },
-    setCharacterName(name) {
-      invoke("set_character_name", { name }).catch(() => {});
+    // `manual`: the player typed it, so the backend takes it even after the
+    // game has named the character.
+    setCharacterName(name, manual) {
+      invoke("set_character_name", { name, manual: !!manual }).catch(() => {});
     },
     bindLocalActorId(actorId) {
       const id = Number(actorId);

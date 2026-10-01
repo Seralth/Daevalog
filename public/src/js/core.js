@@ -2100,6 +2100,21 @@ class DpsApp {
 
     if (this.characterNameInput) {
       this.characterNameInput.value = this.USER_NAME;
+      // The player's own word on their name: saved when they leave the field
+      // or press Enter, sent as a manual change (the backend takes it even
+      // after the game has named a character, unlike a remembered name), and
+      // broadcast so the meter window adopts it too. The game's own record of
+      // who is playing still replaces it on the next zone change if it differs.
+      this.characterNameInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") event.target.blur();
+      });
+      this.characterNameInput.addEventListener("change", (event) => {
+        const name = String(event.target?.value || "").trim();
+        event.target.value = name;
+        if (name === this.USER_NAME) return;
+        this.setUserName(name, { persist: true, syncBackend: true, manual: true });
+        this.safeSetSetting(this.storageKeys.userName, name);
+      });
     }
     if (this.localActorIdInput) {
       this.localActorIdInput.value = this.localPlayerId ? String(this.localPlayerId) : "";
@@ -3473,7 +3488,9 @@ class DpsApp {
     this.settingsPanel?.classList.remove("isOpen");
   }
 
-  setUserName(name, { persist = false, syncBackend = false } = {}) {
+  // `manual` marks a name the player typed, which the backend accepts even
+  // after the game has named the character (see the name field's handler).
+  setUserName(name, { persist = false, syncBackend = false, manual = false } = {}) {
     const previousName = this.USER_NAME;
     const trimmed = String(name ?? "").trim();
     this.USER_NAME = trimmed;
@@ -3484,9 +3501,12 @@ class DpsApp {
       localStorage.setItem(this.storageKeys.userName, trimmed);
     }
     if (syncBackend) {
-      window.javaBridge?.setCharacterName?.(trimmed);
+      window.javaBridge?.setCharacterName?.(trimmed, manual);
     }
-    if (previousName && previousName !== trimmed) {
+    // A typed correction is not a character switch: the backend has already
+    // put the name on the entity that is you, so keep the fight on screen
+    // rather than resetting it.
+    if (previousName && previousName !== trimmed && !manual) {
       const cachedId = this.getRecentLocalIdForName(trimmed);
       if (cachedId) {
         this.refreshDamageData({ reason: "local name update" });
@@ -3520,9 +3540,6 @@ class DpsApp {
     this.debugLoggingEnabled = !!enabled;
     if (this.debugLoggingCheckbox && document.activeElement !== this.debugLoggingCheckbox) {
       this.debugLoggingCheckbox.checked = this.debugLoggingEnabled;
-    }
-    if (this.characterNameInput) {
-      this.characterNameInput.readOnly = !this.debugLoggingEnabled;
     }
     if (persist) {
       this.safeSetSetting(this.storageKeys.debugLogging, String(this.debugLoggingEnabled));
@@ -4083,6 +4100,19 @@ class DpsApp {
   // dropdowns (theme, layout, player limit) are not native inputs and need
   // their own handling, so they are deliberately absent.
   applyRemoteSettingChange(key, value) {
+    // A name typed in the Settings window. That window already told the
+    // backend; this one only has to stop believing the old name, or it would
+    // push the old one straight back.
+    if (key === this.storageKeys.userName) {
+      const name = String(value ?? "").trim();
+      if (name === this.USER_NAME) return;
+      this.USER_NAME = name;
+      if (this.characterNameInput && document.activeElement !== this.characterNameInput) {
+        this.characterNameInput.value = name;
+      }
+      this.renderCurrentRows();
+      return;
+    }
     const selector = REMOTE_APPLIED_SETTING_CONTROLS[key];
     if (!selector) return;
     const control = document.querySelector(selector);
@@ -4284,8 +4314,13 @@ class DpsApp {
     if (this.localActorIdInput && document.activeElement !== this.localActorIdInput) {
       this.localActorIdInput.value = this.localPlayerId ? String(this.localPlayerId) : "";
     }
-    if (this.characterNameInput) {
-      const nickname = String(info?.characterName || this.USER_NAME || "").trim();
+    // Never under the player's cursor: they may be typing a new name.
+    // This window's own name first: it changes the moment the player saves
+    // one, while the backend's copy here is a poll up to 3 s old and would
+    // put the old name back. The game's name reaches USER_NAME through
+    // syncCharacterNameFromGame, so nothing is lost.
+    if (this.characterNameInput && document.activeElement !== this.characterNameInput) {
+      const nickname = String(this.USER_NAME || info?.characterName || "").trim();
       this.characterNameInput.value = nickname;
     }
     // Do NOT reinitTargetSelection() when the backend-reported local id changes:

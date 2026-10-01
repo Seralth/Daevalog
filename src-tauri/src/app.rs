@@ -321,10 +321,12 @@ fn set_target_mode(state: tauri::State<'_, AppState>, mode: String) {
 }
 
 #[tauri::command]
-fn set_character_name(state: tauri::State<'_, AppState>, name: String) {
+fn set_character_name(state: tauri::State<'_, AppState>, name: String, manual: Option<bool>) {
     // The game has said who is playing; a name from the window title or the
-    // last session is at best the same and at worst another character.
-    if state.data_storage.local_identity_from_game() {
+    // last session is at best the same and at worst another character. A name
+    // the player typed (`manual`) is taken anyway: it is their call, and the
+    // game's next self record replaces it if it was wrong.
+    if state.data_storage.local_identity_from_game() && !manual.unwrap_or(false) {
         return;
     }
     let trimmed = name.trim().to_string();
