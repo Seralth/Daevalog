@@ -973,6 +973,12 @@ fn restore_window_geometry(app: &tauri::AppHandle, window: &tauri::WebviewWindow
         return false;
     }
     let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+    // Settings is a fixed list of options: it reopens where it was left, at its
+    // own size. A remembered size only ever made it sprawl (see the inner-size
+    // note where geometry is saved), and it can still be resized while open.
+    if label == "settings" {
+        return true;
+    }
     if let (Some(w), Some(h)) = (get("w"), get("h")) {
         if w > 200 && h > 150 {
             let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
@@ -2048,7 +2054,11 @@ pub fn run() {
                                             state.settings.set(&format!("window.{}.y", label), &pos.y.to_string());
                                         }
                                     }
-                                    if let Ok(size) = w.outer_size() {
+                                    // Inner, not outer: restore applies it with
+                                    // set_size, which sets the inner size. Saving
+                                    // the outer size grew every tool window by its
+                                    // border (16x9 px here) on each reopen.
+                                    if let Ok(size) = w.inner_size() {
                                         if size.width > 100 && size.height > 100 {
                                             state.settings.set(&format!("window.{}.w", label), &size.width.to_string());
                                             state.settings.set(&format!("window.{}.h", label), &size.height.to_string());
