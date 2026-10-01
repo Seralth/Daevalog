@@ -16,12 +16,6 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 /// collide, and stays positive because the frontend discards non-positive ids.
 const PARTY_ROW_ID_BASE: i32 = 90_000_000;
 
-/// Train mob NPC type codes.
-const TRAIN_MOB_CODES: &[i32] = &[
-    2300229, 2300919, 2310229, 2310919, 2320229, 2320919,
-    2400032, 2400392, 2500075, 2500076, 2701376,
-];
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TargetSelectionMode {
     BossTargets,
@@ -555,7 +549,7 @@ impl DpsCalculator {
             TargetSelectionMode::TrainTargets => {
                 let trains: HashSet<i32> = combat_data.keys()
                     .filter(|&&tid| {
-                        mob_data.get(&tid).is_some_and(|code| TRAIN_MOB_CODES.contains(code))
+                        mob_data.get(&tid).is_some_and(|&code| self.npc_lookup.is_training_dummy(code))
                     })
                     .cloned()
                     .collect();
@@ -666,7 +660,7 @@ impl DpsCalculator {
                     return false;
                 }
                 if let Some(&code) = mob_data.get(&tid) {
-                    self.npc_lookup.is_boss(code) || TRAIN_MOB_CODES.contains(&code)
+                    self.npc_lookup.is_boss(code) || self.npc_lookup.is_training_dummy(code)
                 } else {
                     false
                 }
@@ -782,7 +776,7 @@ impl DpsCalculator {
 
             let id = format!("auto_{}_{}", target_id, target_data.first_damage_time);
 
-            let is_train = TRAIN_MOB_CODES.contains(&mob_code);
+            let is_train = self.npc_lookup.is_training_dummy(mob_code);
             let record = FightRecord {
                 id,
                 boss_name,
