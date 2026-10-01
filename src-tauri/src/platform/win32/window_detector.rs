@@ -1,5 +1,4 @@
 /// Find the AION 2 game window and return its title, or None if not found.
-#[cfg(windows)]
 pub fn find_aion2_window_title() -> Option<String> {
     use windows::Win32::Foundation::{BOOL, HWND, LPARAM};
     use windows::Win32::UI::WindowsAndMessaging::{EnumWindows, GetWindowTextW};
@@ -30,25 +29,13 @@ pub fn find_aion2_window_title() -> Option<String> {
 }
 
 /// Check if the AION 2 game window is currently running.
-#[cfg(windows)]
 pub fn find_aion2_window() -> bool {
     find_aion2_window_title().is_some()
-}
-
-#[cfg(not(windows))]
-pub fn find_aion2_window_title() -> Option<String> {
-    None
-}
-
-#[cfg(not(windows))]
-pub fn find_aion2_window() -> bool {
-    false
 }
 
 /// Check if the foreground window belongs to AION 2.
 /// Uses window title check first (works without elevated privileges),
 /// falls back to process name check.
-#[cfg(windows)]
 pub fn is_aion2_foreground() -> bool {
     use windows::Win32::Foundation::HWND;
     use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW};
@@ -71,7 +58,6 @@ pub fn is_aion2_foreground() -> bool {
     }
 }
 
-#[cfg(windows)]
 fn is_aion2_process(hwnd: windows::Win32::Foundation::HWND) -> bool {
     use windows::Win32::System::Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION};
     use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
@@ -95,9 +81,4 @@ fn is_aion2_process(hwnd: windows::Win32::Foundation::HWND) -> bool {
         }
         false
     }
-}
-
-#[cfg(not(windows))]
-pub fn is_aion2_foreground() -> bool {
-    false
 }

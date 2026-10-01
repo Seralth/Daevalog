@@ -27,82 +27,10 @@ pub fn token_path(app_data_dir: &Path) -> PathBuf {
 /// application's folder cannot be decrypted by ours even under the same user.
 const ENTROPY: &[u8] = b"a2tools.account.v1";
 
-#[cfg(windows)]
-mod imp {
-    use windows::Win32::Foundation::{HLOCAL, LocalFree};
-    use windows::Win32::Security::Cryptography::{
-        CRYPT_INTEGER_BLOB, CryptProtectData, CryptUnprotectData,
-    };
-
-    fn blob(bytes: &mut [u8]) -> CRYPT_INTEGER_BLOB {
-        CRYPT_INTEGER_BLOB {
-            cbData: bytes.len() as u32,
-            pbData: bytes.as_mut_ptr(),
-        }
-    }
-
-    /// Copy a blob out and hand its buffer back to the OS.
-    ///
-    /// DPAPI allocates with `LocalAlloc`, so the caller frees with `LocalFree`.
-    /// Missing this leaks on every save and load.
-    unsafe fn take(out: &CRYPT_INTEGER_BLOB) -> Vec<u8> {
-        let slice = unsafe { std::slice::from_raw_parts(out.pbData, out.cbData as usize) };
-        let owned = slice.to_vec();
-        let _ = unsafe { LocalFree(Some(HLOCAL(out.pbData as *mut _))) };
-        owned
-    }
-
-    pub fn protect(plaintext: &[u8], entropy: &[u8]) -> Option<Vec<u8>> {
-        let mut input = plaintext.to_vec();
-        let mut extra = entropy.to_vec();
-        let mut out = CRYPT_INTEGER_BLOB::default();
-        unsafe {
-            CryptProtectData(
-                &blob(&mut input),
-                None,
-                Some(&blob(&mut extra)),
-                None,
-                None,
-                0,
-                &mut out,
-            )
-            .ok()?;
-            Some(take(&out))
-        }
-    }
-
-    pub fn unprotect(ciphertext: &[u8], entropy: &[u8]) -> Option<Vec<u8>> {
-        let mut input = ciphertext.to_vec();
-        let mut extra = entropy.to_vec();
-        let mut out = CRYPT_INTEGER_BLOB::default();
-        unsafe {
-            CryptUnprotectData(
-                &blob(&mut input),
-                None,
-                Some(&blob(&mut extra)),
-                None,
-                None,
-                0,
-                &mut out,
-            )
-            .ok()?;
-            Some(take(&out))
-        }
-    }
-}
-
-/// Non-Windows builds exist only so the crate still compiles for tests and the
-/// wasm parser. Storing a token in the clear would be worse than not storing
-/// one, so this refuses rather than degrading quietly.
-#[cfg(not(windows))]
-mod imp {
-    pub fn protect(_plaintext: &[u8], _entropy: &[u8]) -> Option<Vec<u8>> {
-        None
-    }
-    pub fn unprotect(_ciphertext: &[u8], _entropy: &[u8]) -> Option<Vec<u8>> {
-        None
-    }
-}
+/// The OS's per-user encryption (DPAPI on Windows). Where an OS has none,
+/// `platform::secret` refuses rather than degrading quietly: storing a token in
+/// the clear would be worse than not storing one.
+use crate::platform::secret as imp;
 
 /// Encrypt and write the token. Returns false if it could not be stored, in
 /// which case the caller must treat the account as not connected rather than
@@ -152,9 +80,14 @@ pub fn clear(app_data_dir: &Path) {
     }
 }
 
-#[cfg(all(test, windows))]
+#[cfg(test)]
 mod tests {
     use super::*;
+
+    // Nothing to test where the OS keeps no secrets: every save refuses.
+    fn skip() -> bool {
+        !crate::platform::secret::AVAILABLE
+    }
 
     fn temp(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("a2tools-secret-{name}"));
@@ -165,6 +98,9 @@ mod tests {
 
     #[test]
     fn a_token_round_trips() {
+        if skip() {
+            return;
+        }
         let dir = temp("roundtrip");
         assert!(save(&dir, "tok_abc123"));
         assert_eq!(load(&dir).as_deref(), Some("tok_abc123"));
@@ -173,6 +109,9 @@ mod tests {
 
     #[test]
     fn the_file_on_disk_does_not_contain_the_token() {
+        if skip() {
+            return;
+        }
         // The whole point: `settings.json` is readable, this must not be.
         let dir = temp("opaque");
         assert!(save(&dir, "tok_supersecret"));
@@ -186,6 +125,9 @@ mod tests {
 
     #[test]
     fn clearing_removes_it() {
+        if skip() {
+            return;
+        }
         let dir = temp("clear");
         assert!(save(&dir, "tok_x"));
         clear(&dir);
@@ -195,6 +137,9 @@ mod tests {
 
     #[test]
     fn a_corrupt_file_is_discarded_rather_than_retried() {
+        if skip() {
+            return;
+        }
         let dir = temp("corrupt");
         std::fs::write(token_path(&dir), b"not dpapi output").unwrap();
         assert!(load(&dir).is_none());
@@ -207,6 +152,9 @@ mod tests {
 
     #[test]
     fn no_token_is_not_an_error() {
+        if skip() {
+            return;
+        }
         let dir = temp("empty");
         assert!(load(&dir).is_none());
         let _ = std::fs::remove_dir_all(&dir);

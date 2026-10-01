@@ -28,6 +28,50 @@ jobs:
         working-directory: src-tauri
         run: cargo build --bins
 
+  platform-boundary:
+    name: OS code stays in src/platform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Windows and (later) Linux builds share one codebase. What keeps them from
+      # getting tangled is that only src/platform/ may know which OS it is on:
+      # it picks one implementation (win32/ or unsupported/, later linux/) and
+      # everything else calls platform::... A cfg or a Windows API call anywhere
+      # else is how the muddle starts, so it fails here. Put it behind a
+      # platform:: function instead, with a twin in every OS folder.
+      - name: No OS-specific code outside src/platform
+        run: |
+          leaks=$(grep -rnE --include='*.rs' \
+            'cfg\((not\()?(windows|unix|target_os|target_family)|windows::|std::os::windows' \
+            src-tauri/src | grep -v '^src-tauri/src/platform/' || true)
+          if [ -n "$leaks" ]; then
+            echo "OS-specific code outside src-tauri/src/platform/:"
+            echo "$leaks"
+            exit 1
+          fi
+
+  desktop-linux:
+    name: Desktop builds on Linux (unsupported/ fallback)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      # Tauri's Linux build dependencies (WebKitGTK and friends).
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev \
+            libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      # Nothing ships for Linux yet. This keeps platform/unsupported/ in step
+      # with platform/win32/ (same functions, same signatures), so the meter
+      # always builds off Windows and a Linux port starts from a working tree.
+      - name: Test
+        working-directory: src-tauri
+        run: cargo test --all-targets --no-default-features --features desktop
+
   parser-wasm:
     name: Parser compiles to wasm32
     runs-on: ubuntu-latest

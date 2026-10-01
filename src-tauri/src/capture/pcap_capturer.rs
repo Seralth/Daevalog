@@ -101,9 +101,11 @@ struct PcapLib {
 impl PcapLib {
     fn load() -> Result<Self, String> {
         let lib = unsafe {
-            Library::new("wpcap.dll").map_err(|e| {
+            Library::new(crate::platform::pcap::LIBRARY).map_err(|e| {
                 format!(
-                    "Failed to load wpcap.dll. Is Npcap installed? Download from https://npcap.com\nError: {}",
+                    "Failed to load {}. {}\nError: {}",
+                    crate::platform::pcap::LIBRARY,
+                    crate::platform::pcap::MISSING_HELP,
                     e
                 )
             })?
@@ -212,7 +214,8 @@ unsafe impl Send for PcapLib {}
 unsafe impl Sync for PcapLib {}
 
 /// Manages pcap device handles and captures TCP traffic from network interfaces.
-/// Uses runtime dynamic loading of wpcap.dll — no SDK needed at compile time.
+/// Loads the OS's pcap library at runtime (`platform::pcap::LIBRARY`) — no SDK
+/// needed at compile time.
 pub struct PcapCapturer {
     running: Arc<AtomicBool>,
     sender: mpsc::Sender<CapturedPayload>,

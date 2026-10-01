@@ -432,7 +432,7 @@ fn reset_auto_detection(state: tauri::State<'_, AppState>) {
 
 #[tauri::command]
 fn get_available_devices() -> Vec<String> {
-    // Load wpcap.dll and enumerate devices
+    // Load the OS's pcap library and enumerate devices
     match crate::capture::pcap_capturer::list_device_labels() {
         Ok(labels) => labels,
         Err(_) => Vec::new(),
@@ -470,19 +470,7 @@ async fn show_update_window(app: tauri::AppHandle, current: String, latest: Stri
     let msg = format!("A new update is available!\n\nCurrent: {}\nLatest: {}\n\nDownload and install now?", current, latest);
 
     let accepted = tokio::task::spawn_blocking(move || {
-        #[cfg(windows)]
-        {
-            use windows::Win32::UI::WindowsAndMessaging::*;
-            use windows::core::PCWSTR;
-            let msg_w: Vec<u16> = msg.encode_utf16().chain(std::iter::once(0)).collect();
-            let title: Vec<u16> = "A2Tools - Update Available".encode_utf16().chain(std::iter::once(0)).collect();
-            let result = unsafe {
-                MessageBoxW(None, PCWSTR(msg_w.as_ptr()), PCWSTR(title.as_ptr()), MB_YESNO | MB_ICONINFORMATION | MB_TOPMOST | MB_SETFOREGROUND)
-            };
-            result == IDYES
-        }
-        #[cfg(not(windows))]
-        { false }
+        platform::dialog::ask_yes_no("A2Tools - Update Available", &msg)
     }).await.unwrap_or(false);
 
     if accepted && !msi_url.is_empty() {
@@ -494,21 +482,16 @@ async fn show_update_window(app: tauri::AppHandle, current: String, latest: Stri
                 tracing::error!("Update download failed: {}", e);
                 // Show error dialog
                 let _ = tokio::task::spawn_blocking(move || {
-                    #[cfg(windows)]
-                    {
-                        use windows::Win32::UI::WindowsAndMessaging::*;
-                        use windows::core::PCWSTR;
-                        let msg: Vec<u16> = format!("Download failed: {}\n\nPlease download manually.", e)
-                            .encode_utf16().chain(std::iter::once(0)).collect();
-                        let title: Vec<u16> = "A2Tools - Update Error".encode_utf16().chain(std::iter::once(0)).collect();
-                        unsafe { MessageBoxW(None, PCWSTR(msg.as_ptr()), PCWSTR(title.as_ptr()), MB_OK | MB_ICONERROR | MB_TOPMOST); }
-                    }
+                    platform::dialog::show_error(
+                        "A2Tools - Update Error",
+                        &format!("Download failed: {}\n\nPlease download manually.", e),
+                    );
                 }).await;
             }
         });
     } else if accepted {
         // No MSI URL, open releases page
-        let _ = std::process::Command::new("cmd").args(["/C", "start", "", "https://github.com/taengu/A2Tools-DPS-Meter/releases"]).spawn();
+        platform::shell::open_url("https://github.com/taengu/A2Tools-DPS-Meter/releases");
     }
 
     Ok(accepted)
@@ -562,27 +545,8 @@ async fn download_and_install_msi_inner(app: &tauri::AppHandle, url: &str) -> Re
     // Strip a trailing backslash so msiexec doesn't interpret \" as an escape
     let install_dir = install_dir.trim_end_matches('\\').to_string();
 
-    // Launch the MSI installer. msiexec.exe uses its own non-standard command line
-    // parser, so PROPERTY="value" pairs with spaces require literal embedded quotes
-    // — not what std::process::Command's normal arg quoting produces. We use raw_arg
-    // (Windows-only) to control the exact command line.
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        let mut cmd = std::process::Command::new("msiexec");
-        cmd.raw_arg("/i")
-            .raw_arg(format!("\"{}\"", msi_path.display()))
-            .raw_arg("/passive")
-            .raw_arg(format!("INSTALLDIR=\"{}\"", install_dir))
-            .raw_arg("AUTOLAUNCHAPP=1");
-        tracing::info!("msiexec args: /i \"{}\" /passive INSTALLDIR=\"{}\" AUTOLAUNCHAPP=1",
-            msi_path.display(), install_dir);
-        cmd.spawn().map_err(|e| e.to_string())?;
-    }
-    #[cfg(not(windows))]
-    {
-        return Err("MSI install only supported on Windows".to_string());
-    }
+    // Launch the installer (msiexec on Windows; see platform::updater).
+    platform::updater::run_installer(&msi_path, &install_dir)?;
 
     // Give installer time to start, then exit
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
@@ -668,16 +632,7 @@ async fn fetch_supporter_roster(client: &reqwest::Client) -> Option<crate::suppo
 
 #[tauri::command]
 fn open_url(url: String) {
-    #[cfg(windows)]
-    {
-        let _ = std::process::Command::new("cmd")
-            .args(["/C", "start", "", &url])
-            .spawn();
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
-    }
+    platform::shell::open_url(&url);
 }
 
 #[tauri::command]
@@ -1385,70 +1340,45 @@ async fn capture_screenshot(
     folder: Option<String>,
     filename: Option<String>,
 ) -> ScreenshotResult {
-    #[cfg(windows)]
-    {
-        let Ok(raw) = webview_window.hwnd() else {
-            return ScreenshotResult { clipboard: false, file: None };
-        };
-        let caller = raw.0 as isize;
-        let scale = scale.unwrap_or_else(|| webview_window.scale_factor().unwrap_or(1.0));
-        let meter = include_meter
-            .unwrap_or(false)
-            .then(|| app.get_webview_window("main"))
-            .flatten()
-            .filter(|main| main.label() != webview_window.label())
-            .and_then(|main| main.hwnd().ok())
-            .map(|h| h.0 as isize);
-        let path = save_file.unwrap_or(false).then(|| {
-            let dir = folder
-                .filter(|f| !f.trim().is_empty())
-                .map(std::path::PathBuf::from)
-                .or_else(platform::screenshot::default_folder)
-                .unwrap_or_else(|| std::path::PathBuf::from("."));
-            let name = filename
-                .filter(|n| !n.trim().is_empty() && !n.contains(['/', '\\']))
-                .unwrap_or_else(|| format!("AION2_DPS_{}.png", chrono::Local::now().format("%Y%m%d_%H%M%S")));
-            dir.join(name)
-        });
-        tauri::async_runtime::spawn_blocking(move || {
-            let mut rect = platform::screenshot::css_rect_to_screen(
-                platform::screenshot::client_origin(caller), x, y, width, height, scale,
-            );
-            if let Some(meter) = meter {
-                rect = rect.union(platform::screenshot::client_rect(meter));
-            }
-            let (clipboard, file_ok) = platform::screenshot::capture(caller, rect, path.as_deref());
-            if path.is_some() && !file_ok {
-                tracing::warn!("Screenshot not saved to {:?}", path);
-            }
-            ScreenshotResult {
-                clipboard,
-                file: path.filter(|_| file_ok).map(|p| p.display().to_string()),
-            }
-        })
-        .await
-        .unwrap_or(ScreenshotResult { clipboard: false, file: None })
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = (app, webview_window, x, y, width, height, scale, include_meter, save_file, folder, filename);
-        ScreenshotResult { clipboard: false, file: None }
-    }
+    let scale = scale.unwrap_or_else(|| webview_window.scale_factor().unwrap_or(1.0));
+    let meter = include_meter
+        .unwrap_or(false)
+        .then(|| app.get_webview_window("main"))
+        .flatten()
+        .filter(|main| main.label() != webview_window.label());
+    let path = save_file.unwrap_or(false).then(|| {
+        let dir = folder
+            .filter(|f| !f.trim().is_empty())
+            .map(std::path::PathBuf::from)
+            .or_else(platform::screenshot::default_folder)
+            .unwrap_or_else(|| std::path::PathBuf::from("."));
+        let name = filename
+            .filter(|n| !n.trim().is_empty() && !n.contains(['/', '\\']))
+            .unwrap_or_else(|| format!("AION2_DPS_{}.png", chrono::Local::now().format("%Y%m%d_%H%M%S")));
+        dir.join(name)
+    });
+    tauri::async_runtime::spawn_blocking(move || {
+        let (clipboard, file_ok) = platform::screenshot::capture(
+            &webview_window, x, y, width, height, scale, meter.as_ref(), path.as_deref(),
+        );
+        if path.is_some() && !file_ok {
+            tracing::warn!("Screenshot not saved to {:?}", path);
+        }
+        ScreenshotResult {
+            clipboard,
+            file: path.filter(|_| file_ok).map(|p| p.display().to_string()),
+        }
+    })
+    .await
+    .unwrap_or(ScreenshotResult { clipboard: false, file: None })
 }
 
 /// Where screenshots go when no folder has been chosen.
 #[tauri::command]
 fn default_screenshot_folder() -> String {
-    #[cfg(windows)]
-    {
-        platform::screenshot::default_folder()
-            .map(|p| p.display().to_string())
-            .unwrap_or_default()
-    }
-    #[cfg(not(windows))]
-    {
-        String::new()
-    }
+    platform::screenshot::default_folder()
+        .map(|p| p.display().to_string())
+        .unwrap_or_default()
 }
 
 /// Let the player pick the screenshot folder. `None` if they cancel.
@@ -1457,40 +1387,13 @@ async fn choose_screenshot_folder(
     webview_window: tauri::WebviewWindow,
     current: Option<String>,
 ) -> Option<String> {
-    #[cfg(windows)]
-    {
-        let owner = webview_window.hwnd().ok()?.0 as isize;
-        // The dialog is COM and modal: its own thread, apartment-threaded.
-        std::thread::spawn(move || platform::screenshot::pick_folder(owner, current.as_deref()))
-            .join()
-            .ok()
-            .flatten()
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = (webview_window, current);
-        None
-    }
+    platform::screenshot::pick_folder(&webview_window, current.as_deref())
 }
 
 #[tauri::command]
 fn start_drag(app: tauri::AppHandle) {
-    #[cfg(windows)]
-    {
-        use windows::Win32::Foundation::{HWND, WPARAM, LPARAM};
-        use windows::Win32::UI::WindowsAndMessaging::{PostMessageW, WM_NCLBUTTONDOWN};
-        use windows::Win32::UI::Input::KeyboardAndMouse::ReleaseCapture;
-
-        if let Some(window) = app.get_webview_window("main") {
-            if let Ok(raw) = window.hwnd() {
-                unsafe {
-                    let _ = ReleaseCapture();
-                    const HTCAPTION: usize = 2;
-                    let hwnd = HWND(raw.0);
-                    let _ = PostMessageW(Some(hwnd), WM_NCLBUTTONDOWN, WPARAM(HTCAPTION), LPARAM(0));
-                }
-            }
-        }
+    if let Some(window) = app.get_webview_window("main") {
+        platform::window::start_drag(&window);
     }
 }
 
@@ -1772,7 +1675,7 @@ pub fn run() {
             let npc_lookup = Arc::new(npc_lookup);
 
             let data_storage = Arc::new(DataStorage::new());
-            let ping_tracker = Arc::new(PingTracker::new());
+            let ping_tracker = Arc::new(PingTracker::with_perf_clock(platform::clock::perf_clock()));
             let port_detector = Arc::new(CombatPortDetector::new());
 
             let dps_calculator = DpsCalculator::new(
@@ -1850,7 +1753,7 @@ pub fn run() {
             }
 
             // Check if Npcap is available before starting capture
-            let npcap_available = unsafe { libloading::Library::new("wpcap.dll").is_ok() };
+            let npcap_available = platform::pcap::library_available();
             if !npcap_available {
                 tracing::error!("Npcap is not installed — packet capture disabled");
                 // Notify frontend to show install prompt
@@ -1976,42 +1879,20 @@ pub fn run() {
                                     tracing::trace!("auto-hide: aion_fg={} self_fg={} visible={} minimized={} hide_delay={}",
                                         aion_fg, is_self_fg, is_visible, is_minimized, hide_delay);
                                 }
-                                #[cfg(windows)]
-                                {
-                                    use windows::Win32::Foundation::HWND;
-                                    use windows::Win32::UI::WindowsAndMessaging::*;
-                                    if let Ok(raw) = window.hwnd() {
-                                        let hwnd = HWND(raw.0);
-                                        if aion_fg || is_self_fg {
-                                            hide_delay = 0;
-                                            if !is_visible || is_minimized {
-                                                unsafe {
-                                                    let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
-                                                    let _ = SetWindowPos(
-                                                        hwnd, Some(HWND_TOPMOST),
-                                                        0, 0, 0, 0,
-                                                        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
-                                                    );
-                                                }
-                                                // Notify frontend to recalculate window size
-                                                // (content may have changed while minimized)
-                                                let _ = window.emit("force-resize", ());
-                                            }
-                                        } else if is_visible && !is_minimized {
-                                            // Wait 3 ticks (1.5s) before hiding to avoid
-                                            // flickering during alt-tab transitions
-                                            hide_delay += 1;
-                                            if hide_delay >= 3 {
-                                                unsafe {
-                                                    let _ = SetWindowPos(
-                                                        hwnd, Some(HWND_NOTOPMOST),
-                                                        0, 0, 0, 0,
-                                                        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
-                                                    );
-                                                    let _ = ShowWindow(hwnd, SW_MINIMIZE);
-                                                }
-                                            }
-                                        }
+                                if aion_fg || is_self_fg {
+                                    hide_delay = 0;
+                                    if !is_visible || is_minimized {
+                                        platform::window::show_on_top_without_focus(&window);
+                                        // Notify frontend to recalculate window size
+                                        // (content may have changed while minimized)
+                                        let _ = window.emit("force-resize", ());
+                                    }
+                                } else if is_visible && !is_minimized {
+                                    // Wait 3 ticks (1.5s) before hiding to avoid
+                                    // flickering during alt-tab transitions
+                                    hide_delay += 1;
+                                    if hide_delay >= 3 {
+                                        platform::window::minimize_off_top(&window);
                                     }
                                 }
                             }

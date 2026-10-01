@@ -80,7 +80,7 @@ struct Outcome {
 /// side is fed, which is what a wall-clock timestamp should be enough for.
 fn run(packets: &[Packet], server_port: u16, requests: bool) -> Outcome {
     // Replayed timestamps are on the performance counter as it ran then.
-    let tracker = PingTracker::without_perf_clock();
+    let tracker = PingTracker::new();
     let mut last_request: Option<i64> = None;
     let mut o = Outcome { responses: 0, wall_clock_format: 0, reported: 0, worst_error_ms: 0 };
 

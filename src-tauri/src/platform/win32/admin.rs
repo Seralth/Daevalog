@@ -1,5 +1,4 @@
 /// Check if the current process is running with administrator privileges.
-#[cfg(windows)]
 pub fn is_admin() -> bool {
     use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
     use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
@@ -24,9 +23,4 @@ pub fn is_admin() -> bool {
 
         result.is_ok() && elevation.TokenIsElevated != 0
     }
-}
-
-#[cfg(not(windows))]
-pub fn is_admin() -> bool {
-    false
 }
