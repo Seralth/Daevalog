@@ -36,6 +36,11 @@ settings.properties
 !/public/src/
 /public/src/*
 !/public/src/js/
+# ...and the images the UI loads (class icons, logo, support buttons). They have
+# no other source in the repo, so without them a clean checkout (CI, the Arch
+# package, a build from source) shows broken class icons.
+!/public/assets/
+!/public/src/assets/
 # ...except vendored third-party libs, which are source, not generated. Without
 # these a fresh clone builds an app whose icons 404.
 !/public/vendor/
