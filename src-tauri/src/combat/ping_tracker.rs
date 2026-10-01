@@ -20,9 +20,21 @@ const RELAYED_PING_RQ: [[u8; 4]; 2] = [[0x05, 0x23, 0x0C, 0x0F], [0x05, 0x23, 0x
 /// How far a request's clock offset may move between pings and still be the
 /// same clock.
 const OFFSET_TOLERANCE_MS: i64 = 15;
+/// The newer client stamps its ping with Windows' performance counter in
+/// milliseconds since boot, plus Unreal's fixed 16,777,216 s offset (worked out
+/// by Karim; checked 2026-10-01 against a captured request: exact to the ms).
+const UNREAL_CLOCK_OFFSET_MS: i64 = 16_777_216 * 1000;
+
+/// Reads the performance counter (ms since boot) and the wall clock (Unix ms)
+/// together.
+type PerfClock = fn() -> (i64, i64);
 
 pub struct PingTracker {
     inner: Mutex<Inner>,
+    /// The machine's performance counter, so the newer client's timestamp can
+    /// be read directly. `None` off Windows, and for replays of old captures,
+    /// whose timestamps belong to the counter as it was then.
+    perf_clock: Option<PerfClock>,
 }
 
 struct Inner {
@@ -39,6 +51,16 @@ struct Inner {
 
 impl PingTracker {
     pub fn new() -> Self {
+        Self::with_perf_clock(SYSTEM_PERF_CLOCK)
+    }
+
+    /// For replaying a capture: its timestamps are on the performance counter
+    /// as it ran then, so reading today's would give nonsense.
+    pub fn without_perf_clock() -> Self {
+        Self::with_perf_clock(None)
+    }
+
+    fn with_perf_clock(perf_clock: Option<PerfClock>) -> Self {
         Self {
             inner: Mutex::new(Inner {
                 last_ping: None,
@@ -47,7 +69,23 @@ impl PingTracker {
                 clock_offset: None,
                 prev_offsets: Vec::new(),
             }),
+            perf_clock,
         }
+    }
+
+    /// Round trip for the newer client, from the performance counter alone:
+    /// the echoed timestamp is the counter at the moment the request left, so
+    /// shift it onto the wall clock the capture timestamps use. Both clocks are
+    /// read together now, so a Windows time sync is followed rather than
+    /// learned. `None` for a timestamp that is not on this clock (KR/TW's).
+    fn rtt_from_perf_clock(&self, client_sent: i64, arrival_ms: i64) -> Option<i64> {
+        let (counter_ms, wall_ms) = (self.perf_clock?)();
+        let sent_counter_ms = client_sent.checked_sub(UNREAL_CLOCK_OFFSET_MS)?;
+        if !(0..=counter_ms).contains(&sent_counter_ms) {
+            return None;
+        }
+        let rtt = arrival_ms - (sent_counter_ms + (wall_ms - counter_ms));
+        is_valid_rtt(rtt).then_some(rtt)
     }
 
     /// `server_port` is the locked combat port, which tells the two directions
@@ -83,21 +121,23 @@ impl PingTracker {
                 let client_sent_raw = read_i64_le(data, i + 4);
                 let mut inner = self.inner.lock();
 
-                // Timing the response against the request that caused it needs
-                // no clock at all, so it wins whenever the request was seen.
-                // Otherwise: KR/TW echo wall-clock .NET milliseconds, which the
-                // local clock can be subtracted from directly; the newer client
-                // echoes a clock with an arbitrary epoch, which needs the offset
-                // learned from earlier requests.
+                // The newer client's timestamp is this machine's performance
+                // counter, which the meter can read too: exact, and no request
+                // needed. Otherwise timing the response against the request
+                // that caused it needs no clock at all, so it comes next. Then
+                // KR/TW's wall-clock .NET milliseconds, which the local clock
+                // can be subtracted from directly; then, off Windows, the
+                // offset learned from earlier requests.
                 //
-                // Neither echoed clock follows the PC clock live: the game fixes
-                // it at some point (launch, most likely), so a Windows time sync
-                // mid-session moves our clock and not the game's. That is why a
-                // seen request overrides both fallbacks rather than the reverse.
+                // Neither echoed clock follows the wall clock live, so a Windows
+                // time sync mid-session moves our clock and not the game's.
+                // That is why a seen request overrides the wall-clock reading
+                // rather than the reverse.
                 let wall_clock_rtt = arrival_ms
                     .wrapping_sub(client_sent_raw.wrapping_sub(DOTNET_EPOCH_OFFSET_MS));
-                let rtt_ms = inner
-                    .rtt_from_request(client_sent_raw, arrival_ms)
+                let rtt_ms = self
+                    .rtt_from_perf_clock(client_sent_raw, arrival_ms)
+                    .or_else(|| inner.rtt_from_request(client_sent_raw, arrival_ms))
                     .or_else(|| is_valid_rtt(wall_clock_rtt).then_some(wall_clock_rtt))
                     .or_else(|| inner.rtt_from_known_offset(client_sent_raw, arrival_ms));
 
@@ -203,6 +243,33 @@ impl Inner {
     }
 }
 
+#[cfg(windows)]
+const SYSTEM_PERF_CLOCK: Option<PerfClock> = Some(read_perf_clock);
+#[cfg(not(windows))]
+const SYSTEM_PERF_CLOCK: Option<PerfClock> = None;
+
+#[cfg(windows)]
+fn read_perf_clock() -> (i64, i64) {
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn QueryPerformanceCounter(count: *mut i64) -> i32;
+        fn QueryPerformanceFrequency(frequency: *mut i64) -> i32;
+    }
+    let (mut count, mut frequency) = (0i64, 0i64);
+    // SAFETY: both write one i64 through a valid pointer, and cannot fail on
+    // Windows XP or later.
+    unsafe {
+        QueryPerformanceFrequency(&mut frequency);
+        QueryPerformanceCounter(&mut count);
+    }
+    let wall_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as i64;
+    let counter_ms = (count as i128 * 1000 / frequency.max(1) as i128) as i64;
+    (counter_ms, wall_ms)
+}
+
 fn is_valid_rtt(rtt_ms: i64) -> bool {
     (1..=MAX_PING_MS as i64).contains(&rtt_ms)
 }
@@ -276,7 +343,7 @@ mod tests {
 
     #[test]
     fn wall_clock_timestamp_needs_no_request() {
-        let t = PingTracker::new();
+        let t = PingTracker::without_perf_clock();
         let now = 1_790_000_000_000;
         t.on_packet(&response(now + 80, now + DOTNET_EPOCH_OFFSET_MS), SERVER);
         assert_eq!(t.current_ping_ms(), Some(80));
@@ -284,7 +351,7 @@ mod tests {
 
     #[test]
     fn arbitrary_epoch_is_timed_against_the_request() {
-        let t = PingTracker::new();
+        let t = PingTracker::without_perf_clock();
         let now = 1_790_000_000_000;
         // As captured 2026-10-01: a client clock ~203 days old, pings 10s apart.
         let clock = 17_552_452_660;
@@ -306,7 +373,7 @@ mod tests {
     /// mid-session and the game's ping clock stayed where it was.
     #[test]
     fn a_pc_clock_jump_does_not_skew_ping() {
-        let t = PingTracker::new();
+        let t = PingTracker::without_perf_clock();
         let now = 1_790_000_000_000;
         let clock = 17_552_452_660;
         for n in 0..2 {
@@ -338,7 +405,7 @@ mod tests {
     /// request has to win over it.
     #[test]
     fn wall_clock_timestamp_defers_to_a_seen_request() {
-        let t = PingTracker::new();
+        let t = PingTracker::without_perf_clock();
         let now = 1_790_000_000_000;
         let jump = 2_320;
         // The game stamped its old clock; ours has since moved forward.
@@ -350,7 +417,7 @@ mod tests {
 
     #[test]
     fn arbitrary_epoch_without_a_request_reports_nothing() {
-        let t = PingTracker::new();
+        let t = PingTracker::without_perf_clock();
         t.on_packet(&response(1_790_000_000_064, 17_552_452_660), SERVER);
         assert_eq!(t.current_ping_ms(), None);
     }
@@ -378,5 +445,42 @@ mod tests {
         data.extend_from_slice(&[0xCD; 11]);
         data.extend_from_slice(&[0x05, 0x25, 0x01, 0x01]);
         assert!(has_ping_rq(&data));
+    }
+
+    /// A machine 1,000 s after boot whose wall clock reads 1_790_000_000_000.
+    fn fake_perf_clock() -> (i64, i64) {
+        (1_000_000, 1_790_000_000_000)
+    }
+
+    #[test]
+    fn perf_counter_timestamp_needs_no_request() {
+        let t = PingTracker::with_perf_clock(Some(fake_perf_clock));
+        // Sent 10 s ago by the counter, which is 1_789_999_990_000 on the wall
+        // clock; answered 64 ms later.
+        let sent = 990_000 + UNREAL_CLOCK_OFFSET_MS;
+        t.on_packet(&response(1_789_999_990_064, sent), SERVER);
+        assert_eq!(t.current_ping_ms(), Some(64));
+    }
+
+    #[test]
+    fn perf_counter_leaves_kr_tw_timestamps_alone() {
+        let t = PingTracker::with_perf_clock(Some(fake_perf_clock));
+        let now = 1_790_000_000_000;
+        t.on_packet(&response(now + 80, now + DOTNET_EPOCH_OFFSET_MS), SERVER);
+        assert_eq!(t.current_ping_ms(), Some(80), "read as wall-clock .NET ms, as before");
+    }
+
+    /// As captured 2026-10-01 04:01, after a Windows time sync moved the wall
+    /// clock 2.32 s: the counter did not move, so reading it live is still
+    /// exact. Wall minus counter is the boot time on the synced clock.
+    #[test]
+    fn perf_counter_matches_the_captured_request() {
+        fn clock() -> (i64, i64) {
+            let boot = 1_790_798_496_918 - 787_574_334;
+            (800_000_000, boot + 800_000_000)
+        }
+        let t = PingTracker::with_perf_clock(Some(clock));
+        t.on_packet(&response(1_790_798_497_088, 17_564_790_334), SERVER);
+        assert_eq!(t.current_ping_ms(), Some(170), "170 ms, as timed against the request");
     }
 }
