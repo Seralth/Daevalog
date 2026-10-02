@@ -6,7 +6,7 @@
 
 use gtk::prelude::*;
 
-fn on_gtk_thread<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Option<T> {
+pub(super) fn on_gtk_thread<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Option<T> {
     let (tx, rx) = std::sync::mpsc::channel();
     // Runs at once when called from the GTK thread itself, so no deadlock.
     gtk::glib::MainContext::default().invoke(move || {

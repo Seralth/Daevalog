@@ -3,7 +3,8 @@
 //!
 //! Ported so far: packet capture (libpcap), finding the game (/proc), the
 //! capture-permission check, the account token (the desktop keyring), dialogs
-//! (GTK), updates (pacman), and the clock Wine's QueryPerformanceCounter runs
+//! and the folder picker (GTK), screenshots (WebKit's own snapshot), updates
+//! (pacman, apt, dnf, zypper), and the clock Wine's QueryPerformanceCounter runs
 //! on. The rest still comes from `../unsupported/` and does the safe nothing
 //! until it is ported here.
 
@@ -12,14 +13,13 @@ pub mod clock;
 pub mod dialog;
 pub mod pcap;
 pub mod process;
+pub mod screen;
 pub mod secret;
 pub mod updater;
 pub mod window_detector;
 
 #[path = "../unsupported/hotkeys.rs"]
 pub mod hotkeys;
-#[path = "../unsupported/screen.rs"]
-pub mod screen;
 #[path = "../unsupported/shell.rs"]
 pub mod shell;
 #[path = "../unsupported/window.rs"]

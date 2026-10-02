@@ -38,6 +38,7 @@ desktop = [
     # Linux only (see the target section below); ignored elsewhere.
     "dep:secret-service",
     "dep:gtk",
+    "dep:webkit2gtk",
 ]
 
 # Both binaries are declared rather than left to auto-discovery, so adding the
@@ -121,6 +122,9 @@ windows = { version = "0.59", features = [
 secret-service = { version = "5.2", features = ["rt-async-io-crypto-rust"], optional = true }
 # Native dialogs (the update prompt, errors). The same GTK Tauri runs on.
 gtk = { version = "0.18", optional = true }
+# Screenshots: WebKit's snapshot of the meter's page. Same version and feature
+# as Tauri's own, so it is the one copy.
+webkit2gtk = { version = "2", features = ["v2_40"], optional = true }
 
 [dev-dependencies]
 flate2 = "1"
