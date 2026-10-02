@@ -1,8 +1,18 @@
 # A2Tools DPS Meter on Linux (Proton)
 
-The meter runs natively on Linux while AION 2 runs under Proton. Install the package for your distribution below: it sets up everything, packet-capture permission included, and updates itself. On a distribution with no package, [build it from source](#build-from-source-other-distributions). Linux support is new, so your logs help: see [Sending us your logs](#sending-us-your-logs).
+The meter runs natively on Linux while AION 2 runs under Proton. Install the package for your distribution: it sets up everything, packet-capture permission included, and updates itself. Only on a distribution with no package do you need to build it yourself. Linux support is new, so your logs help: see [Sending us your logs](#sending-us-your-logs).
 
 Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, Debian 12, Fedora 39 or newer, or any current Arch.
+
+## Contents
+
+- **[Install](#install):** [Ubuntu, Debian, Mint, Pop!_OS](#ubuntu-debian-linux-mint-pop_os) · [Fedora](#fedora) · [openSUSE](#opensuse) · [Arch, CachyOS, Manjaro, EndeavourOS](#cachyos-arch-manjaro-endeavouros)
+- **[Update](#update):** [automatically](#automatic-updates) · [by hand](#update-by-hand) · [which version do I have?](#which-version-do-i-have)
+- **[Start and remove](#start-and-remove)**
+- **[What works on Linux](#what-works-on-linux)**
+- **[Build from source](#build-from-source-other-distributions)**, for distributions with no package
+- **[Sending us your logs](#sending-us-your-logs)**
+- **[Troubleshooting](#troubleshooting)**
 
 ## Install
 
@@ -50,7 +60,43 @@ curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest-x86_64.pkg.tar.z
 sudo pacman -U a2tools-dps-meter-latest-x86_64.pkg.tar.zst
 ```
 
-### Starting it
+## Update
+
+### Automatic updates
+
+The packages update themselves: the Arch package from 2.0.33, the .deb and .rpm from 2.0.36, their first release. When a new version is out, the meter asks "A new update is available! … Download and install now?" shortly after it starts:
+
+1. Click **Yes**. The meter downloads the update and closes.
+2. Your desktop asks for your password, the same prompt as for other system changes. Enter it.
+3. The meter starts again by itself, on the new version.
+
+If you cancel the password prompt, the meter restarts on the old version and asks again next time.
+
+### Update by hand
+
+Run the two [Install](#install) commands for your distribution again: the address always serves the newest version, and installing it over the old one keeps your settings and fight history. Do this once if your version cannot update itself: on Arch, `2.0.30.r70.g0ac3fb6-1`, the first test package.
+
+### Which version do I have?
+
+Ubuntu, Debian, Mint, Pop!_OS:
+
+```bash
+dpkg -s a2-tools-dps-meter | grep Version
+```
+
+Fedora, openSUSE:
+
+```bash
+rpm -q a2-tools-dps-meter
+```
+
+Arch, CachyOS, Manjaro, EndeavourOS:
+
+```bash
+pacman -Q a2tools-dps-meter
+```
+
+## Start and remove
 
 The meter is in your application menu, as A2Tools DPS Meter. To start it from a terminal with its output saved, which helps if you send us logs:
 
@@ -58,19 +104,23 @@ The meter is in your application menu, as A2Tools DPS Meter. To start it from a 
 a2tools-dps-meter 2>&1 | tee ~/meter-console.log
 ```
 
-To remove it, use your package manager. The .deb and .rpm are named `a2-tools-dps-meter`, the Arch package `a2tools-dps-meter`: `sudo apt remove a2-tools-dps-meter`, `sudo dnf remove a2-tools-dps-meter`, `sudo zypper remove a2-tools-dps-meter` or `sudo pacman -R a2tools-dps-meter`.
+To remove it (the .deb and .rpm are named `a2-tools-dps-meter`, the Arch package `a2tools-dps-meter`):
 
-## Updates
+```bash
+sudo apt remove a2-tools-dps-meter
+```
 
-The packages update themselves (the Arch package from 2.0.33, the .deb and .rpm from their first release, 2.0.36). When a new version is out, the meter asks "A new update is available! … Download and install now?" shortly after it starts:
+```bash
+sudo dnf remove a2-tools-dps-meter
+```
 
-1. Click **Yes**. The meter downloads the update and closes.
-2. Your desktop asks for your password, the same prompt as for other system changes. Enter it.
-3. The meter starts again by itself, on the new version.
+```bash
+sudo zypper remove a2-tools-dps-meter
+```
 
-If you cancel the password prompt, the meter restarts on the old version and asks again next time. To install an update by hand instead, run the commands under [Install](#install) again.
-
-**On Arch, if `pacman -Q a2tools-dps-meter` says `2.0.30.r70.g0ac3fb6-1`** (the first test package): that version cannot update itself. Install the current package by hand once; every later version then arrives on its own.
+```bash
+sudo pacman -R a2tools-dps-meter
+```
 
 ## What works on Linux
 
@@ -210,7 +260,7 @@ The logs contain character names, yours and those of players near you, so send t
 | What you see | What to do |
 | --- | --- |
 | No update question, though a new version is out | Updates come only to an installed package. A build from source updates with `git pull` and a rebuild. |
-| The update asked for no password, or the meter did not come back | Install the current package by hand with the commands under [Install](#install). |
+| The update asked for no password, or the meter did not come back | Install the current package [by hand](#update-by-hand). |
 | Sign-in says the token could not be stored securely | No keyring is running. Install and enable KWallet (KDE) or GNOME Keyring, then sign in again. |
 | Build fails mentioning `webkit2gtk-4.1`, `pkg-config` or a missing library | Re-run the install line for your distribution. Distributions older than Ubuntu 22.04 lack `webkit2gtk-4.1` and cannot build it. |
 | `debug.log` says it failed to load libpcap | Install libpcap (`libpcap0.8` on Debian and Ubuntu, `libpcap` elsewhere), then start the meter again. |
