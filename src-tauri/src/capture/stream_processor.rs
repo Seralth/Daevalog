@@ -1176,6 +1176,9 @@ impl StreamProcessor {
                     if self.npc_lookup.is_boss(mob_type_id) {
                         self.data_storage.register_boss(real_actor_id);
                     }
+                    if self.npc_lookup.is_training_dummy(mob_type_id) {
+                        self.data_storage.register_training_dummy(real_actor_id);
+                    }
 
                     // Try to extract HP
                     let mut hp_scan = scan_offset + 3;

@@ -274,6 +274,17 @@ struct Inner {
     dead_entity_ids: HashSet<i32>,
     /// Boss entity IDs identified from NPC DB boss flags
     boss_entity_ids: HashSet<i32>,
+    /// Training dummies (scarecrows, punching bags) among the entities spawned,
+    /// from the NPC table. Damage on them follows `held_dot_ticks`.
+    training_dummy_ids: HashSet<i32>,
+    /// On a training dummy, DoT ticks that landed after their actor's latest
+    /// direct hit, keyed (target, actor). They are counted when that actor
+    /// hits directly again; if the player has stopped attacking, they never
+    /// are, and the fight's time ends at the last direct hit. A player asked
+    /// for this (issue #6): DoTs ticking on after you stop dragged a training
+    /// fight's DPS down. Bosses keep every tick, since there players stop
+    /// attacking to dodge.
+    held_dot_ticks: HashMap<(i32, i32), Vec<ParsedDamagePacket>>,
     /// Whether the current combat segment has any boss damage
     has_boss_in_segment: bool,
     current_target: i32,
@@ -335,6 +346,8 @@ impl DataStorage {
                 hostile_target_ids: HashSet::new(),
                 dead_entity_ids: HashSet::new(),
                 boss_entity_ids: HashSet::new(),
+                training_dummy_ids: HashSet::new(),
+                held_dot_ticks: HashMap::new(),
                 has_boss_in_segment: false,
                 current_target: 0,
                 local_player_id: None,
@@ -566,85 +579,25 @@ impl DataStorage {
         if is_boss_target && !inner.has_boss_in_segment && !inner.target_combat.is_empty() {
             tracing::info!("Boss encounter auto-reset: boss entity {} hit, clearing trash segment", target_id);
             inner.target_combat.clear();
+            inner.held_dot_ticks.clear();
             inner.dead_entity_ids.clear();
             inner.has_boss_in_segment = true;
         } else if is_boss_target {
             inner.has_boss_in_segment = true;
         }
 
-        let timestamp = pdp.timestamp();
-        let packet_id = pdp.id();
-
-        // Get or create target combat data
-        let target_data = inner.target_combat.entry(target_id).or_insert_with(|| {
-            TargetCombatData::new(target_id, timestamp)
-        });
-
-        // Idle reset check (30s gap)
-        if target_data.last_damage_time > 0
-            && timestamp - target_data.last_damage_time > IDLE_RESET_MS
-        {
-            tracing::info!("Idle reset: target {} — gap {}ms", target_id,
-                timestamp - target_data.last_damage_time);
-            *target_data = TargetCombatData::new(target_id, timestamp);
+        if inner.training_dummy_ids.contains(&target_id) {
+            let key = (target_id, actor_id);
+            if pdp.is_dot() {
+                inner.held_dot_ticks.entry(key).or_default().push(pdp);
+                return;
+            }
+            // A direct hit: the DoT ticks since the last one count after all.
+            for tick in inner.held_dot_ticks.remove(&key).unwrap_or_default() {
+                apply_damage(&mut inner, &tick);
+            }
         }
-
-        // Update target timing
-        if timestamp < target_data.first_damage_time {
-            target_data.first_damage_time = timestamp;
-        }
-        if timestamp > target_data.last_damage_time {
-            target_data.last_damage_time = timestamp;
-        }
-        let total_dmg = pdp.total_damage();
-        target_data.total_damage += total_dmg as i64;
-        target_data.last_packet_id = packet_id;
-
-        // Update actor data within target
-        let actor_data = target_data.actors.entry(actor_id).or_insert_with(ActorCombatData::new);
-        actor_data.total_damage += total_dmg as i64;
-        if timestamp > actor_data.last_damage_time {
-            actor_data.last_damage_time = timestamp;
-        }
-        if actor_data.job.is_none() {
-            actor_data.job = JobClass::convert_from_skill(skill_code);
-        }
-
-        // Update skill data
-        let skill_key = (skill_code, pdp.is_dot());
-        let skill_data = actor_data.skills.entry(skill_key).or_insert_with(|| {
-            SkillCombatData::new(skill_code, pdp.is_dot())
-        });
-        skill_data.hit_count += 1;
-        // saturating_add: per-skill totals are i32 and a long boss fight can
-        // exceed i32::MAX — overflow panics in debug and wraps to negative in
-        // release. Cap instead of crashing/wrapping.
-        skill_data.total_damage = skill_data.total_damage.saturating_add(total_dmg);
-        let hit_dmg = pdp.damage();
-        if hit_dmg < skill_data.min_damage { skill_data.min_damage = hit_dmg; }
-        if hit_dmg > skill_data.max_damage { skill_data.max_damage = hit_dmg; }
-        if pdp.is_crit() { skill_data.crit_count += 1; }
-        if pdp.specials().contains(&SpecialDamage::Back) { skill_data.back_count += 1; }
-        if pdp.specials().contains(&SpecialDamage::Frontal) { skill_data.frontal_count += 1; }
-        if pdp.specials().contains(&SpecialDamage::Parry) { skill_data.parry_count += 1; }
-        if pdp.specials().contains(&SpecialDamage::Perfect) { skill_data.perfect_count += 1; }
-        if pdp.specials().contains(&SpecialDamage::Double) { skill_data.double_count += 1; }
-        if pdp.specials().contains(&SpecialDamage::Smite) { skill_data.smite_count += 1; }
-        if pdp.specials().contains(&SpecialDamage::PowerShard) { skill_data.powershard_count += 1; }
-        if pdp.multi_hit_count() > 0 {
-            skill_data.multi_hit_count += 1;
-            skill_data.multi_hit_damage = skill_data.multi_hit_damage.saturating_add(pdp.multi_hit_damage());
-            skill_data.multi_hit_hits += pdp.multi_hit_count();
-        }
-        skill_data.heal_amount = skill_data.heal_amount.saturating_add(pdp.heal_amount());
-        // Track regen (life-steal) on the actor aggregate
-        if pdp.heal_amount() > 0 {
-            actor_data.regen += pdp.heal_amount() as i64;
-        }
-        skill_data.hit_timestamps.push(timestamp);
-        for (i, &flag) in pdp.spec_flags().iter().enumerate() {
-            if flag { skill_data.spec_flags[i] = true; }
-        }
+        apply_damage(&mut inner, &pdp);
 
         self.damage_generation.fetch_add(1, Ordering::Relaxed);
         self.last_damage_ms.store(now_ms(), Ordering::Relaxed);
@@ -691,6 +644,11 @@ impl DataStorage {
 
     pub fn register_boss(&self, entity_id: i32) {
         self.inner.write().boss_entity_ids.insert(entity_id);
+    }
+
+    /// An entity the NPC table calls a training dummy. See `held_dot_ticks`.
+    pub fn register_training_dummy(&self, entity_id: i32) {
+        self.inner.write().training_dummy_ids.insert(entity_id);
     }
 
     pub fn is_boss(&self, entity_id: i32) -> bool {
@@ -1095,6 +1053,8 @@ impl DataStorage {
     pub fn flush(&self) {
         let mut inner = self.inner.write();
         inner.target_combat.clear();
+        inner.held_dot_ticks.clear();
+        inner.training_dummy_ids.clear();
         inner.actor_jobs.clear();
         inner.summon_storage.clear();
         inner.known_player_ids.clear();
@@ -1117,6 +1077,7 @@ impl DataStorage {
     pub fn flush_combat_only(&self) {
         let mut inner = self.inner.write();
         inner.target_combat.clear();
+        inner.held_dot_ticks.clear();
         inner.hostile_target_ids.clear();
         inner.dead_entity_ids.clear();
         inner.has_boss_in_segment = false;
@@ -1183,6 +1144,86 @@ fn has_cjk(s: &str) -> bool {
         || (0x3400..=0x4DBF).contains(&cp) || (0x20000..=0x2A6DF).contains(&cp)
         || (0x1100..=0x11FF).contains(&cp)
     })
+}
+
+/// Count one damage record into its target's and actor's aggregates.
+fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
+    let skill_code = pdp.skill_code();
+    let actor_id = pdp.actor_id();
+    let target_id = pdp.target_id();
+    let timestamp = pdp.timestamp();
+    let packet_id = pdp.id();
+
+    // Get or create target combat data
+    let target_data = inner.target_combat.entry(target_id).or_insert_with(|| {
+        TargetCombatData::new(target_id, timestamp)
+    });
+
+    // Idle reset check (30s gap)
+    if target_data.last_damage_time > 0
+        && timestamp - target_data.last_damage_time > IDLE_RESET_MS
+    {
+        tracing::info!("Idle reset: target {} — gap {}ms", target_id,
+            timestamp - target_data.last_damage_time);
+        *target_data = TargetCombatData::new(target_id, timestamp);
+    }
+
+    // Update target timing
+    if timestamp < target_data.first_damage_time {
+        target_data.first_damage_time = timestamp;
+    }
+    if timestamp > target_data.last_damage_time {
+        target_data.last_damage_time = timestamp;
+    }
+    let total_dmg = pdp.total_damage();
+    target_data.total_damage += total_dmg as i64;
+    target_data.last_packet_id = packet_id;
+
+    // Update actor data within target
+    let actor_data = target_data.actors.entry(actor_id).or_insert_with(ActorCombatData::new);
+    actor_data.total_damage += total_dmg as i64;
+    if timestamp > actor_data.last_damage_time {
+        actor_data.last_damage_time = timestamp;
+    }
+    if actor_data.job.is_none() {
+        actor_data.job = JobClass::convert_from_skill(skill_code);
+    }
+
+    // Update skill data
+    let skill_key = (skill_code, pdp.is_dot());
+    let skill_data = actor_data.skills.entry(skill_key).or_insert_with(|| {
+        SkillCombatData::new(skill_code, pdp.is_dot())
+    });
+    skill_data.hit_count += 1;
+    // saturating_add: per-skill totals are i32 and a long boss fight can
+    // exceed i32::MAX — overflow panics in debug and wraps to negative in
+    // release. Cap instead of crashing/wrapping.
+    skill_data.total_damage = skill_data.total_damage.saturating_add(total_dmg);
+    let hit_dmg = pdp.damage();
+    if hit_dmg < skill_data.min_damage { skill_data.min_damage = hit_dmg; }
+    if hit_dmg > skill_data.max_damage { skill_data.max_damage = hit_dmg; }
+    if pdp.is_crit() { skill_data.crit_count += 1; }
+    if pdp.specials().contains(&SpecialDamage::Back) { skill_data.back_count += 1; }
+    if pdp.specials().contains(&SpecialDamage::Frontal) { skill_data.frontal_count += 1; }
+    if pdp.specials().contains(&SpecialDamage::Parry) { skill_data.parry_count += 1; }
+    if pdp.specials().contains(&SpecialDamage::Perfect) { skill_data.perfect_count += 1; }
+    if pdp.specials().contains(&SpecialDamage::Double) { skill_data.double_count += 1; }
+    if pdp.specials().contains(&SpecialDamage::Smite) { skill_data.smite_count += 1; }
+    if pdp.specials().contains(&SpecialDamage::PowerShard) { skill_data.powershard_count += 1; }
+    if pdp.multi_hit_count() > 0 {
+        skill_data.multi_hit_count += 1;
+        skill_data.multi_hit_damage = skill_data.multi_hit_damage.saturating_add(pdp.multi_hit_damage());
+        skill_data.multi_hit_hits += pdp.multi_hit_count();
+    }
+    skill_data.heal_amount = skill_data.heal_amount.saturating_add(pdp.heal_amount());
+    // Track regen (life-steal) on the actor aggregate
+    if pdp.heal_amount() > 0 {
+        actor_data.regen += pdp.heal_amount() as i64;
+    }
+    skill_data.hit_timestamps.push(timestamp);
+    for (i, &flag) in pdp.spec_flags().iter().enumerate() {
+        if flag { skill_data.spec_flags[i] = true; }
+    }
 }
 
 fn set_game_identity(inner: &mut Inner, id: i64, name: Option<String>) {
@@ -1376,6 +1417,48 @@ mod tests {
         s.inner.write().party_roster_at_ms -= 15 * 60 * 1000;
         assert!(!s.party_placeholders_wanted());
         assert_eq!(s.get_party_members().len(), 2, "the roster itself is kept, for combat power");
+    }
+
+    fn hit(actor: i32, target: i32, at: i64, damage: i32, dot: bool) -> ParsedDamagePacket {
+        let mut p = ParsedDamagePacket::new();
+        p.set_actor_id(actor);
+        p.set_target_id(target);
+        p.set_skill_code(11010000);
+        p.set_damage(damage);
+        p.set_dot(dot);
+        p.set_timestamp(at);
+        p
+    }
+
+    fn totals(s: &DataStorage, target: i32) -> (i64, i64) {
+        let snap = s.get_combat_snapshot();
+        let t = &snap[&target];
+        (t.total_damage, t.last_damage_time - t.first_damage_time)
+    }
+
+    #[test]
+    fn on_a_training_dummy_dot_after_the_last_direct_hit_does_not_count() {
+        let s = DataStorage::new();
+        s.register_training_dummy(500);
+        s.append_damage(hit(1454, 500, 1_000, 100, false));
+        s.append_damage(hit(1454, 500, 2_000, 50, true));
+        assert_eq!(totals(&s, 500), (100, 0), "the tick waits for the next direct hit");
+
+        s.append_damage(hit(1454, 500, 3_000, 100, false));
+        assert_eq!(totals(&s, 500), (250, 2_000), "a direct hit brings the tick in");
+
+        // The player stops; their DoT ticks on.
+        s.append_damage(hit(1454, 500, 4_000, 50, true));
+        s.append_damage(hit(1454, 500, 5_000, 50, true));
+        assert_eq!(totals(&s, 500), (250, 2_000), "time ends at the last direct hit");
+    }
+
+    #[test]
+    fn on_anything_else_every_dot_tick_counts() {
+        let s = DataStorage::new();
+        s.append_damage(hit(1454, 600, 1_000, 100, false));
+        s.append_damage(hit(1454, 600, 2_000, 50, true));
+        assert_eq!(totals(&s, 600), (150, 1_000));
     }
 
     #[test]
