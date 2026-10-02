@@ -460,6 +460,14 @@ fn read_cached_icon(state: tauri::State<'_, AppState>, key: String) -> Option<St
 }
 
 #[tauri::command]
+fn log_from_ui(message: String) {
+    // A problem only the webview can see (an icon the CDN would not serve, say),
+    // for debug.log. The UI keeps these few; this keeps each one short.
+    let message: String = message.chars().take(300).collect();
+    tracing::warn!("UI: {message}");
+}
+
+#[tauri::command]
 fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, data: String) {
     let cache_dir = state.app_data_dir.join("icon_cache");
     let _ = std::fs::create_dir_all(&cache_dir);
@@ -2126,6 +2134,7 @@ pub fn run() {
             open_url,
             read_cached_icon,
             write_cached_icon,
+            log_from_ui,
             resize_window,
             list_monitors,
             open_details_window,

@@ -620,6 +620,10 @@
       }).catch(() => {});
       return null;
     },
+    // A line in debug.log, for problems only the UI sees.
+    logToDebug(message) {
+      invoke("log_from_ui", { message: String(message) }).catch(() => {});
+    },
     writeCachedIcon(key, data) {
       if (!key || !data) return;
       if (!window._iconCache) window._iconCache = {};

@@ -179,6 +179,23 @@
   // In-memory blob URL cache: CDN url → blob URL (instant, no decode cost)
   const blobCache = new Map();    // url → blobUrl
   const blobPending = new Map();  // url → Promise<blobUrl|null>
+  // URLs whose fetch failed. The icon CDN only sends CORS headers to
+  // NCSoft's own sites (aion2.plaync.com, www.plaync.com), so a fetch from the
+  // meter's webview or from a2tools.app is refused, while a plain <img> load
+  // of the same URL needs no CORS and works. Those go straight to <img>, and
+  // are not fetched again on every redraw.
+  const fetchFailed = new Set();
+
+  // The first few icon failures go to debug.log, so a player's log tells
+  // "the CDN refused the download" (handled: a direct load follows) apart from
+  // "the image could not be loaded at all" (the CDN is blocked or unreachable
+  // on their network).
+  let failuresLogged = 0;
+  const logFailure = (what) => {
+    if (failuresLogged >= 5) return;
+    failuresLogged += 1;
+    window.javaBridge?.logToDebug?.(`Skill icon: ${what}`);
+  };
 
   // Derive a safe filename from a CDN URL for disk caching
   const urlToCacheKey = (url) => {
@@ -189,6 +206,7 @@
   const fetchAsBlob = (url) => {
     if (blobCache.has(url)) return Promise.resolve(blobCache.get(url));
     if (blobPending.has(url)) return blobPending.get(url);
+    if (fetchFailed.has(url)) return Promise.resolve(null);
     // Only cache CDN URLs (not data: URIs)
     if (!url.startsWith("http")) return Promise.resolve(null);
 
@@ -237,7 +255,11 @@
         blobCache.set(url, blobUrl);
         return blobUrl;
       })
-      .catch(() => null)
+      .catch((err) => {
+        fetchFailed.add(url);
+        logFailure(`download refused (${err?.message || err}); loading it directly instead: ${url}`);
+        return null;
+      })
       .finally(() => blobPending.delete(url));
     blobPending.set(url, p);
     return p;
@@ -293,14 +315,17 @@
       if (blobUrl) {
         imgEl.src = blobUrl;
       } else {
-        // CDN fetch failed — fall through to next candidate
-        handleImgError(imgEl);
+        // The fetch was refused (see fetchFailed): load the image directly.
+        // If that fails too, its error handler moves on to the next candidate.
+        imgEl.src = primaryUrl;
       }
     });
   };
 
   const handleImgError = (imgEl) => {
     if (!imgEl) return;
+    const failedSrc = imgEl.getAttribute("src") || "";
+    if (failedSrc.startsWith("http")) logFailure(`could not load ${failedSrc}`);
     let candidates = [];
     try {
       const raw = imgEl.dataset.iconCandidates || "[]";
