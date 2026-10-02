@@ -14,6 +14,7 @@ Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, D
 - **[What works on Linux](#what-works-on-linux)**
 - **[Build from source](#build-from-source-other-distributions)**, for distributions with no package
 - **[Sending us your logs](#sending-us-your-logs)**
+- **[Tiling desktops](#tiling-desktops-hyprland-sway-i3)** (Hyprland, Sway, i3)
 - **[Troubleshooting](#troubleshooting)**
 
 ## Install
@@ -332,6 +333,27 @@ Along with them, tell us:
 
 The logs contain character names, yours and those of players near you, so send them only to us: on [Discord](https://discord.gg/Aion2Global) or in a [GitHub issue](https://github.com/taengu/A2Tools-DPS-Meter/issues).
 
+## Tiling desktops (Hyprland, Sway, i3)
+
+A tiling window manager tiles every new window unless told otherwise, which breaks an overlay: the meter is squeezed beside the game, and the tooltips on its damage bars appear in the wrong place. Give the meter's window (class `a2tools-dps-meter`) a rule that makes it float, keeps it on every workspace, and turns off blur and borders.
+
+On Hyprland, a player reported this rule works:
+
+```lua
+hl.window_rule({
+    name = "aion-dps-meter",
+    match = {
+        class = "^(a2tools\\-dps\\-meter)$",
+    },
+    float = true,
+    pin = true,
+    no_blur = true,
+    border_size = 0,
+})
+```
+
+That is Hyprland's Lua configuration. If you use `hyprland.conf` instead, set the same four things (float, pin, no blur, no border) for that window class in its window-rule syntax. On Sway and i3, the equivalent is `floating enable` and `sticky enable` for `app_id`/`class` `a2tools-dps-meter`.
+
 ## Troubleshooting
 
 | What you see | What to do |
@@ -344,7 +366,8 @@ The logs contain character names, yours and those of players near you, so send t
 | The meter warns it is not running as admin, or `debug.log` has no `Capture active` lines | The capture permission is missing. Package: reinstall it. Build from source: run the `setcap` line again (a rebuild loses it). |
 | `debug.log` says `No AION2 window found` while the game is running | The meter did not find the game process. Send us the output of `ps aux \| grep -i aion` along with your logs. |
 | `debug.log` says `Not locked yet` with `0 with game markers` while you fight | Capture sees traffic but not the game's. Tell us if you use a VPN or ping reducer. |
-| The meter's window is blank or white | Start it with `WEBKIT_DISABLE_DMABUF_RENDERER=1` in front of the command (a known issue with some graphics drivers). |
+| The window never opens, and the terminal says `Error 71 (Protocol error) dispatching to Wayland display`; or the window is blank or white | A WebKit renderer some Wayland setups reject (NVIDIA drivers especially). From 2.0.38 the meter turns it off itself. On an older version, start it with `WEBKIT_DISABLE_DMABUF_RENDERER=1 a2tools-dps-meter`. If that does not help, try `GDK_BACKEND=x11 a2tools-dps-meter`, which runs it through XWayland, and tell us. |
 | The meter goes behind the game | Run the game borderless or windowed. On Wayland an app cannot force itself on top of a fullscreen game. |
+| On a tiling desktop the meter is tiled beside the game, or its tooltips appear in the wrong place | See [Tiling desktops](#tiling-desktops-hyprland-sway-i3). |
 
 Stuck on something not listed? Send what you have so far, logs included.
