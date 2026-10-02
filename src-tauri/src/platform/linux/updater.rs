@@ -66,6 +66,15 @@ fn manager() -> Option<Manager> {
     if !installed || !Path::new("/usr/bin/pkexec").exists() {
         return None;
     }
+    // Bazzite, Silverblue, Kinoite and the other image-based Fedoras: /usr is
+    // read-only, a package is layered with rpm-ostree and only takes effect
+    // after a reboot. The meter comes from our RPM repository there and is
+    // updated with the system (`rpm-ostree upgrade`, or the distribution's
+    // automatic updates), so offering a dnf install would only fail and ask
+    // again at every start.
+    if Path::new("/run/ostree-booted").exists() {
+        return None;
+    }
     if succeeds("/usr/bin/pacman", &["-Qqo", INSTALLED_BINARY]) {
         return Some(Manager::Pacman);
     }

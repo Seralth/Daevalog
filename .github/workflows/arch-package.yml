@@ -71,7 +71,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
-            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev rpm
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev rpm cpio
       # Files a clean checkout lacks (gitignored mirrors of src/data), as in
       # the PKGBUILD's build().
       - name: Frontend data
@@ -84,14 +84,40 @@ jobs:
         run: |
           npm ci
           npx tauri build --bundles deb,rpm
-      # Tauri names them after the product ("A2Tools DPS Meter_2.0.36_amd64.deb");
+      # Tauri's .rpm can only grant capture permission from a %post script,
+      # which rpm-ostree (Bazzite and the other image-based Fedoras) runs
+      # without the privilege to do it. Repackage its files with our spec,
+      # which declares the permission in the package (%caps) instead.
+      - name: Rebuild the .rpm
+        run: |
+          version=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2)
+          mkdir -p rpmpayload
+          (cd rpmpayload && rpm2cpio ../src-tauri/target/release/bundle/rpm/*.rpm | cpio -idm --quiet)
+          (
+            cd rpmpayload
+            find "./usr/lib/A2Tools DPS Meter" -type d | sed 's|^\.||; s|.*|%dir "&"|'
+            find . \( -type f -o -type l \) | sed 's|^\.||' | while IFS= read -r f; do
+              if [ "$f" = /usr/bin/a2tools-dps-meter ]; then
+                printf '%%caps(cap_net_raw,cap_net_admin=eip) "%s"\n' "$f"
+              else
+                printf '"%s"\n' "$f"
+              fi
+            done
+          ) > rpm-files.txt
+          head -20 rpm-files.txt
+          rpmbuild -bb packaging/linux/a2-tools-dps-meter.spec \
+            --define "_topdir $PWD/rpmbuild" \
+            --define "pkgversion $version" \
+            --define "payload $PWD/rpmpayload" \
+            --define "filelist $PWD/rpm-files.txt"
+      # Tauri names the .deb after the product ("A2Tools DPS Meter_2.0.36_amd64.deb");
       # the CDN and the updater use the package name instead.
       - name: Name the packages
         run: |
           version=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2)
           mkdir -p out
           cp src-tauri/target/release/bundle/deb/*.deb "out/a2tools-dps-meter_${version}_amd64.deb"
-          cp src-tauri/target/release/bundle/rpm/*.rpm "out/a2tools-dps-meter-${version}-1.x86_64.rpm"
+          cp rpmbuild/RPMS/x86_64/*.rpm "out/a2tools-dps-meter-${version}-1.x86_64.rpm"
           ls -la out
       - name: What is in them
         run: |
@@ -99,6 +125,7 @@ jobs:
           dpkg-deb --contents out/*.deb | grep -v '/$'
           rpm -qp --requires out/*.rpm
           rpm -qp --scripts out/*.rpm
+          rpm -qp --filecaps out/*.rpm | grep cap_net_raw
           rpm -qlp out/*.rpm | grep -E '^/usr/(bin|share/applications)/'
       - uses: actions/upload-artifact@v4
         with:
@@ -138,3 +165,69 @@ jobs:
           # Under one of the names platform/linux/pcap.rs loads it by.
           ldconfig -p | grep -qE 'libpcap\.so\.(1|0\.8) ' || { echo "libpcap missing"; exit 1; }
           ls /usr/share/applications/ | grep -i a2tools
+
+  # The RPM repository on the CDN (linux/rpm/), which Fedora and the
+  # image-based Fedoras install and update the meter from.
+  rpm-repo:
+    name: RPM repository
+    needs: deb-rpm
+    runs-on: ubuntu-latest
+    container: fedora:41
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: deb-rpm-packages
+      - name: Metadata
+        run: |
+          dnf install -y createrepo_c
+          mkdir -p repo/rpm
+          cp a2tools-dps-meter-*.x86_64.rpm repo/rpm/
+          createrepo_c repo/rpm
+          ls -laR repo
+      # Installed from the repository, the way a player does, rather than
+      # from the file.
+      - name: Install from it
+        run: |
+          printf '[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file://%s/repo/rpm/\ngpgcheck=0\n' "$PWD" \
+            > /etc/yum.repos.d/a2tools.repo
+          dnf install -y a2-tools-dps-meter
+          getcap /usr/bin/a2tools-dps-meter | grep cap_net_raw
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rpm-repo
+          path: repo
+          if-no-files-found: error
+
+  # Bazzite publishes its system as a container image. Installing into it is
+  # not a reboot into a layered deployment, but it is Bazzite's own rpm-ostree
+  # and libraries, and shows whether the capture permission arrives without
+  # any install script.
+  bazzite:
+    name: Install on Bazzite
+    needs: rpm-repo
+    runs-on: ubuntu-latest
+    steps:
+      # The image is large; the runner needs the room.
+      - name: Disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: actions/download-artifact@v4
+        with:
+          name: rpm-repo
+          path: repo
+      - name: Install
+        run: |
+          docker run --rm -v "$PWD/repo:/repo:ro" ghcr.io/ublue-os/bazzite:stable bash -euc '
+            cat /etc/os-release | grep -E "^(NAME|VERSION)="
+            printf "[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file:///repo/rpm/\ngpgcheck=0\n" > /etc/yum.repos.d/a2tools.repo
+            if rpm-ostree install a2-tools-dps-meter; then
+              echo "installed with rpm-ostree"
+            else
+              echo "rpm-ostree could not install here; trying dnf"
+              dnf install -y a2-tools-dps-meter
+            fi
+            getcap /usr/bin/a2tools-dps-meter | tee /dev/stderr | grep -q cap_net_raw
+            if ldd /usr/bin/a2tools-dps-meter | grep "not found"; then exit 1; fi
+            ldconfig -p | grep -qE "libpcap\.so\.(1|0\.8) "
+          '

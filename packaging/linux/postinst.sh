@@ -1,9 +1,10 @@
 #!/bin/sh
-# Run after the .deb or .rpm installs or upgrades the meter (see
-# src-tauri/tauri.conf.json, bundle.linux). Packet capture needs CAP_NET_RAW;
-# grant it to the installed binary so the meter never has to run as root. A
-# new binary (every upgrade) needs it again. The Arch package does the same in
-# packaging/arch/a2tools-dps-meter.install.
+# Run after the .deb installs or upgrades the meter (see
+# src-tauri/tauri.conf.json, bundle.linux.deb). Packet capture needs
+# CAP_NET_RAW; grant it to the installed binary so the meter never has to run
+# as root. A new binary (every upgrade) needs it again. The Arch package does
+# the same in packaging/arch/a2tools-dps-meter.install; the .rpm declares it in
+# the package instead (packaging/linux/a2-tools-dps-meter.spec).
 
 BIN=/usr/bin/a2tools-dps-meter
 

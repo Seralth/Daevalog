@@ -53,13 +53,6 @@
           "libcap2-bin"
         ],
         "postInstallScript": "../packaging/linux/postinst.sh"
-      },
-      "rpm": {
-        "depends": [
-          "libpcap.so.1()(64bit)",
-          "/usr/sbin/setcap"
-        ],
-        "postInstallScript": "../packaging/linux/postinst.sh"
       }
     }
   }
