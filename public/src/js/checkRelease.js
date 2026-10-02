@@ -24,6 +24,8 @@
       try {
         if (once) return;
         once = true;
+        // Local build, pinned on purpose: upstream releases lack its fixes.
+        return;
 
         // Wait for the bridge AND for the async version fetch to complete
         for (
