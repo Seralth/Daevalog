@@ -218,7 +218,9 @@ jobs:
           path: repo
       - name: Install
         run: |
-          docker run --rm -v "$PWD/repo:/repo:ro" ghcr.io/ublue-os/bazzite:stable bash -euc '
+          # Podman, not Docker: the image has more layers than Docker allows
+          # ("max depth exceeded").
+          sudo podman run --rm -v "$PWD/repo:/repo:ro" ghcr.io/ublue-os/bazzite:stable bash -euc '
             cat /etc/os-release | grep -E "^(NAME|VERSION)="
             printf "[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file:///repo/rpm/\ngpgcheck=0\n" > /etc/yum.repos.d/a2tools.repo
             if rpm-ostree install a2-tools-dps-meter; then
