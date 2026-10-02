@@ -250,8 +250,13 @@ jobs:
           path: pkg
       - name: Create the box and install
         run: |
+          # Ubuntu's distrobox (1.7) is older than SteamOS's; use a current one.
           sudo apt-get update
-          sudo apt-get install -y podman distrobox
+          sudo apt-get install -y podman
+          curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sh -s -- --prefix ~/.local
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          distrobox version
           # A rootful box asks for a password for the user inside it on first
           # entry; a player types one, CI cannot.
           distrobox create --root --yes --name a2tools --image docker.io/library/archlinux:latest \n            --absolutely-disable-root-password-i-am-really-positively-sure
