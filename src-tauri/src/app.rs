@@ -1648,7 +1648,12 @@ fn decode_replay_hex(hex: &str) -> Option<Vec<u8>> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Before anything starts a thread: it may set environment variables.
+    let process_note = platform::process::prepare();
     logging::logger::init_logging();
+    if let Some(note) = process_note {
+        tracing::info!("{note}");
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())

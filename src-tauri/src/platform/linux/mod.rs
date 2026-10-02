@@ -11,6 +11,7 @@ pub mod admin;
 pub mod clock;
 pub mod dialog;
 pub mod pcap;
+pub mod process;
 pub mod secret;
 pub mod updater;
 pub mod window_detector;

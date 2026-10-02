@@ -36,7 +36,7 @@ pub mod hotkeys;
 pub mod procfs;
 pub mod screenshot;
 
-pub use os::{admin, clock, dialog, pcap, secret, shell, updater, window, window_detector};
+pub use os::{admin, clock, dialog, pcap, process, secret, shell, updater, window, window_detector};
 
 /// The installer the update manifest names for each kind of install: the MSI
 /// for Windows, and on Linux one package per package manager. Each platform's
