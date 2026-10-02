@@ -308,7 +308,14 @@ impl DpsCalculator {
             if summon_data.contains_key(&uid) { continue; }
             if nickname_data.contains_key(&uid) { continue; }
             let job = &data.job;
-            if job.is_empty() { continue; }
+            // A classless entity was dropped here, and with it its damage. Some
+            // spirits only use skills that name no class (16110004, 100044…), so
+            // another Elementalist's spirits lost about a tenth of a boss fight
+            // (2026-10-03). One that never acted as a player can still go to
+            // its owner by power scalar, matched against players of any class;
+            // anything else classless is left for the row filter as before.
+            let classless = job.is_empty();
+            if classless && known_players.contains(&uid) { continue; }
             let my_skills = skill_counts.get(&uid).copied().unwrap_or(0);
 
             // Original path, unchanged: an entity never classified as a player,
@@ -316,7 +323,7 @@ impl DpsCalculator {
             // "named" test is what makes "exactly one candidate" meaningful here —
             // without it, other unnamed orphans of the same class count as
             // candidates and the rule stops firing at all.
-            if !known_players.contains(&uid) {
+            if !classless && !known_players.contains(&uid) {
                 let same_job: Vec<_> = dps_data.map.iter()
                     .filter(|(oid, od)| **oid != uid && od.job == *job && nickname_data.contains_key(oid))
                     .map(|(&oid, _)| oid)
@@ -336,11 +343,22 @@ impl DpsCalculator {
             if my_scalars.is_empty() || my_skills == 0 {
                 continue;
             }
+            // The skill-count guard is only for an actor that might be a real
+            // player. One that was never classified as a player (it spawned as
+            // a summon) cannot be, and holding it to the guard failed: another
+            // player's Elementalist spirits use four to six skills each, more
+            // than a third of what their owner showed in a one-minute boss
+            // fight, so each stayed its own `#id` row (2026-10-03, two
+            // Elementalists in one party). The owner must be a real player,
+            // so one orphan never claims another that shares its scalar.
+            let needs_rotation = known_players.contains(&uid);
             let owners: Vec<i32> = dps_data.map.iter()
                 .filter(|(oid, od)| {
                     **oid != uid
-                        && od.job == *job
-                        && skill_counts.get(*oid).copied().unwrap_or(0) >= 3 * my_skills
+                        && (od.job == *job || (classless && !od.job.is_empty()))
+                        && known_players.contains(*oid)
+                        && (!needs_rotation
+                            || skill_counts.get(*oid).copied().unwrap_or(0) >= 3 * my_skills)
                         && scalars.get(*oid).is_some_and(|s| !s.is_disjoint(my_scalars))
                 })
                 .map(|(&oid, _)| oid)
