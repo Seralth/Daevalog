@@ -141,8 +141,11 @@ impl CaptureDispatcher {
         self.dot_skill_ids = ids;
     }
 
-    pub fn set_suspended(&self, suspended: bool) {
-        self.suspended.store(suspended, Ordering::SeqCst);
+    /// Share the "suspended" switch with whoever flips it (the header's
+    /// suspend button, through `suspend_capture`). While it is on, captured
+    /// packets are dropped, so nothing is counted and the fight timer stops.
+    pub fn use_suspend_flag(&mut self, flag: Arc<AtomicBool>) {
+        self.suspended = flag;
     }
 
     /// Run the dispatch loop, consuming packets from the channel.

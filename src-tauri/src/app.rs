@@ -68,6 +68,9 @@ pub struct AppState {
     /// one-shot `reqwest::get`, which builds a fresh client and TLS stack per
     /// call; anything periodic wants a pool rather than a handshake every time.
     pub http: reqwest::Client,
+    /// The header's suspend button: while set, the capture dispatcher drops
+    /// every packet. Shared with it (`CaptureDispatcher::use_suspend_flag`).
+    pub capture_suspended: Arc<std::sync::atomic::AtomicBool>,
 }
 
 // ===== TAURI COMMANDS =====
@@ -457,6 +460,20 @@ fn quit_app(app: tauri::AppHandle) {
 fn read_cached_icon(state: tauri::State<'_, AppState>, key: String) -> Option<String> {
     let path = state.app_data_dir.join("icon_cache").join(&key);
     std::fs::read_to_string(&path).ok()
+}
+
+#[tauri::command]
+fn suspend_capture(state: tauri::State<'_, AppState>, suspended: bool) {
+    // The header's suspend button. It was wired to empty stubs since the move
+    // to Tauri, so it changed its icon and the status line but counting went
+    // on (a player found it in 2.0.37, issue #6).
+    state.capture_suspended.store(suspended, std::sync::atomic::Ordering::SeqCst);
+    tracing::info!("Capture {}", if suspended { "suspended" } else { "resumed" });
+}
+
+#[tauri::command]
+fn is_capture_suspended(state: tauri::State<'_, AppState>) -> bool {
+    state.capture_suspended.load(std::sync::atomic::Ordering::SeqCst)
 }
 
 #[tauri::command]
@@ -1746,7 +1763,9 @@ pub fn run() {
                     .timeout(Duration::from_secs(30))
                     .build()
                     .unwrap_or_default(),
+                capture_suspended: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             };
+            let capture_suspended = state.capture_suspended.clone();
 
             app.manage(state);
 
@@ -1816,6 +1835,7 @@ pub fn run() {
                 ping_tracker.clone(),
             );
             dispatcher.set_dot_skill_ids(dot_ids);
+            dispatcher.use_suspend_flag(capture_suspended);
 
             // Run dispatcher in background
             tauri::async_runtime::spawn(async move {
@@ -2140,6 +2160,8 @@ pub fn run() {
             read_cached_icon,
             write_cached_icon,
             log_from_ui,
+            suspend_capture,
+            is_capture_suspended,
             resize_window,
             list_monitors,
             open_details_window,

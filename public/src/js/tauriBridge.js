@@ -116,6 +116,12 @@
   let cachedCaptureStatus = null;
   let cachedDetailsContext = null;
   let cachedAppVersion = "";     // populated on startup from Tauri backend
+  let captureSuspended = false;  // the suspend button's state; the backend's is the truth
+
+  // A reloaded window picks the suspend state back up from the backend.
+  invoke("is_capture_suspended").then((v) => {
+    captureSuspended = !!v;
+  }).catch(() => {});
 
   // Fetch app version from backend (sourced from Cargo.toml via env!("CARGO_PKG_VERSION"))
   invoke("get_app_version").then((v) => {
@@ -513,8 +519,13 @@
     // --- Feature flags ---
     isRunningFromIde() { return false; },
     getParsingBacklog() { return 0; },
-    isCaptureSuspended() { return false; },
-    suspendCapture() {},
+    // The header's suspend button. The backend owns the switch; this keeps a
+    // copy so the UI can read it synchronously, as it does at load.
+    isCaptureSuspended() { return captureSuspended; },
+    suspendCapture(suspended) {
+      captureSuspended = !!suspended;
+      invoke("suspend_capture", { suspended: captureSuspended }).catch(() => {});
+    },
     setBossLogsEnabled() {},
     setAutoHideMeter(enabled) {
       invoke("update_settings", { key: "dpsMeter.autoHideMeter", value: String(enabled) }).catch(() => {});
