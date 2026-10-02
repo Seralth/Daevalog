@@ -42,6 +42,26 @@ impl JobClass {
         }
     }
 
+    /// The class field of a party roster record (`0x9702`), the u32 right
+    /// after the member's name. Each class has a block of four values, which
+    /// differ by something else about the character: two Gladiators in one
+    /// party read 7 and 8. Matched against the classes the meter detected in
+    /// 14 players over 12 captures: Gladiator 5–8, Templar 9/12, Ranger 14,
+    /// Assassin 17, Elementalist 22/24, Sorcerer 28, Cleric 32, Chanter 36.
+    pub fn from_roster_class(value: u32) -> Option<JobClass> {
+        match value {
+            5..=8 => Some(JobClass::Gladiator),
+            9..=12 => Some(JobClass::Templar),
+            13..=16 => Some(JobClass::Ranger),
+            17..=20 => Some(JobClass::Assassin),
+            21..=24 => Some(JobClass::Elementalist),
+            25..=28 => Some(JobClass::Sorcerer),
+            29..=32 => Some(JobClass::Cleric),
+            33..=36 => Some(JobClass::Chanter),
+            _ => None,
+        }
+    }
+
     fn from_prefix(prefix: i32) -> Option<JobClass> {
         match prefix {
             11 => Some(JobClass::Gladiator),

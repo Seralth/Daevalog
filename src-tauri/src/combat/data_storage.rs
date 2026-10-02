@@ -24,6 +24,10 @@ const ZONE_RESET_DEBOUNCE_MS: i64 = 4_000;
 /// How long party members who have not fought stay on the meter after the
 /// last roster. See `DataStorage::party_placeholders_wanted`.
 const PARTY_PLACEHOLDER_MS: i64 = 10 * 60 * 1000;
+/// How often, in damage records, unnamed party members are matched to the
+/// roster by class. A fight brings a few hundred records a second, so this
+/// names them within the first moments of combat.
+const ROSTER_BIND_EVERY: u32 = 64;
 
 fn now_ms() -> i64 {
     crate::clock::now_ms()
@@ -148,6 +152,9 @@ pub struct PartyMember {
     /// changes on rename, and it is re-usable by a stranger once freed, which
     /// would silently hand them the previous owner's consent.
     pub dbid: u64,
+    /// The member's class, as the roster states it. Lets a member be named
+    /// before their entity id is known: see `bind_roster_names_by_class`.
+    pub job: Option<JobClass>,
 }
 
 #[derive(Debug, Clone)]
@@ -260,6 +267,10 @@ struct Inner {
     /// fought should still get rows. See `party_placeholders_wanted`.
     party_roster_at_ms: i64,
     party_placeholders_hidden: bool,
+    /// Damage records since `bind_roster_names_by_class` last ran. Counted in
+    /// records rather than time so a replay names players where a live meter
+    /// did.
+    damage_since_roster_bind: u32,
     /// Instance id the party is in, from the same packet. Encodes the dungeon and
     /// its difficulty tier; resolved to a name by the frontend's dungeon table.
     current_dungeon_id: i32,
@@ -340,6 +351,7 @@ impl DataStorage {
                 low_id_entities: HashSet::new(),
                 party_members: HashMap::new(),
                 party_roster_at_ms: 0,
+                damage_since_roster_bind: 0,
                 party_placeholders_hidden: false,
                 current_dungeon_id: 0,
                 actor_power_scalars: HashMap::new(),
@@ -604,6 +616,12 @@ impl DataStorage {
 
         // Apply pending nickname
         apply_pending_nickname(&mut inner, actor_id);
+
+        inner.damage_since_roster_bind += 1;
+        if inner.damage_since_roster_bind >= ROSTER_BIND_EVERY {
+            inner.damage_since_roster_bind = 0;
+            bind_roster_names_by_class(&mut inner);
+        }
     }
 
     pub fn append_mob(&self, mid: i32, code: i32) {
@@ -749,6 +767,7 @@ impl DataStorage {
         for (name, member) in members {
             inner.party_members.insert(name, member);
         }
+        bind_roster_names_by_class(&mut inner);
     }
 
     pub fn set_current_dungeon(&self, dungeon_id: i32) {
@@ -1312,6 +1331,80 @@ fn append_nickname_inner_with_force(inner: &mut Inner, uid: i32, nickname: &str,
     }
 }
 
+/// Name party members whose entity id no packet has tied to their name yet,
+/// by class: the roster gives each member's class, and so does the damage of
+/// each player on the meter.
+///
+/// A player's id and name arrive together in their spawn (`45 36`), which the
+/// game sends when they come into view. Start the meter with the party
+/// already together and those spawns have been and gone: a player's capture
+/// started in a dungeon showed four of five members as bare ids through two
+/// bosses, until a later area re-sent the spawns (2026-10-03). The roster
+/// arrived within seconds.
+///
+/// Only a pairing nothing else could explain is used: exactly one roster
+/// member of a class without an entity, and exactly one unnamed player of
+/// that class fighting now. Two of a class on either side are left alone,
+/// unless one of the players clearly runs a rotation and the others only
+/// repeat a skill or two (an aura or a spirit the spawn never covered).
+fn bind_roster_names_by_class(inner: &mut Inner) {
+    if inner.party_members.len() < 2 {
+        return;
+    }
+    let named: HashSet<&str> = inner.nickname_storage.values().map(|n| n.trim()).collect();
+    let mut open: HashMap<JobClass, Vec<String>> = HashMap::new();
+    for (name, member) in &inner.party_members {
+        if let Some(job) = member.job
+            && !named.contains(name.trim())
+        {
+            open.entry(job).or_default().push(name.clone());
+        }
+    }
+    if open.is_empty() {
+        return;
+    }
+    // Unnamed players in the current fight, with how many distinct skills each used.
+    let mut skills: HashMap<i32, HashSet<i32>> = HashMap::new();
+    for target in inner.target_combat.values() {
+        for (&actor, data) in &target.actors {
+            if inner.known_player_ids.contains(&actor)
+                && !inner.nickname_storage.contains_key(&actor)
+                && !inner.summon_storage.contains_key(&actor)
+            {
+                skills.entry(actor).or_default().extend(data.skills.keys().map(|&(code, _)| code));
+            }
+        }
+    }
+    // More unnamed players than unbound members means someone fighting is not
+    // in the party (open world), and a stranger of the right class could be
+    // the one matched. A rotation-less extra (a stray aura) counts here too;
+    // that only delays naming until its owner's spawn does it.
+    let open_names: usize = open.values().map(Vec::len).sum();
+    if skills.len() > open_names {
+        return;
+    }
+    let mut binds = Vec::new();
+    for (job, names) in open {
+        let [name] = names.as_slice() else { continue };
+        let mut players: Vec<(i32, usize)> = skills
+            .iter()
+            .filter(|(id, _)| inner.actor_jobs.get(id) == Some(&job))
+            .map(|(&id, s)| (id, s.len()))
+            .collect();
+        players.sort_by_key(|&(id, n)| (std::cmp::Reverse(n), id));
+        let chosen = match players.as_slice() {
+            [(id, _)] => *id,
+            [(id, top), (_, next), ..] if *top >= 3 * *next => *id,
+            _ => continue,
+        };
+        binds.push((chosen, name.clone()));
+    }
+    for (id, name) in binds {
+        tracing::info!("Roster: {} is entity {}, the one unnamed player of their class", name, id);
+        append_nickname_inner(inner, id, &name);
+    }
+}
+
 fn apply_pending_nickname(inner: &mut Inner, uid: i32) {
     if inner.nickname_storage.contains_key(&uid) { return; }
     if let Some(pending) = inner.pending_nicknames.remove(&uid) {
@@ -1428,6 +1521,98 @@ mod tests {
         p.set_dot(dot);
         p.set_timestamp(at);
         p
+    }
+
+    fn of_class(slot: u8, job: JobClass) -> PartyMember {
+        PartyMember { job: Some(job), ..member(slot) }
+    }
+
+    /// 64 hits from each of `actors`, taking turns, each using `skills`
+    /// distinct skills of the class with skill prefix `prefix`.
+    fn fight_together(s: &DataStorage, actors: &[i32], prefix: i32, skills: i32) {
+        for i in 0..64 {
+            for &actor in actors {
+                let mut p = hit(actor, 900, i, 100, false);
+                p.set_skill_code(prefix * 1_000_000 + 10_000 + (i as i32 % skills) * 10);
+                s.append_damage(p);
+            }
+        }
+    }
+
+    fn fight(s: &DataStorage, actor: i32, prefix: i32, skills: i32) {
+        fight_together(s, &[actor], prefix, skills);
+    }
+
+    #[test]
+    fn a_party_member_is_named_by_class_when_only_one_fits() {
+        let s = DataStorage::new();
+        s.set_party_roster(
+            vec![("Glad".into(), of_class(1, JobClass::Gladiator)), ("Temp".into(), of_class(2, JobClass::Templar))],
+            true,
+        );
+        fight(&s, 101, 11, 6);
+        fight(&s, 102, 12, 6);
+        assert_eq!(s.get_nickname(101).as_deref(), Some("Glad"));
+        assert_eq!(s.get_nickname(102).as_deref(), Some("Temp"));
+    }
+
+    #[test]
+    fn two_of_a_class_on_either_side_stay_unnamed() {
+        // Two Gladiators in the roster, one fighting: either could be them.
+        let s = DataStorage::new();
+        s.set_party_roster(
+            vec![("GladA".into(), of_class(1, JobClass::Gladiator)), ("GladB".into(), of_class(2, JobClass::Gladiator))],
+            true,
+        );
+        fight(&s, 101, 11, 6);
+        assert_eq!(s.get_nickname(101), None);
+
+        // One Gladiator in the roster, two with equal rotations fighting.
+        let s = DataStorage::new();
+        s.set_party_roster(
+            vec![("Glad".into(), of_class(1, JobClass::Gladiator)), ("Temp".into(), of_class(2, JobClass::Templar))],
+            true,
+        );
+        fight_together(&s, &[101, 103], 11, 6);
+        assert_eq!(s.get_nickname(101), None);
+        assert_eq!(s.get_nickname(103), None);
+
+        // Once the other is named by their own spawn, the one left is the match.
+        s.append_nickname_authoritative(103, "Stranger");
+        fight(&s, 101, 11, 6);
+        assert_eq!(s.get_nickname(101).as_deref(), Some("Glad"));
+    }
+
+    #[test]
+    fn strangers_fighting_alongside_stop_the_match() {
+        // Open world: the party's Gladiator plus two players from outside it.
+        // Only one is a Gladiator, but with more unnamed players than open
+        // roster names the meter cannot know a stranger is not the one.
+        let s = DataStorage::new();
+        s.set_party_roster(
+            vec![("Glad".into(), of_class(1, JobClass::Gladiator)), ("Me".into(), of_class(2, JobClass::Templar))],
+            true,
+        );
+        s.append_nickname_authoritative(100, "Me");
+        fight(&s, 100, 12, 6);
+        for (actor, prefix) in [(102, 14), (104, 17), (101, 11)] {
+            fight(&s, actor, prefix, 6);
+        }
+        assert_eq!(s.get_nickname(101), None);
+    }
+
+    #[test]
+    fn a_member_whose_name_is_on_an_entity_is_not_bound_again() {
+        let s = DataStorage::new();
+        s.append_nickname_authoritative(101, "Glad");
+        s.set_party_roster(
+            vec![("Glad".into(), of_class(1, JobClass::Gladiator)), ("Temp".into(), of_class(2, JobClass::Templar))],
+            true,
+        );
+        fight(&s, 101, 11, 6);
+        fight(&s, 105, 11, 6);
+        assert_eq!(s.get_nickname(101).as_deref(), Some("Glad"));
+        assert_eq!(s.get_nickname(105), None);
     }
 
     fn totals(s: &DataStorage, target: i32) -> (i64, i64) {

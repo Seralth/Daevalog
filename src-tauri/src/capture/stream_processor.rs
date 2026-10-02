@@ -2323,7 +2323,8 @@ fn parse_party_roster_at(
         if o + 12 > data.len() {
             break;
         }
-        o += 4; // unnamed u32
+        let job = crate::entity::job_class::JobClass::from_roster_class(parse_u32_le(data, o));
+        o += 4;
         let level = parse_u32_le(data, o) as i32;
         o += 4;
         if !(1..=200).contains(&level) {
@@ -2360,6 +2361,7 @@ fn parse_party_roster_at(
                 combat_power: combat_power as i64,
                 server_id,
                 dbid,
+                job,
             },
         ));
 
