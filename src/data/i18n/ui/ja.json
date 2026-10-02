@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "ダメージ",
       "ariaDps": "DPSを表示中",
-      "ariaDamage": "総ダメージを表示中"
+      "ariaDamage": "総ダメージを表示中",
+      "both": "両方",
+      "ariaBoth": "DPSと総ダメージを表示中"
     }
   },
   "details": {

@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "DMG",
       "ariaDps": "DPS 표시 중",
-      "ariaDamage": "총 피해 표시 중"
+      "ariaDamage": "총 피해 표시 중",
+      "both": "둘 다",
+      "ariaBoth": "DPS와 총 피해 표시 중"
     }
   },
   "details": {

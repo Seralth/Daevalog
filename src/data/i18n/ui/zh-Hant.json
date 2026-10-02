@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "DMG",
       "ariaDps": "顯示 DPS",
-      "ariaDamage": "顯示總傷害"
+      "ariaDamage": "顯示總傷害",
+      "both": "兩者",
+      "ariaBoth": "顯示 DPS 和總傷害"
     }
   },
   "details": {

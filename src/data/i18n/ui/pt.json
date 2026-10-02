@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "DAN",
       "ariaDps": "Mostrando DPS",
-      "ariaDamage": "Mostrando dano total"
+      "ariaDamage": "Mostrando dano total",
+      "both": "AMBOS",
+      "ariaBoth": "Mostrando DPS e dano total"
     }
   },
   "details": {

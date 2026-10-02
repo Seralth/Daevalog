@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "DMG",
       "ariaDps": "显示 DPS",
-      "ariaDamage": "显示总伤害"
+      "ariaDamage": "显示总伤害",
+      "both": "两者",
+      "ariaBoth": "显示 DPS 和总伤害"
     }
   },
   "details": {

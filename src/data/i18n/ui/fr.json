@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "DGT",
       "ariaDps": "Affiche les DPS",
-      "ariaDamage": "Affiche les dégâts totaux"
+      "ariaDamage": "Affiche les dégâts totaux",
+      "both": "LES 2",
+      "ariaBoth": "Affiche les DPS et les dégâts totaux"
     }
   },
   "details": {

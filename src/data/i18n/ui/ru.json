@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "УРН",
       "ariaDps": "Показан DPS",
-      "ariaDamage": "Показан общий урон"
+      "ariaDamage": "Показан общий урон",
+      "both": "ОБА",
+      "ariaBoth": "Показаны DPS и общий урон"
     }
   },
   "details": {

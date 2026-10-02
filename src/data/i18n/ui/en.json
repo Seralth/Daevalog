@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "DMG",
       "ariaDps": "Showing DPS",
-      "ariaDamage": "Showing total damage"
+      "ariaDamage": "Showing total damage",
+      "both": "BOTH",
+      "ariaBoth": "Showing DPS and total damage"
     }
   },
   "details": {

@@ -5,7 +5,9 @@
       "dps": "DPS",
       "total": "SCH",
       "ariaDps": "Zeigt DPS",
-      "ariaDamage": "Zeigt Gesamtschaden"
+      "ariaDamage": "Zeigt Gesamtschaden",
+      "both": "BEIDE",
+      "ariaBoth": "Zeigt DPS und Gesamtschaden"
     }
   },
   "details": {

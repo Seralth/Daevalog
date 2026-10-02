@@ -1882,7 +1882,9 @@ class DpsApp {
       }
     });
     this.metricToggleBtn?.addEventListener("click", () => {
-      const nextMode = this.displayMode === "totalDamage" ? "dps" : "totalDamage";
+      // DPS -> total damage -> both -> DPS.
+      const order = ["dps", "totalDamage", "both"];
+      const nextMode = order[(order.indexOf(this.displayMode) + 1) % order.length];
       this.setDisplayMode(nextMode, { persist: true });
       this.renderCurrentRows();
     });
@@ -3969,7 +3971,7 @@ class DpsApp {
   }
 
   setDisplayMode(mode, { persist = false } = {}) {
-    this.displayMode = mode === "totalDamage" ? "totalDamage" : "dps";
+    this.displayMode = mode === "totalDamage" || mode === "both" ? mode : "dps";
     if (persist) {
       this.safeSetStorage(this.storageKeys.displayMode, this.displayMode);
     }
@@ -3978,14 +3980,13 @@ class DpsApp {
 
   updateDisplayToggleLabel() {
     if (!this.metricToggleBtn) return;
-    const label =
-      this.displayMode === "totalDamage"
-        ? this.i18n?.t("header.display.total", "DMG") ?? "DMG"
-        : this.i18n?.t("header.display.dps", "DPS") ?? "DPS";
-    const ariaLabel =
-      this.displayMode === "totalDamage"
-        ? this.i18n?.t("header.display.ariaDamage", "Showing total damage")
-        : this.i18n?.t("header.display.ariaDps", "Showing DPS");
+    const [labelKey, labelFallback, ariaKey, ariaFallback] = {
+      totalDamage: ["header.display.total", "DMG", "header.display.ariaDamage", "Showing total damage"],
+      both: ["header.display.both", "BOTH", "header.display.ariaBoth", "Showing DPS and total damage"],
+      dps: ["header.display.dps", "DPS", "header.display.ariaDps", "Showing DPS"],
+    }[this.displayMode];
+    const label = this.i18n?.t(labelKey, labelFallback) ?? labelFallback;
+    const ariaLabel = this.i18n?.t(ariaKey, ariaFallback) ?? ariaFallback;
     this.metricToggleBtn.textContent = label;
     this.metricToggleBtn.setAttribute("aria-label", ariaLabel);
   }
@@ -4164,10 +4165,13 @@ class DpsApp {
       };
     }
     const dps = Number(row?.dps) || 0;
-    return {
-      value: dps,
-      text: `${this.formatDpsThousands(dps)}${this.i18n?.t("meter.dpsSuffix", "/s") ?? "/s"}`,
-    };
+    const dpsText = `${this.formatDpsThousands(dps)}${this.i18n?.t("meter.dpsSuffix", "/s") ?? "/s"}`;
+    if (this.displayMode === "both") {
+      // "408k (13k/s)", as a player asked: damage leads, so the bars follow it.
+      const totalDamage = Number(row?.totalDamage) || 0;
+      return { value: totalDamage, text: `${this.formatAbbreviatedNumber(totalDamage)} (${dpsText})` };
+    }
+    return { value: dps, text: dpsText };
   }
 
   updateMeterTotalBar(rows) {
