@@ -252,7 +252,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y podman distrobox
-          distrobox create --root --yes --name a2tools --image docker.io/library/archlinux:latest
+          # A rootful box asks for a password for the user inside it on first
+          # entry; a player types one, CI cannot.
+          distrobox create --root --yes --name a2tools --image docker.io/library/archlinux:latest \n            --absolutely-disable-root-password-i-am-really-positively-sure
           distrobox enter --root a2tools -- sudo pacman -Syu --noconfirm
           distrobox enter --root a2tools -- sudo pacman -U --noconfirm "$PWD"/pkg/*.pkg.tar.zst
       - name: Capture permission

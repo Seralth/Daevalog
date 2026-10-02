@@ -73,11 +73,13 @@ The overlay only works in **Desktop Mode**. In Game Mode, nothing can draw over 
     passwd
     ```
 
-3. Create the box (the first time takes a few minutes):
+3. Create the box:
 
     ```bash
     distrobox create --root --name a2tools --image archlinux:latest
     ```
+
+    The first time you enter it (the next step), it takes a few minutes to set up and asks you to choose a password for your user inside the box. Any password will do; sudo inside the box asks for it.
 
 4. Download the meter and install it inside the box:
 
