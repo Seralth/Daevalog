@@ -40,7 +40,7 @@ On **Linux** (playing through Proton), see the **[Linux guide](docs/linux.md)** 
 3. Run the installer
 4. Launch A2Tools DPS Meter (run as Administrator)
 
-**Linux:** packages for Ubuntu/Debian (.deb), Fedora/openSUSE (.rpm) and Arch/CachyOS/Manjaro — see the **[Linux guide](docs/linux.md)**.
+**Linux:** packages for Ubuntu/Debian (.deb), Fedora/openSUSE (.rpm), Bazzite, Arch/CachyOS/Manjaro and Steam Deck — see the **[Linux guide](docs/linux.md)**.
 
 ## Building from Source
 

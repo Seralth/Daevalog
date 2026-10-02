@@ -1,13 +1,13 @@
 # A2Tools DPS Meter on Linux (Proton)
 
-The meter runs natively on Linux while AION 2 runs under Proton. Install the package for your distribution: it sets up everything, packet-capture permission included, and updates itself. Only on a distribution with no package do you need to build it yourself. Linux support is new, so your logs help: see [Sending us your logs](#sending-us-your-logs).
+The meter runs natively on Linux while AION 2 runs under Proton. Install the package for your system below: it sets up everything, packet-capture permission included, and keeps itself up to date. Only on a distribution with no package do you need to build it yourself. Linux support is new, so your logs help: see [Sending us your logs](#sending-us-your-logs).
 
-Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, Debian 12, Fedora 39 or newer, or any current Arch.
+Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, Debian 12, Fedora 39 or newer, any current Arch, Bazzite, or SteamOS through distrobox.
 
 ## Contents
 
-- **[Install](#install):** [Ubuntu, Debian, Mint, Pop!_OS](#ubuntu-debian-linux-mint-pop_os) · [Fedora](#fedora) · [openSUSE](#opensuse) · [Arch, CachyOS, Manjaro, EndeavourOS](#cachyos-arch-manjaro-endeavouros)
-- **[Update](#update):** [automatically](#automatic-updates) · [by hand](#update-by-hand) · [which version do I have?](#which-version-do-i-have)
+- **[Install](#install):** [Ubuntu, Debian, Mint, Pop!_OS](#ubuntu-debian-linux-mint-pop_os) · [Fedora](#fedora) · [Bazzite and other image-based Fedoras](#bazzite-silverblue-kinoite-aurora-bluefin) · [Steam Deck (SteamOS)](#steam-deck-steamos) · [openSUSE](#opensuse) · [Arch, CachyOS, Manjaro, EndeavourOS](#cachyos-arch-manjaro-endeavouros)
+- **[Update](#update):** [how each install updates](#how-each-install-updates) · [the update prompt](#the-update-prompt) · [by hand](#update-by-hand) · [which version do I have?](#which-version-do-i-have)
 - **[Start and remove](#start-and-remove)**
 - **[What works on Linux](#what-works-on-linux)**
 - **[Build from source](#build-from-source-other-distributions)**, for distributions with no package
@@ -16,7 +16,7 @@ Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, D
 
 ## Install
 
-Download the package first, then install the file. The install should end with "A2Tools DPS Meter may now capture packets": the package grants that permission itself, so you never need `setcap`.
+Each package grants the packet-capture permission itself, so you never need `setcap`.
 
 ### Ubuntu, Debian, Linux Mint, Pop!_OS
 
@@ -30,13 +30,74 @@ sudo apt install ./a2tools-dps-meter-latest_amd64.deb
 
 ### Fedora
 
+Add the A2Tools repository once, then install from it. Updates then arrive with your normal system updates.
+
 ```bash
-curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest.x86_64.rpm
+sudo curl -Lo /etc/yum.repos.d/a2tools.repo https://cdn.a2tools.app/linux/a2tools.repo
 ```
 
 ```bash
-sudo dnf install ./a2tools-dps-meter-latest.x86_64.rpm
+sudo dnf install a2-tools-dps-meter
 ```
+
+### Bazzite, Silverblue, Kinoite, Aurora, Bluefin
+
+These image-based Fedoras keep the system read-only and add packages by layering them with `rpm-ostree`, which takes effect after a restart. Add the A2Tools repository, layer the meter, and restart:
+
+```bash
+sudo curl -Lo /etc/yum.repos.d/a2tools.repo https://cdn.a2tools.app/linux/a2tools.repo
+```
+
+```bash
+rpm-ostree install a2-tools-dps-meter
+```
+
+```bash
+systemctl reboot
+```
+
+Updates then come with your system updates: Bazzite installs them on its own, or run `rpm-ostree upgrade` and restart. On a Steam Deck running Bazzite, use **Desktop Mode**: in Game Mode, nothing can draw over the game.
+
+### Steam Deck (SteamOS)
+
+SteamOS replaces its read-only system with every update, so anything installed into it directly is wiped. Instead, the meter goes in a **distrobox**: a container with its own Arch Linux inside, which SteamOS 3.5 and later include. It must be created with `--root`: an ordinary (rootless) container cannot read the game's network traffic.
+
+The overlay only works in **Desktop Mode**. In Game Mode, nothing can draw over the game.
+
+1. Switch to Desktop Mode: press the **Steam** button, then **Power**, then **Switch to Desktop**.
+2. Open **Konsole** from the application menu. If you have never set a password for the `deck` user, set one now (sudo needs it):
+
+    ```bash
+    passwd
+    ```
+
+3. Create the box (the first time takes a few minutes):
+
+    ```bash
+    distrobox create --root --name a2tools --image archlinux:latest
+    ```
+
+4. Download the meter and install it inside the box:
+
+    ```bash
+    curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest-x86_64.pkg.tar.zst
+    ```
+
+    ```bash
+    distrobox enter --root a2tools -- sudo pacman -Syu --noconfirm
+    ```
+
+    ```bash
+    distrobox enter --root a2tools -- sudo pacman -U --noconfirm ~/a2tools-dps-meter-latest-x86_64.pkg.tar.zst
+    ```
+
+5. Start AION 2 from Steam, still in Desktop Mode, set to borderless or windowed. Then start the meter from Konsole:
+
+    ```bash
+    distrobox enter --root a2tools -- a2tools-dps-meter
+    ```
+
+SteamOS updates leave the box alone, so the meter survives them. This route is new and not yet confirmed on a real Steam Deck: please tell us how it goes.
 
 ### openSUSE
 
@@ -62,9 +123,20 @@ sudo pacman -U a2tools-dps-meter-latest-x86_64.pkg.tar.zst
 
 ## Update
 
-### Automatic updates
+### How each install updates
 
-The packages update themselves: the Arch package from 2.0.33, the .deb and .rpm from 2.0.36, their first release. When a new version is out, the meter asks "A new update is available! … Download and install now?" shortly after it starts:
+| Installed on | Updates |
+| --- | --- |
+| Ubuntu, Debian, Mint, Pop!_OS | The meter offers each new version: [the update prompt](#the-update-prompt) |
+| Fedora | With your system updates (`sudo dnf upgrade`); the meter also offers them |
+| Bazzite and other image-based Fedoras | With your system updates; the meter does not prompt |
+| Steam Deck (SteamOS) | [By hand](#update-by-hand) |
+| openSUSE | The meter offers each new version |
+| Arch, CachyOS, Manjaro, EndeavourOS | The meter offers each new version |
+
+### The update prompt
+
+When a new version is out, the meter asks "A new update is available! … Download and install now?" shortly after it starts:
 
 1. Click **Yes**. The meter downloads the update and closes.
 2. Your desktop asks for your password, the same prompt as for other system changes. Enter it.
@@ -74,7 +146,9 @@ If you cancel the password prompt, the meter restarts on the old version and ask
 
 ### Update by hand
 
-Run the two [Install](#install) commands for your distribution again: the address always serves the newest version, and installing it over the old one keeps your settings and fight history. Do this once if your version cannot update itself: on Arch, `2.0.30.r70.g0ac3fb6-1`, the first test package.
+Run the [Install](#install) commands for your system again: the address always serves the newest version, and installing it over the old one keeps your settings and fight history. On a Steam Deck, that is the `curl` line and the last `pacman -U` line of step 4.
+
+Do this once if your version cannot update itself: on Arch, `2.0.30.r70.g0ac3fb6-1`, the first test package.
 
 ### Which version do I have?
 
@@ -84,7 +158,7 @@ Ubuntu, Debian, Mint, Pop!_OS:
 dpkg -s a2-tools-dps-meter | grep Version
 ```
 
-Fedora, openSUSE:
+Fedora, Bazzite and other image-based Fedoras, openSUSE:
 
 ```bash
 rpm -q a2-tools-dps-meter
@@ -96,31 +170,30 @@ Arch, CachyOS, Manjaro, EndeavourOS:
 pacman -Q a2tools-dps-meter
 ```
 
+Steam Deck (SteamOS):
+
+```bash
+distrobox enter --root a2tools -- pacman -Q a2tools-dps-meter
+```
+
 ## Start and remove
 
-The meter is in your application menu, as A2Tools DPS Meter. To start it from a terminal with its output saved, which helps if you send us logs:
+The meter is in your application menu, as A2Tools DPS Meter; on a Steam Deck, start it from Konsole as in [step 5](#steam-deck-steamos). To start it from a terminal with its output saved, which helps if you send us logs:
 
 ```bash
 a2tools-dps-meter 2>&1 | tee ~/meter-console.log
 ```
 
-To remove it (the .deb and .rpm are named `a2-tools-dps-meter`, the Arch package `a2tools-dps-meter`):
+To remove it:
 
-```bash
-sudo apt remove a2-tools-dps-meter
-```
-
-```bash
-sudo dnf remove a2-tools-dps-meter
-```
-
-```bash
-sudo zypper remove a2-tools-dps-meter
-```
-
-```bash
-sudo pacman -R a2tools-dps-meter
-```
+| Installed on | Command |
+| --- | --- |
+| Ubuntu, Debian, Mint, Pop!_OS | `sudo apt remove a2-tools-dps-meter` |
+| Fedora | `sudo dnf remove a2-tools-dps-meter` |
+| Bazzite and other image-based Fedoras | `rpm-ostree uninstall a2-tools-dps-meter`, then restart |
+| Steam Deck (SteamOS) | `distrobox rm --root a2tools` (removes the whole box) |
+| openSUSE | `sudo zypper remove a2-tools-dps-meter` |
+| Arch, CachyOS, Manjaro, EndeavourOS | `sudo pacman -R a2tools-dps-meter` |
 
 ## What works on Linux
 
@@ -172,7 +245,7 @@ Arch, Manjaro, EndeavourOS (if you would rather build than use the package):
 sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl appmenu-gtk-module libappindicator-gtk3 librsvg libpcap git
 ```
 
-**Steam Deck:** SteamOS is read-only, so building directly on it is hard. If that is your setup, tell us before you start and we will work out a way.
+**Steam Deck:** no need to build: follow the [Steam Deck instructions](#steam-deck-steamos).
 
 ### 2. Download and build the meter
 

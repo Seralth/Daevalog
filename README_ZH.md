@@ -42,7 +42,7 @@
 
 以**管理员身份**运行 A2Tools DPS Meter。
 
-**Linux**（通过 Proton 游玩）：提供 Ubuntu/Debian（.deb）、Fedora/openSUSE（.rpm）和 Arch/CachyOS/Manjaro 软件包 — 请参阅 **[Linux 指南](docs/linux.md)**（英文）。
+**Linux**（通过 Proton 游玩）：提供 Ubuntu/Debian（.deb）、Fedora/openSUSE（.rpm）、Bazzite、Arch/CachyOS/Manjaro 和 Steam Deck 软件包 — 请参阅 **[Linux 指南](docs/linux.md)**（英文）。
 
 ## 从源码构建
 
