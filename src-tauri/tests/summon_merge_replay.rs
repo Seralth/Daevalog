@@ -15,6 +15,7 @@ use a2tools_dps_meter_lib::combat::data_storage::DataStorage;
 use a2tools_dps_meter_lib::combat::dps_calculator::DpsCalculator;
 use a2tools_dps_meter_lib::combat::ping_tracker::PingTracker;
 use a2tools_dps_meter_lib::i18n::lookup::{NpcLookup, SkillLookup};
+use a2tools_dps_meter_lib::share::read_capture;
 
 const NYXIE: i64 = 13520;
 
@@ -28,14 +29,11 @@ fn other_players_spirits_merge_into_their_owner() {
     let mut processor =
         StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
     let mut acc = PacketAccumulator::new();
-    for line in std::fs::read_to_string(path).unwrap().lines() {
-        if line.starts_with('#') || line.is_empty() {
-            continue;
-        }
-        let hex = line.rsplit('|').next().unwrap().trim();
-        let bytes: Vec<u8> =
-            (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()).collect();
-        acc.append(&bytes);
+    // At the captured times, as the log service replays: a saved fight needs
+    // its real length.
+    for p in read_capture(std::path::Path::new(&path)).unwrap() {
+        processor.set_override_timestamp(Some(p.captured_at_ms));
+        acc.append(&p.bytes);
         let used = processor.consume_stream(acc.snapshot());
         if used > 0 {
             acc.discard_bytes(used);
@@ -75,7 +73,7 @@ fn other_players_spirits_merge_into_their_owner() {
     // the owners show far fewer skills than over the whole capture.
     let npcs = Arc::new(NpcLookup::new());
     npcs.load_from_json(&std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../src/data/i18n/npcs/en.json")).unwrap());
-    let mut boss = DpsCalculator::new(storage.clone(), Arc::new(SkillLookup::new()), npcs, Arc::new(PingTracker::new()));
+    let mut boss = DpsCalculator::new(storage.clone(), Arc::new(SkillLookup::new()), npcs.clone(), Arc::new(PingTracker::new()));
     boss.set_target_selection_mode("bossTargets");
     let dps = boss.get_dps();
     let mut rows: Vec<_> = dps.map.iter().collect();
@@ -96,4 +94,22 @@ fn other_players_spirits_merge_into_their_owner() {
     // spirits left about 1.03M.
     let shown: f64 = rows.iter().map(|(_, d)| d.amount).sum();
     assert!(shown >= 0.98 * dps.target_total_damage as f64, "boss damage missing from the rows: {shown}");
+    let live: std::collections::HashMap<i32, f64> = rows.iter().map(|(id, d)| (**id, d.amount)).collect();
+
+    // History: the saved record of the same fight attributes each spirit the
+    // same way. It used to fold every unclaimed Elementalist entity into
+    // whichever of the two was named, or, with both named, none of them.
+    let mut history = DpsCalculator::new(storage.clone(), Arc::new(SkillLookup::new()), npcs, Arc::new(PingTracker::new()));
+    let records = history.snapshot_boss_fights_force();
+    let auldor = records.iter().find(|r| r.mob_code == 2310218).expect("Divine Auldor saved");
+    let mut per_actor: std::collections::HashMap<i32, i64> = std::collections::HashMap::new();
+    for s in &auldor.details.skills {
+        *per_actor.entry(s.actor_id).or_default() += s.dmg as i64;
+    }
+    println!("history: {per_actor:?}");
+    assert_eq!(per_actor.len(), 5, "one row per player in history: {per_actor:?}");
+    for id in [1792, NYXIE as i32] {
+        let (saved, shown) = (per_actor[&id] as f64, live[&id]);
+        assert!((saved - shown).abs() <= 0.01 * shown, "#{id}: history {saved}, meter {shown}");
+    }
 }
