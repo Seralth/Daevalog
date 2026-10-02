@@ -179,6 +179,7 @@
     "roundDps": "Round DPS",
     "autoHideMeter": "Auto-hide meter",
     "showSuspendBtn": "Show suspend button",
+    "showLockBtn": "Show lock button (click-through)",
     "playerLimit": {
       "label": "Max players shown"
     },
@@ -248,7 +249,8 @@
       "reload": "Reload data",
       "toggle": "Show/Hide window",
       "pressKeys": "Press keys...",
-      "needModifiers": "Need 2+ modifiers"
+      "needModifiers": "Need 2+ modifiers",
+      "lock": "Lock/unlock overlay"
     },
     "defaultMeterMode": {
       "label": "Default mode"

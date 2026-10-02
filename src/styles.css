@@ -4523,12 +4523,21 @@ body.legacyUi .header {
       height: 20px;
     }
     /* When suspend button is visible, shrink all header buttons */
-    &.hasSuspendBtn .headerBtn {
+    &.hasSuspendBtn .headerBtn,
+    &.hasLockBtn .headerBtn {
       width: 16px;
       height: 16px;
     }
-    &.hasSuspendBtn {
+    &.hasSuspendBtn,
+    &.hasLockBtn {
       gap: 6px;
+    }
+    .lockBtn {
+      color: rgba(255, 255, 255, 0.85);
+      transition: color 150ms ease;
+    }
+    .lockBtn.isLocked {
+      color: #ffc857;
     }
     .suspendBtn {
       color: rgba(255, 255, 255, 0.85);
@@ -5298,7 +5307,9 @@ body.legacyUi .header .headerBtns .headerBtn svg {
   height: 20px;
 }
 body.legacyUi .header .headerBtns.hasSuspendBtn .headerBtn,
-body.legacyUi .header .headerBtns.hasSuspendBtn .headerBtn svg {
+body.legacyUi .header .headerBtns.hasSuspendBtn .headerBtn svg,
+body.legacyUi .header .headerBtns.hasLockBtn .headerBtn,
+body.legacyUi .header .headerBtns.hasLockBtn .headerBtn svg {
   width: 16px;
   height: 16px;
 }

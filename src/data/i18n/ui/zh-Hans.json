@@ -179,6 +179,7 @@
     "roundDps": "DPS取整",
     "autoHideMeter": "自动隐藏面板",
     "showSuspendBtn": "显示暂停按钮",
+    "showLockBtn": "显示锁定按钮（点击穿透）",
     "playerLimit": {
       "label": "最大显示人数"
     },
@@ -248,7 +249,8 @@
       "reload": "重新加载数据",
       "toggle": "显示/隐藏窗口",
       "pressKeys": "请按下按键...",
-      "needModifiers": "需要2个以上修饰键"
+      "needModifiers": "需要2个以上修饰键",
+      "lock": "锁定/解锁悬浮窗"
     },
     "defaultMeterMode": {
       "label": "默认计量模式"

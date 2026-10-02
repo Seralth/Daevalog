@@ -63,6 +63,7 @@
           </div>
 
           <div class="headerBtns">
+            <div class="headerBtn lockBtn" style="display:none" role="button" tabindex="0" aria-label="Lock overlay (click-through)" data-i18n-aria-label="settings.showLockBtn"><i data-lucide="lock-open"></i></div>
             <div class="headerBtn suspendBtn" style="display:none"><i data-lucide="power"></i></div>
             <div class="headerBtn historyBtn" role="button" tabindex="0" aria-label="Fight history" data-i18n-aria-label="history.title"><i data-lucide="scroll-text"></i></div>
             <div class="headerBtn resetBtn"><i data-lucide="rotate-ccw"></i></div>
@@ -657,6 +658,13 @@
                       <span class="settingsToggleTrack" aria-hidden="true"></span>
                     </span>
                   </label>
+                  <label class="settingsToggle lockSetting" style="display:none">
+                    <span class="settingsToggleLabel settingsLabel" data-i18n="settings.showLockBtn">Show lock button (click-through)</span>
+                    <span class="settingsToggleControl">
+                      <input type="checkbox" class="showLockBtnCheckbox" />
+                      <span class="settingsToggleTrack" aria-hidden="true"></span>
+                    </span>
+                  </label>
                 </div>
               </section>
             </div>
@@ -677,6 +685,14 @@
                   </div>
                   <button class="keybindBtn toggleKeybindBtn" type="button" data-keybind="toggle">
                     <span class="keybindText">Ctrl+Alt+Up</span>
+                  </button>
+                </div>
+                <div class="settingsRow settingsRowKeybind lockSetting" style="display:none">
+                  <div class="settingsInfo">
+                    <div class="settingsLabel" data-i18n="settings.keybind.lock">Lock/unlock overlay</div>
+                  </div>
+                  <button class="keybindBtn lockKeybindBtn" type="button" data-keybind="lock">
+                    <span class="keybindText">Ctrl+Alt+L</span>
                   </button>
                 </div>
               </div>

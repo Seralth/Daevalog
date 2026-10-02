@@ -12,6 +12,7 @@ pub struct HotkeyManager {
 impl HotkeyManager {
     const HOTKEY_RELOAD: i32 = 1;
     const HOTKEY_TOGGLE: i32 = 2;
+    const HOTKEY_LOCK: i32 = 3;
 
     pub fn new() -> Self {
         Self {
@@ -22,14 +23,19 @@ impl HotkeyManager {
     /// Start the hotkey listener thread.
     /// `on_reload` is called when the reload hotkey fires.
     /// `on_toggle` is called when the toggle window hotkey fires.
+    /// `on_lock` is called when the click-through lock hotkey fires.
+    #[allow(clippy::too_many_arguments)]
     pub fn start(
         &self,
         reload_mods: u32,
         reload_vk: u32,
         toggle_mods: u32,
         toggle_vk: u32,
+        lock_mods: u32,
+        lock_vk: u32,
         on_reload: impl Fn() + Send + 'static,
         on_toggle: impl Fn() + Send + 'static,
+        on_lock: impl Fn() + Send + 'static,
     ) {
         if self.running.swap(true, Ordering::SeqCst) {
             return;
@@ -69,8 +75,20 @@ impl HotkeyManager {
                     }
                 }
 
-                info!("Global hotkeys registered (reload={:#x}+{:#x}, toggle={:#x}+{:#x})",
-                    reload_mods, reload_vk, toggle_mods, toggle_vk);
+                let mut lock_ok = false;
+                if lock_vk > 0 {
+                    if RegisterHotKey(None, Self::HOTKEY_LOCK,
+                        HOT_KEY_MODIFIERS(lock_mods | norepeat), lock_vk).is_ok() {
+                        lock_ok = true;
+                        info!("Lock hotkey registered: mods={:#x} vk={:#x}", lock_mods, lock_vk);
+                    } else {
+                        warn!("Lock hotkey unavailable (mods={:#x} vk={:#x}) — already in use by another app",
+                            lock_mods, lock_vk);
+                    }
+                }
+
+                info!("Global hotkeys registered (reload={:#x}+{:#x}, toggle={:#x}+{:#x}, lock={:#x}+{:#x})",
+                    reload_mods, reload_vk, toggle_mods, toggle_vk, lock_mods, lock_vk);
 
                 // Message loop
                 let mut msg = MSG::default();
@@ -81,6 +99,7 @@ impl HotkeyManager {
                             match msg.wParam.0 as i32 {
                                 Self::HOTKEY_RELOAD => on_reload(),
                                 Self::HOTKEY_TOGGLE => on_toggle(),
+                                Self::HOTKEY_LOCK => on_lock(),
                                 _ => {}
                             }
                         }
@@ -91,6 +110,7 @@ impl HotkeyManager {
 
                 if reload_ok { let _ = UnregisterHotKey(None, Self::HOTKEY_RELOAD); }
                 if toggle_ok { let _ = UnregisterHotKey(None, Self::HOTKEY_TOGGLE); }
+                if lock_ok { let _ = UnregisterHotKey(None, Self::HOTKEY_LOCK); }
             }
         });
     }

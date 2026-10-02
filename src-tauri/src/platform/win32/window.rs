@@ -1,10 +1,18 @@
 //! Window behaviour Tauri does not expose the way the overlay needs it.
 
-use windows::Win32::Foundation::{HWND, LPARAM, WPARAM};
+use windows::Win32::Foundation::{HWND, LPARAM, POINT, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 fn hwnd_of(window: &tauri::WebviewWindow) -> Option<HWND> {
     window.hwnd().ok().map(|h| HWND(h.0))
+}
+
+/// Where the mouse pointer is, in physical screen pixels. The click-through
+/// lock uses it to keep its own button clickable.
+pub fn cursor_position() -> Option<(i32, i32)> {
+    let mut point = POINT::default();
+    unsafe { GetCursorPos(&mut point) }.ok()?;
+    Some((point.x, point.y))
 }
 
 /// Begin dragging the window, as if its title bar had been grabbed.

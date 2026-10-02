@@ -179,6 +179,7 @@
     "roundDps": "DPS 반올림",
     "autoHideMeter": "미터 자동 숨기기",
     "showSuspendBtn": "일시정지 버튼 표시",
+    "showLockBtn": "잠금 버튼 표시 (클릭 통과)",
     "playerLimit": {
       "label": "최대 표시 인원"
     },
@@ -248,7 +249,8 @@
       "reload": "데이터 새로고침",
       "toggle": "창 표시/숨기기",
       "pressKeys": "키를 누르세요...",
-      "needModifiers": "수정자 2개 이상 필요"
+      "needModifiers": "수정자 2개 이상 필요",
+      "lock": "오버레이 잠금/해제"
     },
     "defaultMeterMode": {
       "label": "기본 미터 모드"

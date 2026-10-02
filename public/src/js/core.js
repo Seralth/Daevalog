@@ -9,6 +9,8 @@ const REMOTE_APPLIED_SETTING_CONTROLS = {
   "dpsMeter.showPing": ".showPingCheckbox",
   "dpsMeter.bossNameSize": ".bossNameSizeInput",
   "dpsMeter.showSupporterColors": ".showSupporterColorsCheckbox",
+  "dpsMeter.showSuspendBtn": ".showSuspendBtnCheckbox",
+  "dpsMeter.showLockBtn": ".showLockBtnCheckbox",
 };
 
 class DpsApp {
@@ -67,6 +69,8 @@ class DpsApp {
       betaUi: "dpsMeter.betaUi",
       detailsMonitor: "dpsMeter.detailsMonitor",
       showSuspendBtn: "dpsMeter.showSuspendBtn",
+      showLockBtn: "dpsMeter.showLockBtn",
+      overlayLocked: "dpsMeter.overlayLocked",
     };
 
     this.dpsFormatter = new Intl.NumberFormat("en-US");
@@ -232,6 +236,7 @@ class DpsApp {
 
     this.resetBtn = document.querySelector(".resetBtn");
     this.suspendBtn = document.querySelector(".suspendBtn");
+    this.lockBtn = document.querySelector(".lockBtn");
     this.headerBtns = document.querySelector(".headerBtns");
     this.targetModeBtn = document.querySelector(".footerBtns .targetModeBtn");
     this.collapseBtn = document.querySelector(".collapseBtn");
@@ -1856,6 +1861,9 @@ class DpsApp {
     this.suspendBtn?.addEventListener("click", () => {
       this._setCaptureSuspended(!this._captureSuspended);
     });
+    this.lockBtn?.addEventListener("click", () => {
+      this._setOverlayLocked(!this._overlayLocked);
+    });
     this.targetModeBtn?.addEventListener("click", () => {
       const modes = ["lastHitByMe", "bossTargets", "trainTargets", "allTargets"];
       const currentIndex = modes.indexOf(this.targetSelection);
@@ -2232,6 +2240,7 @@ class DpsApp {
         }
       });
     }
+    this.initOverlayLock();
     // Restore suspend state from backend on load
     this._captureSuspended = !!window.javaBridge?.isCaptureSuspended?.();
     this._updateSuspendBtnIcon();
@@ -3364,6 +3373,7 @@ class DpsApp {
 
     const reloadBtn = document.querySelector(".reloadKeybindBtn");
     const toggleBtn = document.querySelector(".toggleKeybindBtn");
+    const lockKeyBtn = document.querySelector(".lockKeybindBtn");
 
     this.refreshKeybindLabels = () => {
       const reloadLabel = window.javaBridge?.getCurrentHotKey?.() || "";
@@ -3373,6 +3383,10 @@ class DpsApp {
       }
       if (toggleBtn) {
         toggleBtn.querySelector(".keybindText").textContent = toggleLabel || "Ctrl+Alt+Up";
+      }
+      if (lockKeyBtn) {
+        lockKeyBtn.querySelector(".keybindText").textContent =
+          window.javaBridge?.getCurrentLockHotKey?.() || "Ctrl+Alt+L";
       }
     };
     this.refreshKeybindLabels();
@@ -3404,6 +3418,7 @@ class DpsApp {
 
     reloadBtn?.addEventListener("click", () => handleKeybindClick(reloadBtn, "reload"));
     toggleBtn?.addEventListener("click", () => handleKeybindClick(toggleBtn, "toggle"));
+    lockKeyBtn?.addEventListener("click", () => handleKeybindClick(lockKeyBtn, "lock"));
 
     document.addEventListener("keydown", (event) => {
       if (!activeRecording) return;
@@ -3462,6 +3477,9 @@ class DpsApp {
       } else if (type === "toggle") {
         window.javaBridge?.setToggleWindowHotkey?.(mods, vk);
         if (toggleBtn) toggleBtn.querySelector(".keybindText").textContent = label;
+      } else if (type === "lock") {
+        window.javaBridge?.setLockHotkey?.(mods, vk);
+        if (lockKeyBtn) lockKeyBtn.querySelector(".keybindText").textContent = label;
       }
     }, true);
 
@@ -4811,6 +4829,76 @@ class DpsApp {
 
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
+  }
+
+  // ===== Click-through lock =====
+  // Locked, the overlay lets clicks through to the game and cannot be
+  // dragged; only its lock button stays clickable (the backend watches the
+  // pointer, see OverlayLock in app.rs), and a hotkey toggles it too. Offered
+  // only where the backend can do that: Windows, not Wayland.
+
+  initOverlayLock() {
+    this._overlayLocked = false;
+    this.showLockBtnCheckbox = document.querySelector(".showLockBtnCheckbox");
+    const isOverlay = window.A2_VIEW === "main";
+    Promise.resolve(window.javaBridge?.overlayLockSupported?.())
+      .then((supported) => {
+        if (!supported) return;
+        document.querySelectorAll(".lockSetting").forEach((el) => { el.style.display = ""; });
+        const show = this.safeGetSetting(this.storageKeys.showLockBtn) === "true";
+        if (this.showLockBtnCheckbox) {
+          this.showLockBtnCheckbox.checked = show;
+          this.showLockBtnCheckbox.addEventListener("change", (event) => {
+            const isChecked = !!event.target?.checked;
+            this.safeSetSetting(this.storageKeys.showLockBtn, String(isChecked));
+            if (!isOverlay) return;
+            this._applyLockBtnVisibility(isChecked);
+            // Hiding the button must not leave a locked overlay behind.
+            if (!isChecked) this._setOverlayLocked(false);
+          });
+        }
+        if (!isOverlay) return;
+        this._applyLockBtnVisibility(show);
+        window.addEventListener("resize", () => this._sendLockBtnRect());
+        // Stay locked across restarts, as the player left it.
+        if (show && this.safeGetSetting(this.storageKeys.overlayLocked) === "true") {
+          requestAnimationFrame(() => this._setOverlayLocked(true));
+        }
+      })
+      .catch(() => {});
+  }
+
+  _applyLockBtnVisibility(show) {
+    if (this.lockBtn) this.lockBtn.style.display = show ? "" : "none";
+    this.headerBtns?.classList.toggle("hasLockBtn", !!show);
+    if (show) requestAnimationFrame(() => this._sendLockBtnRect());
+  }
+
+  // Where the button is, so the backend keeps it clickable while locked.
+  _sendLockBtnRect() {
+    if (!this.lockBtn || this.lockBtn.style.display === "none") return;
+    const r = this.lockBtn.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    window.javaBridge?.setLockButtonRect?.(r.left, r.top, r.width, r.height, window.devicePixelRatio || 1);
+  }
+
+  _setOverlayLocked(locked) {
+    this._sendLockBtnRect();
+    window.javaBridge?.setOverlayLocked?.(!!locked);
+    this._onOverlayLockChanged(!!locked);
+  }
+
+  // Also called when the hotkey toggled the lock (the backend has done it).
+  _onOverlayLockChanged(locked) {
+    this._overlayLocked = !!locked;
+    this.safeSetSetting(this.storageKeys.overlayLocked, String(this._overlayLocked));
+    document.body.classList.toggle("overlayLocked", this._overlayLocked);
+    if (!this.lockBtn) return;
+    this.lockBtn.classList.toggle("isLocked", this._overlayLocked);
+    const icon = document.createElement("i");
+    icon.setAttribute("data-lucide", this._overlayLocked ? "lock" : "lock-open");
+    this.lockBtn.replaceChildren(icon);
+    window.lucide?.createIcons?.({ root: this.lockBtn });
   }
 
   _applySuspendBtnVisibility(show) {

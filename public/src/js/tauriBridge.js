@@ -180,6 +180,11 @@
     window._dpsApp?.refreshAccountPanel?.(event?.payload);
   });
 
+  // The lock hotkey toggled the click-through lock; the page follows.
+  listen("overlay-lock-changed", (event) => {
+    window._dpsApp?._onOverlayLockChanged?.(!!event?.payload);
+  });
+
   listen("npcap-missing", () => {
     const msg = "Npcap is required for packet capture but is not installed.\n\nWould you like to download it now?";
     if (confirm(msg)) {
@@ -487,6 +492,23 @@
     },
     getCurrentToggleWindowHotKey() {
       return this.getSetting("dpsMeter.toggleWindowHotkey") || "Ctrl+Alt+Up";
+    },
+    getCurrentLockHotKey() {
+      return this.getSetting("dpsMeter.lockHotkey") || "Ctrl+Alt+L";
+    },
+    setLockHotkey(mods, vk) {
+      this.setSetting("dpsMeter.lockHotkey", this._buildHotkeyLabel(mods, vk));
+    },
+    // The click-through lock (OverlayLock in app.rs). A promise: whether the
+    // backend can keep the lock button clickable here.
+    overlayLockSupported() {
+      return invoke("overlay_lock_supported").catch(() => false);
+    },
+    setOverlayLocked(locked) {
+      invoke("set_overlay_locked", { locked: !!locked }).catch(() => {});
+    },
+    setLockButtonRect(x, y, width, height, scale) {
+      invoke("set_lock_button_rect", { x, y, width, height, scale }).catch(() => {});
     },
     setHotkey(mods, vk) {
       const label = this._buildHotkeyLabel(mods, vk);

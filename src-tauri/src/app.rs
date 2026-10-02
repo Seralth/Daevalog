@@ -71,6 +71,81 @@ pub struct AppState {
     /// The header's suspend button: while set, the capture dispatcher drops
     /// every packet. Shared with it (`CaptureDispatcher::use_suspend_flag`).
     pub capture_suspended: Arc<std::sync::atomic::AtomicBool>,
+    /// The overlay's click-through lock. See `apply_overlay_lock`.
+    pub overlay_lock: Arc<OverlayLock>,
+}
+
+/// The overlay's click-through lock: while locked, clicks go through the meter
+/// to the game, and it cannot be dragged. Only its own lock button stays
+/// clickable, so the same button unlocks it; a hotkey does too.
+///
+/// A window either takes the mouse or ignores it, all of it, so the button
+/// is kept clickable by watching the pointer: while it is over the button the
+/// window takes the mouse again. That needs the pointer's position outside
+/// the window, which Wayland does not give (`platform::window::cursor_position`),
+/// so the lock is offered only where it is available.
+#[derive(Default)]
+pub struct OverlayLock {
+    locked: std::sync::atomic::AtomicBool,
+    /// The lock button in the main window's page: CSS-pixel x, y, width,
+    /// height, and the page's scale. Sent by the page when it lays out.
+    button: Mutex<Option<(f64, f64, f64, f64, f64)>>,
+    /// Whether the pointer watch is running.
+    watching: std::sync::atomic::AtomicBool,
+    /// What the window was last told (`true` = ignore the mouse). Every change
+    /// goes through `sync_click_through` under this lock, so a late pointer
+    /// check can never leave an unlocked window click-through.
+    applied: Mutex<Option<bool>>,
+}
+
+/// Tell the main window whether to ignore the mouse: when locked, unless the
+/// pointer is over the lock button.
+fn sync_click_through(app: &tauri::AppHandle, lock: &OverlayLock, over_button: bool) {
+    use std::sync::atomic::Ordering;
+    let mut applied = lock.applied.lock();
+    let ignore = lock.locked.load(Ordering::SeqCst) && !over_button;
+    if *applied == Some(ignore) {
+        return;
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        if main.set_ignore_cursor_events(ignore).is_ok() {
+            *applied = Some(ignore);
+        }
+    }
+}
+
+fn pointer_over_lock_button(app: &tauri::AppHandle, lock: &OverlayLock) -> bool {
+    let Some((px, py)) = platform::window::cursor_position() else { return false };
+    let Some((x, y, w, h, scale)) = *lock.button.lock() else { return false };
+    let Some(origin) = app.get_webview_window("main").and_then(|m| m.inner_position().ok()) else {
+        return false;
+    };
+    let (left, top) = (origin.x as f64 + x * scale, origin.y as f64 + y * scale);
+    let (px, py) = (px as f64, py as f64);
+    px >= left && px < left + w * scale && py >= top && py < top + h * scale
+}
+
+/// Lock or unlock the overlay. Locking starts the pointer watch, which ends
+/// by itself once unlocked.
+fn apply_overlay_lock(app: &tauri::AppHandle, locked: bool) {
+    use std::sync::atomic::Ordering;
+    let Some(state) = app.try_state::<AppState>() else { return };
+    let lock = state.overlay_lock.clone();
+    lock.locked.store(locked, Ordering::SeqCst);
+    sync_click_through(app, &lock, false);
+    tracing::info!("Overlay {}", if locked { "locked (click-through)" } else { "unlocked" });
+    if locked && !lock.watching.swap(true, Ordering::SeqCst) {
+        let app = app.clone();
+        std::thread::spawn(move || {
+            while lock.locked.load(Ordering::SeqCst) {
+                std::thread::sleep(Duration::from_millis(50));
+                let over = pointer_over_lock_button(&app, &lock);
+                sync_click_through(&app, &lock, over);
+            }
+            sync_click_through(&app, &lock, false);
+            lock.watching.store(false, Ordering::SeqCst);
+        });
+    }
 }
 
 // ===== TAURI COMMANDS =====
@@ -469,6 +544,31 @@ fn suspend_capture(state: tauri::State<'_, AppState>, suspended: bool) {
     // on (a player found it in 2.0.37, issue #6).
     state.capture_suspended.store(suspended, std::sync::atomic::Ordering::SeqCst);
     tracing::info!("Capture {}", if suspended { "suspended" } else { "resumed" });
+}
+
+/// Whether the click-through lock can work here (it needs the pointer's
+/// position outside the window; see `OverlayLock`).
+#[tauri::command]
+fn overlay_lock_supported() -> bool {
+    platform::window::cursor_position().is_some()
+}
+
+#[tauri::command]
+fn set_overlay_locked(app: tauri::AppHandle, locked: bool) {
+    apply_overlay_lock(&app, locked);
+}
+
+#[tauri::command]
+fn is_overlay_locked(state: tauri::State<'_, AppState>) -> bool {
+    state.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+/// Where the lock button is in the main window's page, so it stays clickable
+/// while the rest of the window lets clicks through.
+#[tauri::command]
+fn set_lock_button_rect(state: tauri::State<'_, AppState>, x: f64, y: f64, width: f64, height: f64, scale: f64) {
+    let scale = if scale.is_finite() && scale > 0.0 { scale } else { 1.0 };
+    *state.overlay_lock.button.lock() = Some((x, y, width, height, scale));
 }
 
 #[tauri::command]
@@ -1438,7 +1538,11 @@ async fn choose_screenshot_folder(
 }
 
 #[tauri::command]
-fn start_drag(app: tauri::AppHandle) {
+fn start_drag(app: tauri::AppHandle, state: tauri::State<'_, AppState>) {
+    // A locked overlay stays where it is.
+    if state.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
     if let Some(window) = app.get_webview_window("main") {
         platform::window::start_drag(&window);
     }
@@ -1764,6 +1868,7 @@ pub fn run() {
                     .build()
                     .unwrap_or_default(),
                 capture_suspended: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                overlay_lock: Arc::new(OverlayLock::default()),
             };
             let capture_suspended = state.capture_suspended.clone();
 
@@ -1850,15 +1955,20 @@ pub fn run() {
                 .get("dpsMeter.hotkey").unwrap_or_default();
             let toggle_label = app.state::<AppState>().settings
                 .get("dpsMeter.toggleWindowHotkey").unwrap_or_default();
+            let lock_label = app.state::<AppState>().settings
+                .get("dpsMeter.lockHotkey").unwrap_or_default();
 
             let (reload_mods, reload_vk) = platform::hotkeys::parse_hotkey_label(&reload_label)
                 .unwrap_or((0x0002 | 0x0001, 0x52)); // Default: Ctrl+Alt+R
             let (toggle_mods, toggle_vk) = platform::hotkeys::parse_hotkey_label(&toggle_label)
                 .unwrap_or((0x0002 | 0x0001, 0x26)); // Default: Ctrl+Alt+Up
+            let (lock_mods, lock_vk) = platform::hotkeys::parse_hotkey_label(&lock_label)
+                .unwrap_or((0x0002 | 0x0001, 0x4C)); // Default: Ctrl+Alt+L
 
             hotkey_manager.start(
                 reload_mods, reload_vk,
                 toggle_mods, toggle_vk,
+                lock_mods, lock_vk,
                 {
                     let h = hotkey_handle.clone();
                     move || {
@@ -1873,7 +1983,7 @@ pub fn run() {
                     }
                 },
                 {
-                    let h = hotkey_handle;
+                    let h = hotkey_handle.clone();
                     move || {
                         // Toggle window visibility
                         if let Some(window) = h.get_webview_window("main") {
@@ -1885,6 +1995,21 @@ pub fn run() {
                                 let _ = window.set_focus();
                             }
                         }
+                    }
+                },
+                {
+                    let h = hotkey_handle;
+                    move || {
+                        // Toggle the click-through lock, and tell the page so
+                        // its button and saved setting follow.
+                        let locked = h
+                            .try_state::<AppState>()
+                            .is_some_and(|s| s.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst));
+                        if platform::window::cursor_position().is_none() && !locked {
+                            return; // the lock is not offered here
+                        }
+                        apply_overlay_lock(&h, !locked);
+                        let _ = h.emit("overlay-lock-changed", !locked);
                     }
                 },
             );
@@ -2161,6 +2286,10 @@ pub fn run() {
             write_cached_icon,
             log_from_ui,
             suspend_capture,
+            overlay_lock_supported,
+            set_overlay_locked,
+            is_overlay_locked,
+            set_lock_button_rect,
             is_capture_suspended,
             resize_window,
             list_monitors,

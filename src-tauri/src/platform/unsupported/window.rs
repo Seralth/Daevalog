@@ -1,5 +1,11 @@
 //! Tauri's own cross-platform equivalents, which is the best available here.
 
+/// Not available: on Wayland an app cannot read the pointer outside its own
+/// windows, so the click-through lock (which needs it) is not offered.
+pub fn cursor_position() -> Option<(i32, i32)> {
+    None
+}
+
 pub fn start_drag(window: &tauri::WebviewWindow) {
     let _ = window.start_dragging();
 }
