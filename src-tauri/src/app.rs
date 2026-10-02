@@ -783,12 +783,23 @@ fn open_url(url: String) {
 }
 
 #[tauri::command]
-fn resize_window(app: tauri::AppHandle, width: f64, height: f64) {
+fn resize_window(app: tauri::AppHandle, width: f64, height: f64, scale: Option<f64>) {
     // Only the overlay auto-sizes itself. The details window is sized to a
     // whole monitor by open_details_window and must never be resized from JS.
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width, height }));
-    }
+    let Some(window) = app.get_webview_window("main") else { return };
+    // `width`/`height` are the page's CSS pixels and `scale` its
+    // devicePixelRatio. WebView2 draws a CSS pixel at the display scale TIMES
+    // Windows' Accessibility "Text size", while a logical size here covers the
+    // display scale only, so with Text size above 100% the meter outgrew its
+    // window and was cut off. The page's own ratio covers both.
+    let size = match scale.filter(|s| s.is_finite() && *s > 0.0) {
+        Some(scale) => tauri::Size::Physical(tauri::PhysicalSize {
+            width: (width * scale).ceil() as u32,
+            height: (height * scale).ceil() as u32,
+        }),
+        None => tauri::Size::Logical(tauri::LogicalSize { width, height }),
+    };
+    let _ = window.set_size(size);
 }
 
 /// Displays as reported by the OS, for the "Show Details on Monitor" picker.

@@ -743,10 +743,12 @@
 
     const w = fullPanel ? PANEL_WIDTH : tooltipOnly ? TOOLTIP_WIDTH : contentW;
     const h = fullPanel ? Math.max(PANEL_HEIGHT, contentH) : contentH;
-    const sizeKey = `${w}x${h}`;
+    const sizeKey = `${w}x${h}@${window.devicePixelRatio || 1}`;
     if (sizeKey === lastSizeKey) return;
     lastSizeKey = sizeKey;
-    invoke("resize_window", { width: w, height: h }).catch(() => {});
+    // The page's devicePixelRatio, so the backend sizes the window in the
+    // pixels the page is actually drawn at (Windows text size included).
+    invoke("resize_window", { width: w, height: h, scale: window.devicePixelRatio || 1 }).catch(() => {});
   };
 
   // Watch all class changes on the container to catch panel open/close instantly
@@ -821,7 +823,7 @@
     resizeActive = true;
     const screenW = window.screen.availWidth || 1920;
     const screenH = window.screen.availHeight || 1080;
-    invoke("resize_window", { width: Math.min(screenW, 2000), height: Math.min(screenH, 1200) }).catch(() => {});
+    invoke("resize_window", { width: Math.min(screenW, 2000), height: Math.min(screenH, 1200), scale: window.devicePixelRatio || 1 }).catch(() => {});
   };
   const shrinkViewport = () => {
     if (resizeActive) {
