@@ -4687,13 +4687,23 @@ class DpsApp {
   }
 
   getTargetLabel({ targetId = 0, targetName = "", targetMode = "", dungeonId = 0 } = {}) {
-    // In a party instance the title names the dungeon rather than whatever mob
-    // happens to be selected — it is the more useful heading, and it is stable
-    // across pulls. Falls back to the target label outside a dungeon.
+    // In a party instance the title is the boss being fought, and the dungeon
+    // between pulls. It used to stay on the dungeon throughout, so a whole run
+    // read "Urugugu Canyon" past every boss. The modes that track no single
+    // target (all targets, training) keep the dungeon.
     const dungeonLabel = Number(dungeonId) > 0
       ? (this.i18n?.getDungeonLabel?.(Number(dungeonId)) ?? "")
       : "";
-    if (dungeonLabel) return dungeonLabel;
+    if (dungeonLabel) {
+      const tracksOne = targetMode !== "allTargets" && targetMode !== "trainTargets";
+      const numericId = Number(targetId);
+      if (tracksOne && Number.isFinite(numericId) && numericId > 0) {
+        const cleanName = typeof targetName === "string" ? targetName.trim() : "";
+        const bossName = this.i18n?.getNpcName?.(numericId, cleanName) ?? cleanName;
+        if (bossName) return bossName;
+      }
+      return dungeonLabel;
+    }
     if (targetMode === "trainTargets" && !this.isLocalUserIdentified()) {
       return this.i18n?.t("target.identifying", "Identifying you...") ?? "Identifying you...";
     }
