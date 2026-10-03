@@ -122,8 +122,10 @@ fn run(app: tauri::AppHandle) {
         }
         let Some(c) = client.as_mut() else { continue };
         let mut assets = Assets::new().small_image("a2tools").small_text("A2Tools DPS Meter");
-        if let (Some(key), Some(name)) = (next.class_key, next.class_name.as_deref()) {
-            assets = assets.large_image(key).large_text(name);
+        // The image's hover text is the class with its level, as the line
+        // beside it reads, not the bare class name.
+        if let Some(key) = next.class_key {
+            assets = assets.large_image(key).large_text(next.details.as_str());
         }
         let mut activity = Activity::new()
             .details(next.details.as_str())
