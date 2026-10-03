@@ -153,7 +153,8 @@ fn class_key(class: JobClass) -> &'static str {
         JobClass::Assassin => "assassin",
         JobClass::Sorcerer => "sorcerer",
         JobClass::Cleric => "cleric",
-        JobClass::Elementalist => "elementalist",
+        // The asset is named for the class as the game calls it.
+        JobClass::Elementalist => "spiritmaster",
         JobClass::Chanter => "chanter",
         JobClass::Fighter => "brawler",
     }
@@ -317,6 +318,7 @@ impl Texts {
     fn class(&self, class: JobClass) -> String {
         let key = match class {
             JobClass::Fighter => "FIGHTER".to_string(),
+            JobClass::Elementalist => "ELEMENTALIST".to_string(),
             other => class_key(other).to_uppercase(),
         };
         self.classes.get(&key).cloned().unwrap_or_else(|| format!("{class:?}"))
