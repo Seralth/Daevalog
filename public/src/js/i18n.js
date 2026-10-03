@@ -243,6 +243,15 @@ const createI18n = ({
     return label ? `${entry.name} (${label})` : entry.name;
   };
 
+  // The instance's tier alone ({ key: "hard", label: "Hard" }), or null where
+  // the dungeon has no tiers or the id is unknown.
+  const getDungeonDifficulty = (dungeonId) => {
+    const key = dungeonStrings?.[String(dungeonId)]?.difficulty;
+    if (!key) return null;
+    const label = t(`dungeon.difficulty.${key}`, "");
+    return label ? { key, label } : null;
+  };
+
   return {
     init,
     setLanguage,
@@ -251,6 +260,7 @@ const createI18n = ({
     getSkillName,
     getNpcName,
     getDungeonLabel,
+    getDungeonDifficulty,
     getLanguage: () => currentLanguage,
     onChange,
   };

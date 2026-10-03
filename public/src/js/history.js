@@ -359,6 +359,16 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
         nameEl.appendChild(badge);
       }
     }
+    // Every row names its dungeon tier, so a Hard clear stands out in any view.
+    const tier = fight.dungeonId
+      ? window.i18n?.getDungeonDifficulty?.(Number(fight.dungeonId))
+      : null;
+    if (tier) {
+      const badge = document.createElement("span");
+      badge.className = `historyDifficultyBadge historyDifficulty-${tier.key}`;
+      badge.textContent = tier.label;
+      nameEl.appendChild(badge);
+    }
     if (fight.isTrain) {
       const badge = document.createElement("span");
       badge.className = "historyTrainBadge";

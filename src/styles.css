@@ -5867,6 +5867,28 @@ body.isHistoryWindow .historyPanel .historyHeader .closeX {
   background: color-mix(in srgb, var(--error-fill) 30%, transparent);
   border: 1px solid color-mix(in srgb, var(--error-fill) 68%, transparent);
 }
+/* Dungeon tier: green Exploration, blue Normal, red Hard. */
+.historyPanel .historyDifficultyBadge {
+  --tier: #8a94a6;
+  display: inline-block;
+  margin-left: 0;
+  padding: 1px 5px;
+  border-radius: 3px;
+  vertical-align: middle;
+  font-family: var(--hud-tech);
+  font-variation-settings: "wght" 700, "wdth" 75;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  color: #fff;
+  background: color-mix(in srgb, var(--tier) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tier) 68%, transparent);
+}
+.historyPanel .historyDifficulty-exploration { --tier: #4caf72; }
+.historyPanel .historyDifficulty-normal { --tier: #4a8fe0; }
+.historyPanel .historyDifficulty-hard { --tier: #e0524a; }
 
 /* ---------- scrollbars: hairline, not hardware ---------- */
 
