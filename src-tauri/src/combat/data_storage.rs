@@ -106,6 +106,31 @@ impl SkillCombatData {
         }
     }
 
+    /// Add `other`'s hits to these: the same skill, recorded under two ids.
+    fn absorb(&mut self, other: SkillCombatData) {
+        self.hit_count += other.hit_count;
+        self.total_damage = self.total_damage.saturating_add(other.total_damage);
+        self.min_damage = self.min_damage.min(other.min_damage);
+        self.max_damage = self.max_damage.max(other.max_damage);
+        self.crit_count += other.crit_count;
+        self.back_count += other.back_count;
+        self.frontal_count += other.frontal_count;
+        self.parry_count += other.parry_count;
+        self.perfect_count += other.perfect_count;
+        self.double_count += other.double_count;
+        self.smite_count += other.smite_count;
+        self.powershard_count += other.powershard_count;
+        self.multi_hit_count += other.multi_hit_count;
+        self.multi_hit_damage = self.multi_hit_damage.saturating_add(other.multi_hit_damage);
+        self.multi_hit_hits += other.multi_hit_hits;
+        self.heal_amount = self.heal_amount.saturating_add(other.heal_amount);
+        self.hit_timestamps.extend(other.hit_timestamps);
+        self.hit_timestamps.sort_unstable();
+        for (mine, theirs) in self.spec_flags.iter_mut().zip(other.spec_flags) {
+            *mine |= theirs;
+        }
+    }
+
     fn new(skill_code: i32, is_dot: bool) -> Self {
         Self {
             skill_code,
@@ -177,6 +202,25 @@ pub struct ActorCombatData {
 }
 
 impl ActorCombatData {
+    /// Add everything `other` recorded: one character, under an old entity id.
+    fn absorb(&mut self, other: ActorCombatData) {
+        self.total_damage += other.total_damage;
+        self.party_heal += other.party_heal;
+        self.regen += other.regen;
+        self.damage_received += other.damage_received;
+        self.hits_received += other.hits_received;
+        self.last_damage_time = self.last_damage_time.max(other.last_damage_time);
+        self.job = self.job.or(other.job);
+        for (key, skill) in other.skills {
+            match self.skills.get_mut(&key) {
+                Some(mine) => mine.absorb(skill),
+                None => {
+                    self.skills.insert(key, skill);
+                }
+            }
+        }
+    }
+
     fn new() -> Self {
         Self {
             total_damage: 0,
@@ -1344,25 +1388,44 @@ fn append_nickname_inner_with_force(inner: &mut Inner, uid: i32, nickname: &str,
     }
 
     // Name eviction: character names are unique per server, so if this name
-    // already belongs to a different entity ID, that old ID is stale (zone change).
-    // Evict the old entity's name, player status, and summon mappings regardless
-    // of whether the old entity was ever classified as a player.
+    // already belongs to a different entity ID, that old ID is stale. Evict the
+    // old entity's name, player status, and summon mappings regardless of
+    // whether the old entity was ever classified as a player.
     let evicted_ids: Vec<i32> = inner.nickname_storage.iter()
         .filter(|&(&old_id, old_name)| old_name == nickname && old_id != uid)
         .map(|(&old_id, _)| old_id)
         .collect();
     for old_id in evicted_ids {
         tracing::debug!("Name eviction: '{}' moved from entity {} to {}", nickname, old_id, uid);
+        // When the game itself named both ids (a spawn or self record each
+        // time), they are one character who came back as a new entity: after
+        // dying, or as the local player does several times a fight. What the
+        // old id did in this segment is theirs, so it moves to the new id. It
+        // used to be deleted: a Cleric re-entering mid-pull lost ~55M of a
+        // Gargaum fight (2026-07 capture). A name that only a fuzzy rule had
+        // bound may have been on someone else, so that damage is still dropped.
+        let same_character = force && inner.authoritative_name_ids.contains(&old_id);
         inner.nickname_storage.remove(&old_id);
         inner.known_player_ids.remove(&old_id);
         inner.authoritative_name_ids.remove(&old_id);
         inner.pending_nicknames.remove(&old_id);
-        // Remove summon mappings pointing to the stale owner
-        inner.summon_storage.retain(|_, &mut owner| owner != old_id);
-        // Also scrub the stale entity's damage from all target aggregates
+        if same_character {
+            for owner in inner.summon_storage.values_mut() {
+                if *owner == old_id {
+                    *owner = uid;
+                }
+            }
+        } else {
+            // Remove summon mappings pointing to the stale owner
+            inner.summon_storage.retain(|_, &mut owner| owner != old_id);
+        }
         for target_data in inner.target_combat.values_mut() {
             if let Some(actor_data) = target_data.actors.remove(&old_id) {
-                target_data.total_damage -= actor_data.total_damage;
+                if same_character {
+                    target_data.actors.entry(uid).or_insert_with(ActorCombatData::new).absorb(actor_data);
+                } else {
+                    target_data.total_damage -= actor_data.total_damage;
+                }
             }
         }
     }
@@ -1597,6 +1660,28 @@ mod tests {
 
     fn fight(s: &DataStorage, actor: i32, prefix: i32, skills: i32) {
         fight_together(s, &[actor], prefix, skills);
+    }
+
+    #[test]
+    fn a_character_back_as_a_new_entity_keeps_their_damage() {
+        let s = DataStorage::new();
+        s.append_nickname_authoritative(101, "Cleric");
+        s.append_damage(hit(101, 900, 1_000, 500, false));
+        s.append_nickname_authoritative(202, "Cleric");
+        s.append_damage(hit(202, 900, 2_000, 300, false));
+        let snap = s.get_combat_snapshot();
+        let boss = &snap[&900];
+        assert!(!boss.actors.contains_key(&101));
+        assert_eq!(boss.actors[&202].total_damage, 800, "the earlier hits moved with the name");
+        assert_eq!(boss.total_damage, 800);
+
+        // A name a fuzzy rule had put on some id says nothing about whose
+        // damage that id dealt, so it is not moved.
+        let s = DataStorage::new();
+        s.append_damage(hit(303, 900, 1_000, 500, false));
+        s.append_nickname(303, "Cleric");
+        s.append_nickname_authoritative(404, "Cleric");
+        assert!(!s.get_combat_snapshot()[&900].actors.contains_key(&404));
     }
 
     #[test]
