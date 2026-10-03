@@ -178,6 +178,13 @@ const createI18n = ({
       if (text) el.setAttribute("data-tip", text);
     });
 
+    // Native tooltips, for windows without the meter's own (data-tip) one.
+    document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+      const key = el.dataset.i18nTitle;
+      const text = t(key, el.getAttribute("title") ?? "");
+      if (text) el.setAttribute("title", text);
+    });
+
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
       const key = el.dataset.i18nPlaceholder;
       const text = t(key, el.getAttribute("placeholder") ?? "");
