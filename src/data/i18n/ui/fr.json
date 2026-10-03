@@ -118,13 +118,15 @@
     "filterPlayer": "Classe du joueur...",
     "filterDate": "Date (AAAA-MM-JJ)...",
     "viewList": "Vue en liste",
+    "viewDungeon": "Grouper par donjon",
     "viewGrouped": "Grouper par boss",
     "fightCount": "{n} combats",
     "fightCountOne": "1 combat",
     "previewUpload": "Aperçu de l'envoi",
     "previewUploadTip": "Écrit ce que le partage de ce combat enverrait. Rien n'est envoyé.",
     "previewWorking": "Création de l'aperçu…",
-    "previewDone": "{slice} Ko écrits ({sent} Ko compressés — ce qu'un envoi transmettrait). {kept} paquets conservés sur {seen}, {blinded} noms masqués. Rien n'a été envoyé. Enregistré dans {dir}"
+    "previewDone": "{slice} Ko écrits ({sent} Ko compressés — ce qu'un envoi transmettrait). {kept} paquets conservés sur {seen}, {blinded} noms masqués. Rien n'a été envoyé. Enregistré dans {dir}",
+    "openWorld": "Monde ouvert"
   },
   "settings": {
     "title": "Paramètres",

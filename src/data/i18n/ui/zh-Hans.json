@@ -118,6 +118,7 @@
     "filterPlayer": "玩家职业...",
     "filterDate": "日期 (YYYY-MM-DD)...",
     "viewList": "列表视图",
+    "viewDungeon": "按副本分组",
     "viewGrouped": "按首领分组",
     "fightCount": "{n} 场",
     "fightCountOne": "1 场",
@@ -129,7 +130,8 @@
     "uploadOpen": "在 a2tools.app 打开这场战斗的记录",
     "uploadWorking": "上传中…",
     "uploadDonePublic": "已上传。链接已复制：{url}",
-    "uploadDonePrivate": "已以私密方式上传。链接已复制：{url}"
+    "uploadDonePrivate": "已以私密方式上传。链接已复制：{url}",
+    "openWorld": "野外"
   },
   "settings": {
     "title": "设置",

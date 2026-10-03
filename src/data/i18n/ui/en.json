@@ -118,6 +118,7 @@
     "filterPlayer": "Player class...",
     "filterDate": "Date (YYYY-MM-DD)...",
     "viewList": "List view",
+    "viewDungeon": "Group by dungeon",
     "viewGrouped": "Group by boss",
     "fightCount": "{n} fights",
     "fightCountOne": "1 fight",
@@ -129,7 +130,8 @@
     "uploadOpen": "Open this fight's log on a2tools.app",
     "uploadWorking": "Uploading…",
     "uploadDonePublic": "Uploaded. Link copied: {url}",
-    "uploadDonePrivate": "Uploaded as private. Link copied: {url}"
+    "uploadDonePrivate": "Uploaded as private. Link copied: {url}",
+    "openWorld": "Open world"
   },
   "settings": {
     "title": "Settings",

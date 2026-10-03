@@ -118,13 +118,15 @@
     "filterPlayer": "Spielerklasse...",
     "filterDate": "Datum (JJJJ-MM-TT)...",
     "viewList": "Listenansicht",
+    "viewDungeon": "Nach Dungeon gruppieren",
     "viewGrouped": "Nach Boss gruppieren",
     "fightCount": "{n} Kämpfe",
     "fightCountOne": "1 Kampf",
     "previewUpload": "Upload-Vorschau",
     "previewUploadTip": "Schreibt, was das Teilen dieses Kampfes hochladen würde. Es wird nichts gesendet.",
     "previewWorking": "Vorschau wird erstellt…",
-    "previewDone": "{slice} KB geschrieben ({sent} KB komprimiert — so viel würde ein Upload senden). {kept} von {seen} Paketen behalten, {blinded} Namen unkenntlich gemacht. Es wurde nichts hochgeladen. Gespeichert unter {dir}"
+    "previewDone": "{slice} KB geschrieben ({sent} KB komprimiert — so viel würde ein Upload senden). {kept} von {seen} Paketen behalten, {blinded} Namen unkenntlich gemacht. Es wurde nichts hochgeladen. Gespeichert unter {dir}",
+    "openWorld": "Offene Welt"
   },
   "settings": {
     "title": "Einstellungen",

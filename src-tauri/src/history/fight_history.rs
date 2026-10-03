@@ -185,6 +185,7 @@ impl FightHistoryManager {
                             is_live: false,
                             app_version: record.app_version,
                             mob_code: record.mob_code,
+                            dungeon_id: record.dungeon_id,
                         });
                     }
                 }

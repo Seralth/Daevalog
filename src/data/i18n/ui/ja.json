@@ -118,13 +118,15 @@
     "filterPlayer": "プレイヤーのクラス...",
     "filterDate": "日付 (YYYY-MM-DD)...",
     "viewList": "リスト表示",
+    "viewDungeon": "ダンジョン別",
     "viewGrouped": "ボスごとにまとめる",
     "fightCount": "{n} 戦",
     "fightCountOne": "1 戦",
     "previewUpload": "アップロードのプレビュー",
     "previewUploadTip": "この戦闘を共有した場合に送信される内容を書き出します。送信はされません。",
     "previewWorking": "プレビューを作成中…",
-    "previewDone": "{slice} KB を書き出しました（圧縮後 {sent} KB — 実際に送信されるサイズ）。{seen} 個中 {kept} 個のパケットを保持し、{blinded} 件の名前を伏せました。何もアップロードされていません。保存先: {dir}"
+    "previewDone": "{slice} KB を書き出しました（圧縮後 {sent} KB — 実際に送信されるサイズ）。{seen} 個中 {kept} 個のパケットを保持し、{blinded} 件の名前を伏せました。何もアップロードされていません。保存先: {dir}",
+    "openWorld": "フィールド"
   },
   "settings": {
     "title": "設定",

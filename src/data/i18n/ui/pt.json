@@ -118,13 +118,15 @@
     "filterPlayer": "Classe do jogador...",
     "filterDate": "Data (AAAA-MM-DD)...",
     "viewList": "Visualização em lista",
+    "viewDungeon": "Agrupar por masmorra",
     "viewGrouped": "Agrupar por chefe",
     "fightCount": "{n} combates",
     "fightCountOne": "1 combate",
     "previewUpload": "Pré-visualizar envio",
     "previewUploadTip": "Escreve o que o compartilhamento deste combate enviaria. Nada é enviado.",
     "previewWorking": "Criando a pré-visualização…",
-    "previewDone": "{slice} KB gravados ({sent} KB compactados — o que um envio transmitiria). {kept} de {seen} pacotes mantidos, {blinded} nomes ocultados. Nada foi enviado. Salvo em {dir}"
+    "previewDone": "{slice} KB gravados ({sent} KB compactados — o que um envio transmitiria). {kept} de {seen} pacotes mantidos, {blinded} nomes ocultados. Nada foi enviado. Salvo em {dir}",
+    "openWorld": "Mundo aberto"
   },
   "settings": {
     "title": "Configurações",

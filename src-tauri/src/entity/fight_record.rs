@@ -64,6 +64,10 @@ pub struct FightSummary {
     pub app_version: String,
     #[serde(default)]
     pub mob_code: i32,
+    /// The instance it was fought in (0 in the open world), so History can
+    /// group fights by dungeon.
+    #[serde(default)]
+    pub dungeon_id: i32,
 }
 
 /// Obscure a nickname for privacy: keep first char and last char, mask the middle.

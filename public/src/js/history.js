@@ -40,10 +40,15 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
   let filterDate = "";
   let classDropdownOpen = false;
 
-  // View mode: "grouped" (each boss its own collapsible section) or "list" (flat chronological).
+  // View mode: "dungeon" (each dungeon and difficulty a collapsible section,
+  // the default), "grouped" (each boss a section) or "list" (flat, newest first).
   const VIEW_KEY = "historyViewMode";
+  const VIEWS = ["dungeon", "grouped", "list"];
   let viewMode = (() => {
-    try { return localStorage.getItem(VIEW_KEY) === "list" ? "list" : "grouped"; } catch { return "grouped"; }
+    try {
+      const saved = localStorage.getItem(VIEW_KEY);
+      return VIEWS.includes(saved) ? saved : "dungeon";
+    } catch { return "dungeon"; }
   })();
   const expandedGroups = new Set();
 
@@ -53,14 +58,18 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     panel.classList.toggle("deleteMode", showDeleteMode);
   };
 
+  const VIEW_TITLES = {
+    dungeon: ["history.viewDungeon", "Group by dungeon"],
+    grouped: ["history.viewGrouped", "Group by boss"],
+    list: ["history.viewList", "List view"],
+  };
   const syncViewToggle = () => {
     viewBtns.forEach((b) => {
       b.classList.toggle("active", b.dataset.view === viewMode);
-      b.title = b.dataset.view === "list"
-        ? t("history.viewList", "List view")
-        : t("history.viewGrouped", "Group by boss");
+      const [key, fallback] = VIEW_TITLES[b.dataset.view] || VIEW_TITLES.list;
+      b.title = t(key, fallback);
     });
-    panel.classList.toggle("groupedView", viewMode === "grouped");
+    panel.classList.toggle("groupedView", viewMode !== "list");
   };
 
   const i18n = window.i18n;
@@ -324,9 +333,12 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     }
   };
 
-  const buildRow = (fight, { grouped = false } = {}) => {
+  // `grouped`: a row inside a boss section, which leads with its date (the
+  // boss is the header). `child`: any row inside a section, styled as one; a
+  // dungeon section's rows still lead with their boss.
+  const buildRow = (fight, { grouped = false, child = grouped } = {}) => {
     const row = document.createElement("div");
-    row.className = grouped ? "historyRow historyRowChild" : "historyRow";
+    row.className = child ? "historyRow historyRowChild" : "historyRow";
     row.dataset.fightId = fight.id;
 
     const infoEl = document.createElement("div");
@@ -438,7 +450,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
         e.stopPropagation();
         if (window.javaBridge?.deleteFight?.(fight.id)) {
           allFights = allFights.filter((x) => x.id !== fight.id);
-          if (viewMode === "grouped") {
+          if (viewMode !== "list") {
             // Re-render so the section's fight count updates and empty sections drop out.
             renderList(allFights);
           } else {
@@ -521,7 +533,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     const renderChildren = () => {
       if (childWrap.childElementCount) return;
       const frag = document.createDocumentFragment();
-      group.fights.forEach((f) => frag.appendChild(buildRow(f, { grouped: true })));
+      group.fights.forEach((f) => frag.appendChild(buildRow(f, group.rowOptions)));
       childWrap.appendChild(frag);
     };
 
@@ -547,12 +559,24 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     return wrap;
   };
 
-  const renderGrouped = (visible) => {
+  // A dungeon section's title: the dungeon and its difficulty, or Open world.
+  const dungeonTitle = (dungeonId) => {
+    const id = Number(dungeonId) || 0;
+    if (!id) return t("history.openWorld", "Open world");
+    return window.i18n?.getDungeonLabel?.(id) || `#${id}`;
+  };
+
+  const renderGrouped = (visible, byDungeon) => {
     const groups = new Map();
     visible.forEach((f) => {
-      const key = f.bossName || `Boss #${f.targetId}`;
+      // Keyed by what the header says, so two instance ids with the same name
+      // and difficulty share one section.
+      const key = byDungeon ? dungeonTitle(f.dungeonId) : (f.bossName || `Boss #${f.targetId}`);
       let g = groups.get(key);
-      if (!g) { g = { name: key, fights: [] }; groups.set(key, g); }
+      if (!g) {
+        g = { name: key, fights: [], rowOptions: byDungeon ? { child: true } : { grouped: true } };
+        groups.set(key, g);
+      }
       g.fights.push(f);
     });
     // Sections ordered by their most recent run.
@@ -577,10 +601,10 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     }
     if (emptyEl) emptyEl.style.display = "none";
 
-    if (viewMode === "grouped") {
-      renderGrouped(lastVisible);
-    } else {
+    if (viewMode === "list") {
       appendPage();
+    } else {
+      renderGrouped(lastVisible, viewMode === "dungeon");
     }
   };
 
@@ -657,7 +681,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
   viewBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
-      const mode = btn.dataset.view === "list" ? "list" : "grouped";
+      const mode = VIEWS.includes(btn.dataset.view) ? btn.dataset.view : "dungeon";
       if (mode === viewMode) return;
       viewMode = mode;
       try { localStorage.setItem(VIEW_KEY, viewMode); } catch {}
