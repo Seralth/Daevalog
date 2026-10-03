@@ -180,6 +180,12 @@
     window._dpsApp?.refreshAccountPanel?.(event?.payload);
   });
 
+  // Settings was asked to open while already open; check the account again
+  // behind what it shows.
+  listen("settings-shown", () => {
+    window._dpsApp?.refreshAccountPanel?.();
+  });
+
   // The lock hotkey toggled the click-through lock; the page follows.
   listen("overlay-lock-changed", (event) => {
     window._dpsApp?._onOverlayLockChanged?.(!!event?.payload);
@@ -588,6 +594,14 @@
 
     accountStatus() {
       return invoke("account_status");
+    },
+
+    // The last check's answer, at once: null if none has run yet, else
+    // { who } with who null when signed out.
+    accountStatusCached() {
+      return invoke("account_status_cached").then((seen) =>
+        seen === null || seen === undefined ? null : { who: seen }
+      );
     },
 
     // Starts the device grant and opens the browser. Resolves with the code to

@@ -1941,14 +1941,29 @@ class DpsApp {
       return;
     }
 
+    // The last known answer first, so the panel is right the moment it opens;
+    // the server's can take seconds, and nothing else waits on it.
+    if (!result) {
+      try {
+        const seen = await window.javaBridge?.accountStatusCached?.();
+        if (seen) this.paintAccount(seen.who);
+      } catch {}
+    }
+
     let who = null;
     try {
       who = await window.javaBridge?.accountStatus?.();
     } catch {
       who = null;
     }
+    this.paintAccount(who);
+  }
 
+  paintAccount(who) {
     const signedIn = !!who;
+    // A sign-in waiting for approval in the browser keeps its code and its
+    // "waiting" line; its outcome arrives on "account-changed".
+    if (!signedIn && this.accountCodeBox?.style.display === "block") return;
     if (this.accountCodeBox && signedIn) this.accountCodeBox.style.display = "none";
     if (this.accountConnectBtn) {
       this.accountConnectBtn.disabled = false;
@@ -2511,9 +2526,7 @@ class DpsApp {
       window.javaBridge?.openBrowser?.("https://github.com/taengu/AION2-DPS-Meter/releases");
     });
 
-    this.quitButton?.addEventListener("click", () => {
-      window.javaBridge?.exitApp?.();
-    });
+    // Quit is wired in startApp, before anything that can be slow.
 
     this.updateSettingsVersion();
     this.updateSupportVisibility(currentLanguage);
@@ -3712,12 +3725,7 @@ class DpsApp {
     this.refreshMonitorList().then(() => this.initializeSettingsDropdowns());
     this._loadDeviceDropdown();
     this.settingsPanel?.classList.add("isOpen");
-    const close = () => window.javaBridge?.closeSettingsWindow?.();
-    this.settingsClose?.addEventListener("click", close);
-    document.querySelector(".settingsWindowClose")?.addEventListener("click", close);
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") close();
-    });
+    // Closing is wired in startApp, before anything that can be slow.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => window.javaBridge?.toolWindowReady?.("settings"));
     });
@@ -5045,6 +5053,19 @@ const startApp = async ({ forced = false } = {}) => {
     hasJavaBridge: !!window.javaBridge,
     forced,
   });
+  // Window controls answer at once: the translations below load first, and
+  // until they had, Quit and closing the settings window did nothing.
+  document.querySelector(".quitButton")?.addEventListener("click", () => {
+    window.javaBridge?.exitApp?.();
+  });
+  if (window.A2_VIEW === "settings") {
+    const close = () => window.javaBridge?.closeSettingsWindow?.();
+    document.querySelector(".settingsClose")?.addEventListener("click", close);
+    document.querySelector(".settingsWindowClose")?.addEventListener("click", close);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") close();
+    });
+  }
   try {
     await window.i18n?.init?.();
     window.lucide?.createIcons?.();
