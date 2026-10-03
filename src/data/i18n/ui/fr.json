@@ -362,6 +362,9 @@
     "elyos": "Élyséens",
     "asmodian": "Asmodiens",
     "korea": "Corée",
-    "taiwan": "Taïwan"
+    "taiwan": "Taïwan",
+    "tierExpedition": "Expédition",
+    "tierConquestNormal": "Conquête (normal)",
+    "tierConquestHard": "Conquête (difficile)"
   }
 }

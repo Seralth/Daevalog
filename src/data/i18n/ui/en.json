@@ -369,6 +369,9 @@
     "elyos": "Elyos",
     "asmodian": "Asmodian",
     "korea": "Korea",
-    "taiwan": "Taiwan"
+    "taiwan": "Taiwan",
+    "tierExpedition": "Expedition",
+    "tierConquestNormal": "Conquest (Normal)",
+    "tierConquestHard": "Conquest (Hard)"
   }
 }

@@ -362,6 +362,9 @@
     "elyos": "Элийцы",
     "asmodian": "Асмодианы",
     "korea": "Корея",
-    "taiwan": "Тайвань"
+    "taiwan": "Тайвань",
+    "tierExpedition": "Экспедиция",
+    "tierConquestNormal": "Завоевание (обычное)",
+    "tierConquestHard": "Завоевание (сложное)"
   }
 }

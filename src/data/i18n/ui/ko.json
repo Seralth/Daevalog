@@ -369,6 +369,9 @@
     "elyos": "천족",
     "asmodian": "마족",
     "korea": "한국",
-    "taiwan": "대만"
+    "taiwan": "대만",
+    "tierExpedition": "원정",
+    "tierConquestNormal": "정복 (일반)",
+    "tierConquestHard": "정복 (어려움)"
   }
 }

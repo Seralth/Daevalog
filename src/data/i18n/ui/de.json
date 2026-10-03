@@ -362,6 +362,9 @@
     "elyos": "Elyos",
     "asmodian": "Asmodier",
     "korea": "Korea",
-    "taiwan": "Taiwan"
+    "taiwan": "Taiwan",
+    "tierExpedition": "Expedition",
+    "tierConquestNormal": "Eroberung (Normal)",
+    "tierConquestHard": "Eroberung (Schwer)"
   }
 }

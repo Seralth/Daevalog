@@ -26,7 +26,7 @@ use crate::platform::window_detector;
 
 /// The Discord application whose name ("AION2") the activity shows under, and
 /// whose art assets hold the class icons (keys as `class_key` returns them).
-const DISCORD_APPLICATION_ID: &str = "";
+const DISCORD_APPLICATION_ID: &str = "1556021373401432214";
 
 pub const SETTING_KEY: &str = "dpsMeter.discordActivity";
 
@@ -173,6 +173,7 @@ fn describe(storage: &Arc<DataStorage>, state: &AppState, text: &Texts, lang: &s
 
     let state_line = fighting(storage, state)
         .map(|boss| text.get("fighting", "Fighting {boss}").replace("{boss}", &boss))
+        .or_else(|| in_dungeon(storage.current_dungeon_id(), state.i18n_data_dir.as_ref(), text, lang))
         .unwrap_or_else(|| where_from(&profile, text, lang));
 
     Shown {
@@ -199,6 +200,42 @@ fn fighting(storage: &Arc<DataStorage>, state: &AppState) -> Option<String> {
     }
     let name = state.npc_lookup.get_npc_name(code);
     (!name.is_empty()).then_some(name)
+}
+
+/// "Urugugu Canyon · Conquest (Normal)", for the instance the party roster
+/// says you are in. Its last digit is the difficulty; dungeons with nine ids
+/// number levels instead, and are named without one.
+fn in_dungeon(dungeon_id: i32, dir: Option<&PathBuf>, text: &Texts, lang: &str) -> Option<String> {
+    if dungeon_id <= 0 {
+        return None;
+    }
+    let read = |l: &str| -> Option<serde_json::Value> {
+        let path = dir?.join("dungeons").join(format!("{l}.json"));
+        serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()
+    };
+    let table = read(lang).or_else(|| read("en"))?;
+    let table = table.as_object()?;
+    let name = table.get(&dungeon_id.to_string())?.get("name")?.as_str()?.to_string();
+    let group = dungeon_id - dungeon_id % 10;
+    let ids_in_group = table
+        .keys()
+        .filter_map(|k| k.parse::<i32>().ok())
+        .filter(|id| id - id % 10 == group)
+        .count();
+    let tier = if ids_in_group >= 9 {
+        None
+    } else {
+        match dungeon_id % 10 {
+            1 => Some(text.get("tierExpedition", "Expedition")),
+            2 => Some(text.get("tierConquestNormal", "Conquest (Normal)")),
+            3 => Some(text.get("tierConquestHard", "Conquest (Hard)")),
+            _ => None,
+        }
+    };
+    Some(match tier {
+        Some(t) => format!("{name} · {t}"),
+        None => name,
+    })
 }
 
 /// "Kaisinel (Elyos) · Europe".
@@ -301,6 +338,14 @@ mod tests {
         let p = LocalProfile { server_id: 2304, ..Default::default() };
         assert_eq!(where_from(&p, &texts(), "en"), "Lumiel (Asmodian) · Europe");
         assert_eq!(where_from(&LocalProfile::default(), &texts(), "en"), "");
+    }
+
+    #[test]
+    fn a_dungeon_is_named_with_its_difficulty() {
+        let dir = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../src/data/i18n"));
+        assert_eq!(in_dungeon(600012, Some(&dir), &texts(), "en").as_deref(), Some("Urugugu Canyon · Conquest (Normal)"));
+        assert_eq!(in_dungeon(600091, Some(&dir), &texts(), "en").as_deref(), Some("Ferocious Horn Den · Expedition"));
+        assert_eq!(in_dungeon(0, Some(&dir), &texts(), "en"), None);
     }
 
     #[test]
