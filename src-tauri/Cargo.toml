@@ -40,6 +40,7 @@ desktop = [
     "dep:secret-service",
     "dep:gtk",
     "dep:webkit2gtk",
+    "dep:x11-dl",
 ]
 
 # Both binaries are declared rather than left to auto-discovery, so adding the
@@ -129,6 +130,9 @@ gtk = { version = "0.18", optional = true }
 # Screenshots: WebKit's snapshot of the meter's page. Same version and feature
 # as Tauri's own, so it is the one copy.
 webkit2gtk = { version = "2", features = ["v2_40"], optional = true }
+# The pointer's position under XWayland, for the click-through lock. Loads
+# libX11 at run time; already in the tree through tao.
+x11-dl = { version = "2.21", optional = true }
 
 [dev-dependencies]
 flate2 = "1"
