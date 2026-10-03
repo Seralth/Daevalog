@@ -5542,6 +5542,30 @@ body.legacyUi .list .item .dps .dpsContribution {
   width: 14px;
   height: 14px;
 }
+/* The Battle History window, which is read rather than glanced at: its text
+   a size up, and its header buttons larger than the overlay's. Zoom rather
+   than a font-size for every rule, so the whole panel keeps its proportions. */
+body.isHistoryWindow .historyPanel {
+  zoom: 1.1;
+}
+body.isHistoryWindow .historyPanel .historyViewBtn,
+body.isHistoryWindow .historyPanel .historyTrainToggle,
+body.isHistoryWindow .historyPanel .historyDeleteToggle,
+body.isHistoryWindow .historyPanel .historyHeader .closeX {
+  width: 27px;
+  height: 27px;
+  min-width: 27px;
+}
+body.isHistoryWindow .historyPanel .historyViewBtn svg,
+body.isHistoryWindow .historyPanel .historyTrainToggle svg,
+body.isHistoryWindow .historyPanel .historyDeleteToggle svg {
+  width: 17px;
+  height: 17px;
+}
+body.isHistoryWindow .historyPanel .historyHeader .closeX {
+  font-size: 20px;
+}
+
 /* The × glyph is optically taller than an icon; drop it a hair so it
    centres in the same 23px box. */
 .historyPanel .historyHeader .closeX,
