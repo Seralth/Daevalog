@@ -644,6 +644,14 @@ impl StreamProcessor {
             // only counts when the owner id sits wholly after the fixed field and
             // the whole name field is a name.
             let after_fixed = fixed_field_start + 4;
+            // A zero there is no owner: the record a summon gets as it
+            // despawns, all zeros. The scan below then ran on into whatever
+            // followed, and found an "owner" in the next damage records: a
+            // Cleric's Divine Aura went to entity 10210, named "M", and showed
+            // as its own row (2026-10-04, Divine Auldor).
+            if data.get(after_fixed).is_none_or(|&b| b == 0) {
+                continue;
+            }
             let scan_end = std::cmp::min(data.len().saturating_sub(2), after_fixed + 128);
             let mut found = None;
             for server_idx in after_fixed + 1..scan_end {
