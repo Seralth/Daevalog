@@ -211,6 +211,8 @@ To remove it:
 | Automatic updates | Works for the packages; builds from source update with `git pull` |
 | Class icons | Works (missing in the 2.0.34 package and earlier; fixed in 2.0.35) |
 | Global hotkeys | Not yet |
+| Click-through lock | From 2.0.42, when the meter runs through XWayland (`GDK_BACKEND=x11 a2tools-dps-meter`): turn on the lock button in Settings. On native Wayland an app cannot see where the pointer is outside its own window, so the button stays hidden there |
+| Discord activity | From 2.0.42: your class, level and server in your Discord status, through the Discord app on the same computer |
 | Screenshots | Works from 2.0.41, to the clipboard and a folder (`~/Pictures/A2Tools DPS Meter` by default). On Linux the meter pictures itself on a plain background, since Wayland lets no app copy the screen |
 | Auto-hide when the game loses focus | Not yet (the meter stays visible) |
 
@@ -367,7 +369,8 @@ That is Hyprland's Lua configuration. If you use `hyprland.conf` instead, set th
 | `debug.log` says `No AION2 window found` while the game is running | The meter did not find the game process. Send us the output of `ps aux \| grep -i aion` along with your logs. |
 | `debug.log` says `Not locked yet` with `0 with game markers` while you fight | Capture sees traffic but not the game's. Tell us if you use a VPN or ping reducer. |
 | The window never opens, and the terminal says `Error 71 (Protocol error) dispatching to Wayland display`; or the window is blank or white | A WebKit renderer some Wayland setups reject (NVIDIA drivers especially). From 2.0.38 the meter turns it off itself. On an older version, start it with `WEBKIT_DISABLE_DMABUF_RENDERER=1 a2tools-dps-meter`. If that does not help, try `GDK_BACKEND=x11 a2tools-dps-meter`, which runs it through XWayland, and tell us. |
-| The meter goes behind the game | Run the game borderless or windowed. On Wayland an app cannot force itself on top of a fullscreen game. |
+| The meter goes behind the game | Run the game borderless or windowed. On Wayland an app cannot force itself on top of a fullscreen game. On KDE Plasma, KWin can count a borderless game as fullscreen anyway: add a window rule for the meter (System Settings → Window Management → Window Rules) with **Layer** set to **Overlay**, forced. Thanks to Seralth for this. |
+| After a WebKitGTK update the meter's window draws only in pieces, or only while you hover or drag it | A rendering regression in WebKitGTK 2.54 (2.52 was fine). Try starting it with `WEBKIT_DISABLE_COMPOSITING_MODE=1 a2tools-dps-meter`, or through XWayland with `GDK_BACKEND=x11 a2tools-dps-meter`. Rolling WebKitGTK back to 2.52 also works. Tell us which helps. |
 | On a tiling desktop the meter is tiled beside the game, or its tooltips appear in the wrong place | See [Tiling desktops](#tiling-desktops-hyprland-sway-i3). |
 
 Stuck on something not listed? Send what you have so far, logs included.
