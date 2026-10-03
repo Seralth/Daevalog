@@ -182,6 +182,14 @@ fn replay(packets: &[CapturedPacket], t: &Tables) -> (Arc<DataStorage>, Vec<Figh
         proc.set_dot_skill_ids(ids.into_iter().collect());
     }
     let mut streams: HashMap<String, PacketAccumulator> = HashMap::new();
+    // Saved as the live meter saves them: every 30 seconds, a fight's record
+    // rewritten while it runs and frozen once it has gone quiet. A snapshot
+    // taken only at the end of the capture is not what anyone saw: by then a
+    // player who changed entity id has had their damage moved off the old id,
+    // and a dummy hit again has been reset, which made correct slices look wrong.
+    let mut calc = DpsCalculator::new(storage.clone(), sk, npc, Arc::new(PingTracker::new()));
+    let mut saved: HashMap<String, FightRecord> = HashMap::new();
+    let mut next_save = packets.first().map(|p| p.captured_at_ms + 30_000).unwrap_or(0);
     for p in packets {
         proc.set_override_timestamp(Some(p.captured_at_ms));
         let acc = streams.entry(p.stream.clone()).or_insert_with(PacketAccumulator::new);
@@ -190,10 +198,21 @@ fn replay(packets: &[CapturedPacket], t: &Tables) -> (Arc<DataStorage>, Vec<Figh
         if used > 0 {
             acc.discard_bytes(used);
         }
+        if p.captured_at_ms >= next_save {
+            for r in calc.snapshot_boss_fights() {
+                saved.insert(r.id.clone(), r);
+            }
+            next_save = p.captured_at_ms + 30_000;
+        }
     }
-    let mut calc = DpsCalculator::new(storage.clone(), sk, npc, Arc::new(PingTracker::new()));
-    let records = calc.snapshot_boss_fights_force();
-    (storage, records)
+    // Fights still running when the capture stops: the meter saves those on
+    // its next tick, which a capture that ends never reaches. (Fights already
+    // frozen are not in this snapshot.)
+    for r in calc.snapshot_boss_fights_force() {
+        saved.insert(r.id.clone(), r);
+    }
+    proc.set_override_timestamp(None);
+    (storage, saved.into_values().collect())
 }
 
 /// Cut the slice for `w`, derive it, and compare. True when identical.
@@ -217,6 +236,20 @@ fn check(packets: &[CapturedPacket], storage: &DataStorage, w: &FightRecord, t: 
         Ok(d) => d,
         Err(e) => {
             println!("   derive failed: {e:?} ({} bytes of slice)", slice.len());
+            // What the slice does hold, against the fight it should have held.
+            if let Ok(enc) = a2tools_dps_meter_lib::rederive::derive(&slice) {
+                let fought = enc.targets.iter().find(|t| t.target_id == w.target_id);
+                println!("     the fight's target {} (mob {}): {}", w.target_id, w.mob_code,
+                         match fought {
+                             Some(t) => format!("in the slice as mob {}, {} damage over {} ms",
+                                                t.mob_code, t.total_damage, t.duration_ms),
+                             None => "not in the slice".to_string(),
+                         });
+                for t in enc.targets.iter().take(4) {
+                    println!("     target {} mob {} damage {} over {} ms", t.target_id, t.mob_code,
+                             t.total_damage, t.duration_ms);
+                }
+            }
             return false;
         }
     };
@@ -247,13 +280,15 @@ fn check(packets: &[CapturedPacket], storage: &DataStorage, w: &FightRecord, t: 
     // The region a log is filed under comes from this; a slice that loses
     // the record naming the server files the log as "unknown".
     let same_server = w.server_id == got.server_id;
-    println!("   slice {} bytes ({} gzipped): boss {} dungeon {}/{} {}  server {}/{} {}  total {} / {}  skill rows {} / {}  -> {}",
-             slice.len(), gz_len(&slice), got.mob_code, w.dungeon_id, got.dungeon_id,
+    println!("   slice {} bytes ({} gzipped): boss {} target {}/{} {}  dungeon {}/{} {}  server {}/{} {}  total {} / {} over {} / {} ms  skill rows {} / {}  -> {}",
+             slice.len(), gz_len(&slice), got.mob_code,
+             w.target_id, got.target_id, if w.target_id == got.target_id { "ok" } else { "MISMATCH" },
+             w.dungeon_id, got.dungeon_id,
              if same_dungeon { "ok" } else { "MISMATCH" },
              w.server_id, got.server_id, if same_server { "ok" } else { "MISMATCH" },
-             w.details.total_target_damage, got.details.total_target_damage,
+             w.details.total_target_damage, got.details.total_target_damage, w.duration_ms, got.duration_ms,
              a.len(), b.len(), if identical { "identical" } else { "DIFFERENT" });
-    for k in diffs.iter().take(12) {
+    for k in diffs.iter().take(if std::env::var("A2_ALL_ROWS").is_ok() { usize::MAX } else { 12 }) {
         println!("     row {:?}: whole {:?} slice {:?}", k, a.get(k), b.get(k));
     }
     identical
