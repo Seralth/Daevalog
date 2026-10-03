@@ -68,6 +68,33 @@ pub struct FightSummary {
     /// group fights by dungeon.
     #[serde(default)]
     pub dungeon_id: i32,
+    /// One class per party member who fought, so History shows two icons
+    /// for two Clerics where `jobs` has one.
+    #[serde(default)]
+    pub member_jobs: Vec<String>,
+}
+
+impl FightRecord {
+    /// Each player's class, one entry per player. With a party roster, only
+    /// its members: a summon or aura that was never tied to its owner stays
+    /// in `actors` with its owner's class and no roster identity. Without
+    /// one, every classed actor not named by a bare id.
+    pub fn member_jobs(&self) -> Vec<String> {
+        let classed = self.actors.iter().filter(|a| !a.job.is_empty());
+        let mut jobs: Vec<String> = if self.actors.iter().any(|a| a.dbid != 0) {
+            classed.filter(|a| a.dbid != 0).map(|a| a.job.clone()).collect()
+        } else {
+            classed
+                .filter(|a| {
+                    let id_only = a.nickname.chars().all(|c| c.is_ascii_digit() || c == '*' || c == '#');
+                    a.nickname.is_empty() || !id_only
+                })
+                .map(|a| a.job.clone())
+                .collect()
+        };
+        jobs.sort();
+        jobs
+    }
 }
 
 /// Obscure a nickname for privacy: keep first char and last char, mask the middle.

@@ -387,7 +387,9 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
     const iconsEl = document.createElement("div");
     iconsEl.className = "historyRowIcons";
-    const allJobs = (Array.isArray(fight.jobs) ? fight.jobs : []).slice(0, 12);
+    // One icon per party member; older builds sent only the distinct classes.
+    const memberJobs = Array.isArray(fight.memberJobs) && fight.memberJobs.length ? fight.memberJobs : null;
+    const allJobs = (memberJobs || (Array.isArray(fight.jobs) ? fight.jobs : [])).slice(0, 12);
     allJobs.forEach((job) => {
       if (!job) return;
       const wrap = document.createElement("span");
