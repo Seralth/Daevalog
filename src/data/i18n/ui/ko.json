@@ -369,7 +369,8 @@
     "difficulty": {
       "exploration": "탐험",
       "normal": "일반",
-      "hard": "매우 어려움"
+      "hard": "매우 어려움",
+      "level": "{n}단계"
     }
   },
   "presence": {

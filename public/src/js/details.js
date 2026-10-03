@@ -9,6 +9,7 @@ const createDetailsUI = ({
   dpsFormatter,
   getDetails,
   getDetailsContext,
+  getDungeonId,
   onPinnedRowChange,
   onBack,
 }) => {
@@ -35,6 +36,8 @@ const createDetailsUI = ({
   let historyRecord = null;
   let fightStartMs = 0;
   let fightBossName = "";
+  // The instance the fight was in (0 in the open world), for its difficulty.
+  let fightDungeonId = 0;
   let lastUnfilteredDetails = null;
   const detailsCacheByRowId = new Map();
   const COMPACT_MAX_SKILLS = 5;
@@ -134,7 +137,11 @@ const createDetailsUI = ({
     if (!bossName) { detailsFightTitleEl.innerHTML = ""; return; }
     const fightVs = labelText("details.fightVs", "Fight vs");
     const suffix = dateStr ? ` - ${dateStr}` : "";
-    detailsFightTitleEl.innerHTML = `${fightVs} <span class="fightTitleBossName">${bossName}</span>${suffix}`;
+    const tier = fightDungeonId > 0 ? window.i18n?.getDungeonDifficulty?.(fightDungeonId) : null;
+    const tierBadge = tier
+      ? ` <span class="difficultyBadge difficulty-${tier.key}">${tier.label}</span>`
+      : "";
+    detailsFightTitleEl.innerHTML = `${fightVs} <span class="fightTitleBossName">${bossName}</span>${tierBadge}${suffix}`;
   };
 
   const STATUS = [
@@ -2254,6 +2261,7 @@ const createDetailsUI = ({
       ? Math.max(0, (Number(firstTarget.lastDamageTime) || 0) - (Number(firstTarget.battleTime) || 0))
       : 0;
     fightBossName = firstTarget ? getTargetLabel(firstTarget) : (row?.name ?? "");
+    fightDungeonId = Number(getDungeonId?.()) || 0;
     updateHeaderText();
     detailsPanel.classList.add("open");
     detailsPanel.style.removeProperty("width");
@@ -2315,6 +2323,7 @@ const createDetailsUI = ({
     window._historyDetailsOverride = null;
     fightStartMs = 0;
     fightBossName = "";
+    fightDungeonId = 0;
     window._resumeFpsMonitor?.();
   };
   detailsClose?.addEventListener("click", close);
@@ -2376,6 +2385,7 @@ const createDetailsUI = ({
 
     fightStartMs = Number(record.startTimeMs) || 0;
     fightBossName = record.bossName || (Number(record.targetId) > 0 ? `Mob #${record.targetId}` : "");
+    fightDungeonId = Number(record.dungeonId) || 0;
     updateHeaderText();
     detailsPanel.classList.add("open");
     detailsPanel.style.removeProperty("width");

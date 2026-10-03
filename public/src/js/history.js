@@ -365,7 +365,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
       : null;
     if (tier) {
       const badge = document.createElement("span");
-      badge.className = `historyDifficultyBadge historyDifficulty-${tier.key}`;
+      badge.className = `difficultyBadge difficulty-${tier.key}`;
       badge.textContent = tier.label;
       nameEl.appendChild(badge);
     }

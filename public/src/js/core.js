@@ -382,6 +382,7 @@ class DpsApp {
       dpsFormatter: this.dpsFormatter,
       getDetails: (row, options) => this.getDetails(row, options),
       getDetailsContext: () => this.getDetailsContext(),
+      getDungeonId: () => this.lastDungeonId,
       onPinnedRowChange: (rowId) => {
         const nextId = Number(rowId);
         this.pinnedDetailsRowId = Number.isFinite(nextId) && nextId > 0 ? nextId : null;

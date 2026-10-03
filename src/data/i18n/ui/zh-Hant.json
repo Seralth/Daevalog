@@ -369,7 +369,8 @@
     "difficulty": {
       "exploration": "探索",
       "normal": "普通",
-      "hard": "困難"
+      "hard": "困難",
+      "level": "第 {n} 階"
     }
   },
   "presence": {

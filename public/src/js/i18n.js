@@ -232,24 +232,35 @@ const createI18n = ({
     return () => listeners.delete(listener);
   };
 
-  // "Ferocious Horn Den (Hard)" for the instance the party roster reports.
-  // Difficulty is only present for dungeons whose id set maps cleanly onto the
-  // game's three tiers; elsewhere the name is returned on its own.
+  // The instance's tier ({ key: "hard", label: "Hard" }), or null when it is
+  // not known. An instance id's last digit is its tier, as on a2tools.app:
+  // Krao Cave is 600001-600004, Ferocious Horn Den 600091-600093. 1, 2 and 3
+  // are Exploration, Conquest Normal and Conquest Hard; a dungeon with nine
+  // ids (Deus Research Base, Shattered Arkanis) has levels instead; the older
+  // dungeons' fourth id is not named yet.
+  const getDungeonDifficulty = (dungeonId) => {
+    const id = Number(dungeonId) || 0;
+    const entry = dungeonStrings?.[String(id)];
+    if (!entry) return null;
+    const n = id % 10;
+    const group = id - n;
+    const size = Object.keys(dungeonStrings).filter((k) => Number(k) - (Number(k) % 10) === group).length;
+    if (size >= 9) {
+      const label = format("dungeon.difficulty.level", { n }, "");
+      return label ? { key: "level", label } : null;
+    }
+    const key = entry.difficulty || { 1: "exploration", 2: "normal", 3: "hard" }[n];
+    const label = key ? t(`dungeon.difficulty.${key}`, "") : "";
+    return label ? { key, label } : null;
+  };
+
+  // "Ferocious Horn Den (Hard)" for the instance the party roster reports, or
+  // the name alone where the tier is not known.
   const getDungeonLabel = (dungeonId) => {
     const entry = dungeonStrings?.[String(dungeonId)];
     if (!entry || !entry.name) return "";
-    if (!entry.difficulty) return entry.name;
-    const label = t(`dungeon.difficulty.${entry.difficulty}`, "");
-    return label ? `${entry.name} (${label})` : entry.name;
-  };
-
-  // The instance's tier alone ({ key: "hard", label: "Hard" }), or null where
-  // the dungeon has no tiers or the id is unknown.
-  const getDungeonDifficulty = (dungeonId) => {
-    const key = dungeonStrings?.[String(dungeonId)]?.difficulty;
-    if (!key) return null;
-    const label = t(`dungeon.difficulty.${key}`, "");
-    return label ? { key, label } : null;
+    const tier = getDungeonDifficulty(dungeonId);
+    return tier ? `${entry.name} (${tier.label})` : entry.name;
   };
 
   return {

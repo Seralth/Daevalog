@@ -362,7 +362,8 @@
     "difficulty": {
       "exploration": "Исследование",
       "normal": "Обычный",
-      "hard": "Сложный"
+      "hard": "Сложный",
+      "level": "Уровень {n}"
     }
   },
   "presence": {

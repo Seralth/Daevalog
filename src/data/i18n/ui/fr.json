@@ -362,7 +362,8 @@
     "difficulty": {
       "exploration": "Exploration",
       "normal": "Normal",
-      "hard": "Difficile"
+      "hard": "Difficile",
+      "level": "Niveau {n}"
     }
   },
   "presence": {
