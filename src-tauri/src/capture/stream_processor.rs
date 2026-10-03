@@ -117,6 +117,7 @@ impl StreamProcessor {
                 }
                 super::framing::FrameKind::Packet => {
                     self.parse_perfect_packet(frame.bytes(buffer));
+                    self.scan_embedded_bundles_for_identity(frame.bytes(buffer));
                 }
             }
         }
@@ -149,6 +150,45 @@ impl StreamProcessor {
         self.scan_party_roster(buffer);
 
         offset
+    }
+
+    /// Who you are, from compressed bundles that sit inside another packet.
+    ///
+    /// The game sends your self record (`33 36`: name, server, class, level)
+    /// on zone loads and then every few minutes, and those later copies arrive
+    /// in a bundle carried inside a larger packet, where the framing never
+    /// opens it. A meter started mid-session therefore never learned your
+    /// level: five copies went unread in one hour of a capture (2026-10-04),
+    /// the player levelling 29 to 30 among them. Only identity is read from
+    /// these: what else they hold is left as it was, so no fight changes.
+    fn scan_embedded_bundles_for_identity(&self, packet: &[u8]) {
+        let mut i = 1;
+        while i + 8 < packet.len() {
+            if packet[i] != 0xFF || packet[i + 1] != 0xFF {
+                i += 1;
+                continue;
+            }
+            // `<varint len> FF FF <size u32> <lz4>`, an outer bundle being one
+            // byte longer than its length says (see `framing`).
+            let bundle = (1..=3usize).rev().find_map(|n| {
+                let at = i.checked_sub(n)?;
+                let len = read_varint(packet, at);
+                if len.length != n as i32 || len.value <= 4 {
+                    return None;
+                }
+                let end = at + (len.value as usize - 3) + 1;
+                let data = super::framing::decompress_bundle(packet.get(i..end)?)?;
+                Some((end, data))
+            });
+            match bundle {
+                Some((end, data)) => {
+                    self.scan_masked_identity(&data);
+                    self.scan_party_roster(&data);
+                    i = end;
+                }
+                None => i += 1,
+            }
+        }
     }
 
     fn unwrap_bundle(&mut self, payload: &[u8]) {

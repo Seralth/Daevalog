@@ -614,8 +614,17 @@ impl DataStorage {
     }
 
     /// Your class and level, as your own self record states them.
+    ///
+    /// A record whose level did not read (a partial copy, the scan having met
+    /// one in still-compressed bytes) keeps the level already known for that
+    /// character rather than erasing it.
     pub fn note_self_profile(&self, name: &str, class: Option<JobClass>, level: Option<u32>) {
-        self.inner.write().self_profile = Some((name.to_string(), class, level));
+        let mut inner = self.inner.write();
+        let (old_class, old_level) = match &inner.self_profile {
+            Some((n, c, l)) if n == name => (*c, *l),
+            _ => (None, None),
+        };
+        inner.self_profile = Some((name.to_string(), class.or(old_class), level.or(old_level)));
     }
 
     /// Who you are playing, as far as the game has said: name, server, class
@@ -1760,6 +1769,20 @@ mod tests {
 
     fn fight(s: &DataStorage, actor: i32, prefix: i32, skills: i32) {
         fight_together(s, &[actor], prefix, skills);
+    }
+
+    #[test]
+    fn a_record_without_a_readable_level_keeps_the_known_one() {
+        let s = DataStorage::new();
+        s.set_local_identity_from_game(14957, Some("Naicha".into()));
+        s.note_self_profile("Naicha", Some(JobClass::Cleric), Some(29));
+        s.note_self_profile("Naicha", Some(JobClass::Cleric), None);
+        assert_eq!(s.local_profile().level, Some(29));
+        s.note_self_profile("Naicha", Some(JobClass::Cleric), Some(30));
+        assert_eq!(s.local_profile().level, Some(30), "a level-up replaces it");
+        s.note_self_profile("Other", None, None);
+        s.set_local_identity_from_game(1, Some("Other".into()));
+        assert_eq!(s.local_profile().level, None, "another character starts unknown");
     }
 
     #[test]
