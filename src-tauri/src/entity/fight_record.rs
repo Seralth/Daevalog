@@ -37,6 +37,11 @@ pub struct FightRecord {
     /// leaderboards do not rank a Normal clear against a Hard one.
     #[serde(default)]
     pub dungeon_id: i32,
+    /// The recording player's home server (`1304` = Europe, Kaisinel), else
+    /// their party's; 0 when the capture never said. Its digits name the
+    /// region, which a2tools.app groups uploaded logs by.
+    #[serde(default)]
+    pub server_id: u16,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

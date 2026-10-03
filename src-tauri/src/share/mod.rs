@@ -453,6 +453,7 @@ mod tests {
             app_version: "2.0.22".into(),
             mob_code: 4242,
             dungeon_id: 600093,
+            server_id: 0,
         }
     }
 
@@ -682,6 +683,20 @@ pub struct UploadResult {
     pub duplicate: bool,
 }
 
+/// The meter's display language, as the settings file holds it (`ko`, `en`, …).
+///
+/// Sent with an upload because a server id cannot tell Korea from Taiwan:
+/// both number their servers 1001–1058 and 2001–2058. The language and the
+/// computer's time zone are what the site has to go on; a player on Korean
+/// servers almost always has one or the other Korean.
+fn ui_language(app_data_dir: &Path) -> String {
+    std::fs::read_to_string(app_data_dir.join("settings.json"))
+        .ok()
+        .and_then(|text| serde_json::from_str::<HashMap<String, String>>(&text).ok())
+        .and_then(|values| values.get("dpsMeter.language").cloned())
+        .unwrap_or_default()
+}
+
 /// Upload a saved fight as a log.
 ///
 /// Sends the slice and the names to show, never a number: the service derives
@@ -723,6 +738,11 @@ pub async fn upload(
         "uploaderActorId": meta.uploader_actor_id,
         "fightStartMs": record.start_time_ms,
         "appVersion": crate::entity::fight_record::APP_VERSION,
+        // Korea and Taiwan number their servers alike (10xx/20xx), so the
+        // slice cannot say which a fight was on; these two settle it. See
+        // `region_hints`.
+        "uiLanguage": ui_language(app_data_dir),
+        "utcOffsetMinutes": chrono::Local::now().offset().local_minus_utc() / 60,
     });
 
     let response = client

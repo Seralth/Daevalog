@@ -53,6 +53,10 @@ fn party_members_are_named_from_the_roster_before_their_spawns() {
         assert_eq!(storage.get_nickname(id).as_deref(), Some(name), "entity {id}");
     }
 
+    // Nyxie's self record names her server, Europe's 2304, which is the
+    // region every saved fight is uploaded under.
+    assert!(saved.iter().all(|r| r.server_id == 2304), "{:?}", saved.iter().map(|r| r.server_id).collect::<Vec<_>>());
+
     // History shows names masked ("Wo****e"); a row with no name showed its
     // entity id masked instead ("92*0"), all digits and asterisks.
     let first_boss_start = saved.iter().map(|r| r.start_time_ms).min().expect("a boss fight was saved");

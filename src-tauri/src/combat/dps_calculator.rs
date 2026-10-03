@@ -810,6 +810,7 @@ impl DpsCalculator {
                 app_version: crate::entity::fight_record::APP_VERSION.to_string(),
                 mob_code,
                 dungeon_id,
+                server_id: self.data_storage.fight_server_id(),
             };
 
             if is_ended {

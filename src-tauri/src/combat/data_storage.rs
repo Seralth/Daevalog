@@ -316,6 +316,9 @@ struct Inner {
     /// Who the loot records (`04 8d` after a kill) say owns the drops, and
     /// what that has been used for. See `note_loot_owner`.
     loot_identity: LootIdentity,
+    /// Each character's home server, by name, from the records that state it:
+    /// the self record and loot records. See `fight_server_id`.
+    player_servers: HashMap<String, u16>,
 }
 
 #[derive(Default)]
@@ -367,6 +370,7 @@ impl DataStorage {
                 local_character_name: None,
                 local_identity_from_game: false,
                 loot_identity: LootIdentity::default(),
+                player_servers: HashMap::new(),
             }),
             damage_generation: AtomicI64::new(0),
             last_damage_ms: AtomicI64::new(0),
@@ -483,6 +487,46 @@ impl DataStorage {
         inner.loot_identity.applied = true;
         set_game_identity(&mut inner, owner_id as i64, Some(name.to_string()));
         true
+    }
+
+    /// `name`'s home server, as a self or loot record states it.
+    pub fn note_player_server(&self, name: &str, server_id: u16) {
+        if !(1000..3000).contains(&server_id) {
+            return;
+        }
+        let mut inner = self.inner.write();
+        // Bounded: one entry per character met, and a session meets hundreds.
+        if inner.player_servers.len() < 10_000 || inner.player_servers.contains_key(name) {
+            inner.player_servers.insert(name.to_string(), server_id);
+        }
+    }
+
+    /// The server the fights being recorded are on: the local player's, else
+    /// the party's. 0 when nothing has said.
+    ///
+    /// A server id names its region (`1304` is Europe), which is what this is
+    /// for: uploaded logs are grouped by region. The local player's own server
+    /// comes from the self record (or a loot record naming them); the roster's
+    /// is the fallback, by majority, since in a cross-server party each member
+    /// keeps their own server but all share the region.
+    pub fn fight_server_id(&self) -> u16 {
+        let inner = self.inner.read();
+        let local = inner.local_character_name.as_deref().map(str::trim);
+        if let Some(&server) = local.and_then(|n| inner.player_servers.get(n)) {
+            return server;
+        }
+        if let Some(member) = local.and_then(|n| inner.party_members.get(n)) {
+            if member.server_id != 0 {
+                return member.server_id;
+            }
+        }
+        let mut counts: HashMap<u16, usize> = HashMap::new();
+        for member in inner.party_members.values() {
+            if member.server_id != 0 {
+                *counts.entry(member.server_id).or_default() += 1;
+            }
+        }
+        counts.into_iter().max_by_key(|&(server, n)| (n, std::cmp::Reverse(server))).map_or(0, |(s, _)| s)
     }
 
     /// Whether the local player's identity came from the game rather than from
@@ -1541,6 +1585,21 @@ mod tests {
 
     fn fight(s: &DataStorage, actor: i32, prefix: i32, skills: i32) {
         fight_together(s, &[actor], prefix, skills);
+    }
+
+    #[test]
+    fn fights_are_on_your_server_else_your_partys() {
+        let s = DataStorage::new();
+        assert_eq!(s.fight_server_id(), 0, "nothing has said");
+        let on = |server: u16| PartyMember { server_id: server, ..member(1) };
+        s.set_party_roster(vec![("A".into(), on(2304)), ("B".into(), on(2304)), ("C".into(), on(1307))], true);
+        assert_eq!(s.fight_server_id(), 2304, "the party's, by majority");
+        s.set_local_identity_from_game(7, Some("C".into()));
+        assert_eq!(s.fight_server_id(), 1307, "your own place in the roster");
+        s.note_player_server("C", 1304);
+        assert_eq!(s.fight_server_id(), 1304, "what your own record says");
+        s.note_player_server("C", 99);
+        assert_eq!(s.fight_server_id(), 1304, "a value no server has is not taken");
     }
 
     #[test]

@@ -609,11 +609,11 @@ impl StreamProcessor {
                     continue;
                 }
                 if let Some(name) = exact_name(&data[name_len_idx + 1..name_end]) {
-                    found = Some((owner_id, name, name_end));
+                    found = Some((owner_id, server_id, name, name_end));
                     break;
                 }
             }
-            let Some((owner_id, name, name_end)) = found else {
+            let Some((owner_id, server_id, name, name_end)) = found else {
                 continue;
             };
 
@@ -621,6 +621,7 @@ impl StreamProcessor {
                 self.data_storage.append_summon(owner_id, summon_id);
             }
             self.data_storage.append_nickname(owner_id, &name);
+            self.data_storage.note_player_server(&name, server_id);
             // For a mob that was fought (it follows the mob's `35 38` despawn)
             // this is the loot owner, which so far has always been you.
             if !self.data_storage.is_confirmed_summon(summon_id)
@@ -836,6 +837,19 @@ impl StreamProcessor {
                     .set_local_identity_from_game(id.value as i64, Some(sanitized.clone()))
                 {
                     tracing::info!("self record: local player '{}' -> entity {}", sanitized, id.value);
+                }
+                // Then your server (u16) and class (u32, the roster's encoding).
+                // The class has to read as one, so a record laid out some other
+                // way is not taken for a server.
+                let after = mask2_idx + 2 + name_len;
+                if let Some(rest) = data.get(after..after + 6) {
+                    let server = u16::from_le_bytes([rest[0], rest[1]]);
+                    let class = u32::from_le_bytes([rest[2], rest[3], rest[4], rest[5]]);
+                    if (1000..3000).contains(&server)
+                        && crate::entity::job_class::JobClass::from_roster_class(class).is_some()
+                    {
+                        self.data_storage.note_player_server(&sanitized, server);
+                    }
                 }
             } else {
                 tracing::debug!("player record: '{}' -> entity {}", sanitized, id.value);

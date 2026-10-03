@@ -244,9 +244,13 @@ fn check(packets: &[CapturedPacket], storage: &DataStorage, w: &FightRecord, t: 
     let same_dungeon = w.dungeon_id == got.dungeon_id;
     let identical = same_boss && diffs.is_empty()
         && w.details.total_target_damage == got.details.total_target_damage;
-    println!("   slice {} bytes ({} gzipped): boss {} dungeon {}/{} {}  total {} / {}  skill rows {} / {}  -> {}",
+    // The region a log is filed under comes from this; a slice that loses
+    // the record naming the server files the log as "unknown".
+    let same_server = w.server_id == got.server_id;
+    println!("   slice {} bytes ({} gzipped): boss {} dungeon {}/{} {}  server {}/{} {}  total {} / {}  skill rows {} / {}  -> {}",
              slice.len(), gz_len(&slice), got.mob_code, w.dungeon_id, got.dungeon_id,
              if same_dungeon { "ok" } else { "MISMATCH" },
+             w.server_id, got.server_id, if same_server { "ok" } else { "MISMATCH" },
              w.details.total_target_damage, got.details.total_target_damage,
              a.len(), b.len(), if identical { "identical" } else { "DIFFERENT" });
     for k in diffs.iter().take(12) {
