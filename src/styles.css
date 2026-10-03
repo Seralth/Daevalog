@@ -1347,6 +1347,13 @@ body.mainPlayerDpsBold .meter .item .content .dps > p {
   min-width: 0;
   max-width: none;
 }
+/* The account sits in a half-width cell beside the A2 Tools switches: its
+   state stays on one line next to its button. */
+.settingsPanel .accountRow .accountState {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .settingsPanel .settingsRowStacked .localActorIdInput {
   flex: 0 0 68px;
   width: 68px;

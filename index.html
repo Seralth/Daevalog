@@ -671,22 +671,17 @@
             <section class="settingsGroup">
               <div class="settingsMiniTitle" data-i18n="settings.account.title">A2 Tools Account</div>
               <div class="settingsGroupBody">
-                <div class="settingsRow settingsRowStacked">
-                  <div class="settingsInfo">
-                    <div class="settingsLabel accountState" data-i18n="settings.account.signedOut">Not signed in</div>
-                    <div class="settingsHint accountHint" data-i18n="settings.account.hint">Sign in to sync characters and settings with a2tools.app.</div>
-                  </div>
-                  <div class="settingsRowEnd">
-                    <button class="settingsAction accountConnectBtn" type="button" data-i18n="settings.account.connect">Sign in</button>
-                    <button class="settingsAction settingsActionDanger accountSignOutBtn" type="button" style="display:none" data-i18n="settings.account.signOut">Sign out</button>
-                  </div>
-                </div>
-                <div class="accountCodeBox" style="display:none">
-                  <div class="accountCodeLabel" data-i18n="settings.account.codePrompt">Approve this code in your browser:</div>
-                  <div class="accountCode"></div>
-                  <div class="accountCodeHint" data-i18n="settings.account.codeHint">The page should have opened already. The code expires in 10 minutes.</div>
-                </div>
                 <div class="settingsGroupSplit">
+                  <div class="settingsRow accountRow">
+                    <div class="settingsInfo">
+                      <div class="settingsLabel accountState" data-i18n="settings.account.signedOut">Not signed in</div>
+                      <div class="settingsHint accountHint" data-i18n="settings.account.hint">Sign in to sync characters and settings with a2tools.app.</div>
+                    </div>
+                    <div class="settingsRowEnd">
+                      <button class="settingsAction accountConnectBtn" type="button" data-i18n="settings.account.connect">Sign in</button>
+                      <button class="settingsAction settingsActionDanger accountSignOutBtn" type="button" style="display:none" data-i18n="settings.account.signOut">Sign out</button>
+                    </div>
+                  </div>
                   <label class="settingsToggle discordActivityGroup" style="display:none" title="While AION2 is open, your Discord status shows your class, level and server, and the boss you are fighting. It goes through the Discord app on this computer; no account is needed." data-i18n-title="settings.discord.activityHint">
                     <span class="settingsToggleLabel settingsLabel" data-i18n="settings.discord.activity">Show what I'm playing in Discord</span>
                     <span class="settingsToggleControl">
@@ -708,6 +703,11 @@
                       <span class="settingsToggleTrack" aria-hidden="true"></span>
                     </span>
                   </label>
+                </div>
+                <div class="accountCodeBox" style="display:none">
+                  <div class="accountCodeLabel" data-i18n="settings.account.codePrompt">Approve this code in your browser:</div>
+                  <div class="accountCode"></div>
+                  <div class="accountCodeHint" data-i18n="settings.account.codeHint">The page should have opened already. The code expires in 10 minutes.</div>
                 </div>
               </div>
             </section>
