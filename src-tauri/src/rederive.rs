@@ -232,16 +232,38 @@ pub fn derive_fight(
     let skills = Arc::new(SkillLookup::new());
     skills.load_from_json(skills_json);
 
-    let storage = Arc::new(DataStorage::new());
-    let mut processor = StreamProcessor::new(storage.clone(), skills.clone(), npcs.clone());
-    // The live meter loads these too (app.rs); without them a DoT tick is
-    // filed as a direct hit and the skill table splits differently.
-    if let Ok(ids) = serde_json::from_str::<Vec<i32>>(dot_ids_json) {
-        processor.set_dot_skill_ids(ids.into_iter().collect());
-    }
-    for (dt_ms, packet) in &records {
-        processor.set_override_timestamp(Some(*dt_ms as i64));
-        processor.consume_stream(packet);
+    let dot_ids: Option<std::collections::HashSet<i32>> =
+        serde_json::from_str::<Vec<i32>>(dot_ids_json).ok().map(|ids| ids.into_iter().collect());
+    let replay = |upto: usize| {
+        let storage = Arc::new(DataStorage::new());
+        let mut processor = StreamProcessor::new(storage.clone(), skills.clone(), npcs.clone());
+        // The live meter loads these too (app.rs); without them a DoT tick is
+        // filed as a direct hit and the skill table splits differently.
+        if let Some(ids) = &dot_ids {
+            processor.set_dot_skill_ids(ids.clone());
+        }
+        // The first zone reset after the fight began, as an index into the
+        // records: the record that caused it.
+        let mut reset_at = None;
+        for (n, (dt_ms, packet)) in records.iter().enumerate().take(upto) {
+            processor.set_override_timestamp(Some(*dt_ms as i64));
+            let before = storage.last_zone_reset_ms();
+            processor.consume_stream(packet);
+            if reset_at.is_none() && *dt_ms > 0 && storage.last_zone_reset_ms() != before {
+                reset_at = Some(n);
+            }
+        }
+        (storage, processor, reset_at)
+    };
+    // A teleport after the fight (a wipe sends everyone back; a kill is often
+    // followed by leaving) is a zone change, and the meter clears combat on
+    // one. The slice's tail runs 15 seconds past the last hit, so it can hold
+    // that teleport, and the replay then had nothing left to derive: two
+    // Gargaum wipes in a 2026-07 capture. The live meter had saved the fight
+    // before; so stop the replay just short of the first reset after the pull.
+    let (mut storage, mut processor, reset_at) = replay(records.len());
+    if let Some(n) = reset_at {
+        (storage, processor, _) = replay(n);
     }
     // Keep the clock pinned through the snapshot. It asks for "now" to decide
     // whether a fight has ended; on wasm32 the wall clock panics, and on a
@@ -263,9 +285,15 @@ pub fn derive_fight(
     crate::clock::set_override(None);
     let mut record = snapshot
         .into_iter()
-        // The slice is cut around one fight, but adds and a second boss can
-        // share it. The fight is the target that took the most damage.
-        .max_by_key(|r| (totals.get(&r.target_id).copied().unwrap_or(0), -r.target_id))
+        // The slice is cut around one fight, but adds and another boss can
+        // share it: the lead-in reaches a minute back, so the previous boss of
+        // a dungeon is often in it whole. The slice's clock starts at the
+        // fight's first hit, so the fight is the boss fight that starts
+        // nearest zero; the most damaged target only breaks a tie. Taking the
+        // most damaged one alone filed a Judge Urahum upload as the Guardian
+        // Captain Raur killed 37 seconds before it, and a scarecrow upload as
+        // someone else's scarecrow (2026-10-03).
+        .min_by_key(|r| (r.start_time_ms.abs(), -totals.get(&r.target_id).copied().unwrap_or(0), r.target_id))
         .ok_or(DeriveError::NothingDerived)?;
     canonicalise(&mut record);
 

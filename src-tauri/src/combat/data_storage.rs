@@ -24,6 +24,12 @@ const ZONE_RESET_DEBOUNCE_MS: i64 = 4_000;
 /// How long party members who have not fought stay on the meter after the
 /// last roster. See `DataStorage::party_placeholders_wanted`.
 const PARTY_PLACEHOLDER_MS: i64 = 10 * 60 * 1000;
+/// "Has not happened" for the times below. Not 0: a replayed slice's clock
+/// starts before 0 (the lead-in runs at negative offsets from the pull), so
+/// a 0 there read as "a moment ago" and suppressed every zone reset in the
+/// lead-in, which ran a wiped pull's damage into the next pull (Gargaum,
+/// 2026-07 capture: 114M derived for a 69M pull).
+const NEVER_MS: i64 = i64::MIN;
 /// How often, in damage records, unnamed party members are matched to the
 /// roster by class. A fight brings a few hundred records a second, so this
 /// names them within the first moments of combat.
@@ -373,8 +379,8 @@ impl DataStorage {
                 player_servers: HashMap::new(),
             }),
             damage_generation: AtomicI64::new(0),
-            last_damage_ms: AtomicI64::new(0),
-            last_zone_reset_ms: AtomicI64::new(0),
+            last_damage_ms: AtomicI64::new(NEVER_MS),
+            last_zone_reset_ms: AtomicI64::new(NEVER_MS),
             combat_reset_requested: AtomicBool::new(false),
         }
     }
@@ -385,10 +391,10 @@ impl DataStorage {
     /// without ever wiping an in-progress fight. Returns true if it reset.
     pub fn note_zone_change(&self) -> bool {
         let now = now_ms();
-        if now - self.last_damage_ms.load(Ordering::Relaxed) < ZONE_RESET_LULL_MS {
+        if now.saturating_sub(self.last_damage_ms.load(Ordering::Relaxed)) < ZONE_RESET_LULL_MS {
             return false; // mid-combat teleport — ignore
         }
-        if now - self.last_zone_reset_ms.load(Ordering::Relaxed) < ZONE_RESET_DEBOUNCE_MS {
+        if now.saturating_sub(self.last_zone_reset_ms.load(Ordering::Relaxed)) < ZONE_RESET_DEBOUNCE_MS {
             return false; // already reset moments ago
         }
         {
@@ -406,6 +412,12 @@ impl DataStorage {
         self.combat_reset_requested.store(true, Ordering::Relaxed);
         tracing::info!("Zone change detected — combat data reset (identity preserved)");
         true
+    }
+
+    /// When the last zone-change combat reset happened (clock ms), `NEVER_MS`
+    /// if it has not.
+    pub fn last_zone_reset_ms(&self) -> i64 {
+        self.last_zone_reset_ms.load(Ordering::Relaxed)
     }
 
     /// Consumed by the dps calculator to drop its cached snapshot/saved-target
@@ -1585,6 +1597,18 @@ mod tests {
 
     fn fight(s: &DataStorage, actor: i32, prefix: i32, skills: i32) {
         fight_together(s, &[actor], prefix, skills);
+    }
+
+    #[test]
+    fn a_zone_change_resets_on_a_replays_clock_before_zero() {
+        // A slice replays at offsets from the pull, so its lead-in runs at
+        // negative times; "never" must still read as long ago there.
+        let s = DataStorage::new();
+        crate::clock::set_override(Some(-40_000));
+        s.append_damage(hit(5, 900, -40_000, 100, false));
+        crate::clock::set_override(Some(-30_000));
+        assert!(s.note_zone_change(), "a wipe's teleport in the lead-in clears the pull before");
+        crate::clock::set_override(None);
     }
 
     #[test]
