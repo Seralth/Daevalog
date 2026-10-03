@@ -651,19 +651,9 @@ impl StreamProcessor {
                 if !(1000..=2999).contains(&server_id) {
                     continue;
                 }
-                // Longest first: the owner `ed 74` (14957) ends in a byte that
-                // alone reads as an id too (`74`, 116), and shortest-first took
-                // that, so the local player's loot named an entity that does
-                // not exist (2026-10-04).
-                let owner_id = (1..=3usize).rev().find_map(|v_len| {
-                    let v_start = server_idx.checked_sub(v_len)?;
-                    if v_start < after_fixed || !can_read_varint(data, v_start) {
-                        return None;
-                    }
-                    let v = read_varint(data, v_start);
-                    (v.length == v_len as i32 && (100..=99_999).contains(&v.value))
-                        .then_some(v.value)
-                });
+                // The owner `ed 74` (14957) ends in a byte that alone reads as
+                // an id too (`74`, 116); see `varint_ending_at`.
+                let owner_id = varint_ending_at(data, server_idx, after_fixed, 100..=99_999);
                 let Some(owner_id) = owner_id.filter(|&id| id != summon_id) else {
                     continue;
                 };
@@ -1510,24 +1500,14 @@ impl StreamProcessor {
                         if let Ok(possible_name) = std::str::from_utf8(np) {
                             if !possible_name.is_empty() && possible_name.chars().next().unwrap().is_alphanumeric() {
                                 if let Some(sanitized) = sanitize_nickname(possible_name) {
-                                    if sanitized.len() >= 2 {
-                                        for v_len in 1..=3usize {
-                                            if search_offset < v_len {
-                                                continue;
-                                            }
-                                            let v_start = search_offset - v_len;
-                                            if can_read_varint(packet, v_start) {
-                                                let v = read_varint(packet, v_start);
-                                                if v.length == v_len as i32 && (100..=9_999_999).contains(&v.value) {
-                                                    self.data_storage.append_nickname(v.value, &sanitized);
-                                                    parsed_any = true;
-                                                    search_offset = len_idx + 1 + name_len;
-                                                    // Skip guild name
-                                                    search_offset = self.skip_guild_name(packet, search_offset);
-                                                    break;
-                                                }
-                                            }
-                                        }
+                                    if sanitized.len() >= 2
+                                        && let Some(id) = varint_ending_at(packet, search_offset, 0, 100..=9_999_999)
+                                    {
+                                        self.data_storage.append_nickname(id, &sanitized);
+                                        parsed_any = true;
+                                        search_offset = len_idx + 1 + name_len;
+                                        // Skip guild name
+                                        search_offset = self.skip_guild_name(packet, search_offset);
                                     }
                                 }
                             }
@@ -2241,6 +2221,41 @@ impl StreamProcessor {
 
 // ===== FREE FUNCTIONS =====
 
+/// The varint that ends just before `end`, starting no earlier than
+/// `min_start` and at most three bytes back, whose value is in `range`.
+///
+/// The last byte of a multi-byte varint has its high bit clear, so it is also
+/// a valid one-byte varint on its own: entity 13978 is `9A 6D`, and `6D`
+/// alone is 109. Read shortest first, every id from 12,800 up came out as
+/// `id >> 7`, which still passes a range check, so names and loot went to the
+/// wrong entity (issue #10). A varint cannot start right after a byte with its
+/// high bit set, since that byte would continue into it, so the candidate not
+/// preceded by one wins; the shortest valid one is only the fallback.
+pub fn varint_ending_at(
+    data: &[u8],
+    end: usize,
+    min_start: usize,
+    range: std::ops::RangeInclusive<i32>,
+) -> Option<i32> {
+    let mut fallback = None;
+    for v_len in 1..=3usize {
+        let Some(v_start) = end.checked_sub(v_len) else { break };
+        if v_start < min_start || !can_read_varint(data, v_start) {
+            continue;
+        }
+        let v = read_varint(data, v_start);
+        if v.length != v_len as i32 || !range.contains(&v.value) {
+            continue;
+        }
+        let continued = v_start > 0 && data[v_start - 1] & 0x80 != 0;
+        if !continued {
+            return Some(v.value);
+        }
+        fallback.get_or_insert(v.value);
+    }
+    fallback
+}
+
 pub fn read_varint(bytes: &[u8], offset: usize) -> VarIntResult {
     let mut value: i32 = 0;
     let mut shift = 0;
@@ -2679,6 +2694,18 @@ mod tests {
         ] {
             assert_eq!(exact_name(field), None, "{field:?}");
         }
+    }
+
+    #[test]
+    fn an_id_is_read_whole_not_from_its_last_byte() {
+        // 13978 = 9A 6D; the 6D alone is 109 and must not win (issue #10).
+        assert_eq!(varint_ending_at(&[0x01, 0x9A, 0x6D, 0xE2, 0x07], 3, 0, 100..=99_999), Some(13978));
+        // 14957 = ED 74, a loot owner (2026-10-04).
+        assert_eq!(varint_ending_at(&[0x01, 0xED, 0x74, 0x18, 0x05], 3, 0, 100..=99_999), Some(14957));
+        // A small id is still one byte.
+        assert_eq!(varint_ending_at(&[0x01, 0x6D, 0xE2, 0x07], 2, 0, 100..=99_999), Some(109));
+        // 8765 = BD 44: 44 alone is 68, below range.
+        assert_eq!(varint_ending_at(&[0x01, 0xBD, 0x44, 0xE2, 0x07], 3, 0, 100..=99_999), Some(8765));
     }
 
     /// The start of a self record from a live capture (2026-10-04): Naicha,
