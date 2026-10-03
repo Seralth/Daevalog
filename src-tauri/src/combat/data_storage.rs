@@ -373,11 +373,15 @@ struct Inner {
 
 #[derive(Default)]
 struct LootIdentity {
-    /// The one name the loot records have named so far this session.
-    owner: Option<String>,
-    /// They have named two different players, so they say nothing about who
-    /// "you" are.
-    conflicted: bool,
+    /// Each owner the loot records have named this session: the entity id
+    /// they gave, and the kills (mob ids) they named them for. Kills, not
+    /// records: the embedded scan sees one record again on every read of the
+    /// buffer it sits in, which counted one kill dozens of times.
+    owners: HashMap<String, (i32, HashSet<i32>)>,
+    /// Entities the server has sent a `06 38` record about. Those go to you
+    /// and your party, never to strangers fighting nearby, so a loot owner
+    /// outside this set is someone else's kill. See `note_party_scope`.
+    party_scope: HashSet<i32>,
     /// The local identity currently in force came from them, not from the
     /// self record.
     applied: bool,
@@ -499,22 +503,43 @@ impl DataStorage {
     ///
     /// The self record that names you arrives on login and zone loads, so a
     /// meter started mid-session can go a long while without it. Loot records
-    /// fill that gap: in every capture so far (2026-10, global servers) they
-    /// have named only the player whose meter it was, once per kill. Until the
-    /// self record arrives, the owner is taken as you, with two checks: if
-    /// they ever name a second player (a party kill, say) they are ignored
-    /// from then on, and a configured name already matched to a player in the
-    /// world is kept. Returns whether the local identity changed.
-    pub fn note_loot_owner(&self, owner_id: i32, name: &str) -> bool {
+    /// fill that gap: they name the player whose kill it was, and mostly that
+    /// is you. Not always: a kill by someone nearby reaches you too, inside
+    /// another packet (2026-10-04, "Deityclaire" a second into a capture whose
+    /// player was Naicha). So they are a vote. Until the self record arrives,
+    /// you are the owner named most often, while that owner leads outright;
+    /// a tie means not knowing. A configured name already matched to a player
+    /// in the world is kept. Returns whether the local identity changed.
+    ///
+    /// Taking the first name and ignoring loot records for good once a second
+    /// appeared left that capture with no local player at all.
+    pub fn note_loot_owner(&self, mob_id: i32, owner_id: i32, name: &str) -> bool {
         let mut inner = self.inner.write();
         let loot = &mut inner.loot_identity;
-        if loot.conflicted {
-            return false;
+        let entry = loot.owners.entry(name.to_string()).or_insert_with(|| (owner_id, HashSet::new()));
+        entry.0 = owner_id;
+        if entry.1.len() < 10_000 {
+            entry.1.insert(mob_id);
         }
-        if loot.owner.as_deref().is_some_and(|known| known != name) {
-            loot.conflicted = true;
+        // Only you and your party: a stranger farming nearby out-killed the
+        // player in one capture, 3 to 2, and took over as "you".
+        let scope = &loot.party_scope;
+        let mut ranked: Vec<(&String, i32, usize)> = loot
+            .owners
+            .iter()
+            .filter(|(_, (id, _))| scope.contains(id))
+            .map(|(n, (id, kills))| (n, *id, kills.len()))
+            .collect();
+        ranked.sort_by(|a, b| b.2.cmp(&a.2));
+        let leader = match ranked.as_slice() {
+            [] => return false, // nobody of yours yet: not evidence either way
+            [first] => Some((first.0.clone(), first.1)),
+            [first, second, ..] if first.2 > second.2 => Some((first.0.clone(), first.1)),
+            _ => None,
+        };
+        let Some((name, owner_id)) = leader else {
             let was_applied = std::mem::take(&mut loot.applied);
-            tracing::info!("loot records name a second player ('{}'); not using them to identify you", name);
+            tracing::info!("loot records name several players equally; not using them to identify you");
             if was_applied {
                 // Back to not knowing: the UI's name and the self record decide.
                 inner.local_identity_from_game = false;
@@ -522,8 +547,8 @@ impl DataStorage {
                 return true;
             }
             return false;
-        }
-        loot.owner = Some(name.to_string());
+        };
+        let name = name.as_str();
         if inner.local_identity_from_game && !inner.loot_identity.applied {
             return false; // the self record has spoken
         }
@@ -543,6 +568,23 @@ impl DataStorage {
         inner.loot_identity.applied = true;
         set_game_identity(&mut inner, owner_id as i64, Some(name.to_string()));
         true
+    }
+
+    /// The server sent a `06 38` record about `entity_id`.
+    ///
+    /// Measured on every capture at hand: in the Global ones it names the
+    /// local player hundreds of times and players nearby never; in older
+    /// Korean/Taiwanese ones, party members too. So it marks you and your
+    /// party, which is what tells your loot from a stranger's.
+    pub fn note_party_scope(&self, entity_id: i32) {
+        if !(100..=9_999_999).contains(&entity_id) {
+            return;
+        }
+        let mut inner = self.inner.write();
+        let scope = &mut inner.loot_identity.party_scope;
+        if scope.len() < 10_000 {
+            scope.insert(entity_id);
+        }
     }
 
     /// `name`'s home server, as a self or loot record states it.
@@ -1588,24 +1630,43 @@ mod tests {
     fn loot_owner_is_you_until_the_self_record_says_otherwise() {
         let s = DataStorage::new();
         s.set_local_character_name(Some("Aveline".into()));
-        assert!(s.note_loot_owner(1454, "ApexZ"));
+        s.note_party_scope(1454);
+        assert!(s.note_loot_owner(900, 1454, "ApexZ"));
         assert_eq!(who(&s), (Some(1454), Some("ApexZ".into()), true));
-        assert!(!s.note_loot_owner(1454, "ApexZ"), "same owner again changes nothing");
+        assert!(!s.note_loot_owner(900, 1454, "ApexZ"), "same owner again changes nothing");
 
         // A zone load brings the self record, which wins.
         assert!(s.set_local_identity_from_game(2001, Some("ApexZ".into())));
-        assert!(!s.note_loot_owner(1454, "ApexZ"));
+        assert!(!s.note_loot_owner(900, 1454, "ApexZ"));
         assert_eq!(who(&s), (Some(2001), Some("ApexZ".into()), true));
     }
 
     #[test]
-    fn loot_naming_two_players_is_ignored_from_then_on() {
+    fn loot_naming_two_of_yours_equally_withdraws_the_guess_until_one_leads() {
         let s = DataStorage::new();
-        s.note_loot_owner(1454, "ApexZ");
-        assert!(s.note_loot_owner(3583, "Galaaadriel"), "the guess is withdrawn");
+        s.note_party_scope(1454);
+        s.note_party_scope(3583);
+        s.note_loot_owner(900, 1454, "ApexZ");
+        assert!(s.note_loot_owner(901, 3583, "Galaaadriel"), "the guess is withdrawn");
         assert_eq!(who(&s), (None, Some("ApexZ".into()), false));
-        assert!(!s.note_loot_owner(1454, "ApexZ"));
+        assert!(!s.note_loot_owner(900, 1454, "ApexZ"), "the same kill again is no new vote");
         assert_eq!(s.local_player_id(), None);
+        assert!(s.note_loot_owner(902, 1454, "ApexZ"), "a second kill leads");
+        assert_eq!(who(&s), (Some(1454), Some("ApexZ".into()), true));
+    }
+
+    #[test]
+    fn a_strangers_kill_says_nothing_about_who_you_are() {
+        // Loot from kills by players nearby reaches you too; the server's
+        // `06 38` records, which name only you and your party, tell them apart.
+        let s = DataStorage::new();
+        s.note_party_scope(14957);
+        assert!(!s.note_loot_owner(22965, 11937, "Deityclaire"));
+        assert!(s.note_loot_owner(46643, 14957, "Naicha"));
+        for mob in [40758, 63645, 74428] {
+            assert!(!s.note_loot_owner(mob, 892, "Dandelion"));
+        }
+        assert_eq!(who(&s), (Some(14957), Some("Naicha".into()), true));
     }
 
     fn member(slot: u8) -> PartyMember {
@@ -1820,7 +1881,7 @@ mod tests {
         s.set_local_character_name(Some("Misti".into()));
         s.append_nickname_authoritative(4099, "Misti");
         assert_eq!(s.local_player_id(), Some(4099));
-        assert!(!s.note_loot_owner(1454, "ApexZ"));
+        assert!(!s.note_loot_owner(900, 1454, "ApexZ"));
         assert_eq!(who(&s), (Some(4099), Some("Misti".into()), false));
     }
 }

@@ -206,6 +206,7 @@ impl StreamProcessor {
             || self.parse_loot_attribution_actor_name(packet)
             || self.parsing_nickname(packet);
         let parsed_hp = self.parse_hp_mp_update_packet(packet);
+        self.parse_party_scope_packet(packet);
         self.parse_death_packet(packet);
         self.parse_zone_change_packet(packet);
 
@@ -214,6 +215,26 @@ impl StreamProcessor {
         }
 
         parsed_damage || parsed_name
+    }
+
+    // ===== PARTY SCOPE (06 38) =====
+
+    /// `<len> 06 38 <entity_id varint> ...`: a record the server sends about
+    /// you and your party only. What it carries is not decoded; who it is
+    /// about is what identifies your loot (see `DataStorage::note_party_scope`).
+    fn parse_party_scope_packet(&self, packet: &[u8]) {
+        let length_info = read_varint(packet, 0);
+        if length_info.length <= 0 {
+            return;
+        }
+        let offset = length_info.length as usize;
+        if offset + 3 >= packet.len() || packet[offset] != 0x06 || packet[offset + 1] != 0x38 {
+            return;
+        }
+        let id = read_varint(packet, offset + 2);
+        if id.length > 0 {
+            self.data_storage.note_party_scope(id.value);
+        }
     }
 
     // ===== ZONE CHANGE (23 36) =====
@@ -590,7 +611,11 @@ impl StreamProcessor {
                 if !(1000..=2999).contains(&server_id) {
                     continue;
                 }
-                let owner_id = (1..=3usize).find_map(|v_len| {
+                // Longest first: the owner `ed 74` (14957) ends in a byte that
+                // alone reads as an id too (`74`, 116), and shortest-first took
+                // that, so the local player's loot named an entity that does
+                // not exist (2026-10-04).
+                let owner_id = (1..=3usize).rev().find_map(|v_len| {
                     let v_start = server_idx.checked_sub(v_len)?;
                     if v_start < after_fixed || !can_read_varint(data, v_start) {
                         return None;
@@ -626,7 +651,7 @@ impl StreamProcessor {
             // this is the loot owner, which so far has always been you.
             if !self.data_storage.is_confirmed_summon(summon_id)
                 && self.data_storage.is_damage_target(summon_id)
-                && self.data_storage.note_loot_owner(owner_id, &name)
+                && self.data_storage.note_loot_owner(summon_id, owner_id, &name)
             {
                 tracing::info!("loot record: local player '{}' -> entity {}", name, owner_id);
             }
