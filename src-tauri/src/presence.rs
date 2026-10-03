@@ -1,4 +1,4 @@
-//! Discord activity: "Playing AION2 — Cleric · Lv 29 — Kaisinel (Elyos) · Europe".
+//! Discord activity: "Playing AION2 — Naicha · Cleric · Lv 29 — Kaisinel (Elyos) · Europe".
 //!
 //! Opt-in (`dpsMeter.discordActivity`), and shown only while AION2 is open.
 //! It talks to the Discord app on this computer over its local IPC socket, so
@@ -52,6 +52,8 @@ struct ServerTable {
 #[derive(Debug, Clone, PartialEq)]
 struct Shown {
     details: String,
+    /// Class and level alone, for the class image's hover text.
+    class_line: String,
     state: String,
     class_key: Option<&'static str>,
     class_name: Option<String>,
@@ -122,10 +124,10 @@ fn run(app: tauri::AppHandle) {
         }
         let Some(c) = client.as_mut() else { continue };
         let mut assets = Assets::new().small_image("a2tools").small_text("A2Tools DPS Meter");
-        // The image's hover text is the class with its level, as the line
-        // beside it reads, not the bare class name.
+        // The image's hover text is the class with its level ("Cleric · Lv
+        // 30"): the line beside it adds the name.
         if let Some(key) = next.class_key {
-            assets = assets.large_image(key).large_text(next.details.as_str());
+            assets = assets.large_image(key).large_text(next.class_line.as_str());
         }
         let mut activity = Activity::new()
             .details(next.details.as_str())
@@ -172,7 +174,12 @@ fn describe(storage: &Arc<DataStorage>, state: &AppState, text: &Texts, lang: &s
     if let Some(level) = profile.level {
         details.push(text.get("level", "Lv {level}").replace("{level}", &level.to_string()));
     }
-    let details = if details.is_empty() { text.get("inGame", "In game") } else { details.join(" · ") };
+    let class_line = if details.is_empty() { text.get("inGame", "In game") } else { details.join(" · ") };
+    // The character's name leads: "Naicha · Cleric · Lv 30".
+    let details = match profile.name.as_deref().map(str::trim).filter(|n| !n.is_empty()) {
+        Some(name) => format!("{name} · {class_line}"),
+        None => class_line.clone(),
+    };
 
     let state_line = fighting(storage, state)
         .map(|boss| text.get("fighting", "Fighting {boss}").replace("{boss}", &boss))
@@ -181,6 +188,7 @@ fn describe(storage: &Arc<DataStorage>, state: &AppState, text: &Texts, lang: &s
 
     Shown {
         details,
+        class_line,
         state: state_line,
         class_key: profile.class.map(class_key),
         class_name,

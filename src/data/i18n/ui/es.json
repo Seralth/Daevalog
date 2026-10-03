@@ -185,7 +185,7 @@
     "discord": {
       "title": "Discord",
       "activity": "Mostrar en Discord a qué estoy jugando",
-      "activityHint": "Mientras AION2 está abierto, tu estado de Discord muestra tu clase, nivel y servidor, y el jefe contra el que luchas. Se hace a través de la aplicación de Discord de este equipo; no hace falta cuenta."
+      "activityHint": "Mientras AION2 está abierto, tu estado de Discord muestra el nombre de tu personaje, su clase, nivel y servidor, y el jefe contra el que luchas. Se hace a través de la aplicación de Discord de este equipo; no hace falta cuenta."
     },
     "version": "Versión",
     "theme": {
