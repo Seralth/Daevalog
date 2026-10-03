@@ -228,19 +228,41 @@ async fn upload_fight(
 ///
 /// Failure is quiet on purpose: not being signed in, or being offline, is not
 /// something to interrupt a fight about. The fight keeps its slice, and the
-/// upload button in History still works.
+/// upload button in History still works. A failure that waiting could fix
+/// (offline, a server error, a rate limit) is tried again later, on the
+/// schedule in `share::note_auto_upload_failure`.
 fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
+    // One upload of a fight at a time: a retry must not start while the first
+    // try is still waiting on the network.
+    static IN_FLIGHT: std::sync::LazyLock<Mutex<std::collections::HashSet<String>>> =
+        std::sync::LazyLock::new(|| Mutex::new(std::collections::HashSet::new()));
+    if !IN_FLIGHT.lock().insert(record.id.clone()) {
+        return;
+    }
     tauri::async_runtime::spawn(async move {
-        let Some(state) = app.try_state::<AppState>() else { return };
-        match share::upload(&state.http, &state.app_data_dir, &record).await {
+        let Some(state) = app.try_state::<AppState>() else {
+            IN_FLIGHT.lock().remove(&record.id);
+            return;
+        };
+        match share::upload_detailed(&state.http, &state.app_data_dir, &record).await {
             Ok(result) => {
                 tracing::info!("Auto-uploaded {} -> {}", record.id, result.url);
                 let _ = app.emit("fight-uploaded", serde_json::json!({
                     "fightId": record.id, "url": result.url, "visibility": result.visibility,
                 }));
             }
-            Err(e) => tracing::info!("Auto-upload of {} skipped: {e}", record.id),
+            Err(failure) => {
+                share::note_auto_upload_failure(
+                    &state.app_data_dir, &record.id, failure.retryable, crate::clock::now_ms());
+                tracing::info!(
+                    "Auto-upload of {} failed{}: {}",
+                    record.id,
+                    if failure.retryable { ", will retry" } else { "" },
+                    failure.message
+                );
+            }
         }
+        IN_FLIGHT.lock().remove(&record.id);
     });
 }
 
@@ -528,6 +550,15 @@ fn set_packet_logging(state: tauri::State<'_, AppState>, enabled: bool) {
     state.settings.set("dpsMeter.saveRawPackets", if enabled { "true" } else { "false" });
 }
 
+/// Send the newest packet captures to the developer (Settings, beside packet
+/// logging). Returns the report code the player passes on.
+#[tauri::command]
+async fn send_logs_to_dev(
+    state: tauri::State<'_, AppState>,
+) -> Result<share::dev_logs::SendResult, String> {
+    share::dev_logs::send(&state.http, &state.app_data_dir).await
+}
+
 #[tauri::command]
 fn reset_auto_detection(state: tauri::State<'_, AppState>) {
     state.port_detector.reset();
@@ -550,15 +581,6 @@ fn set_manual_device(state: tauri::State<'_, AppState>, device: String) {
 }
 
 #[tauri::command]
-/// Send the newest packet captures to the developer (Settings, beside packet
-/// logging). Returns the report code the player passes on.
-#[tauri::command]
-async fn send_logs_to_dev(
-    state: tauri::State<'_, AppState>,
-) -> Result<share::dev_logs::SendResult, String> {
-    share::dev_logs::send(&state.http, &state.app_data_dir).await
-}
-
 fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
 }
@@ -2236,6 +2258,17 @@ pub fn run() {
                                 }
                             }
                         }
+                        // Automatic uploads that failed and are due again,
+                        // fighting or not: a meter left open after the
+                        // connection came back catches up on its own.
+                        if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
+                            let now = crate::clock::now_ms();
+                            for id in share::auto_upload_retries_due(&state.app_data_dir, now) {
+                                if let Ok(record) = state.fight_history.load_fight(&id) {
+                                    auto_upload(handle_save.clone(), record);
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -2330,6 +2363,7 @@ pub fn run() {
             set_language,
             set_debug_logging,
             set_packet_logging,
+            send_logs_to_dev,
             get_aion2_window_title,
             debug_status,
             quit_app,
@@ -2363,7 +2397,6 @@ pub fn run() {
             set_manual_device,
             replay_file,
             test_auto_hide,
-            send_logs_to_dev,
             fetch_url,
             show_update_window,
         ])

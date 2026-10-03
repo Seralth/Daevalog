@@ -552,6 +552,16 @@ pub struct SliceMeta {
     pub url: Option<String>,
     #[serde(default)]
     pub visibility: Option<String>,
+    /// Automatic uploads tried and failed so far. See `note_auto_upload_failure`.
+    #[serde(default)]
+    pub auto_attempts: u32,
+    /// When to try the next automatic upload (ms since the epoch).
+    #[serde(default)]
+    pub retry_at_ms: i64,
+    /// Automatic uploads have stopped for this fight: the failure was one a
+    /// retry cannot fix, or the retries ran out. The History button still works.
+    #[serde(default)]
+    pub gave_up: bool,
 }
 
 fn read_meta(app_data_dir: &Path, id: &str) -> SliceMeta {
@@ -641,10 +651,46 @@ const ENDED_AFTER_MS: i64 = 10_000;
 /// fought is re-saved every 30 seconds, and uploading those partial records
 /// would publish a fight that has not happened yet.
 pub fn wants_auto_upload(app_data_dir: &Path, record: &FightRecord, now_ms: i64) -> bool {
+    let meta = read_meta(app_data_dir, &record.id);
     !record.is_train
         && now_ms - (record.start_time_ms + record.duration_ms) >= ENDED_AFTER_MS
         && slice_path(app_data_dir, &record.id).exists()
-        && read_meta(app_data_dir, &record.id).url.is_none()
+        && meta.url.is_none()
+        // A fight that already failed once is the retry schedule's.
+        && meta.auto_attempts == 0
+}
+
+/// How long to wait before each retry of a failed automatic upload, in
+/// minutes; one more failure after the last and it stops.
+const AUTO_RETRY_MINUTES: [i64; 6] = [1, 2, 5, 15, 30, 60];
+
+/// An automatic upload of `id` failed. Schedule the next try, or stop: when
+/// the failure is one waiting cannot fix (not signed in, a refused fight),
+/// or the retries are used up.
+pub fn note_auto_upload_failure(app_data_dir: &Path, id: &str, retryable: bool, now_ms: i64) {
+    let mut meta = read_meta(app_data_dir, id);
+    meta.auto_attempts += 1;
+    match AUTO_RETRY_MINUTES.get(meta.auto_attempts as usize - 1) {
+        Some(minutes) if retryable => meta.retry_at_ms = now_ms + minutes * 60_000,
+        _ => meta.gave_up = true,
+    }
+    write_meta(app_data_dir, id, &meta);
+}
+
+/// Fights whose automatic upload failed and is due to be tried again.
+pub fn auto_upload_retries_due(app_data_dir: &Path, now_ms: i64) -> Vec<String> {
+    let Ok(rd) = std::fs::read_dir(slices_dir(app_data_dir)) else { return Vec::new() };
+    rd.filter_map(|e| e.ok())
+        .filter_map(|e| e.file_name().to_string_lossy().strip_suffix(".json").map(str::to_string))
+        .filter(|id| {
+            let meta = read_meta(app_data_dir, id);
+            meta.url.is_none()
+                && meta.auto_attempts > 0
+                && !meta.gave_up
+                && meta.retry_at_ms <= now_ms
+                && slice_path(app_data_dir, id).exists()
+        })
+        .collect()
 }
 
 /// Which saved fights can be uploaded, and which already were.
@@ -709,8 +755,35 @@ pub async fn upload(
     app_data_dir: &Path,
     record: &FightRecord,
 ) -> Result<UploadResult, String> {
+    upload_detailed(client, app_data_dir, record).await.map_err(|f| f.message)
+}
+
+/// Why an upload failed, and whether trying the same upload later could work.
+#[derive(Debug, Clone)]
+pub struct UploadFailure {
+    pub message: String,
+    /// Offline, a server error, or rate limited: worth another try later. Not
+    /// signed in, or the service refused the fight: the same again would fail.
+    pub retryable: bool,
+}
+
+impl UploadFailure {
+    fn retry(message: impl Into<String>) -> Self {
+        Self { message: message.into(), retryable: true }
+    }
+    fn fatal(message: impl Into<String>) -> Self {
+        Self { message: message.into(), retryable: false }
+    }
+}
+
+/// `upload`, saying whether a failure is worth retrying.
+pub async fn upload_detailed(
+    client: &reqwest::Client,
+    app_data_dir: &Path,
+    record: &FightRecord,
+) -> Result<UploadResult, UploadFailure> {
     let token = crate::account::secret::load(app_data_dir)
-        .ok_or("Sign in under Settings → A2 Tools Account to upload fights.")?;
+        .ok_or_else(|| UploadFailure::fatal("Sign in under Settings → A2 Tools Account to upload fights."))?;
 
     let compressed = match std::fs::read(slice_path(app_data_dir, &record.id)) {
         Ok(bytes) => bytes,
@@ -719,11 +792,12 @@ pub async fn upload(
         Err(_) => {
             let captures = find_captures(app_data_dir);
             let (encoded, _, _) = slice_for(record, &captures).map_err(|_| {
-                "This fight has no packets saved, so it cannot be verified or uploaded. \
-                 Fights recorded from this version on can be."
-                    .to_string()
+                UploadFailure::fatal(
+                    "This fight has no packets saved, so it cannot be verified or uploaded. \
+                     Fights recorded from this version on can be.",
+                )
             })?;
-            gzip(&encoded)?
+            gzip(&encoded).map_err(UploadFailure::fatal)?
         }
     };
 
@@ -753,14 +827,14 @@ pub async fn upload(
         .body(body.to_string())
         .send()
         .await
-        .map_err(|e| format!("Could not reach a2tools.app: {e}"))?;
+        .map_err(|e| UploadFailure::retry(format!("Could not reach a2tools.app: {e}")))?;
     let status = response.status();
     let text = response.text().await.unwrap_or_default();
     let reply: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
 
     if status.is_success() {
-        let result: UploadResult =
-            serde_json::from_value(reply).map_err(|_| "Unexpected reply from a2tools.app.".to_string())?;
+        let result: UploadResult = serde_json::from_value(reply)
+            .map_err(|_| UploadFailure::retry("Unexpected reply from a2tools.app."))?;
         let mut meta = meta;
         meta.url = Some(result.url.clone());
         meta.visibility = Some(result.visibility.clone());
@@ -768,7 +842,8 @@ pub async fn upload(
         write_meta(app_data_dir, &record.id, &meta);
         return Ok(result);
     }
-    Err(match (status.as_u16(), reply.get("error").and_then(|e| e.as_str())) {
+    let code = status.as_u16();
+    let message = match (code, reply.get("error").and_then(|e| e.as_str())) {
         (401, _) => "Your sign-in has expired. Connect your account again in Settings.".into(),
         (403, Some("insufficient_scope")) => {
             "This sign-in was made before uploads existed. Sign out and connect again in \
@@ -781,7 +856,11 @@ pub async fn upload(
             .and_then(|m| m.as_str())
             .map(str::to_string)
             .unwrap_or_else(|| format!("Upload failed ({status}).")),
-    })
+    };
+    // A server that is down, busy or rate limiting may take it later; one that
+    // refused the fight, or the sign-in, will refuse it again.
+    let retryable = code == 408 || code == 429 || status.is_server_error();
+    Err(UploadFailure { message, retryable })
 }
 
 /// Standard base64. Small enough that a dependency is not worth having.
@@ -818,6 +897,33 @@ mod upload_tests {
     }
 
     #[test]
+    fn a_failed_auto_upload_is_retried_on_a_schedule_and_then_left() {
+        let dir = std::env::temp_dir().join(format!("a2t-retry-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(slices_dir(&dir)).unwrap();
+        std::fs::write(slice_path(&dir, "f1"), b"slice").unwrap();
+        write_meta(&dir, "f1", &SliceMeta::default());
+        let t = 1_000_000;
+        assert!(auto_upload_retries_due(&dir, t).is_empty(), "never failed: not a retry");
+        note_auto_upload_failure(&dir, "f1", true, t);
+        assert!(auto_upload_retries_due(&dir, t + 59_000).is_empty(), "first retry after a minute");
+        assert_eq!(auto_upload_retries_due(&dir, t + 60_000), vec!["f1".to_string()]);
+        for n in 2..=AUTO_RETRY_MINUTES.len() {
+            note_auto_upload_failure(&dir, "f1", true, t);
+            assert!(!read_meta(&dir, "f1").gave_up, "attempt {n}");
+        }
+        note_auto_upload_failure(&dir, "f1", true, t);
+        assert!(read_meta(&dir, "f1").gave_up, "out of retries");
+        assert!(auto_upload_retries_due(&dir, i64::MAX).is_empty());
+
+        std::fs::write(slice_path(&dir, "f2"), b"slice").unwrap();
+        write_meta(&dir, "f2", &SliceMeta::default());
+        note_auto_upload_failure(&dir, "f2", false, t);
+        assert!(read_meta(&dir, "f2").gave_up, "a refused fight is not retried");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn auto_upload_waits_for_the_end_and_fires_once() {
         let dir = std::env::temp_dir().join(format!("a2t-auto-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
@@ -832,7 +938,7 @@ mod upload_tests {
         assert!(!wants_auto_upload(&dir, &fight("auto_9_1000", 1_000, 60_000, true), ended),
                 "a training dummy is never a log");
         write_meta(&dir, &boss.id, &SliceMeta { uploader_actor_id: None,
-                   url: Some("https://a2tools.app/logs/x".into()), visibility: None });
+                   url: Some("https://a2tools.app/logs/x".into()), visibility: None, ..Default::default() });
         assert!(!wants_auto_upload(&dir, &boss, ended), "already uploaded");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -854,6 +960,7 @@ mod upload_tests {
             uploader_actor_id: Some(5),
             url: Some("https://a2tools.app/logs/abc".into()),
             visibility: None,
+            ..Default::default()
         });
         std::fs::write(slice_path(&dir, "auto_3_4"), b"x").unwrap();
         let status = share_status(&dir);
