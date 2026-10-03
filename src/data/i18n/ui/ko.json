@@ -187,7 +187,11 @@
     },
     "debugLogging": "디버그 로그 활성화",
     "quit": "종료",
-    "discord": "Discord",
+    "discord": {
+      "title": "디스코드",
+      "activity": "디스코드에 플레이 중인 정보 표시",
+      "activityHint": "AION2가 실행 중일 때 디스코드 상태에 직업, 레벨, 서버와 싸우고 있는 보스를 표시합니다. 이 컴퓨터의 디스코드 앱을 통해 표시되며 계정은 필요하지 않습니다."
+    },
     "version": "버전",
     "theme": {
       "label": "테마",
@@ -357,5 +361,14 @@
       "normal": "일반",
       "hard": "매우 어려움"
     }
+  },
+  "presence": {
+    "level": "Lv {level}",
+    "fighting": "{boss} 전투 중",
+    "inGame": "게임 중",
+    "elyos": "천족",
+    "asmodian": "마족",
+    "korea": "한국",
+    "taiwan": "대만"
   }
 }

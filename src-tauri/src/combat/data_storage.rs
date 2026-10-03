@@ -157,6 +157,16 @@ impl SkillCombatData {
     }
 }
 
+/// Who the local player is playing. See `DataStorage::local_profile`.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct LocalProfile {
+    pub name: Option<String>,
+    /// 0 when unknown.
+    pub server_id: u16,
+    pub class: Option<JobClass>,
+    pub level: Option<u32>,
+}
+
 /// One entry of the party roster packet (`0x9702`). Keyed by character name,
 /// because the roster carries the account-level `dbid` rather than the
 /// session-scoped entity id — the name is the only field that joins it to the
@@ -369,6 +379,9 @@ struct Inner {
     /// Each character's home server, by name, from the records that state it:
     /// the self record and loot records. See `fight_server_id`.
     player_servers: HashMap<String, u16>,
+    /// The class and level your own self record last stated, with the name it
+    /// was for, so a character switch does not carry the last one's over.
+    self_profile: Option<(String, Option<JobClass>, Option<u32>)>,
 }
 
 #[derive(Default)]
@@ -425,6 +438,7 @@ impl DataStorage {
                 local_identity_from_game: false,
                 loot_identity: LootIdentity::default(),
                 player_servers: HashMap::new(),
+                self_profile: None,
             }),
             damage_generation: AtomicI64::new(0),
             last_damage_ms: AtomicI64::new(NEVER_MS),
@@ -597,6 +611,31 @@ impl DataStorage {
         if inner.player_servers.len() < 10_000 || inner.player_servers.contains_key(name) {
             inner.player_servers.insert(name.to_string(), server_id);
         }
+    }
+
+    /// Your class and level, as your own self record states them.
+    pub fn note_self_profile(&self, name: &str, class: Option<JobClass>, level: Option<u32>) {
+        self.inner.write().self_profile = Some((name.to_string(), class, level));
+    }
+
+    /// Who you are playing, as far as the game has said: name, server, class
+    /// and level. Class falls back to the one your skills show, for a meter
+    /// started before the self record came; level has no such fallback.
+    pub fn local_profile(&self) -> LocalProfile {
+        let server = self.fight_server_id();
+        let inner = self.inner.read();
+        let name = inner.local_character_name.clone();
+        let (mut class, mut level) = (None, None);
+        if let (Some(n), Some((pn, pc, pl))) = (name.as_deref(), inner.self_profile.as_ref()) {
+            if n.trim() == pn.trim() {
+                class = *pc;
+                level = *pl;
+            }
+        }
+        if class.is_none() {
+            class = inner.local_player_id.and_then(|id| inner.actor_jobs.get(&(id as i32)).copied());
+        }
+        LocalProfile { name, server_id: server, class, level }
     }
 
     /// The server the fights being recorded are on: the local player's, else

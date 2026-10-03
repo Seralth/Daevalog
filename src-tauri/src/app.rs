@@ -300,6 +300,13 @@ async fn account_status(
     Ok(who)
 }
 
+/// Whether this build can show a Discord activity (it has a Discord
+/// application configured). The Settings toggle is hidden when it cannot.
+#[tauri::command]
+fn discord_activity_available() -> bool {
+    crate::presence::available()
+}
+
 /// What the last `account_status` found, without asking the server again.
 /// `None` when nothing has been checked yet this session.
 #[tauri::command]
@@ -1906,6 +1913,7 @@ pub fn run() {
             let capture_suspended = state.capture_suspended.clone();
 
             app.manage(state);
+            crate::presence::spawn(app.handle().clone());
 
             // Reopen the Details window if it was left enabled. Done here rather
             // than from JS because the backend already has settings loaded — the
@@ -2296,6 +2304,7 @@ pub fn run() {
             share_status,
             account_status,
             account_status_cached,
+            discord_activity_available,
             account_begin_link,
             account_sign_out,
             get_settings,

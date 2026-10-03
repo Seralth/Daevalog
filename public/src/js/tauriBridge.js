@@ -596,6 +596,10 @@
       return invoke("account_status");
     },
 
+    discordActivityAvailable() {
+      return invoke("discord_activity_available");
+    },
+
     // The last check's answer, at once: null if none has run yet, else
     // { who } with who null when signed out.
     accountStatusCached() {

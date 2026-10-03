@@ -64,6 +64,7 @@ class DpsApp {
       bossLogs: "dpsMeter.bossLogsEnabled",
       saveRawPackets: "dpsMeter.saveRawPackets",
       autoUpload: "dpsMeter.autoUpload",
+      discordActivity: "dpsMeter.discordActivity",
       windowOpacity: "dpsMeter.windowOpacity",
       bossNameSize: "dpsMeter.bossNameSize",
       betaUi: "dpsMeter.betaUi",
@@ -2310,6 +2311,22 @@ class DpsApp {
       });
     }
     this.refreshAccountPanel();
+
+    // Off unless turned on: it shows others what you are playing. Offered
+    // only when this build has a Discord application to show it under.
+    const discordCheckbox = document.querySelector(".discordActivityCheckbox");
+    if (discordCheckbox) {
+      discordCheckbox.checked = this.safeGetSetting(this.storageKeys.discordActivity) === "true";
+      discordCheckbox.addEventListener("change", (event) => {
+        this.safeSetSetting(this.storageKeys.discordActivity, String(!!event.target?.checked));
+      });
+      Promise.resolve(window.javaBridge?.discordActivityAvailable?.())
+        .then((ok) => {
+          const group = document.querySelector(".discordActivityGroup");
+          if (group && ok) group.style.display = "";
+        })
+        .catch(() => {});
+    }
 
     if (this.autoUploadCheckbox) {
       // Off unless turned on: an upload publishes a fight.

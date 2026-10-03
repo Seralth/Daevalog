@@ -182,7 +182,11 @@
     },
     "debugLogging": "Activer la journalisation de débogage",
     "quit": "Quitter",
-    "discord": "Discord",
+    "discord": {
+      "title": "Discord",
+      "activity": "Afficher dans Discord ce à quoi je joue",
+      "activityHint": "Tant qu'AION2 est ouvert, votre statut Discord affiche votre classe, votre niveau, votre serveur et le boss que vous combattez. Cela passe par l'application Discord de cet ordinateur ; aucun compte n'est nécessaire."
+    },
     "version": "Version",
     "theme": {
       "label": "Thème",
@@ -350,5 +354,14 @@
       "normal": "Normal",
       "hard": "Difficile"
     }
+  },
+  "presence": {
+    "level": "Niv. {level}",
+    "fighting": "Combat {boss}",
+    "inGame": "En jeu",
+    "elyos": "Élyséens",
+    "asmodian": "Asmodiens",
+    "korea": "Corée",
+    "taiwan": "Taïwan"
   }
 }
