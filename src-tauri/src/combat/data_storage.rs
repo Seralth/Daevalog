@@ -675,6 +675,15 @@ impl DataStorage {
         counts.into_iter().max_by_key(|&(server, n)| (n, std::cmp::Reverse(server))).map_or(0, |(s, _)| s)
     }
 
+    /// Whether the game itself named the local player (the self record or the
+    /// character list), not a guess from loot records. Only this may stand
+    /// over a name the player typed (issue #13): a loot guess can be a
+    /// bystander's kill.
+    pub fn local_identity_from_self_record(&self) -> bool {
+        let inner = self.inner.read();
+        inner.local_identity_from_game && !inner.loot_identity.applied
+    }
+
     /// Whether the local player's identity came from the game rather than from
     /// the UI (window title, settings, a remembered name).
     pub fn local_identity_from_game(&self) -> bool {
@@ -1701,6 +1710,25 @@ mod tests {
         assert_eq!(s.local_player_id(), None);
         assert!(s.note_loot_owner(902, 1454, "ApexZ"), "a second kill leads");
         assert_eq!(who(&s), (Some(1454), Some("ApexZ".into()), true));
+    }
+
+    /// Issue #12's two orders: you then a bystander, and a bystander then you.
+    #[test]
+    fn a_bystanders_loot_never_takes_over_whichever_comes_first() {
+        let s = DataStorage::new();
+        s.set_local_character_name(Some("PlayerA".into()));
+        s.note_party_scope(13978);
+        assert!(s.note_loot_owner(1, 13978, "PlayerA"));
+        assert!(!s.note_loot_owner(2, 15855, "PlayerB"));
+        assert_eq!(s.local_player_id(), Some(13978));
+
+        let s = DataStorage::new();
+        s.set_local_character_name(Some("PlayerA".into()));
+        s.note_party_scope(13978);
+        assert!(!s.note_loot_owner(1, 15855, "PlayerB"));
+        assert!(s.note_loot_owner(2, 13978, "PlayerA"));
+        assert_eq!(s.local_player_id(), Some(13978));
+        assert!(!s.local_identity_from_self_record(), "a loot guess is not the game's own word");
     }
 
     #[test]
