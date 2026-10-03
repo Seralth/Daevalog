@@ -727,6 +727,21 @@
   const TOOLTIP_WIDTH = 800;
   let lastSizeKey = "";
 
+  // The screen space right of and below the window. The overlay grows from its
+  // top-left corner, and growing past the screen edge makes a window manager
+  // that keeps windows on screen (KWin) move it back, out from under the
+  // cursor: the tooltip hid, the window shrank, the row was under the cursor
+  // again, in a loop (issue #11). Windows simply lets it hang off screen.
+  const spaceRightBelow = () => {
+    const s = window.screen;
+    const right = (s.availLeft || 0) + (s.availWidth || 1920);
+    const bottom = (s.availTop || 0) + (s.availHeight || 1080);
+    return {
+      w: Math.max(0, right - (window.screenX || 0)),
+      h: Math.max(0, bottom - (window.screenY || 0)),
+    };
+  };
+
   const updateWindowSize = () => {
     if (resizeActive) return; // Don't fight the user while they're resizing
     // Tool windows own their own geometry (and remember it). The overlay's
@@ -759,7 +774,13 @@
       contentH = Math.ceil(meterH + pingH) + 10;
     }
 
-    const w = fullPanel ? PANEL_WIDTH : tooltipOnly ? TOOLTIP_WIDTH : contentW;
+    // The tooltip's extra room stops at the screen edge; the meter itself
+    // never shrinks below its content.
+    const w = fullPanel
+      ? PANEL_WIDTH
+      : tooltipOnly
+        ? Math.min(TOOLTIP_WIDTH, Math.max(contentW, spaceRightBelow().w))
+        : contentW;
     const h = fullPanel ? Math.max(PANEL_HEIGHT, contentH) : contentH;
     const sizeKey = `${w}x${h}@${window.devicePixelRatio || 1}`;
     if (sizeKey === lastSizeKey) return;
@@ -839,9 +860,8 @@
   let resizeActive = false;
   const expandViewport = () => {
     resizeActive = true;
-    const screenW = window.screen.availWidth || 1920;
-    const screenH = window.screen.availHeight || 1080;
-    invoke("resize_window", { width: Math.min(screenW, 2000), height: Math.min(screenH, 1200), scale: window.devicePixelRatio || 1 }).catch(() => {});
+    const space = spaceRightBelow();
+    invoke("resize_window", { width: Math.min(space.w, 2000), height: Math.min(space.h, 1200), scale: window.devicePixelRatio || 1 }).catch(() => {});
   };
   const shrinkViewport = () => {
     if (resizeActive) {
@@ -854,6 +874,11 @@
     if (e.target?.closest?.(".resizeHandle")) expandViewport();
   }, { capture: true });
   document.addEventListener("mouseup", shrinkViewport);
+  // A release outside the window sends no mouseup; the next move shows it.
+  // (Not on blur: KWin blurs the window at the start of every drag.)
+  document.addEventListener("mousemove", (e) => {
+    if (resizeActive && (e.buttons & 1) === 0) shrinkViewport();
+  });
 
   // Startup diagnostics
   invoke("debug_status").then((s) => {

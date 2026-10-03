@@ -2136,12 +2136,35 @@ class DpsApp {
       this.characterNameInput.addEventListener("keydown", (event) => {
         if (event.key === "Enter") event.target.blur();
       });
-      this.characterNameInput.addEventListener("change", (event) => {
-        const name = String(event.target?.value || "").trim();
-        event.target.value = name;
-        if (name === this.USER_NAME) return;
+      // Saved after a pause in typing, on Enter or leaving the field, and when
+      // the window closes: saving on "change" alone lost a name typed just
+      // before closing Settings (issue #13). Compared with what was last
+      // saved, not with the detected name, so typing the detected name still
+      // saves it as the player's own.
+      let savedName = String(this.safeGetSetting(this.storageKeys.userName) || "").trim();
+      let saveTimer = null;
+      const saveTypedName = () => {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        const name = String(this.characterNameInput.value || "").trim();
+        if (name === savedName) return;
+        savedName = name;
         this.setUserName(name, { persist: true, syncBackend: true, manual: true });
         this.safeSetSetting(this.storageKeys.userName, name);
+      };
+      this.characterNameInput.addEventListener("input", () => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveTypedName, 800);
+      });
+      this.characterNameInput.addEventListener("change", (event) => {
+        event.target.value = String(event.target?.value || "").trim();
+        saveTypedName();
+      });
+      window.addEventListener("pagehide", () => {
+        if (saveTimer) saveTypedName();
+      });
+      window.addEventListener("beforeunload", () => {
+        if (saveTimer) saveTypedName();
       });
     }
     if (this.localActorIdInput) {
@@ -4825,10 +4848,18 @@ class DpsApp {
     const minWidth = 300;
     const minHeight = 30;
 
+    // Screen coordinates, not client ones: a window manager that keeps windows
+    // on screen (KWin) moves the window while it grows during the drag, which
+    // shifts clientX/Y and made the size jump past the cursor (issue #11).
     const onMouseMove = (event) => {
       if (!isResizing) return;
-      const nextWidth = Math.max(minWidth, startWidth + (event.clientX - startX));
-      const nextHeight = Math.max(minHeight, startHeight + (event.clientY - startY));
+      // The button came up outside the window, where no mouseup arrives.
+      if ((event.buttons & 1) === 0) {
+        onMouseUp();
+        return;
+      }
+      const nextWidth = Math.max(minWidth, startWidth + (event.screenX - startX));
+      const nextHeight = Math.max(minHeight, startHeight + (event.screenY - startY));
       this.meterEl.style.width = `${nextWidth}px`;
       this.meterEl.style.height = `${nextHeight}px`;
     };
@@ -4851,8 +4882,8 @@ class DpsApp {
       const rect = this.meterEl.getBoundingClientRect();
       startWidth = rect.width;
       startHeight = rect.height;
-      startX = event.clientX;
-      startY = event.clientY;
+      startX = event.screenX;
+      startY = event.screenY;
       isResizing = true;
     });
 
