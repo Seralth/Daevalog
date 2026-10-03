@@ -277,6 +277,14 @@
       "working": "Warte auf Bestätigung…",
       "failed": "Anmeldung fehlgeschlagen: {error}",
       "supporter": "Unterstützer"
+    },
+    "sendLogs": {
+      "hint": "Sendet deine 3 neuesten Paket-Logs für einen Fehlerbericht an den Entwickler.",
+      "button": "Logs an Entwickler senden",
+      "confirm": "Deine 3 neuesten Paket-Logs an den A2-Tools-Entwickler senden?\n\nPaket-Logs sind der rohe Spielverkehr, aufgezeichnet während die Paketaufzeichnung an war, einschließlich Charakternamen. Nur der Entwickler kann sie öffnen, und sie werden nach 30 Tagen gelöscht.",
+      "sending": "Wird gesendet...",
+      "sent": "Gesendet. Dein Berichtscode ist {code}: gib ihn dem Entwickler auf Discord.",
+      "failed": "Senden fehlgeschlagen: {error}"
     }
   },
   "support": {

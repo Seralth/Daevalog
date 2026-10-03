@@ -522,6 +522,7 @@ mod tests {
 
 // ===== slices kept automatically, and uploading them =====
 
+pub mod dev_logs;
 pub mod ring;
 
 /// Where a fight's slice and its upload state live. Beside `history/`, not in

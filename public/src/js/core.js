@@ -2015,6 +2015,8 @@ class DpsApp {
     this.debugLoggingCheckbox = document.querySelector(".debugLoggingCheckbox");
     this.showPingCheckbox = document.querySelector(".showPingCheckbox");
     this.saveRawPacketsCheckbox = document.querySelector(".saveRawPacketsCheckbox");
+    this.sendLogsBtn = document.querySelector(".sendLogsBtn");
+    this.sendLogsStatus = document.querySelector(".sendLogsStatus");
     this.pinMeToTopCheckbox = document.querySelector(".pinMeToTopCheckbox");
     this.detailsMonitorDropdownBtn = document.querySelector(".detailsMonitorDropdownBtn");
     this.detailsMonitorDropdownMenu = document.querySelector(".detailsMonitorDropdownMenu");
@@ -2297,6 +2299,7 @@ class DpsApp {
         window.javaBridge?.setSaveRawPackets?.(isChecked);
       });
     }
+    this.initSendLogs();
     if (this.pinMeToTopCheckbox) {
       this.pinMeToTopCheckbox.checked = this.pinMeToTop;
       this.pinMeToTopCheckbox.addEventListener("change", (event) => {
@@ -4239,6 +4242,45 @@ class DpsApp {
     if (this.meterTotalDmgEl) {
       this.meterTotalDmgEl.textContent = this.formatAbbreviatedNumber(totalDmg);
     }
+  }
+
+  // "Send logs to dev": the newest packet captures, for a bug report. Packet
+  // logs are raw game traffic, names included, so it asks first, every time.
+  initSendLogs() {
+    const btn = this.sendLogsBtn;
+    const status = this.sendLogsStatus;
+    if (!btn || btn.dataset.wired) return;
+    btn.dataset.wired = "1";
+    const t = (key, fallback, vars) =>
+      vars ? (window.i18n?.format?.(key, vars, fallback) ?? fallback)
+           : (window.i18n?.t?.(key, fallback) ?? fallback);
+    const show = (text) => {
+      if (!status) return;
+      status.removeAttribute("data-i18n");
+      status.textContent = text;
+    };
+    btn.addEventListener("click", async () => {
+      const ok = window.confirm(t("settings.sendLogs.confirm",
+        "Send your 3 newest packet logs to the A2 Tools developer?\n\n" +
+        "Packet logs are raw game traffic recorded while packet logging was on, " +
+        "including character names. Only the developer can open them, and they " +
+        "are deleted after 30 days."));
+      if (!ok) return;
+      btn.disabled = true;
+      show(t("settings.sendLogs.sending", "Sending..."));
+      try {
+        const result = await window.javaBridge?.sendLogsToDev?.();
+        const code = result?.code || "?";
+        show(t("settings.sendLogs.sent",
+          `Sent. Your report code is ${code}: give it to the developer on Discord.`,
+          { code }));
+      } catch (err) {
+        const msg = String(err?.message || err || "");
+        show(t("settings.sendLogs.failed", `Could not send: ${msg}`, { error: msg }));
+      } finally {
+        btn.disabled = false;
+      }
+    });
   }
 
   initPlayerLimitDropdown() {

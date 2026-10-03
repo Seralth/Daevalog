@@ -277,6 +277,14 @@
       "working": "En attente de validation…",
       "failed": "Échec de la connexion : {error}",
       "supporter": "Soutien"
+    },
+    "sendLogs": {
+      "hint": "Envoie tes 3 derniers journaux de paquets au développeur, pour un rapport de bug.",
+      "button": "Envoyer les journaux au dev",
+      "confirm": "Envoyer tes 3 derniers journaux de paquets au développeur d'A2 Tools ?\n\nLes journaux de paquets sont le trafic brut du jeu enregistré pendant que la journalisation était activée, noms de personnages compris. Seul le développeur peut les ouvrir, et ils sont supprimés au bout de 30 jours.",
+      "sending": "Envoi...",
+      "sent": "Envoyé. Ton code de rapport est {code} : donne-le au développeur sur Discord.",
+      "failed": "Envoi impossible : {error}"
     }
   },
   "support": {

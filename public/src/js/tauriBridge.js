@@ -561,6 +561,11 @@
     setSaveRawPackets(enabled) {
       invoke("set_packet_logging", { enabled: !!enabled }).catch(() => {});
     },
+    // Sends the newest packet captures to the developer. Resolves with
+    // { code, files }; rejects with a message to show as is.
+    sendLogsToDev() {
+      return invoke("send_logs_to_dev");
+    },
     setDebugLoggingEnabled(enabled) {
       invoke("set_debug_logging", { enabled: !!enabled }).catch(() => {});
     },

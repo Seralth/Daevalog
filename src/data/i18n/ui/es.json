@@ -277,6 +277,14 @@
       "working": "Esperando aprobación…",
       "failed": "Error al iniciar sesión: {error}",
       "supporter": "Mecenas"
+    },
+    "sendLogs": {
+      "hint": "Envía tus 3 registros de paquetes más recientes al desarrollador, para un informe de errores.",
+      "button": "Enviar registros al dev",
+      "confirm": "¿Enviar tus 3 registros de paquetes más recientes al desarrollador de A2 Tools?\n\nLos registros de paquetes son el tráfico del juego en bruto grabado mientras el registro de paquetes estaba activado, incluidos los nombres de personajes. Solo el desarrollador puede abrirlos y se eliminan a los 30 días.",
+      "sending": "Enviando...",
+      "sent": "Enviado. Tu código de informe es {code}: dáselo al desarrollador en Discord.",
+      "failed": "No se pudo enviar: {error}"
     }
   },
   "support": {

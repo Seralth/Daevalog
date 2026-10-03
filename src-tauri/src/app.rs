@@ -550,6 +550,15 @@ fn set_manual_device(state: tauri::State<'_, AppState>, device: String) {
 }
 
 #[tauri::command]
+/// Send the newest packet captures to the developer (Settings, beside packet
+/// logging). Returns the report code the player passes on.
+#[tauri::command]
+async fn send_logs_to_dev(
+    state: tauri::State<'_, AppState>,
+) -> Result<share::dev_logs::SendResult, String> {
+    share::dev_logs::send(&state.http, &state.app_data_dir).await
+}
+
 fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
 }
@@ -2354,6 +2363,7 @@ pub fn run() {
             set_manual_device,
             replay_file,
             test_auto_hide,
+            send_logs_to_dev,
             fetch_url,
             show_update_window,
         ])
