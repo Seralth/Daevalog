@@ -83,11 +83,40 @@ const EMBEDDED_KEEP: usize = 160;
 /// for, so the only thing it can do with the packet is the embedded scan.
 pub const LIFTED_HOST: [u8; 2] = [0xE5, 0xA2];
 
-fn lift_embedded_damage(packet: &[u8]) -> Vec<Vec<u8>> {
-    // Every `04 38` in the host, as the live scan would find them.
-    let hits: Vec<usize> = (2..packet.len().saturating_sub(1))
-        .filter(|&i| packet[i] == 0x04 && packet[i + 1] == 0x38)
-        .collect();
+/// The longest stretch kept after an embedded spawn whose own length cannot be
+/// read. A spawn record runs to a few hundred bytes (a boss's, 230).
+const EMBEDDED_SPAWN_KEEP: usize = 512;
+/// Bounds on an embedded spawn's own length, when it can be read: the fixed
+/// fields alone are longer than the first, and a field boss's record (1,037
+/// bytes) is well inside the second.
+const EMBEDDED_SPAWN_MIN: usize = 16;
+const EMBEDDED_SPAWN_MAX: usize = 4096;
+
+/// Records the parser recovers from inside other packets, lifted out.
+///
+/// Damage (`04 38`, see `EMBEDDED_KEEP`) in the fight window, and spawns (`40`
+/// `41` `44` `45 36`) always. The live meter scans every packet's raw bytes for
+/// spawns as well as damage, and some arrive only that way: the spawns that say
+/// what a boss IS came inside a `00 36` container in one capture and a 13 KB
+/// packet in another, so the slice replayed the right damage on a target with
+/// no mob code, which is no boss, and derived nothing (2026-10-03: Guardian
+/// Captain Raur, Glassvein, Decaying Durvati, Kernon of the West).
+fn lift_embedded(packet: &[u8], keep: Keep) -> Vec<Vec<u8>> {
+    let damage_at = |i: usize| packet[i] == 0x04 && packet[i + 1] == 0x38;
+    let mut spans: Vec<(usize, usize)> = Vec::new();
+    for i in 2..packet.len().saturating_sub(1) {
+        if damage_at(i) {
+            if keep == Keep::All {
+                spans.push((i, packet.len().min(i + EMBEDDED_KEEP)));
+            }
+        } else if let Some(end) = embedded_spawn_end(packet, i) {
+            // A spawn's span stops short of any damage record after it, so in
+            // the lead-in no damage rides along, and in the fight no record is
+            // lifted twice.
+            let end = (i + 2..end).find(|&j| j + 1 < packet.len() && damage_at(j)).unwrap_or(end);
+            spans.push((i, end));
+        }
+    }
 
     // Records close together are lifted as ONE span, not one copy each. The
     // replay's embedded scan walks the whole lifted packet, so a per-record
@@ -96,16 +125,16 @@ fn lift_embedded_damage(packet: &[u8]) -> Vec<Vec<u8>> {
     // end, which the live parser never produced: a double count, measured at
     // +2.4% on a real fight. As spans, every record sees exactly the bytes it
     // saw live and no record appears twice.
-    let mut spans: Vec<(usize, usize)> = Vec::new();
-    for &i in &hits {
-        let reach = packet.len().min(i + EMBEDDED_KEEP);
-        match spans.last_mut() {
-            Some((_, end)) if i < *end => *end = (*end).max(reach),
-            _ => spans.push((i, reach)),
+    spans.sort_unstable();
+    let mut merged: Vec<(usize, usize)> = Vec::new();
+    for (from, to) in spans {
+        match merged.last_mut() {
+            Some((_, end)) if from < *end => *end = (*end).max(to),
+            _ => merged.push((from, to)),
         }
     }
 
-    spans
+    merged
         .into_iter()
         .filter_map(|(from, to)| {
             let mut body = Vec::with_capacity(2 + to - from);
@@ -114,6 +143,36 @@ fn lift_embedded_damage(packet: &[u8]) -> Vec<Vec<u8>> {
             frame_packet(&body)
         })
         .collect()
+}
+
+/// Where the spawn record whose opcode is at `i` ends, if one is there, by the
+/// rules the live scan (`scan_for_embedded_40_36`) applies: a spawn opcode not
+/// preceded by `00`, then an entity id in range. Its end is its own frame's,
+/// when the length varint in front of it reads as one that fits; otherwise a
+/// fixed stretch.
+fn embedded_spawn_end(packet: &[u8], i: usize) -> Option<usize> {
+    if packet[i + 1] != 0x36 || !matches!(packet[i], 0x40 | 0x41 | 0x44 | 0x45) || packet[i - 1] == 0x00 {
+        return None;
+    }
+    let id = super::stream_processor::read_varint(packet, i + 2);
+    if id.length <= 0 || !(100..=9_999_999).contains(&id.value) {
+        return None;
+    }
+    // Longest length first: a two-byte length `8d 08` ends in a byte that
+    // also reads as a one-byte length (8), which cut a field boss's 1,037-byte
+    // spawn to four bytes. No spawn record is shorter than its fixed fields.
+    let framed = (1..=3usize).rev().find_map(|n| {
+        let at = i.checked_sub(n)?;
+        let len = super::stream_processor::read_varint(packet, at);
+        if len.length != n as i32 || len.value <= 3 {
+            return None;
+        }
+        // Lengths count three more than the frame's bytes (see `framing`).
+        let end = at + (len.value - 3) as usize;
+        (end >= i + EMBEDDED_SPAWN_MIN && end <= packet.len() && end - i <= EMBEDDED_SPAWN_MAX)
+            .then_some(end)
+    });
+    Some(framed.unwrap_or_else(|| packet.len().min(i + EMBEDDED_SPAWN_KEEP)))
 }
 
 /// The compact-skill context a packet declares, lifted out on its own.
@@ -377,9 +436,19 @@ impl Blinder {
     }
 
     /// Pass two: anything shaped like `<u8 len><len bytes of text>`.
+    ///
+    /// Not in a packet's header, nor in the header of a packet embedded in it.
+    /// A spawn opcode is two printable bytes (`40 36` is "@6") and a length of
+    /// 256 to 383 bytes ends in `02`, so `<len> 40 36` reads as a two-letter
+    /// name: blinding it turned a boss's spawn into nothing the parser knows,
+    /// and its fight into one on an unknown mob, which no slice could file
+    /// (Decaying Durvati, 2026-02 capture).
     fn blind_name_shaped(&mut self, buf: &mut [u8]) -> usize {
         let mut replaced = 0;
-        let mut i = 0usize;
+        // Every buffer handed to the blinder is one framed packet: skip its
+        // length and opcode.
+        let header = super::stream_processor::read_varint(buf, 0);
+        let mut i = if header.length > 0 { header.length as usize + 2 } else { 0 };
         while i < buf.len() {
             let len = buf[i] as usize;
             if !(MIN_NAME_BYTES..=MAX_NAME_BYTES).contains(&len) || i + 1 + len > buf.len() {
@@ -387,7 +456,7 @@ impl Blinder {
                 continue;
             }
             let span = &buf[i + 1..i + 1 + len];
-            if !looks_like_text(span) || self.known_tokens.contains(span) {
+            if !looks_like_text(span) || self.known_tokens.contains(span) || embedded_header(buf, i) {
                 i += 1;
                 continue;
             }
@@ -401,6 +470,22 @@ impl Blinder {
         }
         replaced
     }
+}
+
+/// Is `buf[i]` the last byte of an embedded packet's length, followed by a
+/// spawn or identity opcode and an entity id, rather than a two-byte name?
+/// All three together: a length of two or more bytes (the byte before has its
+/// continuation bit), one of the `36` opcodes the parser scans for inside
+/// other packets, and an id in the range the parser accepts.
+fn embedded_header(buf: &[u8], i: usize) -> bool {
+    if buf[i] != 2 || i == 0 || buf[i - 1] & 0x80 == 0 || i + 3 >= buf.len() {
+        return false;
+    }
+    if buf[i + 2] != 0x36 || !matches!(buf[i + 1], 0x23 | 0x33 | 0x40 | 0x41 | 0x42 | 0x44 | 0x45) {
+        return false;
+    }
+    let id = super::stream_processor::read_varint(buf, i + 3);
+    id.length > 0 && (0..=9_999_999).contains(&id.value)
 }
 
 /// Is this run plausibly a name or other human-readable string?
@@ -541,17 +626,13 @@ fn filter_bundle_inner(
                 stats.bytes_seen += frame.len();
                 let mut packet = frame.bytes(buffer).to_vec();
                 if !is_allowed(&packet, keep) {
-                    if keep == Keep::All {
-                        // Context first: the live parser extracts it from a
-                        // packet before parsing that same packet.
-                        let lifted = lift_compact_context(&packet)
-                            .into_iter()
-                            .chain(lift_embedded_damage(&packet));
-                        for mut lifted in lifted {
-                            stats.names_blinded += blinder.blind(&mut lifted);
-                            stats.bytes_kept += lifted.len();
-                            out.extend_from_slice(&lifted);
-                        }
+                    // Context first: the live parser extracts it from a packet
+                    // before parsing that same packet. It only matters to damage.
+                    let context = if keep == Keep::All { lift_compact_context(&packet) } else { None };
+                    for mut lifted in context.into_iter().chain(lift_embedded(&packet, keep)) {
+                        stats.names_blinded += blinder.blind(&mut lifted);
+                        stats.bytes_kept += lifted.len();
+                        out.extend_from_slice(&lifted);
                     }
                     continue;
                 }
@@ -597,12 +678,10 @@ fn filter_stream(
                 stats.bytes_seen += frame.len();
                 let mut packet = frame.bytes(buffer).to_vec();
                 if !is_allowed(&packet, keep) {
-                    if keep == Keep::All {
-                        for mut lifted in lift_embedded_damage(&packet) {
-                            stats.names_blinded += blinder.blind(&mut lifted);
-                            stats.bytes_kept += lifted.len();
-                            out.push(lifted);
-                        }
+                    for mut lifted in lift_embedded(&packet, keep) {
+                        stats.names_blinded += blinder.blind(&mut lifted);
+                        stats.bytes_kept += lifted.len();
+                        out.push(lifted);
                     }
                     continue;
                 }
@@ -835,7 +914,7 @@ mod tests {
         // Two records 40 bytes apart: one lifted packet, or the replay would
         // parse the second twice under a truncated de-duplication key.
         let host = host_with(&[20, 60], 400);
-        let lifted = lift_embedded_damage(&host);
+        let lifted = lift_embedded(&host, Keep::All);
         assert_eq!(lifted.len(), 1);
         let clear = &lifted[0];
         let hits = clear.windows(2).filter(|w| *w == [0x04, 0x38]).count();
@@ -845,7 +924,7 @@ mod tests {
     #[test]
     fn distant_embedded_records_lift_separately_and_bounded() {
         let host = host_with(&[20, 300], 600);
-        let lifted = lift_embedded_damage(&host);
+        let lifted = lift_embedded(&host, Keep::All);
         assert_eq!(lifted.len(), 2);
         for l in &lifted {
             // varint + host opcode + at most EMBEDDED_KEEP bytes of the host
@@ -857,11 +936,75 @@ mod tests {
     #[test]
     fn a_lifted_packet_frames_like_a_real_one() {
         let host = host_with(&[20], 100);
-        let lifted = &lift_embedded_damage(&host)[0];
+        let lifted = &lift_embedded(&host, Keep::All)[0];
         let walk = framing::walk(lifted);
         assert_eq!(walk.frames.len(), 1);
         assert_eq!(walk.consumed, lifted.len());
         assert!(!is_allowed(lifted, Keep::All), "the host opcode must not collide with the allowlist");
+    }
+
+    /// A non-allowlisted host carrying one framed spawn record, as a field
+    /// boss's arrived: `<len 8d 08> 41 36 <id b6 f5 01> …`, 1,037 bytes.
+    fn host_with_spawn() -> (Vec<u8>, usize) {
+        let mut body = vec![0x99, 0x36, 0x11, 0x11];
+        let at = body.len() + 2;
+        body.extend_from_slice(&[0x8d, 0x08, 0x41, 0x36, 0xb6, 0xf5, 0x01]);
+        body.resize(4 + 1034, 0x22);
+        body.resize(body.len() + 40, 0x11);
+        (frame_packet(&body).unwrap(), at)
+    }
+
+    #[test]
+    fn an_embedded_spawn_is_lifted_whole_even_in_the_lead_in() {
+        let (host, _) = host_with_spawn();
+        for keep in [Keep::State, Keep::All] {
+            let lifted = lift_embedded(&host, keep);
+            assert_eq!(lifted.len(), 1);
+            let l = &lifted[0];
+            let body = &l[l.len() - 1032..];
+            assert_eq!(&body[..5], &[0x41, 0x36, 0xb6, 0xf5, 0x01], "starts at the spawn");
+            // Its own length (two bytes, `8d 08`), not the one-byte `08` inside it.
+            assert!(l.len() > 1000, "cut short: {}", l.len());
+        }
+    }
+
+    #[test]
+    fn a_spawn_lifted_in_the_lead_in_carries_no_damage() {
+        let (mut host, at) = host_with_spawn();
+        // A damage record inside the spawn's span.
+        host[at + 200] = 0x04;
+        host[at + 201] = 0x38;
+        let lifted = lift_embedded(&host, Keep::State);
+        assert!(lifted.iter().all(|l| !l.windows(2).any(|w| w == [0x04, 0x38])));
+    }
+
+    #[test]
+    fn blinding_leaves_packet_headers_alone() {
+        // A spawn whose length (256..=383) ends in 02: `<b3 02> 40 36` reads
+        // as a two-letter name "@6" unless headers are left alone.
+        let mut body = vec![0x40, 0x36, 0xc9, 0x8f, 0x07, 0x0c];
+        body.resize(304, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        assert_eq!(packet[1], 0x02, "a length ending in 02");
+        let mut blinder = Blinder::new(&[]);
+        blinder.blind(&mut packet);
+        assert_eq!(&packet[2..7], &[0x40, 0x36, 0xc9, 0x8f, 0x07]);
+
+        // The same record embedded in another packet.
+        let mut host = vec![0x99, 0x36, 0x00, 0xb3, 0x02, 0x40, 0x36, 0xc9, 0x8f, 0x07, 0x0c];
+        host.resize(64, 0x00);
+        let mut host = frame_packet(&host).unwrap();
+        blinder.blind(&mut host);
+        assert!(host.windows(5).any(|w| w == [0x40, 0x36, 0xc9, 0x8f, 0x07]));
+    }
+
+    #[test]
+    fn a_two_letter_name_is_still_blinded() {
+        let mut body = vec![0x45, 0x36, 0x05, 0x00, 0x02, b'M', b'7', 0x00];
+        body.resize(32, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        Blinder::new(&[]).blind(&mut packet);
+        assert!(!packet.windows(2).any(|w| w == b"M7"));
     }
 
     #[test]
