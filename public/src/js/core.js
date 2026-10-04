@@ -1996,10 +1996,20 @@ class DpsApp {
     let who = null;
     try {
       who = await window.javaBridge?.accountStatus?.();
-    } catch {
-      who = null;
+    } catch (err) {
+      // A token is stored but could not be checked (keyring locked, server
+      // down): say why, and do not ask for a new sign-in.
+      this.paintAccountUnavailable(typeof err === "string" ? err : err?.message || String(err));
+      return;
     }
     this.paintAccount(who);
+  }
+
+  paintAccountUnavailable(message) {
+    if (this.accountCodeBox?.style.display === "block") return;
+    if (this.accountConnectBtn) this.accountConnectBtn.style.display = "none";
+    if (this.accountSignOutBtn) this.accountSignOutBtn.style.display = "";
+    this.setAccountState(message);
   }
 
   paintAccount(who) {

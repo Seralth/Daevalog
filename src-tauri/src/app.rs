@@ -245,7 +245,7 @@ fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
             }
             Err(failure) => {
                 share::note_auto_upload_failure(
-                    &state.app_data_dir, &record.id, failure.retryable, crate::clock::now_ms());
+                    &state.app_data_dir, &record.id, &failure, crate::clock::now_ms());
                 tracing::info!(
                     "Auto-upload of {} failed{}: {}",
                     record.id,
@@ -329,7 +329,11 @@ async fn preview_share(
 async fn account_status(
     state: tauri::State<'_, AppState>,
 ) -> Result<Option<crate::account::AccountSummary>, String> {
-    let who = crate::account::whoami(&state.http, &state.app_data_dir).await;
+    let who = match crate::account::whoami(&state.http, &state.app_data_dir).await {
+        crate::account::AccountState::SignedIn(summary) => Some(summary),
+        crate::account::AccountState::SignedOut => None,
+        crate::account::AccountState::Unavailable(why) => return Err(why),
+    };
     *state.account_seen.lock() = Some(who.clone());
     Ok(who)
 }

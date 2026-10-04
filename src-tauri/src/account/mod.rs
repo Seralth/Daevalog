@@ -215,31 +215,58 @@ pub struct AccountSummary {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
-/// Ask who we are. `None` means the token is gone or no longer valid.
-pub async fn whoami(
-    client: &reqwest::Client,
-    app_data_dir: &Path,
-) -> Option<AccountSummary> {
-    let token = secret::load(app_data_dir)?;
-    let response = client
+/// What `whoami` found.
+#[derive(Debug, Clone)]
+pub enum AccountState {
+    SignedIn(AccountSummary),
+    /// No token, or the server said the token is no longer valid.
+    SignedOut,
+    /// A token is stored but could not be checked now: the keyring is locked
+    /// or the server did not answer. Not a reason to ask for a new sign-in.
+    Unavailable(String),
+}
+
+/// Ask who we are.
+pub async fn whoami(client: &reqwest::Client, app_data_dir: &Path) -> AccountState {
+    let token = match secret::load_stored(app_data_dir) {
+        secret::Stored::Token(token) => token,
+        secret::Stored::Missing => return AccountState::SignedOut,
+        secret::Stored::Locked => {
+            return AccountState::Unavailable(
+                "The desktop keyring is locked, so the account cannot be checked. \
+                 Unlock the keyring and open Settings again."
+                    .into(),
+            )
+        }
+    };
+    let response = match client
         .get(format!("{}/api/me", base_url()))
         .header("authorization", format!("Bearer {token}"))
         .send()
         .await
-        .ok()?;
+    {
+        Ok(response) => response,
+        Err(_) => return AccountState::Unavailable("Could not reach a2tools.app to check the account.".into()),
+    };
 
     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
         // Revoked from the website, or the account is gone. Drop it rather than
         // showing a connected account that cannot do anything.
         tracing::info!("Account token is no longer valid; signing out");
         secret::clear(app_data_dir);
-        return None;
+        return AccountState::SignedOut;
     }
     if !response.status().is_success() {
         // A server hiccup is not a reason to sign someone out.
-        return None;
+        return AccountState::Unavailable(format!(
+            "a2tools.app could not check the account ({}).",
+            response.status()
+        ));
     }
-    serde_json::from_str(&response.text().await.ok()?).ok()
+    match response.text().await.ok().and_then(|t| serde_json::from_str(&t).ok()) {
+        Some(summary) => AccountState::SignedIn(summary),
+        None => AccountState::Unavailable("Unexpected reply from a2tools.app.".into()),
+    }
 }
 
 /// A name for this install, so the approval page says what is being approved.

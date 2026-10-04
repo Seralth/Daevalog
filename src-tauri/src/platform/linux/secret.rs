@@ -13,6 +13,8 @@ use std::collections::HashMap;
 use secret_service::blocking::{Collection, SecretService};
 use secret_service::EncryptionType;
 
+use crate::platform::UnsealError;
+
 const REFERENCE: &[u8] = b"secret-service:";
 const APPLICATION: &str = "a2tools-dps-meter";
 
@@ -35,8 +37,11 @@ fn connect<'a>() -> Option<SecretService<'a>> {
 
 fn collection<'a>(ss: &'a SecretService<'a>) -> Option<Collection<'a>> {
     let collection = ss.get_any_collection().ok()?;
-    // A locked keyring asks the user for its password here.
-    collection.ensure_unlocked().ok()?;
+    // `unlock` shows the keyring's password prompt; `ensure_unlocked` only
+    // reports that the collection is locked.
+    if collection.is_locked().ok()? {
+        collection.unlock().ok()?;
+    }
     Some(collection)
 }
 
@@ -79,20 +84,25 @@ pub fn protect(plaintext: &[u8], entropy: &[u8]) -> Option<Vec<u8>> {
     Some([REFERENCE, id.as_bytes()].concat())
 }
 
-pub fn unprotect(sealed: &[u8], entropy: &[u8]) -> Option<Vec<u8>> {
-    let id = parse_reference(sealed)?;
-    let entropy = std::str::from_utf8(entropy).ok()?;
-    let ss = connect()?;
-    let found = ss.search_items(attributes(entropy, id)).ok()?;
+pub fn unprotect(sealed: &[u8], entropy: &[u8]) -> Result<Vec<u8>, UnsealError> {
+    let id = parse_reference(sealed).ok_or(UnsealError::Invalid)?;
+    let entropy = std::str::from_utf8(entropy).map_err(|_| UnsealError::Invalid)?;
+    // Everything below can pass: the keyring may start later, a dismissed
+    // unlock prompt may be accepted next time, and an item can be hidden in a
+    // collection that is still locked.
+    let ss = connect().ok_or(UnsealError::Unavailable)?;
+    let found = ss
+        .search_items(attributes(entropy, id))
+        .map_err(|_| UnsealError::Unavailable)?;
     let item = match (found.unlocked.into_iter().next(), found.locked.into_iter().next()) {
         (Some(item), _) => item,
         (None, Some(item)) => {
-            item.unlock().ok()?;
+            item.unlock().map_err(|_| UnsealError::Unavailable)?;
             item
         }
-        (None, None) => return None,
+        (None, None) => return Err(UnsealError::Unavailable),
     };
-    item.get_secret().ok()
+    item.get_secret().map_err(|_| UnsealError::Unavailable)
 }
 
 pub fn forget(sealed: &[u8]) {
@@ -118,5 +128,15 @@ mod tests {
         assert_eq!(parse_reference(b"secret-service:"), None);
         assert_eq!(parse_reference(b"not dpapi output"), None);
         assert_ne!(new_id(), new_id());
+    }
+
+    #[test]
+    fn a_reference_the_keyring_cannot_serve_is_not_invalid() {
+        // No keyring, a locked one, or no such item: the reference stays.
+        assert_eq!(
+            unprotect(b"secret-service:no-such-item", b"a2tools.account.v1"),
+            Err(UnsealError::Unavailable)
+        );
+        assert_eq!(unprotect(b"not a reference", b"a2tools.account.v1"), Err(UnsealError::Invalid));
     }
 }
