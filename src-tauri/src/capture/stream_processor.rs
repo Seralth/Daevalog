@@ -1872,10 +1872,13 @@ impl StreamProcessor {
             let mut raw_mods: Option<u8> = None;
             let mut raw_dir: Option<u8> = None;
             if [5, 6, 7].contains(&and_result) && offset < packet.len() {
-                // Modifications byte = attack-quality flags. Confirmed against the
-                // game combat log: Perfect=0x04 (15,276 [Perfect Critical]),
-                // Double=0x08 (60,876 [Double Critical]); 0x0c = Perfect+Double.
-                // Parry/Smite/PowerShard follow the same contiguous shift (inferred).
+                // Modifications byte = attack-quality flags. Verified: Perfect=0x04
+                // (per skill against the game's Damage Analyzer PerfectCount, and the
+                // combat log's [Perfect Critical]); Double=0x08 (the game's HardHit,
+                // 강타, combat log [Double Critical]). Unverified guesses, never seen
+                // set: Parry=0x02, Smite=0x20, PowerShard=0x40; the game counts none
+                // of the three. 0x80 mirrors switch bit 0x10 and is fixed per skill:
+                // a skill property, not a hit result.
                 let mods = packet[offset] as u32;
                 raw_mods = Some(packet[offset]);
                 if mods & 0x02 != 0 { specials.push(SpecialDamage::Parry); }
@@ -1884,9 +1887,9 @@ impl StreamProcessor {
                 if mods & 0x20 != 0 { specials.push(SpecialDamage::Smite); }
                 if mods & 0x40 != 0 { specials.push(SpecialDamage::PowerShard); }
                 // Direction byte (2 later) = positional enum, NOT the modifications
-                // byte. Confirmed against the game combat log: 0x00 = no positional
-                // tag (untagged/parried hits), 0x01 = Back (12,030 [Back]),
-                // 0x02 = Front (14,561 [Front], 28,421 [Front Critical]).
+                // byte. Verified against the combat log and the game's Damage Analyzer
+                // (BackAttackCount, FrontAttackCount per skill): 0x00 = no positional
+                // tag, 0x01 = Back, 0x02 = Front.
                 if offset + 2 < packet.len() {
                     raw_dir = Some(packet[offset + 2]);
                     match packet[offset + 2] {
@@ -1896,6 +1899,7 @@ impl StreamProcessor {
                     }
                 }
             }
+            // Damage type 3 = Critical, verified per skill against CriticalCount.
             if damage_type == 3 {
                 specials.push(SpecialDamage::Critical);
             }

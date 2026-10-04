@@ -153,17 +153,15 @@ const createDetailsUI = ({
     { key: "details.stats.contribution", fallback: "Contribution", getValue: (d) => pctText(d?.contributionPct) },
     { key: "details.stats.combatTime", fallback: "Combat Time", getValue: (d) => d?.combatTime ?? "-" },
     { key: "details.skills.hits", fallback: "Hits", getValue: (d) => formatCount(d?.totalHits) },
-    { key: "details.stats.multiHitHits", fallback: "Multi-Hits", getValue: (d) => pctText(d?.multiHitPct) },
+    { key: "details.stats.multiHitHits", fallback: "Additional Hits", getValue: (d) => pctText(d?.multiHitPct) },
     {
       key: "details.stats.multiHitDamage",
-      fallback: "Multi-Hit Damage",
+      fallback: "Additional Hit Damage",
       getValue: (d) => formatDamageCompact(d?.multiHitDamage),
     },
     { key: "details.stats.critRate", fallback: "Crit Rate", getValue: (d) => pctText(d?.totalCritPct) },
     { key: "details.stats.perfectRate", fallback: "Perfect Rate", getValue: (d) => pctText(d?.totalPerfectPct) },
     { key: "details.stats.doubleRate", fallback: "Double Rate", getValue: (d) => pctText(d?.totalDoublePct) },
-    { key: "details.stats.parryRate", fallback: "Parry Rate", getValue: (d) => pctText(d?.totalParryPct) },
-    { key: "details.stats.powershardRate", fallback: "P.Shard Rate", getValue: (d) => pctText(d?.totalPowershardPct) },
     { key: "details.stats.regen", fallback: "Regen", getValue: (d) => formatDamageCompact(d?.totalRegen) },
   ];
 
@@ -761,7 +759,7 @@ const createDetailsUI = ({
       case "hit":
         return hits;
       case "mhit": {
-        const mhHits = Number(skill?.multiHitHits) || 0;
+        const mhHits = Number(skill?.multiHitCount) || 0;
         return hits > 0 ? mhHits / hits : 0;
       }
       case "mdmg":
@@ -847,7 +845,9 @@ const createDetailsUI = ({
     avgdmg: "minmax(28px, 0.8fr)",
     maxdmg: "minmax(28px, 0.8fr)",
   };
-  const GRID_COL_ORDER = ["name", "hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "parry", "perfect", "double", "back", "frontal", "powershard", "regen", "mindmg", "avgdmg", "maxdmg"];
+  // No parry or powershard column: the game reports neither, and the parser's
+  // bits for them have never been seen set.
+  const GRID_COL_ORDER = ["name", "hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "perfect", "double", "back", "frontal", "regen", "mindmg", "avgdmg", "maxdmg"];
 
   let lastMeasuredNameWidth = 0;
   const updateGridColumns = () => {
@@ -1073,7 +1073,7 @@ const createDetailsUI = ({
         const dotCrit = Number(dot.crit) || 0;
         const dotDmgRate = percentBaseTotal > 0 ? (dotDmg / percentBaseTotal) * 100 : 0;
         const dotCritRate = dotHits > 0 ? Math.round((dotCrit / dotHits) * 100) : 0;
-        const dotMhHits = Number(dot.multiHitHits) || 0;
+        const dotMhHits = Number(dot.multiHitCount) || 0;
         const dotMhDmg = Number(dot.multiHitDamage) || 0;
         const dotMhRate = dotHits > 0 ? Math.round((dotMhHits / dotHits) * 100) : 0;
         const dotParry = dotHits > 0 ? Math.round(((Number(dot.parry) || 0) / dotHits) * 100) : 0;
@@ -1163,7 +1163,8 @@ const createDetailsUI = ({
       const smite = skill.smite || 0;
       const powershard = skill.powershard || 0;
       const regen = skill.regen || 0;
-      const multiHitHits = skill.multiHitHits || 0;
+      // Hits that had additional hits: the game's AdditionalHitCount.
+      const multiHitHits = skill.multiHitCount || 0;
       const multiHitDamage = skill.multiHitDamage || 0;
       const rawMinDmg = Number(skill.minDmg) || 0;
       const dotRawMinDmg = showCombined ? (Number(dotChild?.minDmg) || 0) : 0;
@@ -1954,7 +1955,6 @@ const createDetailsUI = ({
     let totalPowershard = 0;
     let totalMultiHitCount = 0;
     let totalMultiHitDamage = 0;
-    let totalMultiHitHits = 0;
     let totalRegen = 0;
 
     skills.forEach((skill) => {
@@ -1963,7 +1963,6 @@ const createDetailsUI = ({
       totalRegen += Number(skill?.regen) || 0;
       totalMultiHitCount += Number(skill?.multiHitCount) || 0;
       totalMultiHitDamage += Number(skill?.multiHitDamage) || 0;
-      totalMultiHitHits += Number(skill?.multiHitHits) || 0;
       if (!skill?.isDot) {
         totalTimes += Number(skill?.time) || 0;
         totalCrit += Number(skill?.crit) || 0;
@@ -1993,7 +1992,7 @@ const createDetailsUI = ({
       totalPowershardPct: pct(totalPowershard, totalTimes),
       multiHitCount: totalMultiHitCount,
       multiHitDamage: totalMultiHitDamage,
-      multiHitPct: pct(totalMultiHitHits, totalTimes),
+      multiHitPct: pct(totalMultiHitCount, totalTimes),
       totalRegen,
       // Aggregate actor-level stats from context (party heal, damage received)
       totalPartyHeal: (() => {

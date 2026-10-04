@@ -3666,12 +3666,10 @@ body.legacyUi .meter .item .content .name.isSupporter,
     minmax(54px, 0.9fr)  /* mhit */
     minmax(24px, 0.7fr)  /* mdmg */
     minmax(30px, 0.8fr)  /* crit */
-    minmax(36px, 0.9fr)  /* parry */
     minmax(34px, 0.9fr)  /* perfect */
     minmax(28px, 0.7fr)  /* double */
     minmax(24px, 0.7fr)  /* back */
-    minmax(28px, 0.7fr)  /* smite */
-    minmax(28px, 0.7fr)  /* powershard */
+    minmax(28px, 0.72fr) /* frontal */
     minmax(50px, 0.8fr)  /* regen */
     minmax(50px, 0.8fr)  /* mindmg */
     minmax(50px, 0.8fr)  /* avgdmg */
@@ -3694,6 +3692,12 @@ body.legacyUi .meter .item .content .name.isSupporter,
 .detailsPanel.hide-col-mindmg .detailsSkills .cell.mindmg,
 .detailsPanel.hide-col-avgdmg .detailsSkills .cell.avgdmg,
 .detailsPanel.hide-col-maxdmg .detailsSkills .cell.maxdmg {
+  display: none;
+}
+/* Parry, smite and powershard are parser guesses the game never reports. */
+.detailsPanel .detailsSkills .cell.parry,
+.detailsPanel .detailsSkills .cell.smite,
+.detailsPanel .detailsSkills .cell.powershard {
   display: none;
 }
 .detailsPanel .detailsSkills .skillHeader .cell[data-sort-key] {
