@@ -11,6 +11,7 @@
 //!
 //! ```text
 //! 00 ...                      padding, skipped
+//! 17 03 03 <u16 len> ...      a TLS record from another connection, skipped
 //! <varint len> <payload>      a packet; len counts the payload plus 4
 //! <varint len> FF FF <u32 size> <lz4>   a compressed bundle of further packets
 //! ```
@@ -20,6 +21,14 @@
 //! two-byte varint it is `len - 2`, and reading that as `len - 3` framed every
 //! packet of 126 bytes or more one byte short (a capture of 2026-10-04 lost
 //! 3% of its packets to the desync that followed).
+//!
+//! TLS records turn up because the packet log and the share ring key a stream
+//! by the server's port alone, and the game server also talks TLS from that
+//! port on a second connection. Read as a game frame, `17` is a length of 23,
+//! after which the walk lands in ciphertext and can swallow up to 64 KB of
+//! real packets: replays and uploaded logs of 2026-07 and 2026-08 kills came
+//! out 20-35% short of the boss's HP, and match it to within 0.5% with the
+//! records skipped. No game frame in 538,000 checked starts like one.
 
 use super::stream_processor::read_varint;
 
@@ -92,6 +101,14 @@ pub fn walk(buffer: &[u8]) -> Framing {
             continue;
         }
 
+        if let Some(size) = tls_record_size(&buffer[offset..]) {
+            if offset + size > buffer.len() {
+                break; // the rest of it is still to come
+            }
+            offset += size;
+            continue;
+        }
+
         let length_info = read_varint(buffer, offset);
         if length_info.length <= 0 || length_info.value <= 0 {
             if offset + 5 > buffer.len() {
@@ -139,6 +156,16 @@ pub fn walk(buffer: &[u8]) -> Framing {
 
     out.consumed = offset;
     out
+}
+
+/// Bytes a TLS record at the start of `b` occupies, header included: content
+/// type 20-23, version 3.1-3.4, then a big-endian length of at most 2^14 + 256.
+fn tls_record_size(b: &[u8]) -> Option<usize> {
+    if b.len() < 5 || !(0x14..=0x17).contains(&b[0]) || b[1] != 0x03 || !(0x01..=0x04).contains(&b[2]) {
+        return None;
+    }
+    let len = u16::from_be_bytes([b[3], b[4]]) as usize;
+    (len > 0 && len <= 16_384 + 256).then_some(5 + len)
 }
 
 /// Walk the *decompressed* contents of a bundle.
@@ -287,6 +314,27 @@ mod tests {
         }
         assert_eq!(varint(length_value(200)).len(), 2);
         assert_eq!(varint(length_value(20_000)).len(), 3);
+    }
+
+    #[test]
+    fn a_tls_record_between_packets_is_skipped_whole() {
+        let mut tls = vec![0x17, 0x03, 0x03, 0x05, 0x7a];
+        // Ciphertext that, read as frames, would claim a 14 KB packet.
+        tls.extend([0x88, 0x71]);
+        tls.extend((0..0x057a - 2).map(|i| (i % 251) as u8 | 1));
+        let mut buf = packet(&[0x23, 0x36, 0x01]);
+        buf.extend(&tls);
+        buf.extend(packet(&body(0x04, 200)));
+        let f = walk(&buf);
+        assert_eq!(f.consumed, buf.len());
+        let got: Vec<_> = f.frames.iter().map(|fr| fr.payload(&buf).to_vec()).collect();
+        assert_eq!(got, [vec![0x23, 0x36, 0x01], body(0x04, 200)]);
+
+        // Arriving in two segments: the walk waits for the rest of the record.
+        let cut = 3 + 1 + 600;
+        let f = walk(&buf[..cut]);
+        assert_eq!(f.frames.len(), 1);
+        assert_eq!(f.consumed, 4, "stops at the record");
     }
 
     #[test]
