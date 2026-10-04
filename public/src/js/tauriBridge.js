@@ -372,20 +372,22 @@
     setCharacterName(name, manual) {
       invoke("set_character_name", { name, manual: !!manual }).catch(() => {});
     },
-    bindLocalActorId(actorId) {
+    // `manual`: typed in Settings. Other binds only echo the backend's id, and
+    // the backend ignores one that would move the game's name for you.
+    bindLocalActorId(actorId, manual) {
       const id = Number(actorId);
       if (!Number.isFinite(id) || id <= 0) return;
       // Always invoke — the backend is idempotent and needs to reapply the
       // permanent nickname if the character name was set after the initial bind.
       window._boundLocalActorId = id;
-      invoke("bind_local_actor_id", { actorId: id }).catch(() => {});
+      invoke("bind_local_actor_id", { actorId: id, manual: !!manual, view: viewMode }).catch(() => {});
       // Also bind nickname if we can find it from any source
       const name =
         window._dpsApp?.USER_NAME ||
         document.querySelector(".characterNameInput")?.value?.trim() ||
         "";
       if (name) {
-        this.bindLocalNickname(actorId, name);
+        this.bindLocalNickname(actorId, name, manual);
       }
       // Force immediate meter refresh so the name shows right away
       invoke("get_dps_snapshot").then((dps) => {
@@ -395,15 +397,17 @@
     setLocalPlayerId(actorId) {
       this.bindLocalActorId(actorId);
     },
-    bindLocalNickname(actorId, nickname) {
+    bindLocalNickname(actorId, nickname, manual) {
       const id = Number(actorId);
       if (!Number.isFinite(id) || id <= 0 || !nickname) return;
       // Always invoke — backend handles idempotency and will refresh the
       // nickname even if the (id:nickname) pair was previously sent.
       window._boundLocalNickname = `${id}:${nickname}`;
-      invoke("bind_local_nickname", { actorId: id, nickname }).catch(() => {});
+      invoke("bind_local_nickname", { actorId: id, nickname, manual: !!manual, view: viewMode }).catch(() => {});
     },
-    setAllTargetsWindowMs() {},
+    setAllTargetsWindowMs(ms) {
+      invoke("set_all_targets_window_ms", { ms: Number(ms) || 0 }).catch(() => {});
+    },
     setTargetSelectionWindowMs() {},
     setTrainSelectionMode() {},
 
@@ -822,6 +826,12 @@
     updateWindowSize();
   });
 
+  // The meter has no drag and drop. A press that lands on row text or an icon
+  // would otherwise start a native drag of it, and under XWayland a drag the
+  // meter never finishes holds the pointer (a no-drop cursor with the text
+  // stuck to it) until it times out, about a minute, even after the meter quits.
+  document.addEventListener("dragstart", (e) => e.preventDefault(), { capture: true });
+
   // ===== Window dragging =====
   // Core.js's JS-based drag (moveWindow + screenX/Y) is too slow over IPC.
   // Use native Win32 drag via WM_NCLBUTTONDOWN — instant, OS-handled, zero latency.
@@ -846,6 +856,73 @@
       invoke("start_drag");
     }
   }, { capture: true });
+
+  // ===== Tool windows on Linux: drag by the header, resize from the edges =====
+  // The tool windows are frameless. On Windows their headers drag through
+  // -webkit-app-region and the window manager resizes them by their border.
+  // WebKitGTK ignores app-region, and a frameless window has no border to
+  // grab, so on Linux the page starts both: the drag through start_tool_drag,
+  // the resize through begin_tool_resize, which lifts the pinned size hints
+  // (platform::window::set_size) for the length of the resize.
+  if (window.A2_VIEW !== "main" && /Linux/.test(navigator.userAgent)) {
+    const DRAG_HEADERS = ".historyHeader, .detailsHeader, .settingsHeader";
+    const NO_DRAG = "button, a, input, select, textarea, [data-no-drag], "
+      + ".historyViewToggle, .historyFilters, .historyClose, .detailsModeToggle, "
+      + ".detailsSettingsMenuWrapper, .detailsScreenshotWrapper, .detailsWindowClose, .closeX";
+    const MIN_SIZE = { settings: [520, 420], history: [480, 360], details: [520, 360] };
+    const [minW, minH] = MIN_SIZE[window.A2_VIEW] || [480, 360];
+    const EDGE = 6;
+
+    const style = document.createElement("style");
+    style.textContent = [
+      ["n", "ns"], ["s", "ns"], ["e", "ew"], ["w", "ew"],
+      ["ne", "nesw"], ["sw", "nesw"], ["nw", "nwse"], ["se", "nwse"],
+    ].map(([edge, cur]) => `html.toolEdge-${edge}, html.toolEdge-${edge} * { cursor: ${cur}-resize !important; }`).join("\n");
+    document.head.appendChild(style);
+
+    const edgeAt = (e) => {
+      let edge = "";
+      if (e.clientY < EDGE) edge += "n";
+      else if (e.clientY >= window.innerHeight - EDGE) edge += "s";
+      if (e.clientX < EDGE) edge += "w";
+      else if (e.clientX >= window.innerWidth - EDGE) edge += "e";
+      return edge;
+    };
+    let shownEdge = "";
+    const showEdge = (edge) => {
+      if (edge === shownEdge) return;
+      if (shownEdge) document.documentElement.classList.remove(`toolEdge-${shownEdge}`);
+      if (edge) document.documentElement.classList.add(`toolEdge-${edge}`);
+      shownEdge = edge;
+    };
+
+    const DIRECTION = {
+      n: "North", s: "South", e: "East", w: "West",
+      ne: "NorthEast", nw: "NorthWest", se: "SouthEast", sw: "SouthWest",
+    };
+
+    document.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      const edge = edgeAt(e);
+      if (edge) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        // The backend unpins the size first, then the window manager resizes.
+        invoke("begin_tool_resize", { minWidth: minW, minHeight: minH })
+          .then(() => window.__TAURI__.window.getCurrentWindow().startResizeDragging(DIRECTION[edge]))
+          .catch((err) => console.error("[A2Tools] tool window resize failed", err));
+        return;
+      }
+      const target = e.target?.nodeType === Node.TEXT_NODE ? e.target.parentElement : e.target;
+      if (target?.closest?.(DRAG_HEADERS) && !target.closest(NO_DRAG)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        invoke("start_tool_drag").catch(() => {});
+      }
+    }, { capture: true });
+
+    document.addEventListener("mousemove", (e) => showEdge(e.buttons ? "" : edgeAt(e)), { capture: true });
+  }
 
   // Pre-fetch device list and fight history so they're ready when panels open
   invoke("get_available_devices").then((d) => { window._cachedDevices = d; }).catch(() => {});
@@ -881,8 +958,11 @@
   document.addEventListener("mouseup", shrinkViewport);
   // A release outside the window sends no mouseup; the next move shows it.
   // (Not on blur: KWin blurs the window at the start of every drag.)
+  // Only a move inside the window is trusted (see bindResizeHandle in core.js).
   document.addEventListener("mousemove", (e) => {
-    if (resizeActive && (e.buttons & 1) === 0) shrinkViewport();
+    const inside = e.clientX >= 0 && e.clientY >= 0
+      && e.clientX < window.innerWidth && e.clientY < window.innerHeight;
+    if (resizeActive && (e.buttons & 1) === 0 && inside) shrinkViewport();
   });
 
   // Startup diagnostics

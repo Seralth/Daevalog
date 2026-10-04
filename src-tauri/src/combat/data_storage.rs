@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 
 use parking_lot::RwLock;
@@ -10,6 +10,9 @@ use crate::entity::summon_resolver;
 
 /// Maximum idle gap before a fight is considered ended and a new one begins.
 const IDLE_RESET_MS: i64 = 30_000;
+/// How far back each actor's per-second damage is kept: the longest
+/// "last N minutes" window the meter offers.
+pub const DAMAGE_HISTORY_MS: i64 = 900_000;
 
 /// A zone-change auto-reset is ignored if any damage was recorded within this
 /// window, so an in-combat self-teleport (boss knockback/pull) can't wipe an
@@ -209,6 +212,9 @@ pub struct ActorCombatData {
     pub job: Option<JobClass>,
     /// Skills keyed by (raw_skill_code, is_dot)
     pub skills: HashMap<(i32, bool), SkillCombatData>,
+    /// Damage per second as (unix second, damage), oldest first, for the
+    /// meter's "last N minutes" window. Kept for DAMAGE_HISTORY_MS.
+    pub damage_by_second: VecDeque<(i64, i64)>,
 }
 
 impl ActorCombatData {
@@ -221,6 +227,9 @@ impl ActorCombatData {
         self.hits_received += other.hits_received;
         self.last_damage_time = self.last_damage_time.max(other.last_damage_time);
         self.job = self.job.or(other.job);
+        for (sec, dmg) in other.damage_by_second {
+            self.add_damage_at(sec, dmg);
+        }
         for (key, skill) in other.skills {
             match self.skills.get_mut(&key) {
                 Some(mine) => mine.absorb(skill),
@@ -241,6 +250,28 @@ impl ActorCombatData {
             last_damage_time: 0,
             job: None,
             skills: HashMap::new(),
+            damage_by_second: VecDeque::new(),
+        }
+    }
+
+    /// Damage dealt in the window starting at `since_ms` (unix ms).
+    pub fn damage_since(&self, since_ms: i64) -> i64 {
+        let since = since_ms.div_euclid(1000);
+        self.damage_by_second.iter().rev()
+            .take_while(|&&(sec, _)| sec >= since)
+            .map(|&(_, dmg)| dmg)
+            .sum()
+    }
+
+    fn add_damage_at(&mut self, sec: i64, dmg: i64) {
+        match self.damage_by_second.iter().rposition(|&(s, _)| s <= sec) {
+            Some(i) if self.damage_by_second[i].0 == sec => self.damage_by_second[i].1 += dmg,
+            Some(i) => self.damage_by_second.insert(i + 1, (sec, dmg)),
+            None => self.damage_by_second.push_front((sec, dmg)),
+        }
+        let oldest = sec - DAMAGE_HISTORY_MS / 1000;
+        while self.damage_by_second.front().is_some_and(|&(s, _)| s < oldest) {
+            self.damage_by_second.pop_front();
         }
     }
 }
@@ -1249,6 +1280,7 @@ impl DataStorage {
                                 last_damage_time: ad.last_damage_time,
                                 job: ad.job,
                                 skills,
+                                damage_by_second: ad.damage_by_second.clone(),
                             },
                         )
                     })
@@ -1400,6 +1432,7 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     // Update actor data within target
     let actor_data = target_data.actors.entry(actor_id).or_insert_with(ActorCombatData::new);
     actor_data.total_damage += total_dmg as i64;
+    actor_data.add_damage_at(timestamp.div_euclid(1000), total_dmg as i64);
     if timestamp > actor_data.last_damage_time {
         actor_data.last_damage_time = timestamp;
     }
@@ -1678,6 +1711,22 @@ pub fn is_player_skill(skill_code: i32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn damage_window_sums_recent_seconds_only() {
+        let mut a = ActorCombatData::new();
+        a.add_damage_at(100, 10);
+        a.add_damage_at(100, 5);
+        a.add_damage_at(103, 20);
+        a.add_damage_at(101, 7); // out of order
+        assert_eq!(a.damage_by_second, VecDeque::from([(100, 15), (101, 7), (103, 20)]));
+        assert_eq!(a.damage_since(101_000), 27);
+        assert_eq!(a.damage_since(100_000), 42);
+        assert_eq!(a.damage_since(104_000), 0);
+        // Seconds older than the history are dropped.
+        a.add_damage_at(100 + DAMAGE_HISTORY_MS / 1000 + 2, 1);
+        assert_eq!(a.damage_by_second.front(), Some(&(103, 20)));
+    }
 
     fn who(s: &DataStorage) -> (Option<i64>, Option<String>, bool) {
         (s.local_player_id(), s.local_character_name(), s.local_identity_from_game())

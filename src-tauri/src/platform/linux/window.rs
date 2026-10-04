@@ -49,6 +49,16 @@ fn on_x11() -> bool {
 /// The root coordinates are the space tao's `inner_position()` uses on X11,
 /// so the lock button's hit test lines up.
 pub fn cursor_position() -> Option<(i32, i32)> {
+    query_pointer().map(|(x, y, _)| (x, y))
+}
+
+/// Whether the left mouse button is held: on the X11 backend only. Ends a
+/// window-manager resize of a tool window (see `release_size`).
+pub fn primary_button_down() -> Option<bool> {
+    query_pointer().map(|(_, _, mask)| mask & xlib::Button1Mask != 0)
+}
+
+fn query_pointer() -> Option<(i32, i32, u32)> {
     if !on_x11() {
         return None;
     }
@@ -62,7 +72,7 @@ pub fn cursor_position() -> Option<(i32, i32)> {
                 c.display, root, &mut root_ret, &mut child, &mut rx, &mut ry, &mut wx, &mut wy, &mut mask,
             )
         };
-        (ok != 0).then_some((rx, ry))
+        (ok != 0).then_some((rx, ry, mask))
     })
 }
 
@@ -78,4 +88,43 @@ pub fn show_on_top_without_focus(window: &tauri::WebviewWindow) {
 pub fn minimize_off_top(window: &tauri::WebviewWindow) {
     let _ = window.set_always_on_top(false);
     let _ = window.minimize();
+}
+
+/// Size a meter window and pin its size hints to that size. Window managers
+/// only edge-tile or maximize a window whose minimum size is below its maximum
+/// (KWin: `X11Window::isResizable`), so pinned hints keep KDE, GNOME and the
+/// rest from snapping the overlay or its tool windows into a tile. The meter
+/// still sizes its windows itself: every size change goes through here. Min
+/// and max go in one call; set one at a time, the window manager sees a
+/// minimum above the maximum in between and the window flickers.
+pub fn set_size(window: &tauri::WebviewWindow, size: tauri::Size) {
+    let (w, h) = match size {
+        tauri::Size::Physical(s) => (
+            tauri::PixelUnit::Physical(tauri::PhysicalUnit::new(s.width as i32)),
+            tauri::PixelUnit::Physical(tauri::PhysicalUnit::new(s.height as i32)),
+        ),
+        tauri::Size::Logical(s) => (
+            tauri::PixelUnit::Logical(tauri::LogicalUnit::new(s.width)),
+            tauri::PixelUnit::Logical(tauri::LogicalUnit::new(s.height)),
+        ),
+    };
+    let _ = window.set_size_constraints(tauri::WindowSizeConstraints {
+        min_width: Some(w),
+        min_height: Some(h),
+        max_width: Some(w),
+        max_height: Some(h),
+    });
+    let _ = window.set_size(size);
+}
+
+/// Unpin a tool window's size so the window manager can resize it, down to
+/// `min` logical pixels. Window managers tile on a move, not on a resize, so
+/// this is safe for the length of a resize; `set_size` pins it again after.
+pub fn release_size(window: &tauri::WebviewWindow, min: tauri::LogicalSize<f64>) {
+    let _ = window.set_size_constraints(tauri::WindowSizeConstraints {
+        min_width: Some(tauri::PixelUnit::Logical(tauri::LogicalUnit::new(min.width))),
+        min_height: Some(tauri::PixelUnit::Logical(tauri::LogicalUnit::new(min.height))),
+        max_width: None,
+        max_height: None,
+    });
 }

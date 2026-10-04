@@ -2073,7 +2073,7 @@ class DpsApp {
       language: "en",
       theme: this.theme,
       defaultMeterMode: "bossTargets",
-      allTargetsWindowMs: "120000",
+      allTargetsWindowMs: "0",
       trainSelectionMode: "all",
       targetSelectionWindowMs: "5000",
     };
@@ -2081,7 +2081,7 @@ class DpsApp {
     const storedName = this.safeGetStorage(this.storageKeys.userName) || "";
     const storedAllTargetsWindowMs = this.safeGetSetting(this.storageKeys.allTargetsWindowMs) ||
       this.safeGetStorage(this.storageKeys.allTargetsWindowMs) ||
-      "120000";
+      "0";
     const storedTrainSelectionMode = this.safeGetSetting(this.storageKeys.trainSelectionMode) ||
       this.safeGetStorage(this.storageKeys.trainSelectionMode) ||
       "all";
@@ -2195,18 +2195,18 @@ class DpsApp {
           return;
         }
         this.localPlayerId = Number(value);
-        window.javaBridge?.bindLocalActorId?.(value);
+        window.javaBridge?.bindLocalActorId?.(value, true);
         if (this.USER_NAME) {
-          window.javaBridge?.bindLocalNickname?.(value, this.USER_NAME);
+          window.javaBridge?.bindLocalNickname?.(value, this.USER_NAME, true);
         }
         this.setUserName(this.USER_NAME, { persist: true, syncBackend: true });
       });
     }
 
-    const allowedWindows = ["30000", "60000", "120000", "180000", "300000"];
+    const allowedWindows = ["0", "30000", "60000", "120000", "180000", "300000"];
     const selectedWindow = allowedWindows.includes(String(storedAllTargetsWindowMs))
       ? String(storedAllTargetsWindowMs)
-      : "120000";
+      : "0";
     this.settingsSelections.allTargetsWindowMs = selectedWindow;
     this.safeSetSetting(this.storageKeys.allTargetsWindowMs, selectedWindow);
     window.javaBridge?.setAllTargetsWindowMs?.(selectedWindow);
@@ -2852,6 +2852,7 @@ class DpsApp {
     ];
 
     const allTargetsWindowOptions = [
+      { value: "0", label: this.i18n?.t("settings.allTargetsWindow.options.off", "Off (since zone change)") },
       { value: "30000", label: this.i18n?.t("settings.allTargetsWindow.options.30s", "30 seconds") },
       { value: "60000", label: this.i18n?.t("settings.allTargetsWindow.options.1m", "1 minute") },
       { value: "120000", label: this.i18n?.t("settings.allTargetsWindow.options.2m", "2 minutes") },
@@ -4928,8 +4929,13 @@ class DpsApp {
     // shifts clientX/Y and made the size jump past the cursor (issue #11).
     const onMouseMove = (event) => {
       if (!isResizing) return;
-      // The button came up outside the window, where no mouseup arrives.
-      if ((event.buttons & 1) === 0) {
+      // The button came up outside the window, where no mouseup arrives; the
+      // next move inside shows it. A move outside is not trusted: a fast drag
+      // leaves the window before it has grown (KWin, XWayland) and those moves
+      // can report no button held, which cut the resize short.
+      const inside = event.clientX >= 0 && event.clientY >= 0
+        && event.clientX < window.innerWidth && event.clientY < window.innerHeight;
+      if ((event.buttons & 1) === 0 && inside) {
         onMouseUp();
         return;
       }

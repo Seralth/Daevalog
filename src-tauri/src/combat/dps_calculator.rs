@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use crate::clock::now_ms;
 use crate::combat::data_storage::{DataStorage, TargetCombatData};
 use crate::combat::ping_tracker::PingTracker;
 use crate::entity::details_context::*;
@@ -83,7 +84,7 @@ impl DpsCalculator {
             last_damage_gen: -1,
             target_selection_mode: TargetSelectionMode::BossTargets,
             last_known_local_id: None,
-            all_targets_window_ms: 120_000,
+            all_targets_window_ms: 0,
             nickname_job_cache: HashMap::new(),
             saved_boss_targets: HashSet::new(),
         }
@@ -101,8 +102,20 @@ impl DpsCalculator {
         self.target_selection_mode = mode;
     }
 
+    /// ALL mode's "last N minutes" window; 0 turns it off (everything since
+    /// the zone change).
     pub fn set_all_targets_window_ms(&mut self, ms: i64) {
-        self.all_targets_window_ms = ms.clamp(10_000, 900_000);
+        let ms = if ms <= 0 { 0 } else { ms.clamp(10_000, crate::combat::data_storage::DAMAGE_HISTORY_MS) };
+        if ms != self.all_targets_window_ms {
+            self.last_damage_gen = -1;
+        }
+        self.all_targets_window_ms = ms;
+    }
+
+    /// Start of ALL mode's window in unix ms, when the window is on.
+    fn window_since(&self) -> Option<i64> {
+        (self.target_selection_mode == TargetSelectionMode::AllTargets && self.all_targets_window_ms > 0)
+            .then(|| now_ms() - self.all_targets_window_ms)
     }
 
     pub fn mark_all_targets_saved(&mut self) {
@@ -144,9 +157,11 @@ impl DpsCalculator {
             self.last_damage_gen = -1;
         }
 
-        // If no new damage since last cycle, return cached result
+        // If no new damage since last cycle, return cached result. A rolling
+        // window changes with the clock alone, so it is recomputed every time.
+        let window_since = self.window_since();
         let current_gen = self.data_storage.damage_generation();
-        if current_gen == self.last_damage_gen && self.last_dps_snapshot.is_some() {
+        if current_gen == self.last_damage_gen && self.last_dps_snapshot.is_some() && window_since.is_none() {
             return self.last_dps_snapshot.as_ref().unwrap().clone();
         }
         self.last_damage_gen = current_gen;
@@ -197,7 +212,14 @@ impl DpsCalculator {
         for &tid in &target_ids {
             if let Some(target_data) = combat_data.get(&tid) {
                 for (&actor_id, actor_data) in &target_data.actors {
-                    *combined_actors.entry(actor_id).or_insert(0) += actor_data.total_damage;
+                    let damage = match window_since {
+                        Some(since) => actor_data.damage_since(since),
+                        None => actor_data.total_damage,
+                    };
+                    if damage == 0 && window_since.is_some() {
+                        continue;
+                    }
+                    *combined_actors.entry(actor_id).or_insert(0) += damage;
                     if actor_data.job.is_some() && combined_jobs.get(&actor_id).and_then(|j| j.as_ref()).is_none() {
                         combined_jobs.insert(actor_id, actor_data.job);
                     }
@@ -212,9 +234,10 @@ impl DpsCalculator {
                 .unwrap_or(0)
         } else if !target_ids.is_empty() {
             // Multi-target: use max battle time across selected targets
+            let since = window_since.unwrap_or(i64::MIN);
             target_ids.iter()
                 .filter_map(|tid| combat_data.get(tid))
-                .map(|td| (td.last_damage_time - td.first_damage_time).max(0))
+                .map(|td| (td.last_damage_time - td.first_damage_time.max(since)).max(0))
                 .max()
                 .unwrap_or(0)
         } else {
@@ -222,6 +245,11 @@ impl DpsCalculator {
         };
 
         if (battle_time == 0 && combined_actors.is_empty()) || combined_actors.is_empty() {
+            // Keeping the last fight on screen is right until a window says
+            // it is over: then the meter empties.
+            if window_since.is_some() {
+                self.last_dps_snapshot = None;
+            }
             if let Some(ref mut snapshot) = self.last_dps_snapshot {
                 snapshot.target_name = dps_data.target_name.clone();
                 snapshot.target_mode = dps_data.target_mode.clone();
@@ -595,7 +623,11 @@ impl DpsCalculator {
                 }
             }
             TargetSelectionMode::AllTargets => {
-                let all: HashSet<i32> = combat_data.keys().cloned().collect();
+                let since = self.window_since().unwrap_or(i64::MIN);
+                let all: HashSet<i32> = combat_data.iter()
+                    .filter(|(_, td)| td.last_damage_time >= since)
+                    .map(|(&id, _)| id)
+                    .collect();
                 (all, "All Targets".to_string(), 0)
             }
             TargetSelectionMode::TrainTargets => {
@@ -631,16 +663,10 @@ impl DpsCalculator {
                         None => (HashSet::new(), String::new(), 0),
                     }
                 } else {
-                    // Not identified — fall back to most recently damaged target
-                    let best = combat_data.iter()
-                        .max_by_key(|(_, td)| td.last_damage_time);
-                    match best {
-                        Some((&id, _)) => {
-                            let name = self.resolve_target_name(id);
-                            (HashSet::from([id]), name, id)
-                        }
-                        None => (HashSet::new(), String::new(), 0),
-                    }
+                    // Not identified: nothing. Falling back to the mob anyone
+                    // hit last put strangers' fights on the meter while it
+                    // waited, and hid the UI's "Identifying you..." label.
+                    (HashSet::new(), String::new(), 0)
                 }
             }
         }

@@ -244,6 +244,7 @@
     "allTargetsWindow": {
       "label": "All Targets time range",
       "options": {
+        "off": "Off (since zone change)",
         "30s": "30 seconds",
         "1m": "1 minute",
         "2m": "2 minutes",

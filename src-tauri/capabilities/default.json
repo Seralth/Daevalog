@@ -5,6 +5,7 @@
   "windows": ["main", "settings", "details", "details-*", "history"],
   "permissions": [
     "core:default",
+    "core:window:allow-start-resize-dragging",
     "opener:default"
   ]
 }
