@@ -212,6 +212,72 @@ fn canonicalise(record: &mut FightRecord) {
     record.job_ids.sort_unstable();
 }
 
+/// Bumped when the service derives differently from the meter of the same
+/// version, so a2tools.app re-derives its logs: it re-derives every log whose
+/// parser version is older than the service's. `2.0.48.1` sorts after
+/// `2.0.48` and before `2.0.49`.
+const SERVICE_REVISION: u32 = 1;
+
+pub fn parser_version() -> String {
+    format!("{}.{}", crate::entity::fight_record::APP_VERSION, SERVICE_REVISION)
+}
+
+/// Remove the rows of summons whose owner the parser could not find, and
+/// their damage from the totals. Returns the damage removed.
+///
+/// A summon left unplaced is shown as a player of its own, and its damage
+/// counts toward the fight but no one's: on a leaderboard that is a row that
+/// is no one. A row counts as such a summon when it is unnamed and either
+/// spawned as a summon, uses skills that name no class, or used at most two
+/// skills for under 5% of the damage in a fight of 20 seconds or more. An
+/// unnamed player runs a rotation, so is kept.
+fn hide_unplaced_summons(
+    record: &mut FightRecord,
+    named: &std::collections::HashSet<i32>,
+    spawned: &std::collections::HashSet<i32>,
+) -> i64 {
+    let mut damage: HashMap<i32, i64> = HashMap::new();
+    let mut skills: HashMap<i32, std::collections::HashSet<i32>> = HashMap::new();
+    for s in &record.details.skills {
+        *damage.entry(s.actor_id).or_default() += s.dmg as i64;
+        skills.entry(s.actor_id).or_default().insert(s.code);
+    }
+    let total: i64 = damage.values().sum();
+    let long_fight = record.duration_ms >= 20_000;
+    let summon: std::collections::HashSet<i32> = record.actors.iter()
+        .filter(|a| !named.contains(&a.actor_id))
+        .filter(|a| {
+            let few_skills = skills.get(&a.actor_id).map_or(0, |s| s.len()) <= 2;
+            let small = damage.get(&a.actor_id).copied().unwrap_or(0) * 20 < total;
+            spawned.contains(&a.actor_id) || a.job_id == 0 || (few_skills && small && long_fight)
+        })
+        .map(|a| a.actor_id)
+        .collect();
+    if summon.is_empty() {
+        return 0;
+    }
+    let removed: i64 = summon.iter().map(|id| damage.get(id).copied().unwrap_or(0)).sum();
+    record.details.skills.retain(|s| !summon.contains(&s.actor_id));
+    record.details.heal_skills.retain(|s| !summon.contains(&s.actor_id));
+    record.actors.retain(|a| !summon.contains(&a.actor_id));
+    record.total_damage = (record.total_damage as i64 - removed).max(0) as i32;
+    record.details.total_target_damage = (record.details.total_target_damage as i64 - removed).max(0) as _;
+    // The classes in the fight, from the rows that are left.
+    let mut jobs: Vec<String> = Vec::new();
+    let mut job_ids: Vec<i32> = Vec::new();
+    for a in &record.actors {
+        if !a.job.is_empty() && !jobs.contains(&a.job) {
+            jobs.push(a.job.clone());
+        }
+        if a.job_id > 0 && !job_ids.contains(&a.job_id) {
+            job_ids.push(a.job_id);
+        }
+    }
+    record.jobs = jobs;
+    record.job_ids = job_ids;
+    removed
+}
+
 /// Replay a slice through the parser AND the combat aggregation, and return
 /// the boss fight the desktop meter would have saved.
 ///
@@ -279,6 +345,11 @@ pub fn derive_fight(
         .map(|(id, t)| (*id, t.total_damage))
         .collect();
 
+    // Read before the calculator takes the storage: who is named, and which
+    // entities spawned as summons (see `hide_unplaced_summons`).
+    let named: std::collections::HashSet<i32> = storage.get_nicknames().keys().copied().collect();
+    let spawned = storage.get_summon_spawn_ids();
+
     let mut calc = DpsCalculator::new(storage, skills, npcs, Arc::new(PingTracker::new()));
     let snapshot = calc.snapshot_boss_fights_force();
     processor.set_override_timestamp(None);
@@ -295,11 +366,12 @@ pub fn derive_fight(
         // someone else's scarecrow (2026-10-03).
         .min_by_key(|r| (r.start_time_ms.abs(), -totals.get(&r.target_id).copied().unwrap_or(0), r.target_id))
         .ok_or(DeriveError::NothingDerived)?;
+    let hidden = hide_unplaced_summons(&mut record, &named, &spawned);
     canonicalise(&mut record);
 
     Ok(DerivedFight {
-        parser_version: crate::entity::fight_record::APP_VERSION.to_string(),
-        total_damage: totals.get(&record.target_id).copied().unwrap_or(0),
+        parser_version: parser_version(),
+        total_damage: totals.get(&record.target_id).copied().unwrap_or(0) - hidden,
         record,
         blind_map: blind_map.into_iter().collect(),
         records: records.len(),
