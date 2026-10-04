@@ -3,20 +3,6 @@
 version = 4
 
 [[package]]
-name = "daevalog-dps-meter"
-version = "2.0.44"
-dependencies = [
- "chrono",
- "lz4_flex",
- "parking_lot",
- "serde",
- "serde_json",
- "sha2",
- "tracing",
- "windows",
-]
-
-[[package]]
 name = "a2tools-log-service"
 version = "0.1.0"
 dependencies = [
@@ -153,6 +139,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce6e4c961d6cd6c9a86db418387425e8bdeaf05b3c8bc1411e6dca4c252f1453"
 dependencies = [
  "hybrid-array",
+]
+
+[[package]]
+name = "daevalog-dps-meter"
+version = "2.0.44"
+dependencies = [
+ "chrono",
+ "lz4_flex",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tracing",
+ "windows",
 ]
 
 [[package]]
