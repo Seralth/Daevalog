@@ -40,7 +40,7 @@ Every window loads the same `index.html` and runs the same `core.js`. The window
 
 ## Data folder
 
-Linux: `~/.local/share/com.a2tools.dps-meter/`. The folder holds `settings.json`, `history/`, `slices/`, `debug.log` and, when packet logging is on, `packets_*.txt`. Packet logs contain chat and the names of other players. Do not share packet logs.
+Linux: `~/.local/share/com.daevalog.dps-meter/`. The folder holds `settings.json`, `history/`, `slices/`, `debug.log` and, when packet logging is on, `packets_*.txt`. Packet logs contain chat and the names of other players. Do not share packet logs.
 
 ## Rules that must hold
 

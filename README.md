@@ -34,6 +34,8 @@ Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull
 - Arch-based systems: `cd packaging/arch && makepkg -si`.
 - Other distributions: follow the steps in `build()` in `packaging/arch/PKGBUILD`. Packet capture needs `cap_net_raw` and `cap_net_admin` on the binary. The Arch package sets both.
 
+The package is `daevalog-dps-meter`. It replaces an installed `a2tools-dps-meter` package. Settings, saved fights and the sign-in live in `~/.local/share/com.daevalog.dps-meter`. On the first start, the meter moves the folder of an A2Tools DPS Meter install (`com.a2tools.dps-meter`) to that place.
+
 `docs/ARCHITECTURE.md` describes the design. `CONTRIBUTING.md` describes how to test a change.
 
 ## Uploads and a2tools.app
