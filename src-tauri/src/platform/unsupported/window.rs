@@ -46,3 +46,12 @@ pub async fn prepare_resize(_window: &tauri::WebviewWindow, _min: tauri::Logical
 pub fn tray_available() -> bool {
     true
 }
+
+/// The click-through lock does not use an input region here.
+pub fn input_region_supported() -> bool {
+    false
+}
+
+pub fn set_input_region(_window: &tauri::WebviewWindow, _rect: Option<(f64, f64, f64, f64, f64)>) -> bool {
+    false
+}

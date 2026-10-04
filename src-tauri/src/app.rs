@@ -83,11 +83,11 @@ pub struct AppState {
 /// to the game, and it cannot be dragged. Only its own lock button stays
 /// clickable, so the same button unlocks it; a hotkey does too.
 ///
-/// A window either takes the mouse or ignores it, all of it, so the button
-/// is kept clickable by watching the pointer: while it is over the button the
-/// window takes the mouse again. That needs the pointer's position outside
-/// the window, which Wayland does not give (`platform::window::cursor_position`),
-/// so the lock is offered only where it is available.
+/// Where the platform supports it (Linux, X11 and Wayland), the window's
+/// input region shrinks to the lock button: clicks anywhere else go through.
+/// Elsewhere the button is kept clickable by watching the pointer: while it
+/// is over the button the window takes the mouse again. That needs the
+/// pointer's position outside the window (`platform::window::cursor_position`).
 #[derive(Default)]
 pub struct OverlayLock {
     locked: std::sync::atomic::AtomicBool,
@@ -129,13 +129,41 @@ fn pointer_over_lock_button(app: &tauri::AppHandle, lock: &OverlayLock) -> bool 
     px >= left && px < left + w * scale && py >= top && py < top + h * scale
 }
 
-/// Lock or unlock the overlay. Locking starts the pointer watch, which ends
-/// by itself once unlocked.
+/// Whether the click-through lock can work here.
+fn overlay_lock_available() -> bool {
+    platform::window::input_region_supported() || platform::window::cursor_position().is_some()
+}
+
+/// The part of the window that takes the mouse: all of it unlocked, the lock
+/// button locked. With no button placed yet, all of it, so a lock can never
+/// leave the overlay with no way back.
+fn lock_input_rect(locked: bool, button: Option<(f64, f64, f64, f64, f64)>) -> Option<(f64, f64, f64, f64, f64)> {
+    if locked { button } else { None }
+}
+
+fn apply_lock_region(app: &tauri::AppHandle, lock: &OverlayLock) {
+    use std::sync::atomic::Ordering;
+    let Some(main) = app.get_webview_window("main") else { return };
+    let locked = lock.locked.load(Ordering::SeqCst);
+    let button = *lock.button.lock();
+    if locked && button.is_none() {
+        tracing::warn!("Overlay locked before its lock button was placed; it keeps the mouse");
+    }
+    platform::window::set_input_region(&main, lock_input_rect(locked, button));
+}
+
+/// Lock or unlock the overlay. Without an input region, locking starts the
+/// pointer watch, which ends by itself once unlocked.
 fn apply_overlay_lock(app: &tauri::AppHandle, locked: bool) {
     use std::sync::atomic::Ordering;
     let Some(state) = app.try_state::<AppState>() else { return };
     let lock = state.overlay_lock.clone();
     lock.locked.store(locked, Ordering::SeqCst);
+    if platform::window::input_region_supported() {
+        apply_lock_region(app, &lock);
+        tracing::info!("Overlay {}", if locked { "locked (click-through)" } else { "unlocked" });
+        return;
+    }
     sync_click_through(app, &lock, false);
     tracing::info!("Overlay {}", if locked { "locked (click-through)" } else { "unlocked" });
     if locked && !lock.watching.swap(true, Ordering::SeqCst) {
@@ -771,11 +799,10 @@ fn suspend_capture(state: tauri::State<'_, AppState>, suspended: bool) {
     tracing::info!("Capture {}", if suspended { "suspended" } else { "resumed" });
 }
 
-/// Whether the click-through lock can work here (it needs the pointer's
-/// position outside the window; see `OverlayLock`).
+/// Whether the click-through lock can work here (see `OverlayLock`).
 #[tauri::command]
 fn overlay_lock_supported() -> bool {
-    platform::window::cursor_position().is_some()
+    overlay_lock_available()
 }
 
 #[tauri::command]
@@ -789,11 +816,17 @@ fn is_overlay_locked(state: tauri::State<'_, AppState>) -> bool {
 }
 
 /// Where the lock button is in the main window's page, so it stays clickable
-/// while the rest of the window lets clicks through.
+/// while the rest of the window lets clicks through. A locked overlay follows
+/// the button when the layout moves it.
 #[tauri::command]
-fn set_lock_button_rect(state: tauri::State<'_, AppState>, x: f64, y: f64, width: f64, height: f64, scale: f64) {
+fn set_lock_button_rect(app: tauri::AppHandle, state: tauri::State<'_, AppState>, x: f64, y: f64, width: f64, height: f64, scale: f64) {
     let scale = if scale.is_finite() && scale > 0.0 { scale } else { 1.0 };
     *state.overlay_lock.button.lock() = Some((x, y, width, height, scale));
+    if platform::window::input_region_supported()
+        && state.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst)
+    {
+        apply_lock_region(&app, &state.overlay_lock);
+    }
 }
 
 #[tauri::command]
@@ -2385,7 +2418,7 @@ pub fn run() {
                         let locked = h
                             .try_state::<AppState>()
                             .is_some_and(|s| s.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst));
-                        if platform::window::cursor_position().is_none() && !locked {
+                        if !overlay_lock_available() && !locked {
                             return; // the lock is not offered here
                         }
                         apply_overlay_lock(&h, !locked);
@@ -2731,6 +2764,14 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_locked_overlay_takes_the_mouse_only_on_its_button() {
+        let button = Some((300.0, 4.0, 24.0, 24.0, 1.0));
+        assert_eq!(lock_input_rect(true, button), button);
+        assert_eq!(lock_input_rect(false, button), None, "unlocked: the whole window");
+        assert_eq!(lock_input_rect(true, None), None, "no button placed: never a dead overlay");
+    }
 
     #[test]
     fn the_csp_allows_every_inline_handler() {

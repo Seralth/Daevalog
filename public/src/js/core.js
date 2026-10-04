@@ -5030,6 +5030,11 @@ class DpsApp {
         if (!isOverlay) return;
         this._applyLockBtnVisibility(show);
         window.addEventListener("resize", () => this._sendLockBtnRect());
+        // Header buttons shown or hidden move the lock button without a
+        // window resize; a locked overlay must follow it.
+        if (window.ResizeObserver && this.lockBtn?.parentElement) {
+          new ResizeObserver(() => this._sendLockBtnRect()).observe(this.lockBtn.parentElement);
+        }
         // Stay locked across restarts, as the player left it.
         if (show && this.safeGetSetting(this.storageKeys.overlayLocked) === "true") {
           requestAnimationFrame(() => this._setOverlayLocked(true));

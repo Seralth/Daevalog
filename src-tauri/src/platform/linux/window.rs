@@ -1,13 +1,12 @@
 //! Window helpers on Linux. As in `../unsupported/window.rs`, except that the
-//! pointer position can be read when the meter runs on GDK's X11 backend.
+//! pointer button can be read when the meter runs on GDK's X11 backend, and
+//! the click-through lock works through the window's input region.
 //!
-//! The click-through lock needs the pointer's position outside the meter's
-//! windows (`platform::window::cursor_position`). A native Wayland window
-//! cannot read that, but the meter often runs under XWayland (`GDK_BACKEND=x11`),
-//! and so does a Proton game unless `PROTON_ENABLE_WAYLAND` is set; an X11
-//! client can read the global pointer while it is over any X11 window. With
-//! a position, the lock as it is works: a player tested it on KDE Plasma
-//! (issue #14). libX11 is loaded at run time, so nothing new is linked.
+//! The lock lets only the lock button's rectangle take the mouse
+//! (`set_input_region`). GDK applies that with the X shape extension on X11
+//! and as the surface's input region on Wayland, so the lock needs no pointer
+//! position and works on native Wayland too. libX11 is loaded at run time, so
+//! nothing new is linked.
 
 use x11_dl::xlib;
 
@@ -115,12 +114,46 @@ fn on_x11() -> bool {
     }
 }
 
-/// Where the mouse pointer is, in screen pixels: on the X11 backend only. A
-/// native Wayland window cannot read it, so there the lock is not offered.
-/// The root coordinates are the space tao's `inner_position()` uses on X11,
-/// so the lock button's hit test lines up.
+/// Not used here: the lock works through the input region instead.
 pub fn cursor_position() -> Option<(i32, i32)> {
-    query_pointer().map(|(x, y, _)| (x, y))
+    None
+}
+
+/// The click-through lock works through the input region here.
+pub fn input_region_supported() -> bool {
+    true
+}
+
+/// Let only `rect` of the window take the mouse, or the whole window with
+/// `None`. `rect` is the page's CSS-pixel x, y, width, height and its
+/// devicePixelRatio.
+pub fn set_input_region(window: &tauri::WebviewWindow, rect: Option<(f64, f64, f64, f64, f64)>) -> bool {
+    use gtk::prelude::*;
+    let window = window.clone();
+    super::dialog::on_gtk_thread(move || {
+        let Ok(gtk_window) = window.gtk_window() else { return false };
+        match rect {
+            None => gtk_window.input_shape_combine_region(None),
+            Some((x, y, w, h, css_scale)) => {
+                let (x, y, w, h) = window_rect((x, y, w, h), css_scale, gtk_window.scale_factor());
+                let region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(x, y, w, h));
+                gtk_window.input_shape_combine_region(Some(&region));
+            }
+        }
+        true
+    })
+    .unwrap_or(false)
+}
+
+/// The window-pixel rectangle that covers a CSS-pixel rectangle, rounded
+/// outward. GDK window pixels are CSS pixels times the page's zoom, which is
+/// devicePixelRatio over GDK's own scale.
+fn window_rect((x, y, w, h): (f64, f64, f64, f64), css_scale: f64, gdk_scale: i32) -> (i32, i32, i32, i32) {
+    let f = css_scale / f64::from(gdk_scale.max(1));
+    let f = if f.is_finite() && f > 0.0 { f } else { 1.0 };
+    let (left, top) = ((x * f).floor(), (y * f).floor());
+    let (right, bottom) = (((x + w) * f).ceil(), ((y + h) * f).ceil());
+    (left as i32, top as i32, (right - left).max(1.0) as i32, (bottom - top).max(1.0) as i32)
 }
 
 /// Whether the left mouse button is held: on the X11 backend only. Ends a
@@ -240,5 +273,21 @@ mod tray_tests {
         assert_eq!(first_loadable(TRAY_LIBRARIES, |_| false), None);
         assert_eq!(first_loadable(TRAY_LIBRARIES, |n| n == "libappindicator3.so.1"), Some("libappindicator3.so.1"));
         assert_eq!(first_loadable(TRAY_LIBRARIES, |_| true), Some("libayatana-appindicator3.so.1"));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::window_rect;
+
+    #[test]
+    fn the_lock_region_covers_the_button_in_window_pixels() {
+        assert_eq!(window_rect((300.0, 4.0, 24.0, 24.0), 1.0, 1), (300, 4, 24, 24));
+        // HiDPI: GDK scales by 2 and so does the page; window pixels stay CSS pixels.
+        assert_eq!(window_rect((300.0, 4.0, 24.0, 24.0), 2.0, 2), (300, 4, 24, 24));
+        // Page zoom 1.25: fractions round outward, never cutting the button.
+        assert_eq!(window_rect((300.5, 4.2, 24.0, 24.0), 1.25, 1), (375, 5, 31, 31));
+        // A bad scale falls back to 1, and an empty rect still keeps one pixel.
+        assert_eq!(window_rect((10.0, 10.0, 0.0, 0.0), f64::NAN, 1), (10, 10, 1, 1));
     }
 }
