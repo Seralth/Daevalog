@@ -262,11 +262,23 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     btn.setAttribute("aria-label", label);
   };
 
+  // The link comes from the server: open only https on a2tools.app or a subdomain.
+  const isSiteUrl = (value) => {
+    try {
+      const u = new URL(value);
+      const host = u.hostname.toLowerCase();
+      return u.protocol === "https:" && !u.username && !u.password && !u.port &&
+        (host === "a2tools.app" || host.endsWith(".a2tools.app"));
+    } catch {
+      return false;
+    }
+  };
+
   const runUpload = async (fight, btn) => {
     if (btn.disabled) return;
     const existing = shareStatus[fight.id]?.url;
     if (existing) {
-      window.javaBridge?.openBrowser?.(existing);
+      if (isSiteUrl(existing)) window.javaBridge?.openBrowser?.(existing);
       return;
     }
     btn.disabled = true;

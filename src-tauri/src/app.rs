@@ -210,6 +210,9 @@ fn load_fight(state: tauri::State<'_, AppState>, id: String) -> Result<FightReco
 
 #[tauri::command]
 fn delete_fight(state: tauri::State<'_, AppState>, id: String) -> Result<(), String> {
+    if !crate::history::fight_history::is_plain_name(&id) {
+        return Err(format!("Invalid fight id: {id:?}"));
+    }
     share::forget_slice(&state.app_data_dir, &id);
     state.fight_history.delete_fight(&id)
 }
@@ -411,7 +414,11 @@ async fn account_begin_link(
 
     // Open the browser straight onto the filled-in code. If it fails the player
     // still has the code and the URL in front of them.
-    open_url(grant.verification_uri_complete.clone());
+    if crate::account::is_site_url(&grant.verification_uri_complete) {
+        open_url(grant.verification_uri_complete.clone());
+    } else {
+        tracing::warn!("Not opening the sign-in page: the server sent a link outside a2tools.app");
+    }
 
     let http = state.http.clone();
     let app_data_dir = state.app_data_dir.clone();
@@ -650,6 +657,9 @@ fn quit_app(app: tauri::AppHandle) {
 
 #[tauri::command]
 fn read_cached_icon(state: tauri::State<'_, AppState>, key: String) -> Option<String> {
+    if !crate::history::fight_history::is_plain_name(&key) {
+        return None;
+    }
     let path = state.app_data_dir.join("icon_cache").join(&key);
     std::fs::read_to_string(&path).ok()
 }
@@ -703,6 +713,9 @@ fn log_from_ui(message: String) {
 
 #[tauri::command]
 fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, data: String) {
+    if !crate::history::fight_history::is_plain_name(&key) {
+        return;
+    }
     let cache_dir = state.app_data_dir.join("icon_cache");
     let _ = std::fs::create_dir_all(&cache_dir);
     let path = cache_dir.join(&key);
@@ -719,6 +732,10 @@ async fn show_update_window(
     arch_url: Option<String>,
     deb_url: Option<String>,
     rpm_url: Option<String>,
+    msi_sha256: Option<String>,
+    arch_sha256: Option<String>,
+    deb_sha256: Option<String>,
+    rpm_sha256: Option<String>,
 ) -> Result<bool, String> {
     // The manifest names a package per platform (the MSI; the Arch, Debian
     // and RPM packages). Where this install cannot update itself, or the
@@ -730,6 +747,14 @@ async fn show_update_window(
         rpm: rpm_url.as_deref().unwrap_or(""),
     };
     let package_url = platform::updater::package_url(&packages).to_string();
+    // The manifest's SHA-256 for that same package, picked the same way.
+    let hashes = platform::UpdatePackages {
+        msi: msi_sha256.as_deref().unwrap_or(""),
+        arch: arch_sha256.as_deref().unwrap_or(""),
+        deb: deb_sha256.as_deref().unwrap_or(""),
+        rpm: rpm_sha256.as_deref().unwrap_or(""),
+    };
+    let package_sha256 = platform::updater::package_url(&hashes).to_string();
     if !platform::updater::supported() || package_url.is_empty() {
         tracing::info!("Update {} available (running {}); this install updates through its package manager", latest, current);
         return Ok(false);
@@ -745,7 +770,7 @@ async fn show_update_window(
         let app2 = app.clone();
         let url = package_url;
         tauri::async_runtime::spawn(async move {
-            if let Err(e) = download_and_install_update(&app2, &url).await {
+            if let Err(e) = download_and_install_update(&app2, &url, &package_sha256).await {
                 tracing::error!("Update download failed: {}", e);
                 // Show error dialog
                 let _ = tokio::task::spawn_blocking(move || {
@@ -761,15 +786,38 @@ async fn show_update_window(
     Ok(accepted)
 }
 
-async fn download_and_install_update(app: &tauri::AppHandle, url: &str) -> Result<(), String> {
+/// Whether a downloaded package is the one the manifest names: its SHA-256,
+/// in hex, equals the manifest's. A manifest without a hash matches nothing.
+fn package_hash_matches(expected: &str, actual_hex: &str) -> bool {
+    let expected = expected.trim();
+    expected.len() == 64
+        && expected.bytes().all(|b| b.is_ascii_hexdigit())
+        && expected.eq_ignore_ascii_case(actual_hex)
+}
+
+async fn download_and_install_update(app: &tauri::AppHandle, url: &str, expected_sha256: &str) -> Result<(), String> {
     use tokio::io::AsyncWriteExt;
     use futures_util::StreamExt;
+    use sha2::{Digest, Sha256};
+
+    // Only a package the manifest vouches for is installed.
+    if expected_sha256.trim().is_empty() {
+        tracing::warn!("Update manifest has no SHA-256 for {url}; not installing it");
+        return Err("the update manifest has no checksum for this package".into());
+    }
 
     // Show progress dialog on a blocking thread
     let app_clone = app.clone();
     let url_owned = url.to_string();
 
-    let response = reqwest::get(&url_owned).await.map_err(|e| e.to_string())?;
+    let response = app
+        .state::<AppState>()
+        .http
+        .get(&url_owned)
+        .timeout(Duration::from_secs(600))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
     if !response.status().is_success() {
         return Err(format!("HTTP {}", response.status()));
     }
@@ -781,9 +829,11 @@ async fn download_and_install_update(app: &tauri::AppHandle, url: &str) -> Resul
     let mut downloaded: u64 = 0;
     let mut stream = response.bytes_stream();
     let mut last_pct: u64 = 0;
+    let mut hasher = Sha256::new();
 
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| e.to_string())?;
+        hasher.update(&chunk);
         file.write_all(&chunk).await.map_err(|e| e.to_string())?;
         downloaded += chunk.len() as u64;
         if total_size > 0 {
@@ -797,6 +847,13 @@ async fn download_and_install_update(app: &tauri::AppHandle, url: &str) -> Resul
     }
     file.flush().await.map_err(|e| e.to_string())?;
     drop(file);
+
+    let actual: String = hasher.finalize().iter().map(|b| format!("{b:02x}")).collect();
+    if !package_hash_matches(expected_sha256, &actual) {
+        let _ = tokio::fs::remove_file(&msi_path).await;
+        tracing::warn!("Update package {} has SHA-256 {actual}, the manifest says {}; deleted, not installed", msi_path.display(), expected_sha256.trim());
+        return Err("the downloaded package does not match the checksum in the update manifest".into());
+    }
 
     tracing::info!("Download complete, launching installer: {}", msi_path.display());
 
@@ -819,9 +876,17 @@ async fn download_and_install_update(app: &tauri::AppHandle, url: &str) -> Resul
 }
 
 #[tauri::command]
-async fn fetch_url(url: String) -> Result<String, String> {
-    reqwest::get(&url).await.map_err(|e| e.to_string())?
-        .text().await.map_err(|e| e.to_string())
+async fn fetch_url(state: tauri::State<'_, AppState>, url: String) -> Result<String, String> {
+    state
+        .http
+        .get(&url)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())
 }
 
 /// Where the supporter roster lives. The same bucket the installer is served
@@ -881,7 +946,12 @@ fn load_supporter_override(app_data_dir: &std::path::Path) -> Option<crate::supp
 /// a cosmetic, and there is no version of "the CDN is down" that should produce
 /// a visible error, a retry storm, or a wrong answer.
 async fn fetch_supporter_roster(client: &reqwest::Client) -> Option<crate::supporters::Roster> {
-    let response = client.get(SUPPORTER_ROSTER_URL).send().await.ok()?;
+    let response = client
+        .get(SUPPORTER_ROSTER_URL)
+        .timeout(Duration::from_secs(30))
+        .send()
+        .await
+        .ok()?;
     if !response.status().is_success() {
         return None;
     }
@@ -2087,6 +2157,7 @@ pub fn run() {
                 i18n_data_dir: found_data_dir.clone(),
                 http: reqwest::Client::builder()
                     .user_agent(concat!("A2Tools-DPS-Meter/", env!("CARGO_PKG_VERSION")))
+                    .connect_timeout(Duration::from_secs(10))
                     .timeout(Duration::from_secs(30))
                     .build()
                     .unwrap_or_default(),
@@ -2564,5 +2635,49 @@ mod tests {
         });
         assert!(outcome.is_err());
         assert!(InFlight::start("in-flight-test").is_some());
+    }
+
+    #[test]
+    fn only_a_package_with_the_manifest_hash_is_installed() {
+        let actual = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+        assert!(super::package_hash_matches(actual, actual));
+        assert!(super::package_hash_matches(&format!(" {} ", actual.to_uppercase()), actual));
+        assert!(!super::package_hash_matches(&actual.replace('9', "8"), actual));
+        assert!(!super::package_hash_matches("", actual));
+        assert!(!super::package_hash_matches("9f86d081", "9f86d081"));
+    }
+
+    #[test]
+    fn the_csp_allows_every_inline_handler() {
+        use sha2::{Digest, Sha256};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let read = |p: std::path::PathBuf| std::fs::read_to_string(p).unwrap();
+        let conf: serde_json::Value =
+            serde_json::from_str(&read(root.join("src-tauri/tauri.conf.json"))).unwrap();
+        let mut pages = vec![read(root.join("index.html"))];
+        for entry in std::fs::read_dir(root.join("public/src/js")).unwrap() {
+            pages.push(read(entry.unwrap().path()));
+        }
+        // `onload="..."` and the like, in the page and in HTML the scripts build.
+        let mut handlers = Vec::new();
+        for page in &pages {
+            let mut rest = page.as_str();
+            while let Some(at) = rest.find(" on") {
+                rest = &rest[at + 3..];
+                let name = rest.bytes().take_while(|b| b.is_ascii_lowercase()).count();
+                if name > 0 && rest[name..].starts_with("=\"") {
+                    let body = &rest[name + 2..];
+                    handlers.push(body[..body.find('"').unwrap()].to_string());
+                }
+            }
+        }
+        assert!(handlers.len() >= 5);
+        for key in ["csp", "devCsp"] {
+            let script_src = conf["app"]["security"][key]["script-src"].as_str().unwrap();
+            for handler in &handlers {
+                let hash = format!("'sha256-{}'", crate::share::base64(&Sha256::digest(handler.as_bytes())));
+                assert!(script_src.contains(&hash), "{key} script-src has no {hash} for {handler}");
+            }
+        }
     }
 }

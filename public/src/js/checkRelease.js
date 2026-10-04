@@ -53,6 +53,8 @@
           const v = m.version?.startsWith("v") ? m.version : "v" + m.version;
           // One package per platform; the backend picks the one it can install.
           result = { latest: v, msi: m.msiUrl || "", arch: m.archUrl || "", deb: m.debUrl || "", rpm: m.rpmUrl || "" };
+          // SHA-256 of each package: the backend installs a download only when it matches.
+          result.hashes = { msi: m.msiSha256 || "", arch: m.archSha256 || "", deb: m.debSha256 || "", rpm: m.rpmSha256 || "" };
         } catch (e) {
           console.error("[A2Tools] Update check failed:", e);
           return;
@@ -77,6 +79,10 @@
           archUrl: result.arch,
           debUrl: result.deb,
           rpmUrl: result.rpm,
+          msiSha256: result.hashes.msi,
+          archSha256: result.hashes.arch,
+          debSha256: result.hashes.deb,
+          rpmSha256: result.hashes.rpm,
         });
       } catch (e) {
         console.error("[A2Tools] Update check error:", e);

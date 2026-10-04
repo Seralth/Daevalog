@@ -9,6 +9,7 @@
 //! An account is used when the meter is signed in, but is not required.
 
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use serde::Serialize;
 
@@ -77,6 +78,7 @@ pub async fn send(client: &reqwest::Client, app_data_dir: &Path) -> Result<SendR
         .collect();
     let mut register = client
         .post(format!("{base}/api/dev-logs"))
+        .timeout(Duration::from_secs(15))
         .header("content-type", "application/json")
         .body(
             serde_json::json!({
@@ -100,7 +102,7 @@ pub async fn send(client: &reqwest::Client, app_data_dir: &Path) -> Result<SendR
     }
     let code = reply["code"].as_str().unwrap_or_default().to_string();
     let upload_path = reply["uploadPath"].as_str().unwrap_or_default().to_string();
-    if code.is_empty() || upload_path.is_empty() {
+    if code.is_empty() || !is_upload_path(&upload_path) {
         return Err("Unexpected reply from a2tools.app.".to_string());
     }
 
@@ -108,6 +110,8 @@ pub async fn send(client: &reqwest::Client, app_data_dir: &Path) -> Result<SendR
     for (name, _, body) in packed {
         let response = client
             .put(format!("{base}{upload_path}{name}"))
+            // Up to ~10 MB per file, on whatever upload speed the player has.
+            .timeout(Duration::from_secs(600))
             .header("content-type", "application/gzip")
             .body(body)
             .send()
@@ -123,6 +127,16 @@ pub async fn send(client: &reqwest::Client, app_data_dir: &Path) -> Result<SendR
     }
     tracing::info!("Sent {sent} packet logs to the developer as report {code}");
     Ok(SendResult { code, files: sent })
+}
+
+/// The server names where to PUT the files, appended to the API base. Only a
+/// path on that host: it starts with '/', has no ".." (plain or escaped), and
+/// nothing that could make the joined URL name another host.
+fn is_upload_path(path: &str) -> bool {
+    path.starts_with('/')
+        && !path.starts_with("//")
+        && !path.contains("..")
+        && path.bytes().all(|b| b.is_ascii_graphic() && !matches!(b, b'\\' | b'@' | b'?' | b'#' | b'%'))
 }
 
 fn server_message(reply: &serde_json::Value, status: reqwest::StatusCode) -> String {
@@ -165,5 +179,23 @@ mod tests {
             ]
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn only_a_path_on_the_api_host_is_used_for_uploads() {
+        assert!(is_upload_path("/api/dev-logs/ABC123/"));
+        for bad in [
+            "",
+            "api/dev-logs/",
+            "//example.com/",
+            "/api/../admin/",
+            "/api/%2e%2e/admin/",
+            "@example.com/",
+            "https://example.com/",
+            "/api\\dev-logs/",
+            "/api/dev logs/",
+        ] {
+            assert!(!is_upload_path(bad), "{bad:?}");
+        }
     }
 }

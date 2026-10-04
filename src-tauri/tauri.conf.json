@@ -24,7 +24,31 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self' 'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc=' 'sha256-E0wk1DOvyUPgKrx0o/UNs4cZQIUvB5heAW8Cz3IMQH0=' 'sha256-j4VbX71+GbO3b2jDDBol0yaFLV7EorWC6xbgZBPKmMk=' 'sha256-pwQduWxX3Cm7lLbQmAos7n73RLP4QrsCDFejmsBdZ78='",
+        "style-src": "'self' 'unsafe-inline' https://unpkg.com",
+        "font-src": "'self' data: https://unpkg.com",
+        "img-src": "'self' data: blob: https://assets.playnccdn.com",
+        "connect-src": "'self' ipc: http://ipc.localhost https://assets.playnccdn.com",
+        "object-src": "'none'",
+        "base-uri": "'none'",
+        "frame-src": "'none'",
+        "form-action": "'none'"
+      },
+      "devCsp": {
+        "default-src": "'self'",
+        "script-src": "'self' 'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc=' 'sha256-E0wk1DOvyUPgKrx0o/UNs4cZQIUvB5heAW8Cz3IMQH0=' 'sha256-j4VbX71+GbO3b2jDDBol0yaFLV7EorWC6xbgZBPKmMk=' 'sha256-pwQduWxX3Cm7lLbQmAos7n73RLP4QrsCDFejmsBdZ78='",
+        "style-src": "'self' 'unsafe-inline' https://unpkg.com",
+        "font-src": "'self' data: https://unpkg.com",
+        "img-src": "'self' data: blob: https://assets.playnccdn.com",
+        "connect-src": "'self' ipc: http://ipc.localhost https://assets.playnccdn.com ws://localhost:1420",
+        "object-src": "'none'",
+        "base-uri": "'none'",
+        "frame-src": "'none'",
+        "form-action": "'none'"
+      },
+      "dangerousDisableAssetCspModification": ["style-src"]
     }
   },
   "bundle": {

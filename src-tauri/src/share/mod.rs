@@ -859,6 +859,7 @@ pub async fn upload_detailed(
 
     let response = client
         .post(format!("{}/api/logs", crate::account::base_url()))
+        .timeout(std::time::Duration::from_secs(60))
         .header("authorization", format!("Bearer {token}"))
         .header("content-type", "application/json")
         .body(body.to_string())
@@ -901,7 +902,7 @@ pub async fn upload_detailed(
 }
 
 /// Standard base64. Small enough that a dependency is not worth having.
-fn base64(data: &[u8]) -> String {
+pub(crate) fn base64(data: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
