@@ -2,11 +2,11 @@
 # meter never has to run as root. A new binary (every upgrade) needs it again.
 
 _grant_capture() {
-  if setcap cap_net_raw,cap_net_admin=eip /usr/bin/a2tools-dps-meter; then
-    echo "==> A2Tools DPS Meter may now capture packets."
+  if setcap cap_net_raw,cap_net_admin=eip /usr/bin/daevalog-dps-meter; then
+    echo "==> Daevalog DPS Meter may now capture packets."
   else
     echo "==> Could not grant packet-capture permission. Run:"
-    echo "    sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/a2tools-dps-meter"
+    echo "    sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/daevalog-dps-meter"
   fi
 }
 

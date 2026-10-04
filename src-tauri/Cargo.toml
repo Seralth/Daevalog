@@ -1,5 +1,5 @@
 [package]
-name = "a2tools-dps-meter"
+name = "daevalog-dps-meter"
 version = "2.0.44"
 description = "Daevalog DPS Meter - AION 2 real-time DPS overlay"
 authors = ["taengu"]
@@ -7,7 +7,7 @@ edition = "2024"
 # Required because this crate declares more than one binary: without it
 # `cargo run` (and therefore `npm run tauri dev`) cannot tell which one is the
 # app and refuses to start.
-default-run = "a2tools-dps-meter"
+default-run = "daevalog-dps-meter"
 
 [lib]
 name = "a2tools_dps_meter_lib"
@@ -46,7 +46,7 @@ desktop = [
 # Both binaries are declared rather than left to auto-discovery, so adding the
 # second one cannot quietly change which target `tauri build` bundles.
 [[bin]]
-name = "a2tools-dps-meter"
+name = "daevalog-dps-meter"
 path = "src/main.rs"
 required-features = ["desktop"]
 

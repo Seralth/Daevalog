@@ -125,7 +125,7 @@ unsafe fn write_png(hdc: HDC, hbm: HBITMAP, rect: ScreenRect, path: &Path) -> bo
     std::fs::write(path, png).is_ok()
 }
 
-/// `Pictures\A2Tools DPS Meter`, the default place screenshots are saved.
+/// `Pictures\Daevalog DPS Meter`, the default place screenshots are saved.
 pub fn default_folder() -> Option<PathBuf> {
     use windows::Win32::System::Com::CoTaskMemFree;
     use windows::Win32::UI::Shell::{FOLDERID_Pictures, SHGetKnownFolderPath, KF_FLAG_DEFAULT};
@@ -133,7 +133,7 @@ pub fn default_folder() -> Option<PathBuf> {
         let raw = SHGetKnownFolderPath(&FOLDERID_Pictures, KF_FLAG_DEFAULT, None).ok()?;
         let path = raw.to_string().ok();
         CoTaskMemFree(Some(raw.0 as *const _));
-        Some(PathBuf::from(path?).join("A2Tools DPS Meter"))
+        Some(PathBuf::from(path?).join("Daevalog DPS Meter"))
     }
 }
 

@@ -9,7 +9,7 @@ use std::process::{Command, Stdio};
 
 use crate::platform::UpdatePackages;
 
-const INSTALLED_BINARY: &str = "/usr/bin/a2tools-dps-meter";
+const INSTALLED_BINARY: &str = "/usr/bin/daevalog-dps-meter";
 
 /// The package manager that owns the installed meter, and how it installs a
 /// downloaded package file.
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn a_test_run_is_not_an_installed_meter() {
-        // The test binary is not /usr/bin/a2tools-dps-meter.
+        // The test binary is not /usr/bin/daevalog-dps-meter.
         assert_eq!(manager(), None);
         assert!(!supported());
     }

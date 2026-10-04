@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "a2tools-dps-meter"
+name = "daevalog-dps-meter"
 version = "2.0.44"
 dependencies = [
  "chrono",

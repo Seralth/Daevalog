@@ -313,7 +313,7 @@ pub fn device_label() -> String {
     let host = std::env::var("COMPUTERNAME")
         .or_else(|_| std::env::var("HOSTNAME"))
         .unwrap_or_else(|_| "PC".into());
-    format!("A2Tools Meter on {host}")
+    format!("Daevalog DPS Meter on {host}")
 }
 
 #[cfg(test)]

@@ -16,6 +16,8 @@ use secret_service::EncryptionType;
 use crate::platform::UnsealError;
 
 const REFERENCE: &[u8] = b"secret-service:";
+/// Kept from the A2Tools build, like `ENTROPY` in `account::secret`: a
+/// stored sign-in is found by these attributes.
 const APPLICATION: &str = "a2tools-dps-meter";
 
 /// Whether a keyring answers on this desktop. Without one (no KWallet or
@@ -72,7 +74,7 @@ pub fn protect(plaintext: &[u8], entropy: &[u8]) -> Option<Vec<u8>> {
     let collection = collection(&ss)?;
     let id = new_id();
     if let Err(e) = collection.create_item(
-        "A2Tools DPS Meter account",
+        "Daevalog DPS Meter account",
         attributes(entropy, &id),
         plaintext,
         true,

@@ -9,9 +9,9 @@
 # It installs the program to /usr/bin, the game data where Tauri looks for
 # resources (/usr/lib/<product name>/data), and grants packet-capture
 # permission in the install script, which is the one thing a Linux user would
-# otherwise have to do by hand (see a2tools-dps-meter.install).
+# otherwise have to do by hand (see daevalog-dps-meter.install).
 
-pkgname=a2tools-dps-meter
+pkgname=daevalog-dps-meter
 pkgver=0
 pkgrel=1
 pkgdesc="Daevalog DPS Meter: real-time DPS overlay for AION 2 (Linux/Proton)"
@@ -20,7 +20,10 @@ url="https://github.com/Seralth/Daevalog"
 license=('GPL-3.0-only')
 depends=('webkit2gtk-4.1' 'gtk3' 'libpcap' 'libcap' 'hicolor-icon-theme' 'libayatana-appindicator')
 makedepends=('rust' 'nodejs' 'npm' 'git' 'pkgconf')
-install=a2tools-dps-meter.install
+install=daevalog-dps-meter.install
+# The package was a2tools-dps-meter before the fork was renamed.
+conflicts=('a2tools-dps-meter')
+replaces=('a2tools-dps-meter')
 options=('!lto' '!debug')
 
 # The repository root, two levels up from packaging/arch.
@@ -57,23 +60,23 @@ build() {
 package() {
   local root
   root="$(_root)"
-  install -Dm755 "$root/src-tauri/target/release/a2tools-dps-meter" "$pkgdir/usr/bin/a2tools-dps-meter"
+  install -Dm755 "$root/src-tauri/target/release/daevalog-dps-meter" "$pkgdir/usr/bin/daevalog-dps-meter"
 
   # Tauri resolves resources to /usr/lib/<name>; ship both spellings of the
   # name so either resolution finds the data.
-  install -d "$pkgdir/usr/lib/A2Tools DPS Meter"
-  cp -r "$root/src/data" "$pkgdir/usr/lib/A2Tools DPS Meter/data"
-  ln -s "A2Tools DPS Meter" "$pkgdir/usr/lib/a2tools-dps-meter"
+  install -d "$pkgdir/usr/lib/Daevalog DPS Meter"
+  cp -r "$root/src/data" "$pkgdir/usr/lib/Daevalog DPS Meter/data"
+  ln -s "Daevalog DPS Meter" "$pkgdir/usr/lib/daevalog-dps-meter"
 
   install -Dm644 "$root/src-tauri/icons/128x128.png" \
-    "$pkgdir/usr/share/icons/hicolor/128x128/apps/a2tools-dps-meter.png"
-  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/a2tools-dps-meter.desktop" <<DESKTOP
+    "$pkgdir/usr/share/icons/hicolor/128x128/apps/daevalog-dps-meter.png"
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/daevalog-dps-meter.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Name=Daevalog DPS Meter
 Comment=Real-time DPS overlay for AION 2
-Exec=a2tools-dps-meter
-Icon=a2tools-dps-meter
+Exec=daevalog-dps-meter
+Icon=daevalog-dps-meter
 Categories=Game;Utility;
 DESKTOP
   install -Dm644 "$root/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"

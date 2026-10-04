@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "a2tools-dps-meter"
+name = "daevalog-dps-meter"
 version = "2.0.44"
 dependencies = [
  "chrono",
@@ -20,7 +20,7 @@ dependencies = [
 name = "a2tools-log-service"
 version = "0.1.0"
 dependencies = [
- "a2tools-dps-meter",
+ "daevalog-dps-meter",
  "flate2",
  "serde",
  "serde_json",

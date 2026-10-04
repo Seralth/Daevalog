@@ -836,7 +836,7 @@ async fn show_update_window(
     let msg = format!("A new update is available!\n\nCurrent: {}\nLatest: {}\n\nDownload and install now?", current, latest);
 
     let accepted = tokio::task::spawn_blocking(move || {
-        platform::dialog::ask_yes_no("A2Tools - Update Available", &msg)
+        platform::dialog::ask_yes_no("Daevalog - Update Available", &msg)
     }).await.unwrap_or(false);
 
     if accepted {
@@ -849,7 +849,7 @@ async fn show_update_window(
                 // Show error dialog
                 let _ = tokio::task::spawn_blocking(move || {
                     platform::dialog::show_error(
-                        "A2Tools - Update Error",
+                        "Daevalog - Update Error",
                         &format!("Download failed: {}\n\nPlease download manually.", e),
                     );
                 }).await;
@@ -1727,7 +1727,7 @@ struct ScreenshotResult {
 /// that asked, so the Details window captures itself rather than whatever sits
 /// at the same offset from the meter. `include_meter` adds the whole meter
 /// window, for a tool window that cannot measure the meter itself. With
-/// `save_file`, also writes a PNG to `folder` (default: Pictures\A2Tools DPS
+/// `save_file`, also writes a PNG to `folder` (default: Pictures\Daevalog DPS
 /// Meter) named `filename`.
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]

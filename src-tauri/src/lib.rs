@@ -1,4 +1,4 @@
-//! A2Tools DPS Meter.
+//! Daevalog DPS Meter.
 //!
 //! The crate is split in two by the `desktop` feature, and the line is load
 //! bearing rather than tidy-mindedness. Everything outside the feature — the
