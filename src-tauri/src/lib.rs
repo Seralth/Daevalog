@@ -33,6 +33,8 @@ pub mod logging;
 #[cfg(feature = "desktop")]
 pub mod platform;
 #[cfg(feature = "desktop")]
+mod migrate;
+#[cfg(feature = "desktop")]
 mod presence;
 #[cfg(feature = "desktop")]
 mod tray;

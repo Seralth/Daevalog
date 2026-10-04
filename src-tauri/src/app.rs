@@ -2123,6 +2123,8 @@ pub fn run() {
     if let Some(note) = process_note {
         tracing::info!("{note}");
     }
+    // Before Tauri or WebKit opens anything in the data folders.
+    crate::migrate::from_a2tools();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
