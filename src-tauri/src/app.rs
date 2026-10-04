@@ -232,18 +232,10 @@ async fn upload_fight(
 /// (offline, a server error, a rate limit) is tried again later, on the
 /// schedule in `share::note_auto_upload_failure`.
 fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
-    // One upload of a fight at a time: a retry must not start while the first
-    // try is still waiting on the network.
-    static IN_FLIGHT: std::sync::LazyLock<Mutex<std::collections::HashSet<String>>> =
-        std::sync::LazyLock::new(|| Mutex::new(std::collections::HashSet::new()));
-    if !IN_FLIGHT.lock().insert(record.id.clone()) {
-        return;
-    }
+    let Some(in_flight) = InFlight::start(&record.id) else { return };
     tauri::async_runtime::spawn(async move {
-        let Some(state) = app.try_state::<AppState>() else {
-            IN_FLIGHT.lock().remove(&record.id);
-            return;
-        };
+        let _in_flight = in_flight;
+        let Some(state) = app.try_state::<AppState>() else { return };
         match share::upload_detailed(&state.http, &state.app_data_dir, &record).await {
             Ok(result) => {
                 tracing::info!("Auto-uploaded {} -> {}", record.id, result.url);
@@ -262,8 +254,28 @@ fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
                 );
             }
         }
-        IN_FLIGHT.lock().remove(&record.id);
     });
+}
+
+/// Fights with an automatic upload running. One upload of a fight at a time:
+/// a retry must not start while the first try is still waiting on the network.
+static IN_FLIGHT: std::sync::LazyLock<Mutex<HashSet<String>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashSet::new()));
+
+/// A fight's place in `IN_FLIGHT`, given up on drop: every way out of the
+/// upload task clears it, a panic included.
+struct InFlight(String);
+
+impl InFlight {
+    fn start(id: &str) -> Option<Self> {
+        IN_FLIGHT.lock().insert(id.to_string()).then(|| Self(id.to_string()))
+    }
+}
+
+impl Drop for InFlight {
+    fn drop(&mut self) {
+        IN_FLIGHT.lock().remove(&self.0);
+    }
 }
 
 /// Which fights have a slice to upload, and which already have a link.
@@ -2499,4 +2511,22 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_panicking_upload_still_frees_its_fight() {
+        let held = InFlight::start("in-flight-test").unwrap();
+        assert!(InFlight::start("in-flight-test").is_none(), "one upload of a fight at a time");
+        drop(held);
+        let outcome = std::panic::catch_unwind(|| {
+            let _held = InFlight::start("in-flight-test").unwrap();
+            panic!("upload task panicked");
+        });
+        assert!(outcome.is_err());
+        assert!(InFlight::start("in-flight-test").is_some());
+    }
 }
