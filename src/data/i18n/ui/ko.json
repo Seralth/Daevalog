@@ -323,7 +323,8 @@
     "analysing": "데이터 모니터링 중...",
     "idle": "대기 중",
     "notRunning": "AION2 not running",
-    "suspended": "앱 일시정지됨"
+    "suspended": "앱 일시정지됨",
+    "waitingBoss": "보스 대기 중"
   },
   "meter": {
     "identifyingPlayer": "#{id}",

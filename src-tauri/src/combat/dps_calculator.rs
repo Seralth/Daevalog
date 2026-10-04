@@ -90,7 +90,15 @@ impl DpsCalculator {
     }
 
     pub fn set_target_selection_mode(&mut self, id: &str) {
-        self.target_selection_mode = TargetSelectionMode::from_id(id);
+        let mode = TargetSelectionMode::from_id(id);
+        if mode != self.target_selection_mode {
+            // Recompute on the next update even without new damage: the
+            // cached result still names the old mode and its target, so the
+            // meter went on as if nothing had changed until someone hit
+            // something.
+            self.last_damage_gen = -1;
+        }
+        self.target_selection_mode = mode;
     }
 
     pub fn set_all_targets_window_ms(&mut self, ms: i64) {

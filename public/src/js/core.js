@@ -942,6 +942,15 @@ class DpsApp {
       targetCurrentHp,
       dungeonId,
     } = this.buildRowsFromPayload(raw);
+    // Boss mode with no boss engaged: say what it is waiting for. The rows of
+    // the last fight can still be on screen (the meter keeps them), so this
+    // goes by the target alone. Set before anything below can return early,
+    // so switching back to Boss mode shows it again on the next update.
+    const waitingForBoss = targetMode === "bossTargets" && !(Number(targetId) > 0);
+    if (waitingForBoss !== Boolean(this._waitingForBoss)) {
+      this._waitingForBoss = waitingForBoss;
+      this.updateConnectionStatusUi();
+    }
     if (this.refreshPending) {
       const pendingAgeMs = Math.max(0, now - (Number(this.refreshPendingStartedAt) || 0));
       const allowFallbackResume = rows.length > 0 && pendingAgeMs >= 1000;
@@ -1014,6 +1023,7 @@ class DpsApp {
       else {
         this._battleTimeVisible = false;
         this.battleTime.setVisible(false);
+        this.updateConnectionStatusUi();
         return;
       }
     } else if (!isOutOfCombat) {
@@ -4007,6 +4017,12 @@ class DpsApp {
       );
       this._lastTargetSelection = this.targetSelection;
     }
+    // Leaving Boss mode drops "Waiting for a boss" at once, rather than on
+    // the next update from the backend.
+    if (this.targetSelection !== "bossTargets" && this._waitingForBoss) {
+      this._waitingForBoss = false;
+      this.updateConnectionStatusUi();
+    }
     this.updateTargetModeButton();
   }
 
@@ -4589,6 +4605,12 @@ class DpsApp {
       this.applyConnectionStatusOverride(
         this.i18n?.t("connection.detecting", "Detecting AION2 connection...") ??
           "Detecting AION2 connection..."
+      );
+      return;
+    }
+    if (this._waitingForBoss && this.targetSelection === "bossTargets" && !this._captureSuspended) {
+      this.applyConnectionStatusOverride(
+        this.i18n?.t("battleTime.waitingBoss", "Waiting for a boss") ?? "Waiting for a boss"
       );
       return;
     }

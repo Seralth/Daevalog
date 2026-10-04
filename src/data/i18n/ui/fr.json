@@ -316,7 +316,8 @@
     "analysing": "Surveillance des données...",
     "idle": "Inactif",
     "notRunning": "AION2 n'est pas lancé",
-    "suspended": "Application en pause"
+    "suspended": "Application en pause",
+    "waitingBoss": "En attente d'un boss"
   },
   "meter": {
     "identifyingPlayer": "#{id}",

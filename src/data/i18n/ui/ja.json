@@ -316,7 +316,8 @@
     "analysing": "データを監視中...",
     "idle": "待機中",
     "notRunning": "AION2が起動していません",
-    "suspended": "アプリを一時停止中"
+    "suspended": "アプリを一時停止中",
+    "waitingBoss": "ボス待機中"
   },
   "meter": {
     "identifyingPlayer": "#{id}",

@@ -323,7 +323,8 @@
     "analysing": "正在監控資料...",
     "idle": "閒置",
     "notRunning": "AION2 not running",
-    "suspended": "應用程式已暫停"
+    "suspended": "應用程式已暫停",
+    "waitingBoss": "等待首領"
   },
   "meter": {
     "identifyingPlayer": "#{id}",

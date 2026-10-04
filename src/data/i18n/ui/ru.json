@@ -316,7 +316,8 @@
     "analysing": "Отслеживание данных...",
     "idle": "Ожидание",
     "notRunning": "AION2 не запущен",
-    "suspended": "Приложение приостановлено"
+    "suspended": "Приложение приостановлено",
+    "waitingBoss": "Ожидание босса"
   },
   "meter": {
     "identifyingPlayer": "#{id}",
