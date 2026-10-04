@@ -63,7 +63,10 @@ pub struct DpsCalculator {
     last_known_local_id: Option<i64>,
     all_targets_window_ms: i64,
     nickname_job_cache: HashMap<String, String>,
-    saved_boss_targets: HashSet<i32>,
+    /// Boss targets saved as ended, with the time of their last hit then. A
+    /// target hit again after that is saved again, so a fight with a long
+    /// pause keeps its second half.
+    saved_boss_targets: HashMap<i32, i64>,
 }
 
 impl DpsCalculator {
@@ -85,7 +88,7 @@ impl DpsCalculator {
             last_known_local_id: None,
             all_targets_window_ms: 120_000,
             nickname_job_cache: HashMap::new(),
-            saved_boss_targets: HashSet::new(),
+            saved_boss_targets: HashMap::new(),
         }
     }
 
@@ -107,8 +110,8 @@ impl DpsCalculator {
 
     pub fn mark_all_targets_saved(&mut self) {
         let combat = self.data_storage.get_combat_snapshot_light();
-        for &tid in combat.keys() {
-            self.saved_boss_targets.insert(tid);
+        for (&tid, td) in &combat {
+            self.saved_boss_targets.insert(tid, td.last_damage_time);
         }
     }
 
@@ -745,6 +748,26 @@ impl DpsCalculator {
         self.nickname_job_cache.insert(key, job.to_string());
     }
 
+    /// Whether the local player, one of their summons or a party member hit
+    /// this target. Every boss and training dummy in range used to be saved,
+    /// whoever fought it, and a field boss fought only by two strangers was
+    /// auto-uploaded under the local player's account (issue #19). Without
+    /// either a local id or a party to go on, every fight counts, as before.
+    fn is_our_fight(&self, target: &TargetCombatData) -> bool {
+        let summon_data = self.data_storage.get_summon_data();
+        let nicknames = self.data_storage.get_nicknames();
+        let party = self.data_storage.get_party_members();
+        let local = self.resolve_local_ids(&summon_data);
+        if local.is_none() && party.is_empty() {
+            return true;
+        }
+        target.actors.keys().any(|&actor| {
+            let owner = summon_resolver::resolve(actor, &summon_data);
+            local.as_ref().is_some_and(|ids| ids.contains(&actor) || ids.contains(&owner))
+                || nicknames.get(&owner).is_some_and(|name| party.contains_key(name))
+        })
+    }
+
     pub fn snapshot_boss_fights(&mut self) -> Vec<FightRecord> {
         self.snapshot_boss_fights_inner(false)
     }
@@ -769,7 +792,9 @@ impl DpsCalculator {
 
         let boss_target_ids: Vec<i32> = combat_data.keys()
             .filter(|&&tid| {
-                if self.saved_boss_targets.contains(&tid) {
+                // Saved as ended and not hit since: nothing new to save.
+                let last_hit = combat_data.get(&tid).map(|td| td.last_damage_time).unwrap_or(0);
+                if self.saved_boss_targets.get(&tid).is_some_and(|&saved| saved >= last_hit) {
                     return false;
                 }
                 if let Some(&code) = mob_data.get(&tid) {
@@ -793,6 +818,9 @@ impl DpsCalculator {
 
             let battle_time = (target_data.last_damage_time - target_data.first_damage_time).max(0);
             if battle_time < 5_000 || target_data.total_damage <= 0 {
+                continue;
+            }
+            if !self.is_our_fight(target_data) {
                 continue;
             }
 
@@ -909,7 +937,7 @@ impl DpsCalculator {
             };
 
             if is_ended {
-                self.saved_boss_targets.insert(target_id);
+                self.saved_boss_targets.insert(target_id, target_data.last_damage_time);
             }
             records.push(record);
         }
@@ -1563,6 +1591,21 @@ mod tests {
         let rows: HashSet<i32> = meter(&raid).get_target_details(50_000, None)
             .skills.iter().map(|s| s.actor_id).collect();
         assert!(rows.contains(&1490) && rows.contains(&1491), "two Spiritmasters: both kept");
+    }
+
+    #[test]
+    fn a_fight_only_strangers_had_is_not_ours() {
+        let storage = Arc::new(DataStorage::new());
+        storage.append_damage(hit(11_345, 60_000, 1_000));     // a stranger alone on a boss
+        let calc = meter(&storage);
+        let combat = storage.get_combat_snapshot_light();
+        assert!(calc.is_our_fight(&combat[&60_000]), "not knowing who we are, everything counts");
+
+        storage.set_local_player_id(Some(2259));
+        storage.append_damage(hit(2259, 50_000, 1_000));        // ours
+        let combat = storage.get_combat_snapshot_light();
+        assert!(calc.is_our_fight(&combat[&50_000]));
+        assert!(!calc.is_our_fight(&combat[&60_000]), "a stranger's boss is not saved or uploaded");
     }
 
     #[test]
