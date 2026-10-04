@@ -25,7 +25,7 @@ use crate::capture::combat_port_detector::CombatPortDetector;
 use crate::capture::pcap_capturer::PcapCapturer;
 use crate::combat::capture_dispatcher::CaptureDispatcher;
 use crate::combat::data_storage::DataStorage;
-use crate::combat::dps_calculator::DpsCalculator;
+use crate::combat::dps_calculator::{DpsCalculator, PARTY_ROW_ID_BASE};
 use crate::combat::ping_tracker::PingTracker;
 use crate::config::settings::Settings;
 use crate::entity::dps_data::DpsData;
@@ -455,18 +455,24 @@ fn set_character_name(state: tauri::State<'_, AppState>, name: String, manual: O
     // last session is at best the same and at worst another character. A name
     // the player typed (`manual`) is taken anyway: it is their call, and the
     // game's next self record replaces it if it was wrong.
-    if state.data_storage.local_identity_from_self_record() && !manual.unwrap_or(false) {
+    let ds = &state.data_storage;
+    if ds.local_identity_from_self_record() && !manual.unwrap_or(false) {
         return;
     }
     let trimmed = name.trim().to_string();
-    state.data_storage.set_local_character_name(Some(name));
-    // If an actor ID was already bound, propagate the new character name
-    // into nickname_storage immediately so the main meter window updates.
+    ds.set_local_character_name(Some(name));
+    // If an actor ID was already bound, put the name on it now so the meter
+    // updates. Not permanent: the name follows the local id, not this one.
     if !trimmed.is_empty() {
-        if let Some(id) = state.data_storage.local_player_id() {
-            state.data_storage.set_permanent_nickname(id as i32, &trimmed);
+        if let Some(id) = ds.local_player_id().filter(|&id| !is_placeholder_id(id)) {
+            ds.set_local_nickname(id as i32, &trimmed);
         }
     }
+}
+
+/// A party member's row before their entity id is known. Never an entity.
+fn is_placeholder_id(actor_id: i64) -> bool {
+    actor_id >= PARTY_ROW_ID_BASE as i64
 }
 
 /// Another id the game itself named as the local player, which an automatic
@@ -474,14 +480,14 @@ fn set_character_name(state: tauri::State<'_, AppState>, name: String, manual: O
 /// last saw, and one holding a snapshot from before a zone change sent the
 /// old id back 23 s after the zone change: the name left the live entity and
 /// a whole boss fight showed no damage for the player (2026-10-04).
-fn game_named_local_id(state: &AppState, actor_id: i64) -> Option<i64> {
-    if !state.data_storage.local_identity_from_self_record() {
+fn game_named_local_id(ds: &DataStorage, actor_id: i64) -> Option<i64> {
+    if !ds.local_identity_from_self_record() {
         return None;
     }
-    let current = state.data_storage.local_player_id().filter(|&id| id != actor_id)?;
-    let name = state.data_storage.local_character_name()?;
+    let current = ds.local_player_id().filter(|&id| id != actor_id)?;
+    let name = ds.local_character_name()?;
     let name = name.trim();
-    let named = state.data_storage.get_nickname(current as i32);
+    let named = ds.get_nickname(current as i32);
     (!name.is_empty() && named.as_deref().map(str::trim) == Some(name)).then_some(current)
 }
 
@@ -494,33 +500,45 @@ fn bind_local_actor_id(
     manual: Option<bool>,
     view: Option<String>,
 ) {
+    bind_local_actor(&state.data_storage, actor_id, manual.unwrap_or(false), &view.unwrap_or_default());
+}
+
+fn bind_local_actor(ds: &DataStorage, actor_id: i64, manual: bool, view: &str) {
     if actor_id <= 0 {
         // Clear manual binding — auto-detection will take over
-        tracing::info!("bind_local_actor_id: cleared");
-        state.data_storage.set_local_player_id(None);
+        tracing::info!("bind_local_actor_id: cleared (from the {} window)", view);
+        ds.set_local_player_id(None);
         return;
     }
-    let view = view.unwrap_or_default();
-    if !manual.unwrap_or(false) {
-        if let Some(current) = game_named_local_id(&state, actor_id) {
+    // The UI bound a party placeholder at startup, which then kept your name
+    // for good.
+    if is_placeholder_id(actor_id) {
+        tracing::info!("bind_local_actor_id: ignored party placeholder {} from the {} window", actor_id, view);
+        return;
+    }
+    if !manual {
+        if let Some(current) = game_named_local_id(ds, actor_id) {
             tracing::info!("bind_local_actor_id: ignored {} from the {} window, the game named you {}", actor_id, view, current);
             return;
         }
     }
-    let already_bound = state.data_storage.local_player_id() == Some(actor_id);
+    let already_bound = ds.local_player_id() == Some(actor_id);
     if !already_bound {
         tracing::info!("bind_local_actor_id: {} (from the {} window)", actor_id, view);
-        state.data_storage.set_local_player_id(Some(actor_id));
+        ds.set_local_player_id(Some(actor_id));
     }
-    // Always (re)apply the permanent nickname if we have a character name,
-    // even when the actor_id was already bound — this handles the case where
-    // the character name was set AFTER the actor_id binding.
-    if let Some(name) = state.data_storage.local_character_name() {
+    // Always (re)apply the name if we have a character name, even when the
+    // actor_id was already bound — this handles the case where the character
+    // name was set AFTER the actor_id binding. Only an id the player chose
+    // keeps it for good.
+    if let Some(name) = ds.local_character_name() {
         let trimmed = name.trim();
         if !trimmed.is_empty() {
-            let current = state.data_storage.get_nickname(actor_id as i32);
-            if current.as_deref() != Some(trimmed) {
-                state.data_storage.set_permanent_nickname(actor_id as i32, trimmed);
+            let current = ds.get_nickname(actor_id as i32);
+            if manual {
+                ds.set_permanent_nickname(actor_id as i32, trimmed);
+            } else if current.as_deref() != Some(trimmed) {
+                ds.set_local_nickname(actor_id as i32, trimmed);
             }
         }
     }
@@ -534,12 +552,23 @@ fn bind_local_nickname(
     manual: Option<bool>,
     view: Option<String>,
 ) {
-    if !manual.unwrap_or(false) {
-        if let Some(current) = game_named_local_id(&state, actor_id) {
+    bind_local_name(&state.data_storage, actor_id, &nickname, manual.unwrap_or(false), &view.unwrap_or_default());
+}
+
+fn bind_local_name(ds: &DataStorage, actor_id: i64, nickname: &str, manual: bool, view: &str) {
+    if actor_id <= 0 || nickname.trim().is_empty() {
+        return;
+    }
+    if is_placeholder_id(actor_id) {
+        tracing::info!("bind_local_nickname: ignored party placeholder {} from the {} window", actor_id, view);
+        return;
+    }
+    if !manual {
+        if let Some(current) = game_named_local_id(ds, actor_id) {
             tracing::info!(
                 "bind_local_nickname: ignored {} from the {} window, the game named you {}",
                 actor_id,
-                view.unwrap_or_default(),
+                view,
                 current
             );
             return;
@@ -548,22 +577,21 @@ fn bind_local_nickname(
     // Always update if the stored nickname differs from the requested one.
     // Previously we skipped if the actor had ANY nickname, which left stale
     // false-positive scan results stuck in place.
-    let current = state.data_storage.get_nickname(actor_id as i32);
-    if state.data_storage.local_player_id() == Some(actor_id)
-        && current.as_deref() == Some(nickname.as_str())
-    {
+    let current = ds.get_nickname(actor_id as i32);
+    if ds.local_player_id() == Some(actor_id) && current.as_deref() == Some(nickname) && !manual {
         return;
     }
     // Same as set_character_name: the game's name for the local player wins.
-    if state.data_storage.local_identity_from_self_record()
-        && state.data_storage.local_character_name().as_deref() != Some(nickname.trim())
-    {
+    if ds.local_identity_from_self_record() && ds.local_character_name().as_deref() != Some(nickname.trim()) {
         return;
     }
-    tracing::info!("bind_local_nickname: {} -> '{}' (was {:?})", actor_id, nickname, current);
-    state.data_storage.set_local_player_id(Some(actor_id));
-    // Use set_permanent_nickname so it survives reset_nicknames() calls
-    state.data_storage.set_permanent_nickname(actor_id as i32, &nickname);
+    tracing::info!("bind_local_nickname: {} -> '{}' (was {:?}, from the {} window)", actor_id, nickname, current, view);
+    ds.set_local_player_id(Some(actor_id));
+    if manual {
+        ds.set_permanent_nickname(actor_id as i32, nickname);
+    } else {
+        ds.set_local_nickname(actor_id as i32, nickname);
+    }
 }
 
 #[tauri::command]
@@ -635,7 +663,24 @@ fn set_manual_device(state: tauri::State<'_, AppState>, device: String) {
 
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
+    save_fights_before_exit(&app);
     app.exit(0);
+}
+
+/// Save every fight worth keeping before the meter closes, in progress or
+/// not. Only the history record: a slice or an upload would hold up the exit.
+fn save_fights_before_exit(app: &tauri::AppHandle) {
+    static DONE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    if DONE.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    let Some(state) = app.try_state::<AppState>() else { return };
+    let records = state.dps_calculator.lock().snapshot_boss_fights_force();
+    for record in &records {
+        if let Err(e) = state.fight_history.save_fight(record) {
+            tracing::warn!("Failed to save {} on exit: {}", record.id, e);
+        }
+    }
 }
 
 #[tauri::command]
@@ -686,7 +731,8 @@ fn is_capture_suspended(state: tauri::State<'_, AppState>) -> bool {
 #[tauri::command]
 fn log_from_ui(message: String) {
     // A problem only the webview can see (an icon the CDN would not serve, say),
-    // for debug.log. The UI keeps these few; this keeps each one short.
+    // or a UI debug line, for debug.log. The UI rate-limits them; this keeps
+    // each one short.
     let message: String = message.chars().take(300).collect();
     tracing::warn!("UI: {message}");
 }
@@ -1759,8 +1805,14 @@ fn debug_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
 
 #[tauri::command]
 async fn replay_file(state: tauri::State<'_, AppState>, file_path: String) -> Result<String, String> {
-    // Reset existing data before replay
-    state.dps_calculator.lock().restart_target_selection(true);
+    // Keep the live fights, then reset existing data before replay
+    {
+        let mut calc = state.dps_calculator.lock();
+        for record in calc.snapshot_boss_fights_force() {
+            let _ = state.fight_history.save_fight(&record);
+        }
+        calc.restart_target_selection(true);
+    }
     state.data_storage.reset_nicknames();
 
     // Feed packets directly to StreamProcessor, bypassing CaptureDispatcher
@@ -2341,6 +2393,10 @@ pub fn run() {
                             // Run synchronously but only if lock is available
                             if let Some(mut calc) = state.dps_calculator.try_lock() {
                                 let records = calc.snapshot_boss_fights();
+                                let finished: HashSet<String> = records.iter()
+                                    .filter(|r| calc.fight_finished(r))
+                                    .map(|r| r.id.clone())
+                                    .collect();
                                 drop(calc);
                                 for record in &records {
                                     let _ = state.fight_history.save_fight(record);
@@ -2358,9 +2414,8 @@ pub fn run() {
                                     share::prune_slices(&state.app_data_dir);
                                 }
                                 if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
-                                    let now = crate::clock::now_ms();
                                     for record in records.into_iter()
-                                        .filter(|r| share::wants_auto_upload(&state.app_data_dir, r, now))
+                                        .filter(|r| share::wants_auto_upload(&state.app_data_dir, r, finished.contains(&r.id)))
                                     {
                                         auto_upload(handle_save.clone(), record);
                                     }
@@ -2512,6 +2567,61 @@ pub fn run() {
             fetch_url,
             show_update_window,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app, event| {
+            // However the meter closes, the fight in progress is kept.
+            if let tauri::RunEvent::Exit = event {
+                save_fights_before_exit(app);
+            }
+        });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_party_placeholder_is_never_bound_as_you() {
+        let ds = DataStorage::new();
+        ds.set_local_character_name(Some("Seralth".into()));
+        bind_local_actor(&ds, 90_000_001, true, "settings");
+        bind_local_name(&ds, 90_000_001, "Seralth", true, "settings");
+        assert_eq!(ds.local_player_id(), None);
+        assert_eq!(ds.get_nickname(90_000_001), None);
+    }
+
+    #[test]
+    fn an_automatic_bind_does_not_keep_your_name_on_an_old_id() {
+        let ds = DataStorage::new();
+        ds.set_local_character_name(Some("Seralth".into()));
+        bind_local_actor(&ds, 6925, false, "main");
+        assert_eq!(ds.get_nickname(6925).as_deref(), Some("Seralth"));
+        // The next zone: the game names you on a new id.
+        ds.append_nickname_authoritative(7577, "Seralth");
+        ds.set_local_identity_from_game(7577, Some("Seralth".into()));
+        ds.reset_nicknames();
+        assert_eq!(ds.get_nickname(6925), None);
+        assert_eq!(ds.find_id_by_nickname("Seralth"), Some(7577));
+    }
+
+    #[test]
+    fn a_window_cannot_move_you_off_the_id_the_game_named() {
+        let ds = DataStorage::new();
+        ds.append_nickname_authoritative(7577, "Seralth");
+        ds.set_local_identity_from_game(7577, Some("Seralth".into()));
+        bind_local_actor(&ds, 6925, false, "details");
+        bind_local_name(&ds, 6925, "Seralth", false, "details");
+        assert_eq!(ds.local_player_id(), Some(7577));
+        assert_eq!(ds.get_nickname(6925), None);
+    }
+
+    #[test]
+    fn a_cleared_id_unbinds() {
+        let ds = DataStorage::new();
+        bind_local_actor(&ds, 4321, true, "settings");
+        assert_eq!(ds.local_player_id(), Some(4321));
+        bind_local_actor(&ds, 0, true, "settings");
+        assert_eq!(ds.local_player_id(), None);
+    }
 }

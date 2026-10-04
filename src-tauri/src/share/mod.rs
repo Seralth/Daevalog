@@ -641,19 +641,17 @@ pub fn prune_slices(app_data_dir: &Path) {
 /// it on: an upload publishes a fight, and that is theirs to decide.
 pub const AUTO_UPLOAD_KEY: &str = "dpsMeter.autoUpload";
 
-/// How long after the last hit a fight counts as over. The same rule the
-/// snapshot uses to stop re-saving a boss.
-const ENDED_AFTER_MS: i64 = 10_000;
-
 /// Should the auto-save upload this fight now?
 ///
 /// Only a finished fight, once, with its packets behind it. A boss still being
 /// fought is re-saved every 30 seconds, and uploading those partial records
-/// would publish a fight that has not happened yet.
-pub fn wants_auto_upload(app_data_dir: &Path, record: &FightRecord, now_ms: i64) -> bool {
+/// would publish a fight that has not happened yet. `finished` is the
+/// meter's word that the fight cannot go on (`DpsCalculator::fight_finished`):
+/// ten seconds of quiet was not enough, a boss phase can pause longer.
+pub fn wants_auto_upload(app_data_dir: &Path, record: &FightRecord, finished: bool) -> bool {
     let meta = read_meta(app_data_dir, &record.id);
     !record.is_train
-        && now_ms - (record.start_time_ms + record.duration_ms) >= ENDED_AFTER_MS
+        && finished
         && slice_path(app_data_dir, &record.id).exists()
         && meta.url.is_none()
         // A fight that already failed once is the retry schedule's.
@@ -929,17 +927,16 @@ mod upload_tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(slices_dir(&dir)).unwrap();
         let boss = fight("auto_9_1000", 1_000, 60_000, false);
-        let ended = 1_000 + 60_000 + ENDED_AFTER_MS;
 
-        assert!(!wants_auto_upload(&dir, &boss, ended), "no slice, nothing to send");
+        assert!(!wants_auto_upload(&dir, &boss, true), "no slice, nothing to send");
         std::fs::write(slice_path(&dir, &boss.id), b"x").unwrap();
-        assert!(!wants_auto_upload(&dir, &boss, ended - 1), "still being fought");
-        assert!(wants_auto_upload(&dir, &boss, ended));
-        assert!(!wants_auto_upload(&dir, &fight("auto_9_1000", 1_000, 60_000, true), ended),
+        assert!(!wants_auto_upload(&dir, &boss, false), "still being fought");
+        assert!(wants_auto_upload(&dir, &boss, true));
+        assert!(!wants_auto_upload(&dir, &fight("auto_9_1000", 1_000, 60_000, true), true),
                 "a training dummy is never a log");
         write_meta(&dir, &boss.id, &SliceMeta { uploader_actor_id: None,
                    url: Some("https://a2tools.app/logs/x".into()), visibility: None, ..Default::default() });
-        assert!(!wants_auto_upload(&dir, &boss, ended), "already uploaded");
+        assert!(!wants_auto_upload(&dir, &boss, true), "already uploaded");
         let _ = std::fs::remove_dir_all(&dir);
     }
 

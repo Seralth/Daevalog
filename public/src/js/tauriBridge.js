@@ -117,6 +117,7 @@
   let cachedDetailsContext = null;
   let cachedAppVersion = "";     // populated on startup from Tauri backend
   let captureSuspended = false;  // the suspend button's state; the backend's is the truth
+  const recentDebugLines = new Map(); // logDebug message -> when it was last sent
 
   // A reloaded window picks the suspend state back up from the backend.
   invoke("is_capture_suspended").then((v) => {
@@ -372,37 +373,22 @@
     setCharacterName(name, manual) {
       invoke("set_character_name", { name, manual: !!manual }).catch(() => {});
     },
-    // `manual`: typed in Settings. Other binds only echo the backend's id, and
-    // the backend ignores one that would move the game's name for you.
+    // Only the Settings field calls this (`manual`: the player typed it);
+    // the backend decides who you are otherwise. 0 clears the binding.
     bindLocalActorId(actorId, manual) {
       const id = Number(actorId);
-      if (!Number.isFinite(id) || id <= 0) return;
-      // Always invoke — the backend is idempotent and needs to reapply the
-      // permanent nickname if the character name was set after the initial bind.
-      window._boundLocalActorId = id;
+      if (!Number.isFinite(id) || id < 0) return;
       invoke("bind_local_actor_id", { actorId: id, manual: !!manual, view: viewMode }).catch(() => {});
-      // Also bind nickname if we can find it from any source
-      const name =
-        window._dpsApp?.USER_NAME ||
-        document.querySelector(".characterNameInput")?.value?.trim() ||
-        "";
-      if (name) {
-        this.bindLocalNickname(actorId, name, manual);
-      }
       // Force immediate meter refresh so the name shows right away
       invoke("get_dps_snapshot").then((dps) => {
         cachedDpsJson = JSON.stringify(dps);
       }).catch(() => {});
-    },
-    setLocalPlayerId(actorId) {
-      this.bindLocalActorId(actorId);
     },
     bindLocalNickname(actorId, nickname, manual) {
       const id = Number(actorId);
       if (!Number.isFinite(id) || id <= 0 || !nickname) return;
       // Always invoke — backend handles idempotency and will refresh the
       // nickname even if the (id:nickname) pair was previously sent.
-      window._boundLocalNickname = `${id}:${nickname}`;
       invoke("bind_local_nickname", { actorId: id, nickname, manual: !!manual, view: viewMode }).catch(() => {});
     },
     setAllTargetsWindowMs(ms) {
@@ -574,7 +560,21 @@
       invoke("set_debug_logging", { enabled: !!enabled }).catch(() => {});
     },
     getAion2WindowTitle() { return window._cachedAion2Title ?? null; },
-    logDebug() {},
+    // Into debug.log, at most once per 10 s for the same message: every
+    // window runs the meter loop and would repeat it.
+    logDebug(message) {
+      const text = `[${viewMode}] ${String(message)}`;
+      const now = Date.now();
+      const last = recentDebugLines.get(text);
+      if (last !== undefined && now - last < 10000) return;
+      if (recentDebugLines.size > 200) {
+        for (const [line, at] of recentDebugLines) {
+          if (now - at >= 10000) recentDebugLines.delete(line);
+        }
+      }
+      recentDebugLines.set(text, now);
+      invoke("log_from_ui", { message: text }).catch(() => {});
+    },
 
     getFightHistory() {
       // Trigger async refresh for next call

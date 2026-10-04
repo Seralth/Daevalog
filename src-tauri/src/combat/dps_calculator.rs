@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use crate::clock::now_ms;
-use crate::combat::data_storage::{DataStorage, TargetCombatData};
+use crate::combat::data_storage::{DataStorage, HealSkillData, TargetCombatData, IDLE_RESET_MS, MIN_SAVED_FIGHT_MS};
 use crate::combat::ping_tracker::PingTracker;
 use crate::entity::details_context::*;
 use crate::entity::dps_data::DpsData;
@@ -15,7 +15,7 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 /// Synthetic row ids for party members whose entity id we do not know yet. Sits
 /// above the entity-id range (real ids top out at 9,999,999) so it can never
 /// collide, and stays positive because the frontend discards non-positive ids.
-const PARTY_ROW_ID_BASE: i32 = 90_000_000;
+pub const PARTY_ROW_ID_BASE: i32 = 90_000_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TargetSelectionMode {
@@ -64,7 +64,9 @@ pub struct DpsCalculator {
     last_known_local_id: Option<i64>,
     all_targets_window_ms: i64,
     nickname_job_cache: HashMap<String, String>,
-    saved_boss_targets: HashSet<i32>,
+    /// Fights saved for good, as (target, segment start) -> last hit at the
+    /// time. A segment that goes on after that is saved again.
+    saved_fights: HashMap<(i32, i64), i64>,
 }
 
 impl DpsCalculator {
@@ -86,7 +88,7 @@ impl DpsCalculator {
             last_known_local_id: None,
             all_targets_window_ms: 0,
             nickname_job_cache: HashMap::new(),
-            saved_boss_targets: HashSet::new(),
+            saved_fights: HashMap::new(),
         }
     }
 
@@ -96,8 +98,9 @@ impl DpsCalculator {
             // Recompute on the next update even without new damage: the
             // cached result still names the old mode and its target, so the
             // meter went on as if nothing had changed until someone hit
-            // something.
+            // something. Its rows are the old mode's too, so they go.
             self.last_damage_gen = -1;
+            self.last_dps_snapshot = None;
         }
         self.target_selection_mode = mode;
     }
@@ -120,15 +123,21 @@ impl DpsCalculator {
 
     pub fn mark_all_targets_saved(&mut self) {
         let combat = self.data_storage.get_combat_snapshot_light();
-        for &tid in combat.keys() {
-            self.saved_boss_targets.insert(tid);
+        for (&tid, td) in &combat {
+            self.saved_fights.insert((tid, td.first_damage_time), td.last_damage_time);
         }
+    }
+
+    /// Whether `record` is a fight that is over and saved for good: it cannot
+    /// go on, so it is safe to upload.
+    pub fn fight_finished(&self, record: &FightRecord) -> bool {
+        self.saved_fights.get(&(record.target_id, record.start_time_ms))
+            == Some(&(record.start_time_ms + record.duration_ms))
     }
 
     pub fn restart_target_selection(&mut self, clear_damage: bool) {
         self.current_target = 0;
         self.last_dps_snapshot = None;
-        self.saved_boss_targets.clear();
         self.last_damage_gen = -1;
         if clear_damage {
             self.data_storage.flush();
@@ -141,7 +150,6 @@ impl DpsCalculator {
         // state so the meter resets this cycle instead of returning the stale snapshot.
         if self.data_storage.take_combat_reset_requested() {
             self.last_dps_snapshot = None;
-            self.saved_boss_targets.clear();
             self.last_damage_gen = -1;
             self.current_target = 0;
             self.data_storage.set_current_target(0);
@@ -232,14 +240,25 @@ impl DpsCalculator {
             combat_data.get(&self.current_target)
                 .map(|td| (td.last_damage_time - td.first_damage_time).max(0))
                 .unwrap_or(0)
+        } else if self.target_selection_mode == TargetSelectionMode::TrainTargets {
+            // Your time on the dummies, not anyone's who hit them before you.
+            let mine = self.resolve_local_ids(&summon_data).unwrap_or_default();
+            active_time(target_ids.iter().filter_map(|tid| combat_data.get(tid)).filter_map(|td| {
+                let ours = td.actors.iter()
+                    .filter(|(a, _)| mine.contains(&summon_resolver::resolve(**a, &summon_data)));
+                let (first, last) = ours.fold((i64::MAX, i64::MIN), |(f, l), (_, ad)| {
+                    (f.min(ad.first_damage_time), l.max(ad.last_damage_time))
+                });
+                (first <= last).then_some((first, last))
+            }), i64::MIN)
         } else if !target_ids.is_empty() {
-            // Multi-target: use max battle time across selected targets
-            let since = window_since.unwrap_or(i64::MIN);
-            target_ids.iter()
+            // Multi-target: the time anything selected was being fought, gaps
+            // between pulls left out. The longest single target made ten
+            // pulls over five minutes read as one pull's time.
+            active_time(target_ids.iter()
                 .filter_map(|tid| combat_data.get(tid))
-                .map(|td| (td.last_damage_time - td.first_damage_time.max(since)).max(0))
-                .max()
-                .unwrap_or(0)
+                .map(|td| (td.first_damage_time, td.last_damage_time)),
+                window_since.unwrap_or(i64::MIN))
         } else {
             0
         };
@@ -574,15 +593,25 @@ impl DpsCalculator {
                 }
             }
             TargetSelectionMode::BossTargets => {
-                let boss_targets: Vec<_> = combat_data.keys()
-                    .filter(|&&tid| {
-                        if let Some(&mob_code) = mob_data.get(&tid) {
-                            self.npc_lookup.is_boss(mob_code)
-                        } else {
-                            false
-                        }
+                // Once you are identified, only what you or your party hit:
+                // a stranger's field boss nearby took the meter over.
+                let ours = self.ours_ids(nickname_data, summon_data);
+                let is_ours = |td: &TargetCombatData| ours.as_ref().is_none_or(|ids| td.actors.keys()
+                    .any(|&a| ids.contains(&summon_resolver::resolve(a, summon_data))));
+                let newest_hit = combat_data.values()
+                    .filter(|td| is_ours(*td))
+                    .map(|td| td.last_damage_time)
+                    .max()
+                    .unwrap_or(i64::MIN);
+                let is_boss = |tid: i32| mob_data.get(&tid).is_some_and(|&code| self.npc_lookup.is_boss(code));
+                let boss_targets: Vec<_> = combat_data.iter()
+                    .filter(|(tid, td)| {
+                        is_boss(**tid)
+                            && is_ours(*td)
+                            // A dead boss gives way once you fight something newer.
+                            && !(td.last_damage_time < newest_hit && self.data_storage.is_entity_dead(**tid))
                     })
-                    .cloned()
+                    .map(|(&tid, _)| tid)
                     .collect();
 
                 if let Some(&best) = boss_targets.iter()
@@ -602,16 +631,9 @@ impl DpsCalculator {
                     // that put strangers fighting their own mobs on your
                     // meter (2026-10-04: one player, then another, each alone
                     // on a mob you never touched).
-                    let ours = self.resolve_local_ids(summon_data).map(|mut ids| {
-                        let party = self.data_storage.get_party_members();
-                        ids.extend(nickname_data.iter()
-                            .filter(|(_, name)| party.contains_key(name.as_str()))
-                            .map(|(&id, _)| id));
-                        ids
-                    });
+                    // Any boss here is one that gave way above.
                     let best = combat_data.iter()
-                        .filter(|(_, td)| ours.as_ref().is_none_or(|ids| td.actors.keys()
-                            .any(|&a| ids.contains(&summon_resolver::resolve(a, summon_data)))))
+                        .filter(|(tid, td)| !is_boss(**tid) && is_ours(*td))
                         .max_by_key(|(_, td)| td.total_damage);
                     match best {
                         Some((&id, _)) => {
@@ -631,11 +653,14 @@ impl DpsCalculator {
                 (all, "All Targets".to_string(), 0)
             }
             TargetSelectionMode::TrainTargets => {
-                let trains: HashSet<i32> = combat_data.keys()
-                    .filter(|&&tid| {
-                        mob_data.get(&tid).is_some_and(|&code| self.npc_lookup.is_training_dummy(code))
+                // The dummies you hit; nothing until the meter knows you.
+                let mine = self.resolve_local_ids(summon_data).unwrap_or_default();
+                let trains: HashSet<i32> = combat_data.iter()
+                    .filter(|(tid, td)| {
+                        mob_data.get(*tid).is_some_and(|&code| self.npc_lookup.is_training_dummy(code))
+                            && td.actors.keys().any(|&a| mine.contains(&summon_resolver::resolve(a, summon_data)))
                     })
-                    .cloned()
+                    .map(|(&tid, _)| tid)
                     .collect();
                 (trains, "Train".to_string(), 0)
             }
@@ -695,6 +720,18 @@ impl DpsCalculator {
         Some(ids)
     }
 
+    /// You, your summons and your party, by entity id; `None` until the
+    /// meter knows who you are.
+    fn ours_ids(&self, nickname_data: &HashMap<i32, String>, summon_data: &HashMap<i32, i32>) -> Option<HashSet<i32>> {
+        self.resolve_local_ids(summon_data).map(|mut ids| {
+            let party = self.data_storage.get_party_members();
+            ids.extend(nickname_data.iter()
+                .filter(|(_, name)| party.contains_key(name.as_str()))
+                .map(|(&id, _)| id));
+            ids
+        })
+    }
+
     fn cached_job(&self, nickname: &str) -> Option<String> {
         let key = nickname.trim().to_lowercase();
         if key.is_empty() || key.chars().all(|c| c.is_ascii_digit()) { return None; }
@@ -720,47 +757,41 @@ impl DpsCalculator {
 
     fn snapshot_boss_fights_inner(&mut self, force: bool) -> Vec<FightRecord> {
         let mob_data = self.data_storage.get_mob_data();
+        let now_ms = crate::clock::now_ms();
+        let mut records = Vec::new();
+
+        // Fights already cleared out of the live data (an idle restart on the
+        // same mob, a boss pull, a reset, a zone change): saved as they ended.
+        for seg in self.data_storage.take_ended_segments() {
+            let td = &seg.data;
+            if !self.is_saved_fight_target(&mob_data, td) || self.saved_fights.get(&(td.target_id, td.first_damage_time)) == Some(&td.last_damage_time) {
+                continue;
+            }
+            let details = self.details_for(td, seg.max_hp, &seg.heals, None);
+            let stats = actor_stats([td].into_iter());
+            records.push(self.build_record(td, details, &stats, &mob_data));
+            self.saved_fights.insert((td.target_id, td.first_damage_time), td.last_damage_time);
+        }
+
         // Light snapshot: only used for target filtering + per-actor aggregate
         // stats here; the saved record's timestamps come from get_target_details.
         let combat_data = self.data_storage.get_combat_snapshot_light();
-        // Once per snapshot rather than once per actor: the roster is a clone
-        // behind a lock, and it does not change between targets here.
-        let party_members = self.data_storage.get_party_members();
-        let supporters = self.data_storage.supporters();
-        let dungeon_id = self.data_storage.current_dungeon_id();
-        let now_ms = crate::clock::now_ms();
-
-        let mut records = Vec::new();
-
-        let boss_target_ids: Vec<i32> = combat_data.keys()
-            .filter(|&&tid| {
-                if self.saved_boss_targets.contains(&tid) {
-                    return false;
-                }
-                if let Some(&code) = mob_data.get(&tid) {
-                    self.npc_lookup.is_boss(code) || self.npc_lookup.is_training_dummy(code)
-                } else {
-                    false
-                }
+        let candidates: Vec<i32> = combat_data.iter()
+            .filter(|(tid, td)| {
+                self.saved_fights.get(&(**tid, td.first_damage_time)) != Some(&td.last_damage_time)
+                    && self.is_saved_fight_target(&mob_data, td)
             })
-            .cloned()
+            .map(|(&tid, _)| tid)
             .collect();
 
-        if !boss_target_ids.is_empty() {
-            tracing::trace!("snapshot_boss_fights: {} candidate targets", boss_target_ids.len());
+        if !candidates.is_empty() {
+            tracing::trace!("snapshot_boss_fights: {} candidate targets", candidates.len());
         }
+        let stats = actor_stats(combat_data.values());
 
-        for target_id in boss_target_ids {
-            let target_data = match combat_data.get(&target_id) {
-                Some(td) => td,
-                None => continue,
-            };
-
-            let battle_time = (target_data.last_damage_time - target_data.first_damage_time).max(0);
-            if battle_time < 5_000 || target_data.total_damage <= 0 {
-                continue;
-            }
-
+        for target_id in candidates {
+            let Some(target_data) = combat_data.get(&target_id) else { continue };
+            let battle_time = target_data.last_damage_time - target_data.first_damage_time;
             let idle_time = now_ms - target_data.last_damage_time;
             let is_ended = idle_time >= 10_000;
             let is_periodic = battle_time >= 15_000;
@@ -768,118 +799,132 @@ impl DpsCalculator {
                 continue;
             }
 
-            // Generate fight record
             let details = self.get_target_details(target_id, None);
-            let nickname_data = self.data_storage.get_nicknames();
-            let summon_data_snap = self.data_storage.get_summon_data();
-
-            let mut record_actors: HashMap<i32, (String, String)> = HashMap::new();
-            for skill in &details.skills {
-                let uid = skill.actor_id;
-                record_actors.entry(uid).or_insert_with(|| {
-                    let nick = resolve_nickname(uid, &nickname_data, &summon_data_snap);
-                    let job = if !skill.job.is_empty() { skill.job.clone() }
-                        else { JobClass::convert_from_skill(skill.code).map(|j| j.class_name().to_string()).unwrap_or_default() };
-                    (nick, job)
-                });
-                let entry = record_actors.get_mut(&uid).unwrap();
-                if entry.1.is_empty() && !skill.job.is_empty() {
-                    entry.1 = skill.job.clone();
-                }
+            records.push(self.build_record(target_data, details, &stats, &mob_data));
+            // Saved for good only once the next hit would start a new fight:
+            // a pause in a boss fight is not its end, and the record is
+            // saved again (same id) while the fight goes on.
+            if idle_time > IDLE_RESET_MS {
+                self.saved_fights.insert((target_id, target_data.first_damage_time), target_data.last_damage_time);
             }
-
-            let local_id = self.data_storage.local_player_id().unwrap_or(-1) as i32;
-            let actors: Vec<DetailsActorSummary> = record_actors.iter()
-                .map(|(&id, (nick, job))| {
-                    let display_nick = if id == local_id {
-                        nick.clone()
-                    } else {
-                        crate::entity::fight_record::obscure_nickname(nick)
-                    };
-                    let job_class = JobClass::convert_from_skill(
-                        details.skills.iter()
-                            .find(|s| s.actor_id == id && !s.job.is_empty())
-                            .map(|s| s.code)
-                            .unwrap_or(0)
-                    );
-                    // Aggregate per-actor stats across all targets
-                    let (mut party_heal, mut regen, mut dmg_recv, mut hits_recv) = (0i64, 0i64, 0i64, 0i32);
-                    for td in combat_data.values() {
-                        if let Some(ad) = td.actors.get(&id) {
-                            party_heal += ad.party_heal;
-                            regen += ad.regen;
-                            dmg_recv += ad.damage_received;
-                            hits_recv += ad.hits_received;
-                        }
-                    }
-                    // Joined on the unobscured nickname: the roster is keyed by
-                    // name, and `display_nick` above has already been masked for
-                    // everyone but the local player.
-                    let roster = party_members.get(nick.as_str());
-                    DetailsActorSummary {
-                        actor_id: id,
-                        nickname: display_nick,
-                        job: job.clone(),
-                        job_id: job_class.map(|j| j.class_prefix()).unwrap_or(0),
-                        party_heal,
-                        regen,
-                        damage_received: dmg_recv,
-                        hits_received: hits_recv,
-                        dbid: roster.map(|m| m.dbid).unwrap_or(0),
-                        server_id: roster.map(|m| m.server_id).unwrap_or(0),
-                        is_supporter: supporters
-                            .contains(nick, roster.map(|m| m.dbid).unwrap_or(0)),
-                        level: roster.map(|m| m.level).unwrap_or(0),
-                        gear_score: roster.map(|m| m.gear_score).unwrap_or(0),
-                        combat_power: roster.map(|m| m.combat_power).unwrap_or(0),
-                    }
-                })
-                .collect();
-
-            let mob_code = mob_data.get(&target_id).copied().unwrap_or(0);
-            let boss_name = self.resolve_target_name(target_id);
-
-            let job_ids: Vec<i32> = actors.iter()
-                .filter(|a| a.job_id > 0)
-                .map(|a| a.job_id)
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect();
-            let jobs: Vec<String> = actors.iter()
-                .filter(|a| !a.job.is_empty() && a.job != "Unknown")
-                .map(|a| a.job.clone())
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect();
-
-            let id = format!("auto_{}_{}", target_id, target_data.first_damage_time);
-
-            let is_train = self.npc_lookup.is_training_dummy(mob_code);
-            let record = FightRecord {
-                id,
-                boss_name,
-                target_id,
-                start_time_ms: target_data.first_damage_time,
-                duration_ms: battle_time,
-                total_damage: target_data.total_damage as i32,
-                jobs,
-                job_ids,
-                details,
-                actors,
-                is_train,
-                app_version: crate::entity::fight_record::APP_VERSION.to_string(),
-                mob_code,
-                dungeon_id,
-                server_id: self.data_storage.fight_server_id(),
-            };
-
-            if is_ended {
-                self.saved_boss_targets.insert(target_id);
-            }
-            records.push(record);
         }
 
+        // Bounded: entries for fights over an hour ago are no use.
+        if self.saved_fights.len() > 256 {
+            self.saved_fights.retain(|_, &mut last| now_ms - last < 3_600_000);
+        }
         records
+    }
+
+    /// A boss or a training dummy, fought long enough to keep.
+    fn is_saved_fight_target(&self, mob_data: &HashMap<i32, i32>, td: &TargetCombatData) -> bool {
+        mob_data.get(&td.target_id).is_some_and(|&code| self.npc_lookup.is_boss(code) || self.npc_lookup.is_training_dummy(code))
+            && td.total_damage > 0
+            && td.last_damage_time - td.first_damage_time >= MIN_SAVED_FIGHT_MS
+    }
+
+    fn build_record(
+        &self,
+        target_data: &TargetCombatData,
+        details: TargetDetailsResponse,
+        stats: &HashMap<i32, (i64, i64, i64, i32)>,
+        mob_data: &HashMap<i32, i32>,
+    ) -> FightRecord {
+        let target_id = target_data.target_id;
+        let party_members = self.data_storage.get_party_members();
+        let supporters = self.data_storage.supporters();
+        let dungeon_id = self.data_storage.current_dungeon_id();
+        let battle_time = (target_data.last_damage_time - target_data.first_damage_time).max(0);
+        let nickname_data = self.data_storage.get_nicknames();
+        let summon_data_snap = self.data_storage.get_summon_data();
+
+        let mut record_actors: HashMap<i32, (String, String)> = HashMap::new();
+        for skill in &details.skills {
+            let uid = skill.actor_id;
+            record_actors.entry(uid).or_insert_with(|| {
+                let nick = resolve_nickname(uid, &nickname_data, &summon_data_snap);
+                let job = if !skill.job.is_empty() { skill.job.clone() }
+                    else { JobClass::convert_from_skill(skill.code).map(|j| j.class_name().to_string()).unwrap_or_default() };
+                (nick, job)
+            });
+            let entry = record_actors.get_mut(&uid).unwrap();
+            if entry.1.is_empty() && !skill.job.is_empty() {
+                entry.1 = skill.job.clone();
+            }
+        }
+
+        let local_id = self.data_storage.local_player_id().unwrap_or(-1) as i32;
+        let actors: Vec<DetailsActorSummary> = record_actors.iter()
+            .map(|(&id, (nick, job))| {
+                let display_nick = if id == local_id {
+                    nick.clone()
+                } else {
+                    crate::entity::fight_record::obscure_nickname(nick)
+                };
+                let job_class = JobClass::convert_from_skill(
+                    details.skills.iter()
+                        .find(|s| s.actor_id == id && !s.job.is_empty())
+                        .map(|s| s.code)
+                        .unwrap_or(0)
+                );
+                let (party_heal, regen, dmg_recv, hits_recv) = stats.get(&id).copied().unwrap_or_default();
+                // Joined on the unobscured nickname: the roster is keyed by
+                // name, and `display_nick` above has already been masked for
+                // everyone but the local player.
+                let roster = party_members.get(nick.as_str());
+                DetailsActorSummary {
+                    actor_id: id,
+                    nickname: display_nick,
+                    job: job.clone(),
+                    job_id: job_class.map(|j| j.class_prefix()).unwrap_or(0),
+                    party_heal,
+                    regen,
+                    damage_received: dmg_recv,
+                    hits_received: hits_recv,
+                    dbid: roster.map(|m| m.dbid).unwrap_or(0),
+                    server_id: roster.map(|m| m.server_id).unwrap_or(0),
+                    is_supporter: supporters
+                        .contains(nick, roster.map(|m| m.dbid).unwrap_or(0)),
+                    level: roster.map(|m| m.level).unwrap_or(0),
+                    gear_score: roster.map(|m| m.gear_score).unwrap_or(0),
+                    combat_power: roster.map(|m| m.combat_power).unwrap_or(0),
+                }
+            })
+            .collect();
+
+        let mob_code = mob_data.get(&target_id).copied().unwrap_or(0);
+        let boss_name = self.resolve_target_name(target_id);
+
+        let job_ids: Vec<i32> = actors.iter()
+            .filter(|a| a.job_id > 0)
+            .map(|a| a.job_id)
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+        let jobs: Vec<String> = actors.iter()
+            .filter(|a| !a.job.is_empty() && a.job != "Unknown")
+            .map(|a| a.job.clone())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        FightRecord {
+            id: format!("auto_{}_{}", target_id, target_data.first_damage_time),
+            boss_name,
+            target_id,
+            start_time_ms: target_data.first_damage_time,
+            duration_ms: battle_time,
+            total_damage: target_data.total_damage as i32,
+            jobs,
+            job_ids,
+            details,
+            actors,
+            is_train: self.npc_lookup.is_training_dummy(mob_code),
+            app_version: crate::entity::fight_record::APP_VERSION.to_string(),
+            mob_code,
+            dungeon_id,
+            server_id: self.data_storage.fight_server_id(),
+        }
     }
 
     pub fn get_details_context(&self) -> DetailsContext {
@@ -1049,10 +1094,21 @@ impl DpsCalculator {
                 heal_skills: Vec::new(),
             },
         };
+        let max_hp = self.data_storage.get_mob_hp(target_id).unwrap_or(0);
+        self.details_for(target_data, max_hp, &self.data_storage.get_heal_snapshot(), actor_ids)
+    }
 
+    /// Details of one fight segment, live or already cleared out.
+    fn details_for(
+        &self,
+        target_data: &TargetCombatData,
+        max_hp: i32,
+        heals: &HashMap<i32, HashMap<(i32, bool), HealSkillData>>,
+        actor_ids: Option<&[i32]>,
+    ) -> TargetDetailsResponse {
+        let target_id = target_data.target_id;
         let summon_data = self.data_storage.get_summon_data();
         let nickname_data = self.data_storage.get_nicknames();
-        let mob_hp_data = self.data_storage.get_mob_hp_data();
 
         let actor_damage_map: HashMap<i32, i64> = target_data.actors.iter()
             .map(|(&id, ad)| (id, ad.total_damage))
@@ -1253,7 +1309,7 @@ impl DpsCalculator {
         // (same nickname/orphan resolution as damage). Reuses DetailSkillEntry:
         // dmg = heal amount, time = tick count, is_dot = HoT.
         let mut heal_map: HashMap<(i32, i32), DetailSkillEntry> = HashMap::new();
-        for (&actor_id, skills) in &self.data_storage.get_heal_snapshot() {
+        for (&actor_id, skills) in heals {
             let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
             if raw_uid <= 0 { continue; }
             let remapped = *orphan_to_owner.get(&raw_uid).unwrap_or(&raw_uid);
@@ -1311,7 +1367,7 @@ impl DpsCalculator {
 
         TargetDetailsResponse {
             target_id,
-            max_hp: mob_hp_data.get(&target_id).copied().unwrap_or(0),
+            max_hp,
             total_target_damage: target_data.total_damage as i32,
             battle_time,
             start_time: target_data.first_damage_time,
@@ -1320,6 +1376,44 @@ impl DpsCalculator {
             heal_skills: heal_map.into_values().collect(),
         }
     }
+}
+
+/// Total time covered by `spans` of (first hit, last hit), overlaps counted
+/// once, each clipped to start no earlier than `since`.
+fn active_time(spans: impl Iterator<Item = (i64, i64)>, since: i64) -> i64 {
+    let mut spans: Vec<(i64, i64)> = spans
+        .filter(|&(_, last)| last >= since)
+        .map(|(first, last)| (first.max(since), last))
+        .collect();
+    spans.sort_unstable();
+    let mut total = 0;
+    let mut current: Option<(i64, i64)> = None;
+    for (first, last) in spans {
+        current = match current {
+            Some((start, end)) if first <= end => Some((start, end.max(last))),
+            Some((start, end)) => {
+                total += end - start;
+                Some((first, last))
+            }
+            None => Some((first, last)),
+        };
+    }
+    total + current.map_or(0, |(start, end)| end - start)
+}
+
+/// Healing, regen and damage taken per actor over `targets`.
+fn actor_stats<'a>(targets: impl Iterator<Item = &'a TargetCombatData>) -> HashMap<i32, (i64, i64, i64, i32)> {
+    let mut stats: HashMap<i32, (i64, i64, i64, i32)> = HashMap::new();
+    for td in targets {
+        for (&id, ad) in &td.actors {
+            let e = stats.entry(id).or_default();
+            e.0 += ad.party_heal;
+            e.1 += ad.regen;
+            e.2 += ad.damage_received;
+            e.3 += ad.hits_received;
+        }
+    }
+    stats
 }
 
 fn resolve_nickname(uid: i32, nicknames: &HashMap<i32, String>, summon_data: &HashMap<i32, i32>) -> String {
@@ -1387,6 +1481,229 @@ mod tests {
     fn meter(storage: &Arc<DataStorage>) -> DpsCalculator {
         DpsCalculator::new(storage.clone(), Arc::new(SkillLookup::new()),
             Arc::new(NpcLookup::new()), Arc::new(PingTracker::new()))
+    }
+
+    const BOSS: i32 = 700;
+    const DUMMY: i32 = 701;
+
+    /// A meter whose NPC table knows one boss and one training dummy.
+    fn meter_with_npcs(storage: &Arc<DataStorage>) -> DpsCalculator {
+        let npcs = NpcLookup::new();
+        npcs.load_from_json(r#"{"700":{"name":"Boss","isBoss":true},"701":{"name":"Training Scarecrow"}}"#);
+        DpsCalculator::new(storage.clone(), Arc::new(SkillLookup::new()),
+            Arc::new(npcs), Arc::new(PingTracker::new()))
+    }
+
+    fn spawn(storage: &DataStorage, id: i32, code: i32) {
+        storage.append_mob(id, code);
+        if code == BOSS {
+            storage.register_boss(id);
+        } else if code == DUMMY {
+            storage.register_training_dummy(id);
+        }
+    }
+
+    /// One hit a second from `actor` on `target`, `from` to `to` inclusive.
+    fn hits(storage: &DataStorage, actor: i32, target: i32, from: i64, to: i64) {
+        let mut at = from;
+        while at <= to {
+            crate::clock::set_override(Some(at));
+            storage.append_damage(hit(actor, target, at));
+            at += 1_000;
+        }
+    }
+
+    fn snapshot_at(calc: &mut DpsCalculator, now: i64) -> Vec<FightRecord> {
+        crate::clock::set_override(Some(now));
+        calc.snapshot_boss_fights()
+    }
+
+    fn ids(records: &[FightRecord]) -> Vec<String> {
+        let mut ids: Vec<String> = records.iter().map(|r| r.id.clone()).collect();
+        ids.sort();
+        ids
+    }
+
+    #[test]
+    fn a_second_run_on_the_same_dummy_is_saved_too() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 36734, DUMMY);
+        let mut calc = meter_with_npcs(&s);
+        hits(&s, 2259, 36734, 1_000, 11_000);
+        let saved = snapshot_at(&mut calc, 50_000);
+        assert_eq!(ids(&saved), vec!["auto_36734_1000"]);
+        assert!(calc.fight_finished(&saved[0]));
+        assert!(snapshot_at(&mut calc, 60_000).is_empty(), "saved once");
+
+        hits(&s, 2259, 36734, 70_000, 80_000);
+        let saved = snapshot_at(&mut calc, 120_000);
+        assert_eq!(ids(&saved), vec!["auto_36734_70000"]);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_run_cut_off_by_the_idle_restart_is_saved() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 36734, DUMMY);
+        let mut calc = meter_with_npcs(&s);
+        hits(&s, 2259, 36734, 1_000, 11_000);
+        // Back on the same dummy after 34 s, before any auto-save ran.
+        hits(&s, 2259, 36734, 45_000, 50_000);
+        let saved = snapshot_at(&mut calc, 51_000);
+        assert_eq!(ids(&saved), vec!["auto_36734_1000"]);
+        assert_eq!(saved[0].duration_ms, 10_000);
+        assert!(calc.fight_finished(&saved[0]));
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_pause_in_a_boss_fight_does_not_end_it() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        hits(&s, 2259, 800, 1_000, 10_000);
+        let saved = snapshot_at(&mut calc, 22_000);
+        assert_eq!(ids(&saved), vec!["auto_800_1000"]);
+        assert!(!calc.fight_finished(&saved[0]), "12 s of quiet may be a phase");
+
+        hits(&s, 2259, 800, 30_000, 60_000);
+        let saved = snapshot_at(&mut calc, 61_000);
+        assert_eq!(ids(&saved), vec!["auto_800_1000"], "the same fight, saved again");
+        assert_eq!(saved[0].duration_ms, 59_000);
+        assert!(!calc.fight_finished(&saved[0]));
+
+        let saved = snapshot_at(&mut calc, 95_000);
+        assert_eq!(saved[0].duration_ms, 59_000);
+        assert!(calc.fight_finished(&saved[0]));
+        assert!(snapshot_at(&mut calc, 125_000).is_empty());
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn fights_survive_a_zone_change_a_reset_and_the_party_ending() {
+        use crate::combat::data_storage::PartyMember;
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        hits(&s, 2259, 800, 1_000, 8_000);
+        crate::clock::set_override(Some(12_000));
+        assert!(s.note_zone_change());
+        let saved = snapshot_at(&mut calc, 12_000);
+        assert_eq!(ids(&saved), vec!["auto_800_1000"]);
+        assert!(calc.fight_finished(&saved[0]), "it cannot go on");
+
+        hits(&s, 2259, 800, 20_000, 30_000);
+        crate::clock::set_override(Some(31_000));
+        calc.restart_target_selection(true);
+        assert_eq!(ids(&snapshot_at(&mut calc, 31_000)), vec!["auto_800_20000"]);
+
+        let member = |slot| PartyMember { slot, ..Default::default() };
+        s.set_party_roster(vec![("A".into(), member(1)), ("B".into(), member(2))], true);
+        hits(&s, 2259, 800, 40_000, 50_000);
+        s.set_party_roster(vec![("A".into(), member(1))], true);
+        assert_eq!(ids(&snapshot_at(&mut calc, 51_000)), vec!["auto_800_40000"]);
+
+        // Too short to keep, and not a boss: neither is saved.
+        spawn(&s, 900, 1);
+        hits(&s, 2259, 900, 60_000, 70_000);
+        hits(&s, 2259, 800, 60_000, 62_000);
+        crate::clock::set_override(Some(80_000));
+        assert!(s.note_zone_change());
+        assert!(snapshot_at(&mut calc, 80_000).is_empty());
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn all_targets_time_is_the_time_anything_was_fought() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        hits(&s, 2259, 50_001, 1_000, 11_000);
+        hits(&s, 2259, 50_002, 5_000, 15_000);
+        hits(&s, 9000, 50_003, 31_000, 41_000);
+        let mut calc = meter(&s);
+        calc.set_target_selection_mode("allTargets");
+        crate::clock::set_override(Some(45_000));
+        assert_eq!(calc.get_dps().battle_time, 24_000, "the gap between pulls is left out");
+
+        // A 10 s window at 45 s sees the last pull from 35 s.
+        calc.set_all_targets_window_ms(10_000);
+        assert_eq!(calc.get_dps().battle_time, 6_000);
+        crate::clock::set_override(Some(60_000));
+        let shown = calc.get_dps();
+        assert_eq!(shown.battle_time, 0);
+        assert!(shown.map.is_empty(), "all of it is outside the window");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn train_is_your_dummies_and_your_time() {
+        let s = Arc::new(DataStorage::new());
+        spawn(&s, 36734, DUMMY);
+        spawn(&s, 36735, DUMMY);
+        spawn(&s, 36736, DUMMY);
+        hits(&s, 9000, 36736, 1_000, 100_000);
+        hits(&s, 9000, 36734, 80_000, 80_000);
+        hits(&s, 2259, 36734, 95_000, 100_000);
+        hits(&s, 2259, 36735, 90_000, 100_000);
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("trainTargets");
+        assert!(calc.get_dps().map.is_empty(), "nothing until the meter knows you");
+
+        s.set_local_player_id(Some(2259));
+        let shown = calc.get_dps();
+        assert_eq!(shown.battle_time, 10_000);
+        assert!(shown.map.contains_key(&2259));
+        assert_eq!(shown.map[&2259].amount, 17.0 * 500.0);
+        assert_eq!(shown.map[&9000].amount, 500.0, "a stranger's dummy is not yours");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn boss_mode_follows_your_boss_and_lets_a_dead_one_go() {
+        let s = Arc::new(DataStorage::new());
+        for id in [801, 802] {
+            s.append_mob(id, BOSS);
+        }
+        s.append_mob(900, 1);
+        hits(&s, 2259, 801, 1_000, 5_000);
+        hits(&s, 9000, 802, 10_000, 20_000);
+        let mut calc = meter_with_npcs(&s);
+        assert_eq!(calc.get_dps().target_id, 802, "not identified: any boss");
+        s.set_local_player_id(Some(2259));
+        assert_eq!(calc.get_dps().target_id, 801, "a stranger's boss is not yours");
+
+        s.mark_entity_dead(801);
+        assert_eq!(calc.get_dps().target_id, 801, "dead, and still the last thing you hit");
+        hits(&s, 2259, 900, 30_000, 31_000);
+        assert_eq!(calc.get_dps().target_id, 900, "dead, and you moved on");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_mode_switch_does_not_show_the_last_modes_rows() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        hits(&s, 2259, 900, 1_000, 2_000);
+        let mut calc = meter(&s);
+        calc.set_target_selection_mode("lastHitByMe");
+        assert!(calc.get_dps().map.contains_key(&2259));
+        calc.set_target_selection_mode("trainTargets");
+        let shown = calc.get_dps();
+        assert!(shown.map.is_empty());
+        assert_eq!(shown.target_mode, "trainTargets");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn spans_are_merged_and_clipped() {
+        assert_eq!(active_time([(0, 10), (5, 15), (30, 40)].into_iter(), i64::MIN), 25);
+        assert_eq!(active_time([(0, 10), (5, 15), (30, 40)].into_iter(), 12), 13);
+        assert_eq!(active_time([(0, 10)].into_iter(), 20), 0);
+        assert_eq!(active_time(std::iter::empty(), 0), 0);
     }
 
     #[test]

@@ -9,7 +9,11 @@ use crate::entity::special_damage::SpecialDamage;
 use crate::entity::summon_resolver;
 
 /// Maximum idle gap before a fight is considered ended and a new one begins.
-const IDLE_RESET_MS: i64 = 30_000;
+pub const IDLE_RESET_MS: i64 = 30_000;
+/// The shortest fight the history keeps.
+pub const MIN_SAVED_FIGHT_MS: i64 = 5_000;
+/// Ended segments waiting for the auto-save, at most. See `take_ended_segments`.
+const MAX_ENDED_SEGMENTS: usize = 32;
 /// How far back each actor's per-second damage is kept: the longest
 /// "last N minutes" window the meter offers.
 pub const DAMAGE_HISTORY_MS: i64 = 900_000;
@@ -208,6 +212,8 @@ pub struct ActorCombatData {
     pub regen: i64,
     pub damage_received: i64,
     pub hits_received: i32,
+    /// i64::MAX until the first hit.
+    pub first_damage_time: i64,
     pub last_damage_time: i64,
     pub job: Option<JobClass>,
     /// Skills keyed by (raw_skill_code, is_dot)
@@ -225,6 +231,7 @@ impl ActorCombatData {
         self.regen += other.regen;
         self.damage_received += other.damage_received;
         self.hits_received += other.hits_received;
+        self.first_damage_time = self.first_damage_time.min(other.first_damage_time);
         self.last_damage_time = self.last_damage_time.max(other.last_damage_time);
         self.job = self.job.or(other.job);
         for (sec, dmg) in other.damage_by_second {
@@ -247,6 +254,7 @@ impl ActorCombatData {
             regen: 0,
             damage_received: 0,
             hits_received: 0,
+            first_damage_time: i64::MAX,
             last_damage_time: 0,
             job: None,
             skills: HashMap::new(),
@@ -300,6 +308,15 @@ impl TargetCombatData {
     }
 }
 
+/// A fight segment taken out of the live data (an idle restart, a boss
+/// pull, a reset or a zone change) before the auto-save wrote it.
+#[derive(Debug, Clone)]
+pub struct EndedSegment {
+    pub data: TargetCombatData,
+    pub max_hp: i32,
+    pub heals: HashMap<i32, HashMap<(i32, bool), HealSkillData>>,
+}
+
 // ───── Main storage ─────
 
 pub struct DataStorage {
@@ -317,6 +334,9 @@ pub struct DataStorage {
 struct Inner {
     /// Aggregated combat data per target (replaces raw packet storage)
     target_combat: HashMap<i32, TargetCombatData>,
+    /// Boss and dummy fights cleared out of `target_combat` before they were
+    /// saved. See `take_ended_segments`.
+    ended_segments: Vec<EndedSegment>,
     /// Job class detected per actor (across all targets, for summon matching)
     actor_jobs: HashMap<i32, JobClass>,
 
@@ -436,6 +456,7 @@ impl DataStorage {
         Self {
             inner: RwLock::new(Inner {
                 target_combat: HashMap::new(),
+                ended_segments: Vec::new(),
                 actor_jobs: HashMap::new(),
                 nickname_storage: HashMap::new(),
                 pending_nicknames: HashMap::new(),
@@ -521,6 +542,18 @@ impl DataStorage {
 
     pub fn damage_generation(&self) -> i64 {
         self.damage_generation.load(Ordering::Relaxed)
+    }
+
+    /// Something the meter shows changed without new damage: recompute.
+    fn touch(&self) {
+        self.damage_generation.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Boss and dummy fights that were cleared out of the live data (an idle
+    /// restart on the same mob, a boss pull, a reset, a zone change, the
+    /// party ending) before the auto-save wrote them. Each is returned once.
+    pub fn take_ended_segments(&self) -> Vec<EndedSegment> {
+        std::mem::take(&mut self.inner.write().ended_segments)
     }
 
     pub fn set_local_character_name(&self, name: Option<String>) {
@@ -817,14 +850,16 @@ impl DataStorage {
 
         // Boss encounter auto-reset: if this target is a boss and the current
         // segment has no boss yet, clear the trash segment so boss gets clean data.
-        let is_boss_target = inner.boss_entity_ids.contains(&target_id);
-        if is_boss_target && !inner.has_boss_in_segment && !inner.target_combat.is_empty() {
-            tracing::info!("Boss encounter auto-reset: boss entity {} hit, clearing trash segment", target_id);
-            inner.target_combat.clear();
-            inner.held_dot_ticks.clear();
-            inner.dead_entity_ids.clear();
-            inner.has_boss_in_segment = true;
-        } else if is_boss_target {
+        // Once you are identified, only when you or your party pull it: a
+        // stranger hitting a field boss nearby wiped everything you were
+        // fighting.
+        if inner.boss_entity_ids.contains(&target_id) && is_ours(&inner, actor_id) {
+            if !inner.has_boss_in_segment && !inner.target_combat.is_empty() {
+                tracing::info!("Boss encounter auto-reset: boss entity {} hit, clearing trash segment", target_id);
+                retire_all(&mut inner);
+                inner.held_dot_ticks.clear();
+                inner.dead_entity_ids.clear();
+            }
             inner.has_boss_in_segment = true;
         }
 
@@ -869,6 +904,8 @@ impl DataStorage {
                     target_data.total_damage -= actor_data.total_damage;
                 }
             }
+            drop(inner);
+            self.touch();
         }
     }
 
@@ -879,7 +916,9 @@ impl DataStorage {
     }
 
     pub fn mark_entity_dead(&self, entity_id: i32) {
-        self.inner.write().dead_entity_ids.insert(entity_id);
+        if self.inner.write().dead_entity_ids.insert(entity_id) {
+            self.touch();
+        }
     }
 
     pub fn is_entity_dead(&self, entity_id: i32) -> bool {
@@ -960,6 +999,7 @@ impl DataStorage {
         if members.is_empty() {
             return;
         }
+        self.touch();
         let mut inner = self.inner.write();
         inner.party_roster_at_ms = now_ms();
         inner.party_placeholders_hidden = false;
@@ -1116,11 +1156,23 @@ impl DataStorage {
         append_nickname_inner_with_force(&mut inner, uid, nickname, true);
     }
 
+    /// A name the player tied to an id in Settings, kept through
+    /// `reset_nicknames`. Names are unique, so any other id holding it loses it.
     pub fn set_permanent_nickname(&self, uid: i32, nickname: &str) {
         let mut inner = self.inner.write();
+        inner.permanent_nicknames.retain(|&id, name| id == uid || name != nickname);
         inner.permanent_nicknames.insert(uid, nickname.to_string());
         // User explicitly set this in settings: authoritative, and force-apply to
         // bypass length/CJK heuristics that protect against bad packet scan results.
+        inner.authoritative_name_ids.insert(uid);
+        append_nickname_inner_with_force(&mut inner, uid, nickname, true);
+    }
+
+    /// The local player's name on their id, for this session only: unlike
+    /// `set_permanent_nickname` it does not outlive the id. `reset_nicknames`
+    /// puts it back on whatever id is local then.
+    pub fn set_local_nickname(&self, uid: i32, nickname: &str) {
+        let mut inner = self.inner.write();
         inner.authoritative_name_ids.insert(uid);
         append_nickname_inner_with_force(&mut inner, uid, nickname, true);
     }
@@ -1277,6 +1329,7 @@ impl DataStorage {
                                 regen: ad.regen,
                                 damage_received: ad.damage_received,
                                 hits_received: ad.hits_received,
+                                first_damage_time: ad.first_damage_time,
                                 last_damage_time: ad.last_damage_time,
                                 job: ad.job,
                                 skills,
@@ -1302,7 +1355,7 @@ impl DataStorage {
 
     pub fn flush(&self) {
         let mut inner = self.inner.write();
-        inner.target_combat.clear();
+        retire_all(&mut inner);
         inner.held_dot_ticks.clear();
         inner.training_dummy_ids.clear();
         inner.actor_jobs.clear();
@@ -1326,7 +1379,7 @@ impl DataStorage {
     /// clean numbers without dropping who your party and you are.
     pub fn flush_combat_only(&self) {
         let mut inner = self.inner.write();
-        inner.target_combat.clear();
+        retire_all(&mut inner);
         inner.held_dot_ticks.clear();
         inner.hostile_target_ids.clear();
         inner.dead_entity_ids.clear();
@@ -1345,6 +1398,19 @@ impl DataStorage {
         let permanent: Vec<(i32, String)> = inner.permanent_nicknames.iter().map(|(&k, v)| (k, v.clone())).collect();
         for (uid, nick) in permanent {
             inner.nickname_storage.insert(uid, nick);
+            inner.authoritative_name_ids.insert(uid);
+        }
+        // You stay named. The next saved fight called the player by their id
+        // after a reset, until a zone change sent the self record again.
+        let local = inner.local_player_id.zip(inner.local_character_name.clone());
+        if let Some((id, name)) = local {
+            let name = name.trim();
+            let uid = id as i32;
+            if !name.is_empty() {
+                inner.nickname_storage.retain(|&k, v| k == uid || v.trim() != name);
+                inner.nickname_storage.insert(uid, name.to_string());
+                inner.authoritative_name_ids.insert(uid);
+            }
         }
     }
 }
@@ -1404,19 +1470,23 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     let timestamp = pdp.timestamp();
     let packet_id = pdp.id();
 
+    // Idle reset check (30s gap): a new fight on the same mob. The one before
+    // goes to the auto-save first; it used to be thrown away unsaved.
+    if let Some(old) = inner.target_combat.get(&target_id)
+        && old.last_damage_time > 0
+        && timestamp - old.last_damage_time > IDLE_RESET_MS
+    {
+        tracing::info!("Idle reset: target {} — gap {}ms", target_id,
+            timestamp - old.last_damage_time);
+        if let Some(old) = inner.target_combat.remove(&target_id) {
+            retire_segment(inner, old);
+        }
+    }
+
     // Get or create target combat data
     let target_data = inner.target_combat.entry(target_id).or_insert_with(|| {
         TargetCombatData::new(target_id, timestamp)
     });
-
-    // Idle reset check (30s gap)
-    if target_data.last_damage_time > 0
-        && timestamp - target_data.last_damage_time > IDLE_RESET_MS
-    {
-        tracing::info!("Idle reset: target {} — gap {}ms", target_id,
-            timestamp - target_data.last_damage_time);
-        *target_data = TargetCombatData::new(target_id, timestamp);
-    }
 
     // Update target timing
     if timestamp < target_data.first_damage_time {
@@ -1433,6 +1503,9 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     let actor_data = target_data.actors.entry(actor_id).or_insert_with(ActorCombatData::new);
     actor_data.total_damage += total_dmg as i64;
     actor_data.add_damage_at(timestamp.div_euclid(1000), total_dmg as i64);
+    if timestamp < actor_data.first_damage_time {
+        actor_data.first_damage_time = timestamp;
+    }
     if timestamp > actor_data.last_damage_time {
         actor_data.last_damage_time = timestamp;
     }
@@ -1477,7 +1550,45 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     }
 }
 
+/// Keep a segment that is leaving the live data when the history would save
+/// it (a boss or a training dummy, long enough), for `take_ended_segments`.
+fn retire_segment(inner: &mut Inner, data: TargetCombatData) {
+    let tid = data.target_id;
+    let fight = inner.boss_entity_ids.contains(&tid) || inner.training_dummy_ids.contains(&tid);
+    if !fight || data.total_damage <= 0 || data.last_damage_time - data.first_damage_time < MIN_SAVED_FIGHT_MS {
+        return;
+    }
+    if inner.ended_segments.len() >= MAX_ENDED_SEGMENTS {
+        inner.ended_segments.remove(0);
+    }
+    let max_hp = inner.mob_hp_data.get(&tid).copied().unwrap_or(0);
+    let heals = inner.heal_storage.clone();
+    inner.ended_segments.push(EndedSegment { data, max_hp, heals });
+}
+
+/// Clear every target's segment, keeping the fights worth saving.
+fn retire_all(inner: &mut Inner) {
+    let segments: Vec<TargetCombatData> = inner.target_combat.drain().map(|(_, td)| td).collect();
+    for td in segments {
+        retire_segment(inner, td);
+    }
+}
+
+/// Whether `actor_id` is you, your party, or a summon of either. Anyone
+/// counts until the meter knows who you are.
+fn is_ours(inner: &Inner, actor_id: i32) -> bool {
+    let Some(local) = inner.local_player_id else { return true };
+    let owner = summon_resolver::resolve(actor_id, &inner.summon_storage);
+    owner == local as i32
+        || inner.nickname_storage.get(&owner).is_some_and(|n| inner.party_members.contains_key(n.as_str()))
+}
+
 fn set_game_identity(inner: &mut Inner, id: i64, name: Option<String>) {
+    // An older id kept with your name would come back on the next
+    // `reset_nicknames` and be taken for you again.
+    if let Some(name) = name.as_deref().map(str::trim).filter(|n| !n.is_empty()) {
+        inner.permanent_nicknames.retain(|&k, v| k as i64 == id || v.trim() != name);
+    }
     inner.local_identity_from_game = true;
     inner.local_player_id = Some(id);
     inner.local_character_name = name;
@@ -1541,6 +1652,9 @@ fn append_nickname_inner_with_force(inner: &mut Inner, uid: i32, nickname: &str,
         inner.known_player_ids.remove(&old_id);
         inner.authoritative_name_ids.remove(&old_id);
         inner.pending_nicknames.remove(&old_id);
+        if force {
+            inner.permanent_nicknames.remove(&old_id);
+        }
         if same_character {
             for owner in inner.summon_storage.values_mut() {
                 if *owner == old_id {
@@ -1794,6 +1908,43 @@ mod tests {
         assert_eq!(who(&s), (Some(14957), Some("Naicha".into()), true));
     }
 
+    #[test]
+    fn your_name_set_by_hand_leaves_old_ids_when_the_game_names_you() {
+        let s = DataStorage::new();
+        s.set_permanent_nickname(6925, "Seralth");
+        s.set_permanent_nickname(6926, "Seralth");
+        s.reset_nicknames();
+        assert_eq!(s.get_nickname(6925), None, "one id per name");
+        // The self record names you on a new id; nothing else touches the old one.
+        s.set_local_identity_from_game(7577, Some("Seralth".into()));
+        s.reset_nicknames();
+        assert_eq!(s.get_nickname(6926), None);
+        assert_eq!(s.find_id_by_nickname("Seralth"), Some(7577));
+    }
+
+    #[test]
+    fn a_name_moving_to_a_new_id_takes_the_kept_name_with_it() {
+        let s = DataStorage::new();
+        s.set_permanent_nickname(6925, "Seralth");
+        s.append_nickname_authoritative(7577, "Seralth");
+        s.reset_nicknames();
+        assert_eq!(s.get_nickname(6925), None);
+    }
+
+    #[test]
+    fn you_keep_your_name_through_a_reset() {
+        let s = DataStorage::new();
+        s.append_nickname_authoritative(13600, "Seralth");
+        s.set_local_identity_from_game(13600, Some("Seralth".into()));
+        s.append_nickname_authoritative(2001, "Other");
+        s.reset_nicknames();
+        assert_eq!(s.local_player_id(), Some(13600));
+        assert_eq!(s.get_nickname(13600).as_deref(), Some("Seralth"));
+        assert_eq!(s.get_nickname(2001), None);
+        s.flush();
+        assert_eq!(s.get_nickname(13600).as_deref(), Some("Seralth"));
+    }
+
     fn member(slot: u8) -> PartyMember {
         PartyMember { slot, level: 45, gear_score: 3000, combat_power: 39_000, ..Default::default() }
     }
@@ -2012,6 +2163,38 @@ mod tests {
         s.append_damage(hit(1454, 600, 1_000, 100, false));
         s.append_damage(hit(1454, 600, 2_000, 50, true));
         assert_eq!(totals(&s, 600), (150, 1_000));
+    }
+
+    #[test]
+    fn a_strangers_boss_hit_does_not_clear_your_fight() {
+        let s = DataStorage::new();
+        s.set_local_player_id(Some(2259));
+        s.register_boss(800);
+        s.register_training_dummy(500);
+        for t in 0..10 {
+            s.append_damage(hit(2259, 500, 1_000 + t * 1_000, 100, false));
+        }
+        s.append_damage(hit(9000, 800, 12_000, 100, false));
+        assert!(s.is_damage_target(500), "a stranger pulling a boss nearby");
+        assert!(s.take_ended_segments().is_empty());
+
+        s.append_damage(hit(2259, 800, 13_000, 100, false));
+        assert!(!s.is_damage_target(500), "your own pull starts clean");
+        let ended = s.take_ended_segments();
+        assert_eq!(ended.len(), 1, "the dummy fight before it is kept for saving");
+        assert_eq!(ended[0].data.target_id, 500);
+        assert_eq!(ended[0].data.total_damage, 1_000);
+    }
+
+    #[test]
+    fn a_kill_or_a_roster_change_redraws_the_meter() {
+        let s = DataStorage::new();
+        let before = s.damage_generation();
+        s.mark_entity_dead(800);
+        assert!(s.damage_generation() > before);
+        let before = s.damage_generation();
+        s.set_party_roster(vec![("A".into(), member(1))], true);
+        assert!(s.damage_generation() > before);
     }
 
     #[test]

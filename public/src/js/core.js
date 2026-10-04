@@ -157,7 +157,6 @@ class DpsApp {
     this.trainSelectionMode = "all";
     this._detailsFlashTimer = null;
     this._meterFlashTimer = null;
-    this._recentLocalIdByName = new Map();
     this.pinnedDetailsRowId = null;
     this.hoveredDetailsRowId = null;
     this.setWindowDragFreeze(false);
@@ -612,6 +611,9 @@ class DpsApp {
     }
     if (!running) return;
     this.syncCharacterNameFromGame();
+    // Acting on the title tells the backend a name and resets the meter, so
+    // only the overlay does it; the other windows just show the name.
+    if (window.A2_VIEW !== "main") return;
     const detectedName = this.parseCharacterNameFromWindowTitle(title);
     // Act on the title only when it changes. It is not kept current (a new
     // character keeps the title of the session it was created in), so a title
@@ -651,8 +653,6 @@ class DpsApp {
     // last real one.
     if (name) {
       this.safeSetStorage(this.storageKeys.userName, name);
-      const id = Number(info.localPlayerId);
-      if (Number.isFinite(id) && id > 0) this.rememberLocalIdForName(name, id);
     }
     this.renderCurrentRows();
     return true;
@@ -973,8 +973,7 @@ class DpsApp {
     }
 
     this.lastJson = raw;
-    this.applyLocalPlayerIdUpdate(localPlayerId, "backend local id update");
-    this.updateLocalPlayerIdentity(rows);
+    this.setLocalPlayerIdFromBackend(localPlayerId);
     this._lastBattleTimeMs = battleTimeMs;
     this.lastTargetMode = targetMode;
     this.lastTargetName = targetName;
@@ -1127,7 +1126,7 @@ class DpsApp {
       : null;
 
     const mapObj = payload?.map && typeof payload.map === "object" ? payload.map : {};
-    const rows = this.buildRowsFromMapObject(mapObj);
+    const rows = this.buildRowsFromMapObject(mapObj, localPlayerId);
 
     const battleTimeMsRaw = payload?.battleTime;
     const battleTimeMs = Number.isFinite(Number(battleTimeMsRaw)) ? Number(battleTimeMsRaw) : null;
@@ -1155,8 +1154,9 @@ class DpsApp {
     };
   }
 
-  buildRowsFromMapObject(mapObj) {
+  buildRowsFromMapObject(mapObj, localPlayerId = null) {
     const rows = [];
+    const localId = Number(localPlayerId) > 0 ? Number(localPlayerId) : null;
 
     for (const [id, value] of Object.entries(mapObj || {})) {
       const numericId = Number(id);
@@ -1198,7 +1198,7 @@ class DpsApp {
         totalDamage,
         damageContribution,
         combatPower,
-        isUser: name === this.USER_NAME,
+        isUser: name === this.USER_NAME || numericId === localId,
         isIdentifying,
         // Resolved in Rust against a downloaded roster; the frontend only
         // renders it. Cosmetic only — it must not reach sorting or bar colour.
@@ -1397,71 +1397,20 @@ class DpsApp {
     this._lastLoggedTargetName = null;
   }
 
-  updateLocalPlayerIdentity(rows = []) {
-    if (!Array.isArray(rows) || !rows.length || !this.USER_NAME) {
-      return;
-    }
-    // Stay sticky: if our current local id is still an active row, keep it. The
-    // canonical id for the local player can flip between co-existing self-ids as
-    // damage accumulates; re-binding on every flip churned the binding needlessly.
-    if (this.localPlayerId && rows.some((row) => Number(row?.id) === this.localPlayerId)) {
-      return;
-    }
-    const matched = rows.find((row) => row?.name === this.USER_NAME);
-    if (!matched) {
-      return;
-    }
-    const actorId = Number(matched.id);
-    this.applyLocalPlayerIdUpdate(actorId, "local id update");
-  }
-
-  applyLocalPlayerIdUpdate(actorId, reason) {
-    if (!Number.isFinite(actorId) || actorId <= 0) {
-      return;
-    }
-    if (this.localPlayerId === actorId) {
-      return;
-    }
-    this.localPlayerId = actorId;
-    window.javaBridge?.bindLocalActorId?.(String(actorId));
-    window.javaBridge?.setLocalPlayerId?.(String(actorId));
-    // When the game has named the local player the backend already holds the
-    // right name; pushing ours could stamp another character's on this row.
-    if (this.USER_NAME && !this.syncCharacterNameFromGame()) {
-      window.javaBridge?.bindLocalNickname?.(String(actorId), this.USER_NAME);
-      this.setUserName(this.USER_NAME, { persist: true, syncBackend: true });
-      this.rememberLocalIdForName(this.USER_NAME, actorId);
-    }
+  // Who "you" are is the backend's call: it has the game's own word, which
+  // a window does not. Each window only reads it from the dps payload, for the
+  // highlight and the Settings field, and never sends it back. Windows used to
+  // bind a row by name or echo the id they last saw; after a zone change that
+  // bound a stale id, or a party placeholder at startup.
+  setLocalPlayerIdFromBackend(actorId) {
+    const id = Number(actorId);
+    const next = Number.isFinite(id) && id > 0 ? Math.trunc(id) : null;
+    if (this.localPlayerId === next) return;
+    this.logDebug(`Local player id ${this.localPlayerId ?? "none"} -> ${next ?? "none"}.`);
+    this.localPlayerId = next;
     if (this.localActorIdInput && document.activeElement !== this.localActorIdInput) {
-      this.localActorIdInput.value = String(actorId);
+      this.localActorIdInput.value = next ? String(next) : "";
     }
-    this.refreshConnectionInfo({ skipSettingsRefresh: true });
-    // NOTE: do NOT reinitTargetSelection() here. Which entity id is "you" can
-    // change several times within one fight (the local player churns entity ids,
-    // e.g. after casting Divine Aura), and reinit → restartTargetSelection →
-    // reset_combat wipes ALL combat data and every teammate nickname. That fired
-    // on every poll, causing the meter to reset over and over (PC lag), teammates
-    // to flip to raw ids, and skills like Divine Aura to be dropped. Re-labelling
-    // who "you" are is a display concern only — the next dps poll re-renders the
-    // highlight from the updated localPlayerId with no reset.
-  }
-
-  rememberLocalIdForName(name, actorId) {
-    const key = String(name ?? "").trim().toLowerCase();
-    if (!key || !Number.isFinite(actorId) || actorId <= 0) return;
-    this._recentLocalIdByName.set(key, { actorId, timestamp: Date.now() });
-  }
-
-  getRecentLocalIdForName(name) {
-    const key = String(name ?? "").trim().toLowerCase();
-    if (!key) return null;
-    const entry = this._recentLocalIdByName.get(key);
-    if (!entry) return null;
-    if (Date.now() - entry.timestamp > 120000) {
-      this._recentLocalIdByName.delete(key);
-      return null;
-    }
-    return entry.actorId;
   }
 
   getDetailsContext() {
@@ -2110,7 +2059,11 @@ class DpsApp {
     const storedLanguage = this.safeGetStorage(this.storageKeys.language);
     const storedTheme = this.safeGetSetting(this.storageKeys.theme);
 
-    this.setUserName(storedName, { persist: false, syncBackend: true });
+    // Only the overlay tells the backend things at startup. Every window runs
+    // this, and opening History or a fight used to put the default meter mode
+    // back while the overlay's button still showed the old one.
+    const isOverlay = window.A2_VIEW === "main";
+    this.setUserName(storedName, { persist: false, syncBackend: isOverlay });
     this.setOnlyShowUser(false, { persist: false });
     this.setDebugLogging(storedDebugLogging, { persist: false, syncBackend: true });
     this.setPinMeToTop(storedPinMeToTop, { persist: false });
@@ -2131,7 +2084,7 @@ class DpsApp {
     this.settingsSelections.defaultMeterMode = normalizedDefaultMode;
     this.setTargetSelection(normalizedDefaultMode, {
       persist: false,
-      syncBackend: true,
+      syncBackend: isOverlay,
       reason: "default meter mode setting",
     });
     this.applyTheme(storedTheme || this.theme, { persist: false });
@@ -2188,18 +2141,17 @@ class DpsApp {
       });
       this.localActorIdInput.addEventListener("change", (event) => {
         const value = String(event.target?.value || "").trim();
+        // The only id the UI sends: one the player typed. The backend's
+        // answer comes back in the next dps update.
         if (!value) {
-          // User cleared the ID — reset so auto-detection can take over
-          this.localPlayerId = null;
-          window.javaBridge?.bindLocalActorId?.(0);
+          // Cleared: the backend unbinds and finds you again.
+          window.javaBridge?.bindLocalActorId?.(0, true);
           return;
         }
-        this.localPlayerId = Number(value);
         window.javaBridge?.bindLocalActorId?.(value, true);
         if (this.USER_NAME) {
           window.javaBridge?.bindLocalNickname?.(value, this.USER_NAME, true);
         }
-        this.setUserName(this.USER_NAME, { persist: true, syncBackend: true });
       });
     }
 
@@ -3020,14 +2972,11 @@ class DpsApp {
       this.settingsSelections.defaultMeterMode,
       (value) => {
         if (!value) return;
+        // Saved only. The backend tells every window, and the overlay
+        // switches to it (applyRemoteSettingChange); it is the one window that
+        // sets the backend's mode.
         this.settingsSelections.defaultMeterMode = value;
         this.safeSetSetting(this.storageKeys.defaultMeterMode, value);
-        this.setTargetSelection(value, {
-          persist: true,
-          syncBackend: true,
-          reason: "default meter mode changed",
-        });
-        if (!this.isCollapse) this.fetchDps();
       }
     );
   }
@@ -3597,16 +3546,6 @@ class DpsApp {
     // put the name on the entity that is you, so keep the fight on screen
     // rather than resetting it.
     if (previousName && previousName !== trimmed && !manual) {
-      const cachedId = this.getRecentLocalIdForName(trimmed);
-      if (cachedId) {
-        this.refreshDamageData({ reason: "local name update" });
-        this.applyLocalPlayerIdUpdate(cachedId, "local name update cached id");
-        return;
-      }
-      this.localPlayerId = null;
-      if (this.localActorIdInput && document.activeElement !== this.localActorIdInput) {
-        this.localActorIdInput.value = "";
-      }
       this.refreshDamageData({ reason: "local name update" });
       this.reinitTargetSelection("local name update");
     }
@@ -4203,6 +4142,19 @@ class DpsApp {
       this.renderCurrentRows();
       return;
     }
+    if (key === this.storageKeys.defaultMeterMode) {
+      const validModes = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets"];
+      if (!validModes.includes(value)) return;
+      if (this.settingsSelections) this.settingsSelections.defaultMeterMode = value;
+      if (window.A2_VIEW !== "main" || value === this.targetSelection) return;
+      this.setTargetSelection(value, {
+        persist: true,
+        syncBackend: true,
+        reason: "default meter mode changed",
+      });
+      if (!this.isCollapse) this.fetchDps();
+      return;
+    }
     const selector = REMOTE_APPLIED_SETTING_CONTROLS[key];
     if (!selector) return;
     const control = document.querySelector(selector);
@@ -4439,12 +4391,13 @@ class DpsApp {
       const textEl = this.deviceDropdownBtn.querySelector(".settingsDropdownText");
       if (textEl) textEl.textContent = deviceName;
     }
-    const localPlayerId = Number(info?.localPlayerId);
-    this.localPlayerId = Number.isFinite(localPlayerId) && localPlayerId > 0
-      ? Math.trunc(localPlayerId)
-      : null;
+    // Shown only: this status is polled and can be 3 s old, so the id the
+    // meter uses comes from the dps updates (setLocalPlayerIdFromBackend).
+    const polledLocalId = Number(info?.localPlayerId);
+    const shownLocalId = this.localPlayerId ||
+      (Number.isFinite(polledLocalId) && polledLocalId > 0 ? Math.trunc(polledLocalId) : null);
     if (this.localActorIdInput && document.activeElement !== this.localActorIdInput) {
-      this.localActorIdInput.value = this.localPlayerId ? String(this.localPlayerId) : "";
+      this.localActorIdInput.value = shownLocalId ? String(shownLocalId) : "";
     }
     // Never under the player's cursor: they may be typing a new name.
     // This window's own name first: it changes the moment the player saves
