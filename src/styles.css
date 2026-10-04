@@ -1405,6 +1405,10 @@ body.mainPlayerDpsBold .meter .item .content .dps > p {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.settingsPanel .accountRow .accountState.isLong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .settingsPanel .settingsRowStacked .localActorIdInput {
   flex: 0 0 68px;
   width: 68px;

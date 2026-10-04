@@ -37,11 +37,11 @@ use crate::platform::UnsealError;
 /// Encrypt and write the token. Returns false if it could not be stored, in
 /// which case the caller must treat the account as not connected rather than
 /// keeping a token only in memory and appearing connected until restart.
-pub fn save(app_data_dir: &Path, token: &str) -> bool {
-    let Some(sealed) = imp::protect(token.as_bytes(), ENTROPY) else {
-        tracing::error!("Could not encrypt the account token; refusing to store it");
-        return false;
-    };
+pub fn save(app_data_dir: &Path, token: &str) -> Result<(), String> {
+    let sealed = imp::protect(token.as_bytes(), ENTROPY).map_err(|why| {
+        tracing::error!("Could not encrypt the account token ({why}); refusing to store it");
+        why
+    })?;
     let path = token_path(app_data_dir);
     let previous = std::fs::read(&path).ok();
     match std::fs::write(&path, &sealed) {
@@ -51,11 +51,11 @@ pub fn save(app_data_dir: &Path, token: &str) -> bool {
             if let Some(previous) = previous {
                 imp::forget(&previous);
             }
-            true
+            Ok(())
         }
         Err(e) => {
             tracing::error!("Could not write the account token: {e}");
-            false
+            Err(format!("the token file could not be written ({e})"))
         }
     }
 }
@@ -147,7 +147,7 @@ mod tests {
             return;
         }
         let dir = temp("roundtrip");
-        assert!(save(&dir, "tok_abc123"));
+        assert!(save(&dir, "tok_abc123").is_ok());
         assert_eq!(load(&dir).as_deref(), Some("tok_abc123"));
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -159,7 +159,7 @@ mod tests {
         }
         // The whole point: `settings.json` is readable, this must not be.
         let dir = temp("opaque");
-        assert!(save(&dir, "tok_supersecret"));
+        assert!(save(&dir, "tok_supersecret").is_ok());
         let raw = std::fs::read(token_path(&dir)).unwrap();
         assert!(
             !raw.windows(15).any(|w| w == b"tok_supersecret"),
@@ -174,7 +174,7 @@ mod tests {
             return;
         }
         let dir = temp("clear");
-        assert!(save(&dir, "tok_x"));
+        assert!(save(&dir, "tok_x").is_ok());
         clear(&dir);
         assert!(load(&dir).is_none());
         let _ = std::fs::remove_dir_all(&dir);

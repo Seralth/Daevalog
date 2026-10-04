@@ -6,8 +6,8 @@ pub fn available() -> bool {
 
 pub fn forget(_sealed: &[u8]) {}
 
-pub fn protect(_plaintext: &[u8], _entropy: &[u8]) -> Option<Vec<u8>> {
-    None
+pub fn protect(_plaintext: &[u8], _entropy: &[u8]) -> Result<Vec<u8>, String> {
+    Err("this system has no secret store the meter can use".into())
 }
 
 pub fn unprotect(

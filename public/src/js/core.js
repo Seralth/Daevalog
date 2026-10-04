@@ -1939,7 +1939,12 @@ class DpsApp {
   }
 
   setAccountState(text) {
-    if (this.accountStateEl) this.accountStateEl.textContent = text;
+    if (!this.accountStateEl) return;
+    this.accountStateEl.textContent = text;
+    // A short state stays on one line beside its button; a long one (an
+    // error saying why sign-in failed) wraps rather than being cut off.
+    this.accountStateEl.title = text || "";
+    this.accountStateEl.classList.toggle("isLong", String(text || "").length > 40);
   }
 
   // Reflects whatever the backend reports. Called on open, after sign-out, and

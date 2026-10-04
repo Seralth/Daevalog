@@ -216,8 +216,8 @@ pub async fn poll_until_decided(
 
         match poll_once(client, &grant.device_code).await {
             PollOutcome::Approved(token) => {
-                if !secret::save(app_data_dir, &token) {
-                    return Err("signed in, but the token could not be stored securely".into());
+                if let Err(why) = secret::save(app_data_dir, &token) {
+                    return Err(format!("signed in, but the token could not be stored securely: {why}"));
                 }
                 tracing::info!("Account connected");
                 return Ok(());
