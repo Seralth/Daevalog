@@ -1,101 +1,64 @@
-# A2Tools DPS Meter
+# Daevalog DPS Meter
 
 [![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
-[![GitHub Issues](https://img.shields.io/github/issues/taengu/A2Tools-DPS-Meter)](https://github.com/taengu/A2Tools-DPS-Meter/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/taengu/A2Tools-DPS-Meter)](https://github.com/taengu/A2Tools-DPS-Meter/pulls)
 
-Real-time DPS meter overlay for AION 2. Captures game network packets to display damage, skills, and combat statistics.
+Daevalog DPS Meter is a real-time damage meter overlay for AION 2. Daevalog DPS Meter is a fork of [A2Tools DPS Meter](https://github.com/taengu/A2Tools-DPS-Meter) by taengu, based on A2Tools DPS Meter v2.0.44.
 
-**[Download Latest Release](https://github.com/taengu/A2Tools-DPS-Meter/releases)** | **[A2Tools.app](https://a2tools.app)**
+Daevalog DPS Meter reads the game's network traffic. Daevalog DPS Meter does not read game memory and does not change game files.
 
-[한국어](README_KO.md) | [简体中文](README_ZH.md) | [繁體中文](README_ZH-TW.md)
+## Status of this fork
 
-## Features
+- **Linux first.** Daevalog DPS Meter is developed and tested on Linux, with AION 2 running under Proton. The Windows code from A2Tools DPS Meter is still in the source, but Daevalog DPS Meter is not built, tested or supported on Windows.
+- **Differences from A2Tools DPS Meter.** Daevalog DPS Meter may differ from A2Tools DPS Meter in features, behaviour and security handling.
+- **No compatibility promise.** Compatibility with A2Tools DPS Meter is kept where practical: settings, saved fights, the upload format and the a2tools.app log service. No compatibility is promised. A future version may drop compatibility without warning or notice.
+- **No releases yet.** No packages are published. Build from source, as described below.
+- **No automatic updates.** Daevalog DPS Meter never updates itself. The update check of A2Tools DPS Meter is switched off.
 
-- Real-time DPS tracking with per-player breakdown
-- Skill-level damage analysis with crit, back attack, parry, double, and perfect rates
-- DOT (damage over time) tracking
-- Summon damage merged with owner
-- Multiple target selection modes (Boss, Last Hit, All Targets, Train)
-- DPS chart and timeline visualization
-- Battle history with auto-save for boss fights
-- Ping monitoring
-- Multi-language support (English, Korean, Chinese Traditional/Simplified)
-- Always-on-top transparent overlay
-- Themes and customization
+## Reporting problems
 
-## Requirements
+Report problems with Daevalog DPS Meter in the issues of this repository. Do not report problems with Daevalog DPS Meter to the A2Tools DPS Meter project.
 
-- **Windows 10/11** (x86_64)
-- **[Npcap](https://npcap.com)** — required for packet capture
-  - During Npcap installation, check **"Install Npcap in WinPcap API-compatible Mode"**
-- **Administrator privileges** — required for raw packet capture
+## Changes from A2Tools DPS Meter
 
-On **Linux** (playing through Proton), see the **[Linux guide](docs/linux.md)** instead.
+- Packets are framed by the real length rule: payload plus 4.
+- Spirits are linked to their owners by the game's link records and the spawn caster field. Owners are not guessed by power scalar or class.
+- Every fight segment is saved before any reset. Only fights that the player or the party fought are saved.
+- The backend alone decides which player is the local player.
+- The sign-in, upload and webview paths are hardened.
+- Windows behave correctly under KDE Plasma (KWin), and the overlay draws on WebKitGTK 2.54.
 
-## Installation
+Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull requests.
 
-1. Install [Npcap](https://npcap.com) with WinPcap API-compatible mode enabled
-2. Download the latest MSI installer from [Releases](https://github.com/taengu/A2Tools-DPS-Meter/releases)
-3. Run the installer
-4. Launch A2Tools DPS Meter (run as Administrator)
+## Build from source
 
-**Linux:** packages for Ubuntu/Debian (.deb), Fedora/openSUSE (.rpm), Bazzite, Arch/CachyOS/Manjaro and Steam Deck — see the **[Linux guide](docs/linux.md)**.
+- Arch-based systems: `cd packaging/arch && makepkg -si`.
+- Other distributions: follow the steps in `build()` in `packaging/arch/PKGBUILD`. Packet capture needs `cap_net_raw` and `cap_net_admin` on the binary. The Arch package sets both.
 
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?logo=ubuntu&logoColor=white)](docs/linux.md#ubuntu-debian-linux-mint-pop_os) [![Debian](https://img.shields.io/badge/Debian-A81D33?logo=debian&logoColor=white)](docs/linux.md#ubuntu-debian-linux-mint-pop_os) [![Linux Mint](https://img.shields.io/badge/Linux_Mint-87CF3E?logo=linuxmint&logoColor=white)](docs/linux.md#ubuntu-debian-linux-mint-pop_os) [![Pop!_OS](https://img.shields.io/badge/Pop%21__OS-48B9C7?logo=popos&logoColor=white)](docs/linux.md#ubuntu-debian-linux-mint-pop_os) [![Fedora](https://img.shields.io/badge/Fedora-51A2DA?logo=fedora&logoColor=white)](docs/linux.md#fedora) [![Bazzite](https://img.shields.io/badge/Bazzite-8A3FFC?logo=fedora&logoColor=white)](docs/linux.md#bazzite-silverblue-kinoite-aurora-bluefin) [![Steam Deck](https://img.shields.io/badge/Steam_Deck-1A9FFF?logo=steamdeck&logoColor=white)](docs/linux.md#steam-deck-steamos) [![openSUSE](https://img.shields.io/badge/openSUSE-73BA25?logo=opensuse&logoColor=white)](docs/linux.md#opensuse) [![Arch](https://img.shields.io/badge/Arch-1793D1?logo=archlinux&logoColor=white)](docs/linux.md#cachyos-arch-manjaro-endeavouros) [![CachyOS](https://img.shields.io/badge/CachyOS-08A88A?logo=cachyos&logoColor=white)](docs/linux.md#cachyos-arch-manjaro-endeavouros) [![Manjaro](https://img.shields.io/badge/Manjaro-35BF5C?logo=manjaro&logoColor=white)](docs/linux.md#cachyos-arch-manjaro-endeavouros) [![EndeavourOS](https://img.shields.io/badge/EndeavourOS-7F3FBF?logo=endeavouros&logoColor=white)](docs/linux.md#cachyos-arch-manjaro-endeavouros)
+`docs/ARCHITECTURE.md` describes the design. `CONTRIBUTING.md` describes how to test a change.
 
-## Building from Source
+## Uploads and a2tools.app
 
-### Prerequisites
+Daevalog DPS Meter can upload fights to the a2tools.app log service, which the A2Tools project runs. An account on a2tools.app is an A2Tools account. Daevalog DPS Meter is not affiliated with A2Tools or a2tools.app.
 
-- [Rust](https://rustup.rs/) (latest stable)
-- [Node.js](https://nodejs.org/) (v18+)
-- [Npcap](https://npcap.com) installed
+## Support A2Tools
 
-### Build
+Daevalog DPS Meter is built on the work of taengu and the A2Tools project. If Daevalog DPS Meter is useful to you, please consider supporting A2Tools:
 
-```bash
-npm install
-npm run tauri build
-```
+- [Buy me a Coffee (Ko-fi)](https://ko-fi.com/hiddencube)
+- [爱发电 (afdian)](https://afdian.com/a/hiddencube)
+- [PayPal](https://www.paypal.me/taengoo)
+- [Donate with crypto (NOWPayments)](https://nowpayments.io/donation/thehiddencube)
 
-The MSI installer will be at `src-tauri/target/release/bundle/msi/`.
+The full and current list of A2Tools donation options, including WeChat and wallet addresses, is in the [A2Tools DPS Meter README](https://github.com/taengu/A2Tools-DPS-Meter#support). Daevalog DPS Meter does not take donations on behalf of A2Tools.
 
-### Development
+## License and credits
 
-```bash
-npm run tauri dev
-```
+Daevalog DPS Meter is licensed under the GNU General Public License, version 3. See [LICENSE](LICENSE).
 
-## FAQ
+- A2Tools DPS Meter: Copyright (c) 2026 taengu.
+- Parts are derived from AION2-DPS-Meter, Copyright (c) 2026 TK-open-public, under the MIT License. The full MIT text is in [LICENSE](LICENSE).
+- Modifications: Seralth, since 2026-10-02.
 
-**Q: The meter shows "Detecting AION2 connection..."**
-A: Make sure AION 2 is running and the app has administrator privileges. If using a VPN or ping reducer, the app will detect the loopback adapter automatically.
+AION 2 is a trademark of NCSOFT. Daevalog DPS Meter is not affiliated with or endorsed by NCSOFT.
 
-**Q: My name doesn't appear on the meter**
-A: Enter your character name and actor ID in Settings. The name is auto-detected from the AION 2 window title.
-
-**Q: Npcap is installed but capture doesn't work**
-A: Reinstall Npcap and ensure "WinPcap API-compatible Mode" is checked during installation.
-
-## Community
-
-- [Discord](https://discord.gg/Aion2Global)
-- [A2Tools.app](https://a2tools.app)
-
-## Support
-
-Say thanks and fund new cool projects & features!
-
-- <img src="wechat.png" width="150">
-- ☕ [Buy me a Coffee](https://ko-fi.com/hiddencube)
-- ☕ [在爱发电支持我](https://afdian.com/a/hiddencube)
-- 🅿️ [Send with PayPal](https://www.paypal.me/taengoo)
-- 🎁 [Donate with Crypto](https://nowpayments.io/donation/thehiddencube)
-- **BTC**: `1GexKhgVZPYRqpfCKydXLoNUXRRRUoAUwT`
-- **ETH**: `0x38F0bc371A563A24eCa6034cFf77eB6173c7e3e7`
-- **USDC**: `0xA9571Fc95666350f6DFFB8Fb80ee27eE7db46b56`
-
-## License
-
-[GPL-3.0](LICENSE)
+The README of A2Tools DPS Meter, with Windows instructions and the community links of the A2Tools project, is in the [A2Tools DPS Meter repository](https://github.com/taengu/A2Tools-DPS-Meter).

@@ -1,3 +1,5 @@
+> This file is the README of the upstream project, A2Tools DPS Meter. For Daevalog DPS Meter, read [README.md](README.md).
+
 # A2Tools DPS Meter
 
 [![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)

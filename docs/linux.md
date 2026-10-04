@@ -1,3 +1,5 @@
+> This guide is the Linux guide of the upstream project, A2Tools DPS Meter. Its packages, repositories and update notes describe A2Tools DPS Meter, not Daevalog DPS Meter. Daevalog DPS Meter has no packages yet: see [README.md](../README.md).
+
 # A2Tools DPS Meter on Linux (Proton)
 
 The meter runs natively on Linux while AION 2 runs under Proton. Install the package for your system below: it sets up everything, packet-capture permission included, and keeps itself up to date. Only on a distribution with no package do you need to build it yourself. Linux support is new, so your logs help: see [Sending us your logs](#sending-us-your-logs).
