@@ -1295,6 +1295,7 @@ impl DataStorage {
             return;
         }
         append_nickname_inner(&mut inner, uid, nickname);
+        rebind_roster_after_naming(&mut inner, nickname);
     }
 
     /// Bind a nickname from an AUTHORITATIVE source (a masked identity record, a
@@ -1312,6 +1313,7 @@ impl DataStorage {
         let mut inner = self.inner.write();
         inner.authoritative_name_ids.insert(uid);
         append_nickname_inner_with_force(&mut inner, uid, nickname, true);
+        rebind_roster_after_naming(&mut inner, nickname);
     }
 
     /// A name the player tied to an id in Settings, kept through
@@ -2010,6 +2012,17 @@ fn append_nickname_inner_with_force(inner: &mut Inner, uid: i32, nickname: &str,
 /// that class fighting now. Two of a class on either side are left alone,
 /// unless one of the players clearly runs a rotation and the others only
 /// repeat a skill or two (an aura or a spirit the spawn never covered).
+/// When a party member has just been named, match the rest of the roster at
+/// once. Naming one of two Spiritmasters settles the other by elimination,
+/// but the match ran only every 64 damage records of the current fight, so
+/// between pulls the other waited: 30 and 105 seconds in a 2026-10-02 run
+/// with two Gladiators and two Spiritmasters, the second being the player.
+fn rebind_roster_after_naming(inner: &mut Inner, nickname: &str) {
+    if inner.party_members.contains_key(nickname.trim()) {
+        bind_roster_names_by_class(inner);
+    }
+}
+
 fn bind_roster_names_by_class(inner: &mut Inner) {
     if inner.party_members.len() < 2 {
         return;
@@ -2150,6 +2163,27 @@ mod tests {
         a.add_at(101, &SecondStats { damage: 50, hits: 0, crits: 0, max_hit: 0 });
         assert_eq!(a.stats_since(100_000), SecondStats { damage: 1250, hits: 2, crits: 1, max_hit: 900 });
         assert_eq!(a.stats_since(101_000), SecondStats { damage: 350, hits: 1, crits: 0, max_hit: 300 });
+    }
+
+    #[test]
+    fn naming_one_of_two_same_class_members_names_the_other_at_once() {
+        let s = DataStorage::new();
+        let sm = |slot| PartyMember { slot, job: Some(JobClass::Elementalist), ..Default::default() };
+        s.set_party_roster(vec![("Thermi".into(), sm(1)), ("Nyxie".into(), sm(2))], true);
+        // Two unnamed Spiritmasters, each running a rotation.
+        for (actor, base) in [(1792, 16_010_000), (13520, 16_010_000)] {
+            for i in 0..4 {
+                let mut p = ParsedDamagePacket::new();
+                p.set_actor_id(actor);
+                p.set_target_id(900);
+                p.set_skill_code(base + i * 10_000);
+                p.set_damage(100);
+                s.append_damage(p);
+            }
+        }
+        assert!(s.get_nickname(13520).is_none(), "two of a class: the roster cannot tell");
+        s.append_nickname_authoritative(1792, "Thermi");
+        assert_eq!(s.get_nickname(13520).as_deref(), Some("Nyxie"), "the other one, by elimination");
     }
 
     fn who(s: &DataStorage) -> (Option<i64>, Option<String>, bool) {
