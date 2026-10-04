@@ -20,7 +20,7 @@ function setup(getBattleDetail) {
   app.hoverTooltipRequestSeqByRowId = new Map();
   const rendered = [];
   app.renderHoverTooltip = (details) => rendered.push(details);
-  return { app, rendered, logs };
+  return { app, rendered, logs, window };
 }
 
 test("hover replaces loading with the player's highest-damage skills", async () => {
