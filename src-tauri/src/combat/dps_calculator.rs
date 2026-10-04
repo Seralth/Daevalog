@@ -381,21 +381,20 @@ impl DpsCalculator {
                 orphan_merges.push((uid, owners[0]));
             }
         }
-        // The instance rule from `get_target_details`: with the whole party
-        // roster tied to entities, an unnamed actor is a summon of the one
-        // party member of its class.
-        let actor_jobs: HashMap<i32, String> = dps_data.map.iter()
-            .map(|(&id, d)| (id, d.job.clone()))
+        // The instance rule from `get_target_details`: an actor of a class
+        // only one party member has is that member, or their summon.
+        let rows: Vec<(i32, String, usize, i64)> = dps_data.map.iter()
+            .map(|(&id, d)| (id, d.job.clone(), skill_counts.get(&id).copied().unwrap_or(0), d.amount as i64))
             .collect();
-        if let Some(by_job) = self.instance_party_by_job(&nickname_data, &actor_jobs) {
+        if let Some(owners) = self.instance_class_owners(&rows) {
             let merged: HashSet<i32> = orphan_merges.iter().map(|(o, _)| *o).collect();
-            for (&uid, data) in &dps_data.map {
-                if merged.contains(&uid) || summon_data.contains_key(&uid) || nickname_data.contains_key(&uid) {
+            for (id, job, _, _) in &rows {
+                if merged.contains(id) {
                     continue;
                 }
-                if let Some(owners) = by_job.get(&data.job) {
-                    if owners.len() == 1 && owners[0] != uid {
-                        orphan_merges.push((uid, owners[0]));
+                if let Some(&owner) = owners.get(job) {
+                    if owner != *id {
+                        orphan_merges.push((*id, owner));
                     }
                 }
             }
@@ -667,15 +666,21 @@ impl DpsCalculator {
         }
     }
 
-    /// The party's members in a fight, by class: `actor_jobs` narrowed to the
-    /// actors named after a roster member. Only in an instance, and only once
-    /// every roster member is tied to an entity; otherwise None, since an
-    /// unnamed actor might then be a party member whose name was never bound.
-    fn instance_party_by_job(
-        &self,
-        nickname_data: &HashMap<i32, String>,
-        actor_jobs: &HashMap<i32, String>,
-    ) -> Option<HashMap<String, Vec<i32>>> {
+    /// In an instance the party roster names each member's class. For a class
+    /// only one member has, every actor of that class in the fight is that
+    /// member, under an older entity id (meters before 2.0.42 lost track of
+    /// the local player's), or one of their summons whose owner the capture
+    /// never named. Returns each such class with the actor to credit: the one
+    /// with the most distinct skills (a player's rotation, against a summon's
+    /// one or two), then the most damage.
+    ///
+    /// None outside an instance, when the roster leaves a member's class
+    /// unknown, or when more actors run a rotation than the party has members:
+    /// then another party is in the fight and a class says nothing.
+    ///
+    /// `actors`: (row id, class name, distinct skills, damage).
+    fn instance_class_owners(&self, actors: &[(i32, String, usize, i64)]) -> Option<HashMap<String, i32>> {
+        const ROTATION_SKILLS: usize = 5;
         if self.data_storage.current_dungeon_id() <= 0 {
             return None;
         }
@@ -683,17 +688,23 @@ impl DpsCalculator {
         if party.len() < 2 {
             return None;
         }
-        let bound: HashSet<&str> = nickname_data.values().map(|n| n.as_str()).collect();
-        if !party.keys().all(|name| bound.contains(name.as_str())) {
+        let mut members_of: HashMap<String, usize> = HashMap::new();
+        for member in party.values() {
+            *members_of.entry(member.job?.class_name().to_string()).or_default() += 1;
+        }
+        if actors.iter().filter(|a| a.2 >= ROTATION_SKILLS).count() > party.len() {
             return None;
         }
-        let mut by_job: HashMap<String, Vec<i32>> = HashMap::new();
-        for (&id, job) in actor_jobs {
-            if !job.is_empty() && nickname_data.get(&id).is_some_and(|n| party.contains_key(n)) {
-                by_job.entry(job.clone()).or_default().push(id);
+        let mut best: HashMap<String, (i32, usize, i64)> = HashMap::new();
+        for (id, job, skills, damage) in actors {
+            if members_of.get(job) != Some(&1) {
+                continue;
+            }
+            if best.get(job).is_none_or(|&(_, s, d)| (*skills, *damage) > (s, d)) {
+                best.insert(job.clone(), (*id, *skills, *damage));
             }
         }
-        Some(by_job)
+        Some(best.into_iter().map(|(job, (id, _, _))| (job, id)).collect())
     }
 
     fn resolve_target_name(&self, target_id: i32) -> String {
@@ -1145,25 +1156,34 @@ impl DpsCalculator {
                 }
             }
 
-            // In an instance, with the whole party roster tied to entities, an
-            // unnamed actor is a summon whose spawn the capture missed. Slices
-            // from older meters carry no spawn packets, and in them half the
-            // party can share a power scalar, so neither rule above can tell:
-            // a Vakron log kept 18 rows of spirits, Divine Auras and a
-            // Sorcerer's summon (2026-10-05). Its owner is the one party
-            // member of its class; with two of that class it stays as it is.
-            if let Some(by_job) = self.instance_party_by_job(&nickname_data, &actor_jobs) {
-                for (&actor_id, actor_data) in &target_data.actors {
-                    let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
-                    if raw_uid <= 0 || orphan_to_owner.contains_key(&raw_uid) { continue; }
-                    if summon_data.contains_key(&raw_uid) || nickname_data.contains_key(&raw_uid) { continue; }
-                    let job = actor_data.job
-                        .or_else(|| actor_data.skills.keys()
-                            .find_map(|&(sc, _)| JobClass::convert_from_skill_loose(sc)))
-                        .map(|j| j.class_name().to_string());
-                    if let Some(owners) = job.and_then(|j| by_job.get(&j)) {
-                        if owners.len() == 1 && owners[0] != raw_uid {
-                            orphan_to_owner.insert(raw_uid, owners[0]);
+            // In an instance, an actor of a class only one party member has
+            // is that member or their summon. Slices from older meters carry
+            // no spawn packets, lost track of the local player's id, and tie
+            // names to stale ids, so neither the names nor the scalar above can
+            // place them: one Vakron log kept 14 rows of a Sorcerer's summons
+            // and the uploader split in two (2026-10-05).
+            let mut rows: HashMap<i32, (String, HashSet<i32>, i64)> = HashMap::new();
+            for (&actor_id, actor_data) in &target_data.actors {
+                let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
+                if raw_uid <= 0 || orphan_to_owner.contains_key(&raw_uid) { continue; }
+                let job = actor_data.job
+                    .or_else(|| actor_data.skills.keys()
+                        .find_map(|&(sc, _)| JobClass::convert_from_skill_loose(sc)))
+                    .map(|j| j.class_name().to_string())
+                    .unwrap_or_default();
+                let row = rows.entry(raw_uid).or_insert_with(|| (String::new(), HashSet::new(), 0));
+                if row.0.is_empty() { row.0 = job; }
+                row.1.extend(actor_data.skills.keys().map(|k| k.0));
+                row.2 += actor_data.total_damage;
+            }
+            let rows: Vec<(i32, String, usize, i64)> = rows.into_iter()
+                .map(|(id, (job, skills, damage))| (id, job, skills.len(), damage))
+                .collect();
+            if let Some(owners) = self.instance_class_owners(&rows) {
+                for (id, job, _, _) in &rows {
+                    if let Some(&owner) = owners.get(job) {
+                        if owner != *id {
+                            orphan_to_owner.insert(*id, owner);
                         }
                     }
                 }
@@ -1473,48 +1493,76 @@ mod tests {
         assert_eq!(shown.detail_target_ids, vec![50_000, 60_000]);
     }
 
-    #[test]
-    fn in_an_instance_an_unnamed_actor_goes_to_the_party_member_of_its_class() {
+    /// A party of a Spiritmaster, a Cleric and two Gladiators, by class.
+    fn roster(storage: &DataStorage) {
         use crate::combat::data_storage::PartyMember;
+        use crate::entity::job_class::JobClass;
+        let member = |slot, job| PartyMember { slot, job: Some(job), ..Default::default() };
+        storage.set_party_roster(vec![
+            ("TieuPhung".into(), member(1, JobClass::Elementalist)),
+            ("Bong".into(), member(2, JobClass::Cleric)),
+            ("Glad1".into(), member(3, JobClass::Gladiator)),
+            ("Glad2".into(), member(4, JobClass::Gladiator)),
+        ], true);
+    }
+
+    /// `skills` distinct skills of a class (prefix: 16 Spiritmaster, 17 Cleric,
+    /// 11 Gladiator) from `actor` on `target`.
+    fn rotation(storage: &DataStorage, actor: i32, target: i32, prefix: i32, skills: i32) {
+        for i in 0..skills {
+            let mut p = hit(actor, target, 1_000 + i as i64);
+            p.set_skill_code(prefix * 1_000_000 + (i + 1) * 10_000);
+            storage.append_damage(p);
+        }
+    }
+
+    #[test]
+    fn in_an_instance_an_actor_goes_to_the_one_party_member_of_its_class() {
         let storage = Arc::new(DataStorage::new());
         storage.set_current_dungeon(600_072);
-        // Two named party members, a Spiritmaster (16) and a Cleric (17).
-        let mut sm = hit(1490, 50_000, 1_000);
-        sm.set_skill_code(16_010_000);
-        storage.append_damage(sm);
-        let mut cleric = hit(4046, 50_000, 1_000);
-        cleric.set_skill_code(17_010_000);
-        storage.append_damage(cleric);
-        storage.set_party_roster(vec![
-            ("TieuPhung".into(), PartyMember { slot: 1, ..Default::default() }),
-            ("Bong".into(), PartyMember { slot: 2, ..Default::default() }),
-        ], true);
-        storage.append_nickname(1490, "TieuPhung");
-        storage.append_nickname(4046, "Bong");
-        // An unnamed spirit with a Spiritmaster skill, its spawn never seen.
-        let mut spirit = hit(34_784, 50_000, 1_500);
+        roster(&storage);
+        rotation(&storage, 1490, 50_000, 16, 8);           // the Spiritmaster
+        rotation(&storage, 5886, 50_000, 17, 8);           // the Cleric, under a new id
+        rotation(&storage, 5844, 50_000, 17, 1);           // ...and its old one
+        rotation(&storage, 7001, 50_000, 11, 8);           // two Gladiators
+        rotation(&storage, 7002, 50_000, 11, 8);
+        let mut spirit = hit(34_784, 50_000, 1_500);        // a spirit, owner never seen
         spirit.set_skill_code(16_130_004);
         storage.append_damage(spirit);
+        let mut aura = hit(17_001, 50_000, 1_600);          // a Divine Aura
+        aura.set_skill_code(17_150_000);
+        storage.append_damage(aura);
+        let mut stray = hit(119, 50_000, 1_700);            // a Gladiator-class summon
+        stray.set_skill_code(11_390_000);
+        storage.append_damage(stray);
 
         let details = meter(&storage).get_target_details(50_000, None);
         let rows: HashSet<i32> = details.skills.iter().map(|s| s.actor_id).collect();
-        assert_eq!(rows, HashSet::from([1490, 4046]), "the spirit is folded into its owner");
+        assert_eq!(rows, HashSet::from([1490, 5886, 7001, 7002, 119]),
+            "spirit to the Spiritmaster; the old id and the aura to the Cleric; two Gladiators: unknown");
+    }
 
-        // Outside an instance an unnamed actor may be a stranger: left alone.
+    #[test]
+    fn the_class_rule_stays_off_outside_an_instance_and_with_another_party() {
+        // Open world: an actor of the class may be a stranger.
         let open = Arc::new(DataStorage::new());
-        let mut a = hit(1490, 50_000, 1_000);
-        a.set_skill_code(16_010_000);
-        open.append_damage(a);
-        let mut s = hit(34_784, 50_000, 1_500);
-        s.set_skill_code(16_130_004);
-        open.append_damage(s);
-        open.set_party_roster(vec![
-            ("TieuPhung".into(), PartyMember { slot: 1, ..Default::default() }),
-            ("Bong".into(), PartyMember { slot: 2, ..Default::default() }),
-        ], true);
-        open.append_nickname(1490, "TieuPhung");
-        let details = meter(&open).get_target_details(50_000, None);
-        assert!(details.skills.iter().any(|s| s.actor_id == 34_784));
+        roster(&open);
+        rotation(&open, 1490, 50_000, 16, 8);
+        rotation(&open, 34_784, 50_000, 16, 1);
+        let rows: HashSet<i32> = meter(&open).get_target_details(50_000, None)
+            .skills.iter().map(|s| s.actor_id).collect();
+        assert!(rows.contains(&34_784));
+
+        // More players running a rotation than the party has: another party.
+        let raid = Arc::new(DataStorage::new());
+        raid.set_current_dungeon(600_072);
+        roster(&raid);
+        for (i, id) in [1490, 1491, 5886, 7001, 7002].into_iter().enumerate() {
+            rotation(&raid, id, 50_000, [16, 16, 17, 11, 11][i], 8);
+        }
+        let rows: HashSet<i32> = meter(&raid).get_target_details(50_000, None)
+            .skills.iter().map(|s| s.actor_id).collect();
+        assert!(rows.contains(&1490) && rows.contains(&1491), "two Spiritmasters: both kept");
     }
 
     #[test]
