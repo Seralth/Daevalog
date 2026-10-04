@@ -554,6 +554,11 @@ impl DpsCalculator {
                 {
                     let name = self.resolve_target_name(best);
                     (HashSet::from([best]), name, best)
+                } else if self.data_storage.current_dungeon_id() > 0 {
+                    // No boss yet in a dungeon: show nothing. Every mob in an
+                    // instance is on the way to a boss, so the fallback below
+                    // put the first trash pull of each run on the meter.
+                    (HashSet::new(), String::new(), 0)
                 } else {
                     // No boss: the mob with the most damage. Once you are
                     // identified, only one you or your party hit. Any mob
@@ -1328,4 +1333,48 @@ fn build_nickname_canonical_map_from_aggregates(
         }
     }
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::entity::damage_packet::ParsedDamagePacket;
+
+    fn hit(actor: i32, target: i32, at: i64) -> ParsedDamagePacket {
+        let mut p = ParsedDamagePacket::new();
+        p.set_actor_id(actor);
+        p.set_target_id(target);
+        p.set_skill_code(11010000);
+        p.set_damage(500);
+        p.set_timestamp(at);
+        p
+    }
+
+    fn meter(storage: &Arc<DataStorage>) -> DpsCalculator {
+        DpsCalculator::new(storage.clone(), Arc::new(SkillLookup::new()),
+            Arc::new(NpcLookup::new()), Arc::new(PingTracker::new()))
+    }
+
+    #[test]
+    fn boss_mode_shows_your_trash_mob_in_the_open_world_only() {
+        let open_world = Arc::new(DataStorage::new());
+        open_world.set_local_player_id(Some(2259));
+        open_world.append_damage(hit(2259, 50_000, 1_000));
+        // A stranger alone on a bigger fight of their own stays off the meter.
+        for t in 0..5 {
+            open_world.append_damage(hit(11_345, 60_000, 1_000 + t));
+        }
+        let shown = meter(&open_world).get_dps();
+        assert_eq!(shown.target_id, 50_000);
+        assert_eq!(shown.map.keys().copied().collect::<Vec<_>>(), vec![2259]);
+
+        // In a dungeon, a mob that is not a boss is not shown at all.
+        let dungeon = Arc::new(DataStorage::new());
+        dungeon.set_local_player_id(Some(2259));
+        dungeon.set_current_dungeon(600_011);
+        dungeon.append_damage(hit(2259, 50_000, 1_000));
+        let shown = meter(&dungeon).get_dps();
+        assert_eq!(shown.target_id, 0);
+        assert!(shown.map.is_empty());
+    }
 }
