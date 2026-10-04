@@ -34,6 +34,7 @@ class DpsApp {
       userName: "dpsMeter.userName",
       onlyShowUser: "dpsMeter.onlyShowUser",
       allTargetsWindowMs: "dpsMeter.allTargetsWindowMs",
+      encounterTimeoutSec: "dpsMeter.encounterTimeoutSec",
       trainSelectionMode: "dpsMeter.trainSelectionMode",
       targetSelectionWindowMs: "dpsMeter.targetSelectionWindowMs",
       meterFillOpacity: "dpsMeter.meterFillOpacity",
@@ -1856,7 +1857,7 @@ class DpsApp {
       this._setOverlayLocked(!this._overlayLocked);
     });
     this.targetModeBtn?.addEventListener("click", () => {
-      const modes = ["lastHitByMe", "bossTargets", "trainTargets", "allTargets"];
+      const modes = ["lastHitByMe", "bossTargets", "trainTargets", "allTargets", "encounter"];
       const currentIndex = modes.indexOf(this.targetSelection);
       const nextMode = modes[(currentIndex + 1) % modes.length];
       console.log("[Target Mode Toggle]", {
@@ -1999,6 +2000,7 @@ class DpsApp {
     this.localActorIdInput = document.querySelector(".localActorIdInput");
     this.allTargetsWindowDropdownBtn = document.querySelector(".allTargetsWindowDropdownBtn");
     this.allTargetsWindowDropdownMenu = document.querySelector(".allTargetsWindowDropdownMenu");
+    this.encounterTimeoutInput = document.querySelector(".encounterTimeoutInput");
     this.targetWindowDropdownBtn = document.querySelector(".targetWindowDropdownBtn");
     this.targetWindowDropdownMenu = document.querySelector(".targetWindowDropdownMenu");
     this.trainSelectionModeDropdownBtn = document.querySelector(".trainSelectionModeDropdownBtn");
@@ -2118,7 +2120,7 @@ class DpsApp {
     if (mainPlayerDpsBoldSetting === null || mainPlayerDpsBoldSetting === undefined || mainPlayerDpsBoldSetting === "") {
       this.safeSetSetting(this.storageKeys.mainPlayerDpsBold, "true");
     }
-    const validModes = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets"];
+    const validModes = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets", "encounter"];
     const normalizedDefaultMode = validModes.includes(storedDefaultMeterMode)
       ? storedDefaultMeterMode : "bossTargets";
     this.settingsSelections.defaultMeterMode = normalizedDefaultMode;
@@ -2202,6 +2204,19 @@ class DpsApp {
     this.settingsSelections.allTargetsWindowMs = selectedWindow;
     this.safeSetSetting(this.storageKeys.allTargetsWindowMs, selectedWindow);
     window.javaBridge?.setAllTargetsWindowMs?.(selectedWindow);
+
+    // Encounter timeout in whole seconds, 5-300; the backend reads the setting.
+    if (this.encounterTimeoutInput) {
+      const storedTimeout = Number(this.safeGetSetting(this.storageKeys.encounterTimeoutSec));
+      this.encounterTimeoutInput.value = String(
+        Number.isInteger(storedTimeout) && storedTimeout >= 5 && storedTimeout <= 300 ? storedTimeout : 15);
+      this.encounterTimeoutInput.addEventListener("change", () => {
+        const value = Math.round(Number(this.encounterTimeoutInput.value));
+        const secs = Number.isFinite(value) ? Math.min(300, Math.max(5, value)) : 15;
+        this.encounterTimeoutInput.value = String(secs);
+        this.safeSetSetting(this.storageKeys.encounterTimeoutSec, String(secs));
+      });
+    }
 
     const allowedTargetWindows = ["5000", "10000", "15000", "20000", "30000"];
     const selectedTargetWindow = allowedTargetWindows.includes(String(storedTargetSelectionWindowMs))
@@ -2871,6 +2886,7 @@ class DpsApp {
       { value: "bossTargets", label: "BOSS" },
       { value: "allTargets", label: "ALL" },
       { value: "trainTargets", label: "TRAIN" },
+      { value: "encounter", label: "ENC" },
     ];
 
     const trainModeOptions = [
@@ -3996,7 +4012,7 @@ class DpsApp {
 
   setTargetSelection(mode, { persist = false, syncBackend = false, reason = "update" } = {}) {
     const previousSelection = this.targetSelection;
-    this.targetSelection = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets"].includes(mode)
+    this.targetSelection = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets", "encounter"].includes(mode)
       ? mode
        : "lastHitByMe";
     if (persist) {
@@ -4197,7 +4213,7 @@ class DpsApp {
       return;
     }
     if (key === this.storageKeys.defaultMeterMode) {
-      const validModes = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets"];
+      const validModes = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets", "encounter"];
       if (!validModes.includes(value)) return;
       if (this.settingsSelections) this.settingsSelections.defaultMeterMode = value;
       if (window.A2_VIEW !== "main" || value === this.targetSelection) return;
@@ -4708,6 +4724,9 @@ class DpsApp {
     if (targetMode === "allTargets") {
       return this.i18n?.t("target.all", "All Targets") ?? "All Targets";
     }
+    if (targetMode === "encounter") {
+      return this.i18n?.t("target.encounter", "Encounter") ?? "Encounter";
+    }
     if (targetMode === "trainTargets") {
       if (!this.isLocalUserIdentified()) {
         return this.i18n?.t("target.identifying", "Identifying you...") ?? "Identifying you...";
@@ -4726,7 +4745,7 @@ class DpsApp {
       ? (this.i18n?.getDungeonLabel?.(Number(dungeonId)) ?? "")
       : "";
     if (dungeonLabel) {
-      const tracksOne = targetMode !== "allTargets" && targetMode !== "trainTargets";
+      const tracksOne = targetMode !== "allTargets" && targetMode !== "trainTargets" && targetMode !== "encounter";
       const numericId = Number(targetId);
       if (tracksOne && Number.isFinite(numericId) && numericId > 0) {
         const cleanName = typeof targetName === "string" ? targetName.trim() : "";
@@ -4738,7 +4757,7 @@ class DpsApp {
     if (targetMode === "trainTargets" && !this.isLocalUserIdentified()) {
       return this.i18n?.t("target.identifying", "Identifying you...") ?? "Identifying you...";
     }
-    if (targetMode === "allTargets" || targetMode === "trainTargets") {
+    if (targetMode === "allTargets" || targetMode === "trainTargets" || targetMode === "encounter") {
       return this.getDefaultTargetLabel(targetMode);
     }
     if (targetMode === "bossTargets" && (!Number(targetId) || Number(targetId) <= 0) && !targetName) {
@@ -4770,16 +4789,19 @@ class DpsApp {
     const isBossTargets = this.targetSelection === "bossTargets";
     const isAllTargets = this.targetSelection === "allTargets";
     const isTrainTargets = this.targetSelection === "trainTargets";
-    this.targetModeBtn.classList.toggle("isAllTargets", isAllTargets);
+    const isEncounter = this.targetSelection === "encounter";
+    this.targetModeBtn.classList.toggle("isAllTargets", isAllTargets || isEncounter);
     this.targetModeBtn.classList.toggle("isTrainTargets", isTrainTargets);
-    this.targetModeBtn.textContent = isBossTargets ? "BOSS" : isAllTargets ? "ALL" : isTrainTargets ? "TRAIN" : "TARGET";
+    this.targetModeBtn.textContent = isBossTargets ? "BOSS" : isAllTargets ? "ALL" : isTrainTargets ? "TRAIN" : isEncounter ? "ENC" : "TARGET";
     const ariaLabel = isBossTargets
       ? "Boss targets mode"
       : isAllTargets
         ? "All targets mode"
         : isTrainTargets
           ? "Train targets mode"
-          : "Target mode";
+          : isEncounter
+            ? "Encounter mode"
+            : "Target mode";
     this.targetModeBtn.setAttribute("aria-label", ariaLabel);
   }
 

@@ -304,6 +304,10 @@
       "sending": "Sending...",
       "sent": "Sent. Your report code is {code}: give it to the developer on Discord.",
       "failed": "Could not send: {error}"
+    },
+    "encounterTimeout": {
+      "label": "Encounter ends after (seconds)",
+      "hint": "Seconds without combat by you or your party that end an encounter. A boss you hit that is still alive keeps it open."
     }
   },
   "support": {
@@ -363,7 +367,8 @@
     "all": "All Targets",
     "identifying": "Identifying you...",
     "train": "Training Scarecrow",
-    "boss": "Boss Targets"
+    "boss": "Boss Targets",
+    "encounter": "Encounter"
   },
   "classes": {
     "GLADIATOR": "Gladiator",

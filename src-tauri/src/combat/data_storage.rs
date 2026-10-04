@@ -359,8 +359,34 @@ pub struct SegmentIdentity {
 
 // ───── Main storage ─────
 
+/// A stretch of combat by you or your party: from the first hit dealt or
+/// taken until the timeout passes without one. A boss you hit that is still
+/// alive holds it open, up to `BOSS_HOLD_MAX_MS`.
+#[derive(Debug, Clone, Default)]
+pub struct Encounter {
+    pub start: i64,
+    /// Last hit dealt or taken by you or your party.
+    pub last_ours: i64,
+    /// Last hit by anyone on one of its targets.
+    pub last_any: i64,
+    /// The enemies fought: hit by you or your party, or hitting you.
+    pub targets: HashSet<i32>,
+}
+
+impl Encounter {
+    pub fn duration(&self) -> i64 {
+        (self.last_any.max(self.last_ours) - self.start).max(0)
+    }
+}
+
+pub const DEFAULT_ENCOUNTER_TIMEOUT_MS: i64 = 15_000;
+/// A live boss holds an encounter open at most this long after your last hit,
+/// so a boss that leaves without dying cannot hold it for good.
+const BOSS_HOLD_MAX_MS: i64 = 300_000;
+
 pub struct DataStorage {
     inner: RwLock<Inner>,
+    encounter_timeout_ms: AtomicI64,
     damage_generation: AtomicI64,
     /// Wall-clock ms of the last damage record — gates the zone-change lull check.
     last_damage_ms: AtomicI64,
@@ -459,6 +485,7 @@ struct Inner {
     /// Who the loot records (`04 8d` after a kill) say owns the drops, and
     /// what that has been used for. See `note_loot_owner`.
     loot_identity: LootIdentity,
+    encounter: Option<Encounter>,
     /// Each character's home server, by name, from the records that state it:
     /// the self record and loot records. See `fight_server_id`.
     player_servers: HashMap<String, u16>,
@@ -520,6 +547,7 @@ impl DataStorage {
                 local_character_name: None,
                 local_identity_from_game: false,
                 loot_identity: LootIdentity::default(),
+                encounter: None,
                 player_servers: HashMap::new(),
                 self_profile: None,
             }),
@@ -527,7 +555,17 @@ impl DataStorage {
             last_damage_ms: AtomicI64::new(NEVER_MS),
             last_zone_reset_ms: AtomicI64::new(NEVER_MS),
             combat_reset_requested: AtomicBool::new(false),
+            encounter_timeout_ms: AtomicI64::new(DEFAULT_ENCOUNTER_TIMEOUT_MS),
         }
+    }
+
+    /// Seconds without combat by you or your party that end an encounter.
+    pub fn set_encounter_timeout_ms(&self, ms: i64) {
+        self.encounter_timeout_ms.store(ms.clamp(5_000, 300_000), Ordering::Relaxed);
+    }
+
+    pub fn current_encounter(&self) -> Option<Encounter> {
+        self.inner.read().encounter.clone()
     }
 
     /// Called when a self/world teleport (zone-change opcode) is seen. Resets
@@ -835,6 +873,10 @@ impl DataStorage {
         {
             // Track damage received on the player target
             let resolved_target = summon_resolver::resolve(target_id, &inner.summon_storage);
+            if inner.known_player_ids.contains(&resolved_target) && is_ours(&inner, resolved_target) {
+                let timeout = self.encounter_timeout_ms.load(Ordering::Relaxed);
+                note_encounter(&mut inner, timeout, pdp.timestamp(), actor_id, true);
+            }
             if inner.known_player_ids.contains(&resolved_target) {
                 let dmg = pdp.total_damage() as i64;
                 for target_data in inner.target_combat.values_mut() {
@@ -923,6 +965,9 @@ impl DataStorage {
             }
         }
         apply_damage(&mut inner, &pdp);
+        let ours = is_ours(&inner, actor_id);
+        let timeout = self.encounter_timeout_ms.load(Ordering::Relaxed);
+        note_encounter(&mut inner, timeout, pdp.timestamp(), target_id, ours);
 
         self.damage_generation.fetch_add(1, Ordering::Relaxed);
         self.last_damage_ms.store(now_ms(), Ordering::Relaxed);
@@ -1407,6 +1452,7 @@ impl DataStorage {
     pub fn flush(&self) {
         let mut inner = self.inner.write();
         retire_all(&mut inner);
+        inner.encounter = None;
         inner.held_dot_ticks.clear();
         inner.actor_jobs.clear();
         inner.known_player_ids.clear();
@@ -1426,6 +1472,7 @@ impl DataStorage {
     pub fn flush_combat_only(&self) {
         let mut inner = self.inner.write();
         retire_all(&mut inner);
+        inner.encounter = None;
         inner.held_dot_ticks.clear();
         inner.hostile_target_ids.clear();
         inner.dead_entity_ids.clear();
@@ -1640,6 +1687,33 @@ fn retire_all(inner: &mut Inner) {
     let segments: Vec<TargetCombatData> = inner.target_combat.drain().map(|(_, td)| td).collect();
     for td in segments {
         retire_segment(inner, td);
+    }
+}
+
+/// Extend the encounter with a hit at `ts` on (or by) `enemy`. A hit by you or
+/// your party starts a new encounter once the old one timed out; anyone
+/// else's hit only counts toward an encounter it belongs to.
+fn note_encounter(inner: &mut Inner, timeout: i64, ts: i64, enemy: i32, ours: bool) {
+    if !ours {
+        if let Some(e) = inner.encounter.as_mut().filter(|e| e.targets.contains(&enemy)) {
+            e.last_any = e.last_any.max(ts);
+        }
+        return;
+    }
+    let ended = inner.encounter.as_ref().is_some_and(|e| {
+        let quiet = ts - e.last_ours;
+        let boss_alive = e.targets.iter().any(|t| {
+            inner.boss_entity_ids.contains(t) && !inner.dead_entity_ids.contains(t)
+        });
+        quiet > timeout && !(boss_alive && quiet <= BOSS_HOLD_MAX_MS)
+    });
+    if ended || inner.encounter.is_none() {
+        inner.encounter = Some(Encounter { start: ts, last_ours: ts, last_any: ts, targets: HashSet::new() });
+    }
+    if let Some(e) = inner.encounter.as_mut() {
+        e.last_ours = e.last_ours.max(ts);
+        e.last_any = e.last_any.max(ts);
+        e.targets.insert(enemy);
     }
 }
 

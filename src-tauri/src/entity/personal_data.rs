@@ -27,6 +27,17 @@ pub struct PersonalData {
     /// meter anybody should trust.
     #[serde(default)]
     pub is_supporter: bool,
+    /// Damage over this player's own time in combat, first to last hit,
+    /// beside `dps` (over the whole fight or encounter).
+    #[serde(default)]
+    pub active_dps: f64,
+    /// Damage per second over the last 10, 30 and 60 seconds.
+    #[serde(default)]
+    pub last10_dps: f64,
+    #[serde(default)]
+    pub last30_dps: f64,
+    #[serde(default)]
+    pub last60_dps: f64,
 }
 
 impl PersonalData {
@@ -40,6 +51,10 @@ impl PersonalData {
             nickname,
             combat_power: 0,
             is_supporter: false,
+            active_dps: 0.0,
+            last10_dps: 0.0,
+            last30_dps: 0.0,
+            last60_dps: 0.0,
         }
     }
 
@@ -53,6 +68,10 @@ impl PersonalData {
             nickname,
             combat_power: 0,
             is_supporter: false,
+            active_dps: 0.0,
+            last10_dps: 0.0,
+            last30_dps: 0.0,
+            last60_dps: 0.0,
         }
     }
 

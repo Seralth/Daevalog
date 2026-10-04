@@ -433,12 +433,25 @@ fn update_settings(
     key: String,
     value: String,
 ) {
+    if key == ENCOUNTER_TIMEOUT_KEY {
+        apply_encounter_timeout(&state.data_storage, Some(&value));
+    }
     if state.settings.set(&key, &value) {
         if key == crate::tray::HIDE_FROM_TASKBAR_KEY {
             crate::tray::apply_taskbar(&app);
         }
         let _ = app.emit("setting-changed", serde_json::json!({ "key": key, "value": value }));
     }
+}
+
+const ENCOUNTER_TIMEOUT_KEY: &str = "dpsMeter.encounterTimeoutSec";
+
+/// The encounter timeout setting, in whole seconds; anything else keeps the
+/// default.
+fn apply_encounter_timeout(storage: &DataStorage, value: Option<&str>) {
+    let secs = value.and_then(|v| v.trim().parse::<i64>().ok());
+    let ms = secs.map_or(crate::combat::data_storage::DEFAULT_ENCOUNTER_TIMEOUT_MS, |s| s * 1000);
+    storage.set_encounter_timeout_ms(ms);
 }
 
 #[tauri::command]
@@ -2192,6 +2205,7 @@ pub fn run() {
             );
 
             let settings = Settings::new(app_data_dir.clone());
+            apply_encounter_timeout(&data_storage, settings.get(ENCOUNTER_TIMEOUT_KEY).as_deref());
 
             // Load logging settings from saved state
             if settings.get("dpsMeter.debugLoggingEnabled").as_deref() == Some("true") {

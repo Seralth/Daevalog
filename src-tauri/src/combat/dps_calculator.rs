@@ -25,6 +25,7 @@ pub enum TargetSelectionMode {
     LastHitByMe,
     AllTargets,
     TrainTargets,
+    Encounter,
 }
 
 impl TargetSelectionMode {
@@ -36,6 +37,7 @@ impl TargetSelectionMode {
             "lastHitByMe" => Self::LastHitByMe,
             "allTargets" => Self::AllTargets,
             "trainTargets" => Self::TrainTargets,
+            "encounter" => Self::Encounter,
             _ => Self::LastHitByMe,
         }
     }
@@ -48,6 +50,7 @@ impl TargetSelectionMode {
             Self::LastHitByMe => "lastHitByMe",
             Self::AllTargets => "allTargets",
             Self::TrainTargets => "trainTargets",
+            Self::Encounter => "encounter",
         }
     }
 }
@@ -177,8 +180,14 @@ impl DpsCalculator {
         // If no new damage since last cycle, return cached result. A rolling
         // window changes with the clock alone, so it is recomputed every time.
         let window_since = self.window_since();
+        let encounter = (self.target_selection_mode == TargetSelectionMode::Encounter)
+            .then(|| self.data_storage.current_encounter())
+            .flatten();
+        // Damage counted from here: the ALL window's start, or the encounter's.
+        let since = window_since.or(encounter.as_ref().map(|e| e.start));
+        let clock_driven = window_since.is_some() || self.target_selection_mode == TargetSelectionMode::Encounter;
         let current_gen = self.data_storage.damage_generation();
-        if current_gen == self.last_damage_gen && self.last_dps_snapshot.is_some() && window_since.is_none() {
+        if current_gen == self.last_damage_gen && self.last_dps_snapshot.is_some() && !clock_driven {
             return self.last_dps_snapshot.as_ref().unwrap().clone();
         }
         self.last_damage_gen = current_gen;
@@ -230,19 +239,30 @@ impl DpsCalculator {
         dps_data.target_current_hp = target_current_hp;
 
         // Collect actors from selected targets
+        let now = now_ms();
         let mut combined_actors: HashMap<i32, i64> = HashMap::new();
         let mut combined_jobs: HashMap<i32, Option<JobClass>> = HashMap::new();
+        // Per actor: own first and last hit, and damage in the last 10/30/60 s.
+        let mut actor_extra: HashMap<i32, ActorExtra> = HashMap::new();
         for &tid in &target_ids {
             if let Some(target_data) = combat_data.get(&tid) {
                 for (&actor_id, actor_data) in &target_data.actors {
-                    let damage = match window_since {
+                    let damage = match since {
                         Some(since) => actor_data.damage_since(since),
                         None => actor_data.total_damage,
                     };
-                    if damage == 0 && window_since.is_some() {
+                    if damage == 0 && since.is_some() {
                         continue;
                     }
                     *combined_actors.entry(actor_id).or_insert(0) += damage;
+                    let extra = actor_extra.entry(actor_id).or_default();
+                    extra.add_span(
+                        actor_data.first_damage_time.max(since.unwrap_or(i64::MIN)),
+                        actor_data.last_damage_time,
+                    );
+                    for (i, secs) in LAST_WINDOWS_S.iter().enumerate() {
+                        extra.last[i] += actor_data.damage_since(now - secs * 1000);
+                    }
                     if actor_data.job.is_some() && combined_jobs.get(&actor_id).and_then(|j| j.as_ref()).is_none() {
                         combined_jobs.insert(actor_id, actor_data.job);
                     }
@@ -251,7 +271,9 @@ impl DpsCalculator {
         }
 
         // Calculate battle time
-        let battle_time = if self.current_target != 0 {
+        let battle_time = if let Some(e) = &encounter {
+            e.duration()
+        } else if self.current_target != 0 {
             combat_data.get(&self.current_target)
                 .map(|td| (td.last_damage_time - td.first_damage_time).max(0))
                 .unwrap_or(0)
@@ -305,6 +327,7 @@ impl DpsCalculator {
         let canonical = build_nickname_canonical_map_from_aggregates(&combined_actors, &summon_data, &nickname_data, current_local_id.map(|v| v as i32));
 
         let mut total_damage: f64 = 0.0;
+        let mut row_extra: HashMap<i32, ActorExtra> = HashMap::new();
 
         // Build PersonalData from aggregates (no packet iteration!)
         for (&actor_id, &damage) in &combined_actors {
@@ -314,6 +337,9 @@ impl DpsCalculator {
             let uid = *canonical.get(&nickname).unwrap_or(&raw_uid);
 
             total_damage += damage as f64;
+            if let Some(extra) = actor_extra.get(&actor_id) {
+                row_extra.entry(uid).or_default().absorb(extra);
+            }
 
             let entry = dps_data.map.entry(uid).or_insert_with(|| {
                 let cached_job = self.cached_job(&nickname);
@@ -367,6 +393,13 @@ impl DpsCalculator {
                 }
             }
             data.dps = data.amount / bt as f64 * 1000.0;
+            if let Some(extra) = row_extra.get(&uid) {
+                data.active_dps = extra.active_dps(data.amount);
+                for (i, secs) in LAST_WINDOWS_S.iter().enumerate() {
+                    let value = extra.last[i] as f64 / *secs as f64;
+                    match i { 0 => data.last10_dps = value, 1 => data.last30_dps = value, _ => data.last60_dps = value }
+                }
+            }
             data.damage_contribution = if total_damage > 0.0 {
                 data.amount / total_damage * 100.0
             } else {
@@ -554,6 +587,13 @@ impl DpsCalculator {
                         None => (HashSet::new(), String::new(), 0),
                     }
                 }
+            }
+            TargetSelectionMode::Encounter => {
+                // The enemies of the current encounter, while their data lasts.
+                let targets: HashSet<i32> = self.data_storage.current_encounter()
+                    .map(|e| e.targets.into_iter().filter(|t| combat_data.contains_key(t)).collect())
+                    .unwrap_or_default();
+                (targets, "Encounter".to_string(), 0)
             }
             TargetSelectionMode::AllTargets => {
                 let since = self.window_since().unwrap_or(i64::MIN);
@@ -1260,6 +1300,43 @@ fn actor_stats<'a>(targets: impl Iterator<Item = &'a TargetCombatData>) -> HashM
     stats
 }
 
+/// The Last N columns, in seconds.
+const LAST_WINDOWS_S: [i64; 3] = [10, 30, 60];
+
+/// A row's own time in combat and its recent damage, gathered over the
+/// actors (player and summons) the row stands for.
+#[derive(Default, Clone)]
+struct ActorExtra {
+    first: Option<i64>,
+    last_hit: Option<i64>,
+    last: [i64; 3],
+}
+
+impl ActorExtra {
+    fn add_span(&mut self, first: i64, last: i64) {
+        if first > last { return; }
+        self.first = Some(self.first.map_or(first, |f| f.min(first)));
+        self.last_hit = Some(self.last_hit.map_or(last, |l| l.max(last)));
+    }
+
+    fn absorb(&mut self, other: &ActorExtra) {
+        if let (Some(f), Some(l)) = (other.first, other.last_hit) {
+            self.add_span(f, l);
+        }
+        for i in 0..3 {
+            self.last[i] += other.last[i];
+        }
+    }
+
+    /// Damage over first-to-last hit, at least one second.
+    fn active_dps(&self, damage: f64) -> f64 {
+        match (self.first, self.last_hit) {
+            (Some(f), Some(l)) => damage / ((l - f).max(1000) as f64) * 1000.0,
+            _ => 0.0,
+        }
+    }
+}
+
 fn resolve_nickname(uid: i32, nicknames: &HashMap<i32, String>, summon_data: &HashMap<i32, i32>) -> String {
     if let Some(name) = nicknames.get(&uid) {
         return name.clone();
@@ -1479,6 +1556,89 @@ mod tests {
         hits(&s, 2259, 800, 6_000, 9_000);
         crate::clock::set_override(Some(10_000));
         assert_eq!(dungeon_of(&calc.snapshot_boss_fights_force(), "auto_800_1000"), 600002);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn an_encounter_ends_after_the_timeout_unless_a_live_boss_holds_it() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, 1);
+        spawn(&s, 810, 1);
+        hits(&s, 2259, 800, 1_000, 5_000);
+        hits(&s, 2259, 810, 30_000, 33_000);
+        let e = s.current_encounter().unwrap();
+        assert_eq!((e.start, e.targets.len()), (30_000, 1), "25 s quiet ends it");
+
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("encounter");
+        let shown = calc.get_dps();
+        assert_eq!(shown.battle_time, 3_000);
+        assert_eq!(shown.map.values().map(|r| r.amount).sum::<f64>(), 4.0 * 500.0);
+
+        // A live boss holds it through a long pause; a dead one does not.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 900, BOSS);
+        spawn(&s, 910, 1);
+        hits(&s, 2259, 900, 1_000, 3_000);
+        hits(&s, 2259, 910, 40_000, 41_000);
+        assert_eq!(s.current_encounter().unwrap().start, 1_000);
+        s.mark_entity_dead(900);
+        hits(&s, 2259, 910, 80_000, 81_000);
+        assert_eq!(s.current_encounter().unwrap().start, 80_000);
+
+        // A quiet span shorter than the timeout keeps one encounter; a custom
+        // timeout is honoured.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        s.set_encounter_timeout_ms(30_000);
+        spawn(&s, 800, 1);
+        hits(&s, 2259, 800, 1_000, 2_000);
+        hits(&s, 2259, 800, 25_000, 26_000);
+        assert_eq!(s.current_encounter().unwrap().start, 1_000);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_zone_load_or_a_reset_ends_the_encounter() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, 1);
+        hits(&s, 2259, 800, 1_000, 3_000);
+        assert!(s.current_encounter().is_some());
+        crate::clock::set_override(Some(10_000));
+        assert!(s.note_zone_change());
+        assert!(s.current_encounter().is_none());
+
+        hits(&s, 2259, 800, 20_000, 21_000);
+        let mut calc = meter_with_npcs(&s);
+        calc.restart_target_selection(true);
+        assert!(s.current_encounter().is_none());
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn encounter_rows_carry_encdps_own_dps_and_last_n() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, 1);
+        hits(&s, 2259, 800, 1_000, 70_000);
+        // Someone else joins for the last three seconds.
+        hits(&s, 3000, 800, 68_000, 70_000);
+        crate::clock::set_override(Some(70_000));
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("encounter");
+        let shown = calc.get_dps();
+        assert_eq!(shown.battle_time, 69_000);
+        let me = &shown.map[&2259];
+        let other = &shown.map[&3000];
+        let close = |a: f64, b: f64| (a - b).abs() < 0.01;
+        assert!(close(me.dps, 70.0 * 500.0 / 69.0), "ENCDPS over the encounter");
+        assert!(close(other.dps, 3.0 * 500.0 / 69.0));
+        assert!(close(other.active_dps, 3.0 * 500.0 / 2.0), "own DPS over its own 2 s");
+        assert!(close(me.last10_dps, 11.0 * 500.0 / 10.0), "60..70 s");
+        assert!(close(me.last60_dps, 61.0 * 500.0 / 60.0), "10..70 s");
         crate::clock::set_override(None);
     }
 
