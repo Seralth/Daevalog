@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "A2Tools DPS Meter",
+        "title": "Daevalog DPS Meter",
         "width": 400,
         "height": 300,
         "decorations": false,

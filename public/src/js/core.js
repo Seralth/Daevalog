@@ -4660,7 +4660,7 @@ class DpsApp {
       }
       return this.i18n?.t("target.train", "Training Scarecrow") ?? "Training Scarecrow";
     }
-    return this.i18n?.t("header.title", "A2Tools DPS Meter") ?? "A2Tools DPS Meter";
+    return this.i18n?.t("header.title", "Daevalog DPS Meter") ?? "Daevalog DPS Meter";
   }
 
   getTargetLabel({ targetId = 0, targetName = "", targetMode = "", dungeonId = 0 } = {}) {

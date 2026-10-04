@@ -1356,7 +1356,6 @@ impl DataStorage {
         let mut inner = self.inner.write();
         retire_all(&mut inner);
         inner.held_dot_ticks.clear();
-        inner.training_dummy_ids.clear();
         inner.actor_jobs.clear();
         inner.known_player_ids.clear();
         inner.hostile_target_ids.clear();
@@ -2223,6 +2222,17 @@ mod tests {
         let snap = s.get_combat_snapshot();
         let t = &snap[&target];
         (t.total_damage, t.last_damage_time - t.first_damage_time)
+    }
+
+    #[test]
+    fn a_reset_does_not_forget_the_dummy() {
+        // The dummy is known from its spawn, which came before the reset.
+        let s = DataStorage::new();
+        s.register_training_dummy(500);
+        s.flush();
+        s.append_damage(hit(1454, 500, 1_000, 100, false));
+        s.append_damage(hit(1454, 500, 2_000, 50, true));
+        assert_eq!(totals(&s, 500), (100, 0), "ticks after the last hit still wait");
     }
 
     #[test]

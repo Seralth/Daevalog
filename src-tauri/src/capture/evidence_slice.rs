@@ -783,6 +783,9 @@ pub const MAGIC: &[u8; 4] = b"A2ES";
 /// 2: lengths follow the corrected framing rule. Version 1 slices are read by
 /// re-framing their records (see `upgrade_v1_record`).
 pub const VERSION: u16 = 2;
+/// What `encode` writes: the log service only reads version 1, so records go
+/// out in version 1 lengths (see `downgrade_to_v1`).
+const WIRE_VERSION: u16 = 1;
 
 /// Serialise to the `.a2es` container.
 ///
@@ -798,7 +801,7 @@ pub const VERSION: u16 = 2;
 pub fn encode(slice: &EvidenceSlice) -> Vec<u8> {
     let mut out = Vec::with_capacity(slice.stats.bytes_kept + 256);
     out.extend_from_slice(MAGIC);
-    out.extend_from_slice(&VERSION.to_le_bytes());
+    out.extend_from_slice(&WIRE_VERSION.to_le_bytes());
 
     out.extend_from_slice(&(ALLOWED_OPCODES.len() as u16).to_le_bytes());
     for (op, _) in ALLOWED_OPCODES {
@@ -816,11 +819,64 @@ pub fn encode(slice: &EvidenceSlice) -> Vec<u8> {
 
     out.extend_from_slice(&(slice.records.len() as u32).to_le_bytes());
     for (dt, packet) in &slice.records {
+        let packet = downgrade_to_v1(packet);
         out.extend_from_slice(&dt.to_le_bytes());
         out.extend_from_slice(&(packet.len() as u16).to_le_bytes());
-        out.extend_from_slice(packet);
+        out.extend_from_slice(&packet);
     }
     out
+}
+
+/// Re-frame a record for version 1 readers, the reverse of
+/// `upgrade_v1_record`: the old walk takes `len - 3` bytes for a frame and one
+/// more for a top-level bundle. Each frame keeps its bytes.
+fn downgrade_to_v1(record: &[u8]) -> Vec<u8> {
+    fn v1_prefix(body: usize, top_bundle: bool) -> Option<Vec<u8>> {
+        (1usize..=5).find_map(|n| {
+            let v = encode_varint((n + body + 3 - usize::from(top_bundle)) as u32);
+            (v.len() == n).then_some(v)
+        })
+    }
+    fn reframe(buf: &[u8], top: bool, depth: usize) -> Option<Vec<u8>> {
+        let mut out = Vec::with_capacity(buf.len() + 8);
+        let mut o = 0;
+        while o < buf.len() {
+            if buf[o] == 0x00 {
+                out.push(0x00);
+                o += 1;
+                continue;
+            }
+            let len = super::stream_processor::read_varint(buf, o);
+            if len.length <= 0 {
+                break;
+            }
+            let n = len.length as usize;
+            let Some(size) = framing::frame_size(len.value, len.length) else { break };
+            if size < n || o + size > buf.len() {
+                break;
+            }
+            let body = &buf[o + n..o + size];
+            let bundle = body.len() > 1 && body[0] == 0xFF && body[1] == 0xFF;
+            let inner = (bundle && depth < MAX_BUNDLE_DEPTH)
+                .then(|| framing::decompress_bundle(body).and_then(|i| reframe(&i, false, depth + 1)))
+                .flatten();
+            let body = match inner {
+                Some(inner) => {
+                    let mut p = vec![0xFF, 0xFF];
+                    p.extend_from_slice(&(inner.len() as u32).to_le_bytes());
+                    p.extend_from_slice(&lz4_flex::compress(&inner));
+                    p
+                }
+                None => body.to_vec(),
+            };
+            out.extend_from_slice(&v1_prefix(body.len(), bundle && top)?);
+            out.extend_from_slice(&body);
+            o += size;
+        }
+        out.extend_from_slice(&buf[o..]);
+        Some(out)
+    }
+    reframe(record, true, 0).unwrap_or_else(|| record.to_vec())
 }
 
 /// Read a `.a2es` back. Used by the server, and by `a2t-inspect` so a user can
@@ -1204,6 +1260,22 @@ mod tests {
             build(&packets, 10_000_000, 10_001_000, &HashMap::new()),
             Err(SliceError::Empty)
         ));
+    }
+
+    #[test]
+    fn slices_go_out_as_version_1_and_read_back_unchanged() {
+        let long: Vec<u8> = [0x04, 0x38].into_iter().chain((0..200).map(|i| i as u8 | 1)).collect();
+        let short = vec![0x41, 0x36, 0x05];
+        let mut inner = frame_packet(&short).unwrap();
+        inner.extend(frame_packet(&long).unwrap());
+        let bundle = rewrap_bundle(&inner).unwrap();
+        let records = vec![(0, frame_packet(&long).unwrap()), (1, bundle), (2, frame_packet(&short).unwrap())];
+        let slice = EvidenceSlice { records: records.clone(), blind_map: HashMap::new(), stats: SliceStats::default() };
+        let bytes = encode(&slice);
+        assert_eq!(u16::from_le_bytes([bytes[4], bytes[5]]), 1, "the log service reads version 1");
+        // Version 1 lengths: the 202-byte body is 2 + 202 bytes framed, length 207.
+        let (decoded, _) = decode(&bytes).unwrap();
+        assert_eq!(decoded, records);
     }
 
     #[test]
