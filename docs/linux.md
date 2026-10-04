@@ -391,7 +391,7 @@ That is Hyprland's Lua configuration. If you use `hyprland.conf` instead, set th
 | --- | --- |
 | No update question, though a new version is out | Updates come only to an installed package. A build from source updates with `git pull` and a rebuild. |
 | The update asked for no password, or the meter did not come back | Install the current package [by hand](#update-by-hand). |
-| Sign-in says the token could not be stored securely | No keyring is running. Install and enable KWallet (KDE) or GNOME Keyring, then sign in again. |
+| Sign-in says the token could not be stored securely | The meter keeps your sign-in in the desktop keyring and never in a plain file. The message says what went wrong. **No desktop keyring is running**: install and start GNOME Keyring (`gnome-keyring`) or KWallet, or turn on Secret Service in KeePassXC; on Hyprland, Sway or i3 start the keyring with your session (for example `exec-once = gnome-keyring-daemon --start --components=secrets`). **Stayed locked**: accept the keyring's unlock prompt. **No collection**: accept the prompt to create a keyring (from 2.0.49 the meter asks for one). Then sign in again. |
 | Build fails mentioning `webkit2gtk-4.1`, `pkg-config` or a missing library | Re-run the install line for your distribution. Distributions older than Ubuntu 22.04 lack `webkit2gtk-4.1` and cannot build it. |
 | `debug.log` says it failed to load libpcap | Install libpcap (`libpcap0.8` on Debian and Ubuntu, `libpcap` elsewhere), then start the meter again. |
 | The meter warns it is not running as admin, or `debug.log` has no `Capture active` lines | The capture permission is missing. Package: reinstall it. Build from source: run the `setcap` line again (a rebuild loses it). |
