@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
+use std::sync::Arc;
 
 use parking_lot::RwLock;
 
@@ -281,6 +282,9 @@ pub struct DataStorage {
     /// Set when a zone change clears combat; the dps calculator consumes it to
     /// drop its cached snapshot / saved-target state on the next cycle.
     combat_reset_requested: AtomicBool,
+    /// Run just before combat data is cleared by a zone change or the end of a
+    /// party, with no lock of ours held, so the fights can still be saved.
+    before_reset: RwLock<Option<Arc<dyn Fn() + Send + Sync>>>,
 }
 
 struct Inner {
@@ -444,6 +448,7 @@ impl DataStorage {
             last_damage_ms: AtomicI64::new(NEVER_MS),
             last_zone_reset_ms: AtomicI64::new(NEVER_MS),
             combat_reset_requested: AtomicBool::new(false),
+            before_reset: RwLock::new(None),
         }
     }
 
@@ -466,6 +471,7 @@ impl DataStorage {
             }
         }
         self.last_zone_reset_ms.store(now, Ordering::Relaxed);
+        self.run_before_reset();
         // Preserve identity across the reset: a teleport within the same instance
         // keeps everyone's entity ids, so wiping nicknames/known-players/summons
         // would drop your party (and you) to raw ids until they happen to be
@@ -474,6 +480,21 @@ impl DataStorage {
         self.combat_reset_requested.store(true, Ordering::Relaxed);
         tracing::info!("Zone change detected — combat data reset (identity preserved)");
         true
+    }
+
+    /// Have `hook` run before every automatic combat reset (zone change, end of
+    /// a party). Combat data used to be cleared without saving: leaving an
+    /// instance right after a kill lost everything since the last auto-save
+    /// (issue #19).
+    pub fn set_before_reset(&self, hook: impl Fn() + Send + Sync + 'static) {
+        *self.before_reset.write() = Some(Arc::new(hook));
+    }
+
+    fn run_before_reset(&self) {
+        let hook = self.before_reset.read().clone();
+        if let Some(hook) = hook {
+            hook();
+        }
     }
 
     /// When the last zone-change combat reset happened (clock ms), `NEVER_MS`
@@ -975,6 +996,11 @@ impl DataStorage {
                 inner.party_members.len(),
                 members.len()
             );
+            // Save the party's fights while the roster and instance still say
+            // whose they are; the hook reads this storage, so no lock is held.
+            drop(inner);
+            self.run_before_reset();
+            let mut inner = self.inner.write();
             inner.party_members.clear();
             inner.current_dungeon_id = 0;
             drop(inner);
@@ -1793,6 +1819,31 @@ mod tests {
 
     fn who(s: &DataStorage) -> (Option<i64>, Option<String>, bool) {
         (s.local_player_id(), s.local_character_name(), s.local_identity_from_game())
+    }
+
+    #[test]
+    fn fights_can_be_saved_before_a_zone_change_clears_them() {
+        let s = Arc::new(DataStorage::new());
+        let seen = Arc::new(std::sync::atomic::AtomicI64::new(-1));
+        {
+            let (s2, seen) = (s.clone(), seen.clone());
+            // The hook can read the storage: no lock of ours is held.
+            s.set_before_reset(move || {
+                let damage: i64 = s2.get_combat_snapshot_light().values().map(|t| t.total_damage).sum();
+                seen.store(damage, Ordering::Relaxed);
+            });
+        }
+        let mut p = ParsedDamagePacket::new();
+        p.set_actor_id(2259);
+        p.set_target_id(50_000);
+        p.set_skill_code(11010000);
+        p.set_damage(700);
+        s.append_damage(p);
+        // A teleport well after the last hit.
+        s.last_damage_ms.store(now_ms() - 10_000, Ordering::Relaxed);
+        assert!(s.note_zone_change());
+        assert_eq!(seen.load(Ordering::Relaxed), 700, "the hook saw the fight before it was cleared");
+        assert!(s.get_combat_snapshot_light().is_empty());
     }
 
     #[test]

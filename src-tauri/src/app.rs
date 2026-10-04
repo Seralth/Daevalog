@@ -257,6 +257,47 @@ fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
     });
 }
 
+/// Save fights to History, with the packets behind each so it can be uploaded
+/// and verified later (training dummies are not logs), and auto-upload the
+/// finished ones when that is on.
+fn save_fight_records(app: &tauri::AppHandle, state: &AppState, records: Vec<FightRecord>) {
+    for record in &records {
+        let _ = state.fight_history.save_fight(record);
+        if !record.is_train {
+            if let Err(e) = share::save_slice(&state.app_data_dir, record, &state.data_storage) {
+                tracing::debug!("No slice for {}: {e}", record.id);
+            }
+        }
+    }
+    if !records.is_empty() {
+        share::prune_slices(&state.app_data_dir);
+    }
+    if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
+        let now = crate::clock::now_ms();
+        for record in records.into_iter()
+            .filter(|r| share::wants_auto_upload(&state.app_data_dir, r, now))
+        {
+            auto_upload(app.clone(), record);
+        }
+    }
+}
+
+/// Save every fight on the meter now, before its combat data is cleared: a
+/// zone change, the end of a party, the reset button, the reload hotkey or
+/// quitting. Each cleared it unsaved, and leaving an instance right after a
+/// kill lost everything since the last 30-second save (issue #19).
+fn save_fights_before_reset(app: &tauri::AppHandle) {
+    let Some(state) = app.try_state::<AppState>() else { return };
+    if state.data_storage.damage_generation() <= 0 {
+        return;
+    }
+    let records = state.dps_calculator.lock().snapshot_boss_fights_force();
+    if !records.is_empty() {
+        tracing::info!("Saving {} fight(s) before combat data is cleared", records.len());
+    }
+    save_fight_records(app, &state, records);
+}
+
 /// Fights with an automatic upload running. One upload of a fight at a time:
 /// a retry must not start while the first try is still waiting on the network.
 static IN_FLIGHT: std::sync::LazyLock<Mutex<HashSet<String>>> =
@@ -530,7 +571,8 @@ fn bind_local_nickname(state: tauri::State<'_, AppState>, actor_id: i64, nicknam
 }
 
 #[tauri::command]
-fn reset_combat(state: tauri::State<'_, AppState>) {
+fn reset_combat(app: tauri::AppHandle, state: tauri::State<'_, AppState>) {
+    save_fights_before_reset(&app);
     state.dps_calculator.lock().restart_target_selection(true);
     // Don't reset port detector or ping — keep the network connection alive
     // Only clear combat data and re-learn nicknames from future packets
@@ -598,6 +640,7 @@ fn set_manual_device(state: tauri::State<'_, AppState>, device: String) {
 
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
+    save_fights_before_reset(&app);
     app.exit(0);
 }
 
@@ -2050,6 +2093,11 @@ pub fn run() {
             let capture_suspended = state.capture_suspended.clone();
 
             app.manage(state);
+            {
+                let handle = app.handle().clone();
+                app.state::<AppState>().data_storage
+                    .set_before_reset(move || save_fights_before_reset(&handle));
+            }
             crate::presence::spawn(app.handle().clone());
 
             // Reopen the Details window if it was left enabled. Done here rather
@@ -2154,6 +2202,7 @@ pub fn run() {
                     let h = hotkey_handle.clone();
                     move || {
                         tracing::info!("Hotkey: reload triggered");
+                        save_fights_before_reset(&h);
                         if let Some(state) = h.try_state::<AppState>() {
                             state.dps_calculator.lock().restart_target_selection(true);
                             state.data_storage.reset_nicknames();
@@ -2342,29 +2391,7 @@ pub fn run() {
                             if let Some(mut calc) = state.dps_calculator.try_lock() {
                                 let records = calc.snapshot_boss_fights();
                                 drop(calc);
-                                for record in &records {
-                                    let _ = state.fight_history.save_fight(record);
-                                    // The packets behind it, so it can be
-                                    // uploaded and verified later. Training
-                                    // dummies are not logs.
-                                    if !record.is_train {
-                                        if let Err(e) = share::save_slice(
-                                            &state.app_data_dir, record, &state.data_storage) {
-                                            tracing::debug!("No slice for {}: {e}", record.id);
-                                        }
-                                    }
-                                }
-                                if !records.is_empty() {
-                                    share::prune_slices(&state.app_data_dir);
-                                }
-                                if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
-                                    let now = crate::clock::now_ms();
-                                    for record in records.into_iter()
-                                        .filter(|r| share::wants_auto_upload(&state.app_data_dir, r, now))
-                                    {
-                                        auto_upload(handle_save.clone(), record);
-                                    }
-                                }
+                                save_fight_records(&handle_save, &state, records);
                             }
                         }
                         // Automatic uploads that failed and are due again,
