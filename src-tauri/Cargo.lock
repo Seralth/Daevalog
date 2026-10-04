@@ -3,36 +3,6 @@
 version = 4
 
 [[package]]
-name = "daevalog-dps-meter"
-version = "2.0.44"
-dependencies = [
- "chrono",
- "discord-rich-presence",
- "flate2",
- "futures-util",
- "gtk",
- "libloading 0.8.9",
- "lz4_flex",
- "parking_lot",
- "reqwest 0.12.28",
- "secret-service",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tauri-plugin-process",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "urlencoding",
- "webkit2gtk",
- "windows 0.59.0",
- "x11-dl",
-]
-
-[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -753,6 +723,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d5515a3834141de9eafb9717ad39eea8247b5674e6066c404e8c4b365d2a29e"
 dependencies = [
  "cmov",
+]
+
+[[package]]
+name = "daevalog-dps-meter"
+version = "2.0.44"
+dependencies = [
+ "chrono",
+ "dirs",
+ "discord-rich-presence",
+ "flate2",
+ "futures-util",
+ "gtk",
+ "libloading 0.8.9",
+ "lz4_flex",
+ "parking_lot",
+ "reqwest 0.12.28",
+ "secret-service",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "urlencoding",
+ "webkit2gtk",
+ "windows 0.59.0",
+ "x11-dl",
 ]
 
 [[package]]
