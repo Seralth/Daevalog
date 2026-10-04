@@ -19,3 +19,13 @@ pub fn minimize_off_top(window: &tauri::WebviewWindow) {
     let _ = window.set_always_on_top(false);
     let _ = window.minimize();
 }
+
+pub fn set_size(window: &tauri::WebviewWindow, size: tauri::Size) {
+    let _ = window.set_size(size);
+}
+
+pub fn release_size(_window: &tauri::WebviewWindow, _min: tauri::LogicalSize<f64>) {}
+
+pub fn primary_button_down() -> Option<bool> {
+    None
+}

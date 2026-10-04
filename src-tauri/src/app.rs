@@ -853,7 +853,7 @@ fn resize_window(app: tauri::AppHandle, width: f64, height: f64, scale: Option<f
         }),
         None => tauri::Size::Logical(tauri::LogicalSize { width, height }),
     };
-    let _ = window.set_size(size);
+    platform::window::set_size(&window, size);
 }
 
 /// Displays as reported by the OS, for the "Show Details on Monitor" picker.
@@ -980,7 +980,7 @@ fn open_details_on_monitor_inner(
         if force_place {
             let _ = existing.unmaximize();
             let _ = existing.set_position(tauri::Position::Physical(pos));
-            let _ = existing.set_size(tauri::Size::Physical(size));
+            platform::window::set_size(&existing, tauri::Size::Physical(size));
         }
         let _ = existing.show();
         let _ = existing.unminimize();
@@ -1016,6 +1016,7 @@ fn open_details_on_monitor_inner(
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: lw, height: lh }));
 
     // An explicit monitor pick always wins; otherwise fall back to wherever the
     // user last dragged the window.
@@ -1023,7 +1024,7 @@ fn open_details_on_monitor_inner(
         // Re-assert in physical units: the builder's logical values round on
         // fractional-scale displays.
         let _ = window.set_position(tauri::Position::Physical(pos));
-        let _ = window.set_size(tauri::Size::Physical(size));
+        platform::window::set_size(&window, tauri::Size::Physical(size));
     }
 
     // Announced once the window reports ready (see details_window_ready); a
@@ -1148,7 +1149,7 @@ fn restore_window_geometry(app: &tauri::AppHandle, window: &tauri::WebviewWindow
     }
     if let (Some(w), Some(h)) = (get("w"), get("h")) {
         if w > 200 && h > 150 {
-            let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+            platform::window::set_size(window, tauri::Size::Physical(tauri::PhysicalSize {
                 width: w as u32,
                 height: h as u32,
             }));
@@ -1210,6 +1211,7 @@ fn build_settings_window(app: &tauri::AppHandle) -> Result<(), String> {
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: 760.0, height: 820.0 }));
 
     if !restore_window_geometry(app, &window, "settings") {
         let _ = window.center();
@@ -1435,6 +1437,7 @@ fn open_fight_window(app: &tauri::AppHandle, label: &str) -> Result<(), String> 
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: 1180.0, height: 760.0 }));
 
     center_on_overlay_monitor(app, &window);
     if offset > 0.0 {
@@ -1469,6 +1472,7 @@ fn open_history_window_inner(app: &tauri::AppHandle) -> Result<(), String> {
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: 1100.0, height: 720.0 }));
 
     if !restore_window_geometry(app, &window, "history") {
         center_on_overlay_monitor(app, &window);
@@ -1507,6 +1511,7 @@ fn open_details_windowed(app: &tauri::AppHandle) -> Result<(), String> {
     .background_color(tauri::window::Color(10, 14, 22, 255))
     .build()
     .map_err(|e| e.to_string())?;
+    platform::window::set_size(&window, tauri::Size::Logical(tauri::LogicalSize { width: 1180.0, height: 760.0 }));
 
     // A remembered position still wins, but only one the user actually chose.
     if !details_geometry_is_user_placed(app)
@@ -1616,6 +1621,54 @@ fn start_drag(app: tauri::AppHandle, state: tauri::State<'_, AppState>) {
     if let Some(window) = app.get_webview_window("main") {
         platform::window::start_drag(&window);
     }
+}
+
+/// Drag a tool window (Details, History, Settings) by its header. Their CSS
+/// marks the header `-webkit-app-region: drag`, which WebView2 honours and
+/// WebKitGTK does not, so on Linux the page asks for the drag instead.
+#[tauri::command]
+fn start_tool_drag(window: tauri::WebviewWindow) {
+    if window.label() == "main" {
+        return;
+    }
+    platform::window::start_drag(&window);
+}
+
+/// Let the window manager resize a tool window from one of the page's edge
+/// handles. Its size hints are pinned (see `platform::window::set_size`), so
+/// they are released for the resize and pinned again at the size it ends on.
+/// The page starts the resize itself (`startResizeDragging`) right after this.
+#[tauri::command]
+fn begin_tool_resize(window: tauri::WebviewWindow, min_width: f64, min_height: f64) {
+    if window.label() == "main" {
+        return;
+    }
+    platform::window::release_size(&window, tauri::LogicalSize::new(min_width, min_height));
+    std::thread::spawn(move || {
+        // The window manager owns the pointer until the button comes up. Where
+        // the button cannot be read (native Wayland), wait for the size to settle.
+        std::thread::sleep(Duration::from_millis(150));
+        let mut last = window.inner_size().ok();
+        let mut still = 0;
+        for _ in 0..1200 {
+            std::thread::sleep(Duration::from_millis(50));
+            match platform::window::primary_button_down() {
+                Some(true) => continue,
+                Some(false) => break,
+                None => {
+                    let now = window.inner_size().ok();
+                    still = if now == last { still + 1 } else { 0 };
+                    last = now;
+                    if still >= 10 {
+                        break;
+                    }
+                }
+            }
+        }
+        if let Ok(size) = window.inner_size() {
+            platform::window::set_size(&window, tauri::Size::Physical(size));
+        }
+    });
 }
 
 #[tauri::command]
@@ -1981,6 +2034,9 @@ pub fn run() {
                     }
                 }
                 let _ = window.set_always_on_top(true);
+                if let Ok(size) = window.inner_size() {
+                    platform::window::set_size(&window, tauri::Size::Physical(size));
+                }
             }
 
             // Check if Npcap is available before starting capture
@@ -2392,6 +2448,8 @@ pub fn run() {
             default_screenshot_folder,
             choose_screenshot_folder,
             start_drag,
+            start_tool_drag,
+            begin_tool_resize,
             reset_auto_detection,
             get_available_devices,
             set_manual_device,

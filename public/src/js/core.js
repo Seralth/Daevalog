@@ -4928,8 +4928,13 @@ class DpsApp {
     // shifts clientX/Y and made the size jump past the cursor (issue #11).
     const onMouseMove = (event) => {
       if (!isResizing) return;
-      // The button came up outside the window, where no mouseup arrives.
-      if ((event.buttons & 1) === 0) {
+      // The button came up outside the window, where no mouseup arrives; the
+      // next move inside shows it. A move outside is not trusted: a fast drag
+      // leaves the window before it has grown (KWin, XWayland) and those moves
+      // can report no button held, which cut the resize short.
+      const inside = event.clientX >= 0 && event.clientY >= 0
+        && event.clientX < window.innerWidth && event.clientY < window.innerHeight;
+      if ((event.buttons & 1) === 0 && inside) {
         onMouseUp();
         return;
       }
