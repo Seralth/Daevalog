@@ -378,5 +378,12 @@
     "tierExpedition": "Expedition",
     "tierConquestNormal": "Eroberung (Normal)",
     "tierConquestHard": "Eroberung (Schwer)"
+  },
+  "discordPromo": {
+    "title": "Neu: Discord-Aktivität",
+    "text": "Zeige Freunden in deinem Discord-Status deinen Charakter, deine Klasse, Stufe und deinen Server sowie den Boss oder Dungeon, in dem du gerade bist.",
+    "hint": "Läuft über die Discord-App auf diesem PC, kein Konto nötig. Du kannst das jederzeit in den Einstellungen ändern.",
+    "done": "Fertig",
+    "close": "Schließen"
   }
 }

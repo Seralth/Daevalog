@@ -378,5 +378,12 @@
     "tierExpedition": "Expédition",
     "tierConquestNormal": "Conquête (normal)",
     "tierConquestHard": "Conquête (difficile)"
+  },
+  "discordPromo": {
+    "title": "Nouveau : activité Discord",
+    "text": "Montrez à vos amis, dans votre statut Discord, votre personnage, votre classe, votre niveau et votre serveur, ainsi que le boss ou le donjon où vous êtes.",
+    "hint": "Passe par l'application Discord de ce PC, sans compte. Vous pouvez changer cela à tout moment dans les Paramètres.",
+    "done": "Terminé",
+    "close": "Fermer"
   }
 }

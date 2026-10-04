@@ -378,5 +378,12 @@
     "tierExpedition": "遠征",
     "tierConquestNormal": "征服（ノーマル）",
     "tierConquestHard": "征服（ハード）"
+  },
+  "discordPromo": {
+    "title": "新機能：Discord のステータス表示",
+    "text": "キャラクター、クラス、レベル、サーバー、挑戦中のボスやダンジョンを Discord のステータスでフレンドに表示します。",
+    "hint": "この PC の Discord アプリを使い、アカウントは不要です。設定でいつでも変更できます。",
+    "done": "完了",
+    "close": "閉じる"
   }
 }

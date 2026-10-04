@@ -729,6 +729,8 @@
   // ===== Dynamic window resizing =====
   const PANEL_WIDTH = 1540;
   const PANEL_HEIGHT = 820;
+  const PROMO_WIDTH = 400;
+  const PROMO_HEIGHT = 480;
   const TOOLTIP_WIDTH = 800;
   let lastSizeKey = "";
 
@@ -760,6 +762,9 @@
       document.querySelector(".historyPanel.open")
     );
     const tooltipOnly = !fullPanel && !!document.querySelector(".hoverDetailsTooltip.isVisible");
+    // The one-time Discord popup needs room for its card, no more: a
+    // full-panel window would block clicks on the game around it.
+    const promoOpen = !fullPanel && !!document.querySelector(".discordPromo.isOpen");
 
     // Measure meter width (may be resized by user via drag handle) and height
     const meter = document.querySelector(".meter");
@@ -783,10 +788,16 @@
     // never shrinks below its content.
     const w = fullPanel
       ? PANEL_WIDTH
-      : tooltipOnly
-        ? Math.min(TOOLTIP_WIDTH, Math.max(contentW, spaceRightBelow().w))
-        : contentW;
-    const h = fullPanel ? Math.max(PANEL_HEIGHT, contentH) : contentH;
+      : promoOpen
+        ? Math.max(contentW, PROMO_WIDTH)
+        : tooltipOnly
+          ? Math.min(TOOLTIP_WIDTH, Math.max(contentW, spaceRightBelow().w))
+          : contentW;
+    const h = fullPanel
+      ? Math.max(PANEL_HEIGHT, contentH)
+      : promoOpen
+        ? Math.max(contentH, PROMO_HEIGHT)
+        : contentH;
     const sizeKey = `${w}x${h}@${window.devicePixelRatio || 1}`;
     if (sizeKey === lastSizeKey) return;
     lastSizeKey = sizeKey;

@@ -385,5 +385,12 @@
     "tierExpedition": "遠征",
     "tierConquestNormal": "征服（普通）",
     "tierConquestHard": "征服（困難）"
+  },
+  "discordPromo": {
+    "title": "新功能：Discord 狀態顯示",
+    "text": "在 Discord 狀態中向好友顯示你的角色、職業、等級、伺服器，以及所在的首領戰或副本。",
+    "hint": "透過這台電腦上的 Discord 應用程式顯示，不需要帳號。可隨時在設定中變更。",
+    "done": "完成",
+    "close": "關閉"
   }
 }

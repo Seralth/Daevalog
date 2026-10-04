@@ -378,5 +378,12 @@
     "tierExpedition": "Expedición",
     "tierConquestNormal": "Conquista (normal)",
     "tierConquestHard": "Conquista (difícil)"
+  },
+  "discordPromo": {
+    "title": "Nuevo: actividad en Discord",
+    "text": "Muestra a tus amigos en tu estado de Discord tu personaje, clase, nivel y servidor, y el jefe o la mazmorra en la que estás.",
+    "hint": "Usa la app de Discord de este PC; no hace falta cuenta. Puedes cambiarlo cuando quieras en Ajustes.",
+    "done": "Listo",
+    "close": "Cerrar"
   }
 }

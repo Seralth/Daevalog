@@ -65,6 +65,7 @@ class DpsApp {
       saveRawPackets: "dpsMeter.saveRawPackets",
       autoUpload: "dpsMeter.autoUpload",
       discordActivity: "dpsMeter.discordActivity",
+      discordPromoShown: "dpsMeter.discordPromoShown",
       windowOpacity: "dpsMeter.windowOpacity",
       bossNameSize: "dpsMeter.bossNameSize",
       betaUi: "dpsMeter.betaUi",
@@ -2361,6 +2362,7 @@ class DpsApp {
         .then((ok) => {
           const group = document.querySelector(".discordActivityGroup");
           if (group && ok) group.style.display = "";
+          if (ok && window.A2_VIEW === "main") this.maybeShowDiscordPromo();
         })
         .catch(() => {});
     }
@@ -5072,6 +5074,52 @@ class DpsApp {
       this.suspendBtn.replaceChildren(newIcon);
     }
     window.lucide?.createIcons?.({ root: this.suspendBtn });
+  }
+
+  // A one-time popup offering Discord activity, with the toggle already on.
+  // Done keeps what the toggle says; closing it any other way (×, Escape, a
+  // click outside) leaves it off. Not shown to anyone who has already chosen
+  // either way in Settings, and never again once answered.
+  maybeShowDiscordPromo() {
+    const promo = document.querySelector("#discordPromo");
+    if (!promo) return;
+    if (this.safeGetSetting(this.storageKeys.discordPromoShown) === "true") return;
+    const current = this.safeGetSetting(this.storageKeys.discordActivity);
+    if (current === "true" || current === "false") return;
+
+    const checkbox = promo.querySelector(".discordPromoCheckbox");
+    let answered = false;
+    const onKey = (event) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        answer(false);
+      }
+    };
+    const answer = (enabled) => {
+      if (answered) return;
+      answered = true;
+      this.safeSetSetting(this.storageKeys.discordActivity, String(enabled));
+      this.safeSetSetting(this.storageKeys.discordPromoShown, "true");
+      const settingsCheckbox = document.querySelector(".discordActivityCheckbox");
+      if (settingsCheckbox) settingsCheckbox.checked = enabled;
+      promo.classList.remove("isOpen");
+      promo.setAttribute("aria-hidden", "true");
+      document.removeEventListener("keydown", onKey, true);
+    };
+    promo.querySelector(".discordPromoDone")?.addEventListener("click", () => answer(!!checkbox?.checked));
+    promo.querySelector(".discordPromoClose")?.addEventListener("click", () => answer(false));
+    promo.addEventListener("click", (event) => {
+      if (event.target === promo) answer(false);
+    });
+
+    // A moment after start, so it does not land on top of the first paint.
+    setTimeout(() => {
+      if (answered) return;
+      if (checkbox) checkbox.checked = true;
+      promo.classList.add("isOpen");
+      promo.setAttribute("aria-hidden", "false");
+      document.addEventListener("keydown", onKey, true);
+    }, 2500);
   }
 
   _updateSuspendStatusMessage() {

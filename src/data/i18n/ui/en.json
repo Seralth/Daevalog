@@ -385,5 +385,12 @@
     "tierExpedition": "Expedition",
     "tierConquestNormal": "Conquest (Normal)",
     "tierConquestHard": "Conquest (Hard)"
+  },
+  "discordPromo": {
+    "title": "New: Discord activity",
+    "text": "Let friends see your character, class, level and server, and the boss or dungeon you're in, right in your Discord status.",
+    "hint": "Uses the Discord app on this PC; no account needed. You can change this any time in Settings.",
+    "done": "Done",
+    "close": "Close"
   }
 }
