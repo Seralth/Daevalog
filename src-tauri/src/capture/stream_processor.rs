@@ -1941,15 +1941,27 @@ impl StreamProcessor {
                 second_value
             };
 
+            // The tail after the value, checked against the game's own Damage
+            // Analyzer record of the same fight (2026-10-04): layout 4 carries
+            // one varint, then switch bit 0x20 marks a hit that triggered
+            // additional hits, as a count and that many damage values which the
+            // value above already includes. Records that do not end cleanly
+            // this way keep the older reading below.
+            let strict_tail = if [4, 6].contains(&and_result) && exact_skill_code != 99_745_942 {
+                parse_hit_tail(packet, offset, and_result, switch_value, final_damage)
+            } else {
+                None
+            };
+
             // Multi-hit extra field
-            if (switch_value & 0x30) == 0x30 && offset < packet.len() {
+            if strict_tail.is_none() && (switch_value & 0x30) == 0x30 && offset < packet.len() {
                 try_read_varint(packet, &mut offset);
             }
 
             let mut hit_count = 0;
             let pre_hit_offset = offset;
 
-            if offset < packet.len() {
+            if strict_tail.is_none() && offset < packet.len() {
                 let is_marker_next = offset + 1 < packet.len()
                     && packet[offset + 1] == 0x00
                     && (1..=7).contains(&(packet[offset] as i32));
@@ -1986,7 +1998,7 @@ impl StreamProcessor {
             let mut first_multi_hit_value: Option<i32> = None;
             let mut all_multi_hits_match = true;
 
-            if hit_count > 0 && offset < packet.len() {
+            if strict_tail.is_none() && hit_count > 0 && offset < packet.len() {
                 let safe_max = std::cmp::min(hit_count, 25);
                 let multi_hit_cap = std::cmp::max(final_damage, 500_000);
                 let mut hits_read = 0;
@@ -2027,7 +2039,7 @@ impl StreamProcessor {
                 multi_hit_count = hits_read;
             }
 
-            if switch_value == 54 && hit_count > multi_hit_count && multi_hit_count == 1 {
+            if strict_tail.is_none() && switch_value == 54 && hit_count > multi_hit_count && multi_hit_count == 1 {
                 if let Some(fv) = first_multi_hit_value {
                     if all_multi_hits_match {
                         multi_hit_count = hit_count;
@@ -2036,8 +2048,15 @@ impl StreamProcessor {
                 }
             }
 
-            if should_use_repeated_hit_damage(switch_value, second_value, multi_hit_count, first_multi_hit_value, all_multi_hits_match) {
+            if strict_tail.is_none() && should_use_repeated_hit_damage(switch_value, second_value, multi_hit_count, first_multi_hit_value, all_multi_hits_match) {
                 final_damage = first_multi_hit_value.unwrap();
+            }
+
+            if let Some((end, field, count, damage)) = strict_tail {
+                offset = end;
+                hit_count = field;
+                multi_hit_count = count;
+                multi_hit_damage = damage;
             }
 
             if multi_hit_count > 0 && multi_hit_damage > 0 && final_damage > multi_hit_damage {
@@ -2362,6 +2381,41 @@ fn should_treat_first_value_as_damage(first_value: i32, second_value: i32, and_r
     if !(0..=25).contains(&second_value) { return false; }
     if first_value > 5_000_000 { return false; }
     and_result == 6 && damage_type == 3
+}
+
+/// The tail of a damage record after its value, when it has the shape the
+/// game's own record confirms: `(end offset, layout-4 field, additional hits,
+/// their damage)`. `None` when the bytes do not end cleanly at the next record.
+fn parse_hit_tail(packet: &[u8], mut offset: usize, layout: i32, switch_value: i32, value: i32) -> Option<(usize, i32, i32, i32)> {
+    let mut field = 0;
+    if layout == 4 {
+        field = try_read_varint(packet, &mut offset)?;
+        if !(1..=25).contains(&field) {
+            return None;
+        }
+    }
+    let (mut count, mut damage) = (0, 0i64);
+    if switch_value & 0x20 != 0 {
+        count = try_read_varint(packet, &mut offset)?;
+        if !(1..=25).contains(&count) {
+            return None;
+        }
+        for _ in 0..count {
+            let hit = try_read_varint(packet, &mut offset)?;
+            if hit < 0 {
+                return None;
+            }
+            damage += i64::from(hit);
+        }
+        if damage >= i64::from(value) {
+            return None;
+        }
+    }
+    let rest = &packet[offset.min(packet.len())..];
+    let clean_end = rest.is_empty()
+        || (rest.len() >= 2 && rest[1] == 0x00 && (1..=7).contains(&rest[0]))
+        || rest.starts_with(&[0x04, 0x38]);
+    clean_end.then_some((offset, field, count, damage as i32))
 }
 
 fn should_use_repeated_hit_damage(switch_value: i32, encoded_damage: i32, multi_hit_count: i32, first_multi_hit_value: Option<i32>, all_match: bool) -> bool {
@@ -2692,6 +2746,32 @@ fn unicode_script(ch: char) -> UnicodeScript {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Damage records from a live capture (2026-10-04, target 30001, actor
+    /// 1395), each checked against the game's own Damage Analyzer record of
+    /// the same fight: switch bit 0x20 marks a hit with additional hits.
+    #[test]
+    fn additional_hits_are_read_from_the_record_tail() {
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let parse = |record: &str| {
+            let storage = Arc::new(DataStorage::new());
+            let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+            p.set_override_timestamp(Some(1_000));
+            let mut packet = vec![0x00, 0x04, 0x38];
+            packet.extend(hex(record));
+            packet[0] = packet.len() as u8;
+            assert!(p.parsing_damage(&packet, false, false), "{record}");
+            let combat = storage.get_combat_snapshot();
+            let skill = combat[&30001].actors[&1395].skills.values().next().unwrap().clone();
+            (skill.total_damage, skill.hit_count, skill.multi_hit_count, skill.multi_hit_hits, skill.multi_hit_damage)
+        };
+        // Layout 6, switch 0x36: 1700 with two additional hits of 24.
+        assert_eq!(parse("b1ea013600f30a40c0f4007a038000010b199b5f01000000ac52a40d021818"), (1700, 1, 1, 2, 48));
+        // Layout 4, switch 0x34: the layout-4 field, then one additional hit of 89.
+        assert_eq!(parse("b1ea013400f30ae0b7f800cd028bd3276101000000ac52d330010159"), (6227, 1, 1, 1, 89));
+        // Layout 6, switch 0x16: no additional hits.
+        assert_eq!(parse("b1ea011600f30a40c0f40063028000010b199b5f01000000ac52d007"), (976, 1, 0, 0, 0));
+    }
 
     #[test]
     fn another_players_spirit_is_linked_at_spawn_by_its_caster() {
