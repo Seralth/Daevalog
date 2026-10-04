@@ -558,10 +558,14 @@ fn bind_local_nickname(state: tauri::State<'_, AppState>, actor_id: i64, nicknam
     {
         return;
     }
-    // Same as set_character_name: the game's name for the local player wins.
-    if state.data_storage.local_identity_from_self_record()
-        && state.data_storage.local_character_name().as_deref() != Some(nickname.trim())
-    {
+    // A party placeholder row is no entity.
+    if actor_id >= 90_000_000 {
+        return;
+    }
+    // Once the game's self record has named the player, it alone says who
+    // they are: a window binding by name kept an id from before a zone change
+    // and sent it back, and uploads then named a stale uploader (issue #19).
+    if state.data_storage.local_identity_from_self_record() {
         return;
     }
     tracing::info!("bind_local_nickname: {} -> '{}' (was {:?})", actor_id, nickname, current);

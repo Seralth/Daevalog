@@ -614,9 +614,23 @@ pub fn save_slice(
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     std::fs::write(slice_path(app_data_dir, &record.id), &compressed).map_err(|e| e.to_string())?;
     let mut meta = read_meta(app_data_dir, &record.id);
-    meta.uploader_actor_id = storage.local_player_id().map(|v| v as i32);
+    meta.uploader_actor_id = uploader_in(record, storage.local_player_id(), storage.local_character_name());
     write_meta(app_data_dir, &record.id, &meta);
     Ok(compressed.len())
+}
+
+/// Who uploads `record`: an actor in the fight, never just the current id.
+/// The local id can have moved on since (a zone change gives everyone new
+/// ids), and was once a party placeholder row: two uploads named an uploader
+/// who was not in the fight at all (issue #19). The local id when it is in
+/// the fight, else the actor carrying the local character's name, else none.
+fn uploader_in(record: &FightRecord, local_id: Option<i64>, local_name: Option<String>) -> Option<i32> {
+    let local_id = local_id.map(|v| v as i32);
+    if let Some(id) = local_id.filter(|id| record.actors.iter().any(|a| a.actor_id == *id)) {
+        return Some(id);
+    }
+    let name = local_name.map(|n| n.trim().to_string()).filter(|n| !n.is_empty())?;
+    record.actors.iter().find(|a| a.nickname.trim() == name).map(|a| a.actor_id)
 }
 
 /// Remove a fight's slice along with the fight.
@@ -917,6 +931,22 @@ mod upload_tests {
         .unwrap();
         r.is_train = is_train;
         r
+    }
+
+    #[test]
+    fn the_uploader_is_an_actor_in_the_fight() {
+        let mut r = fight("u1", 0, 30_000, false);
+        r.actors = serde_json::from_value(serde_json::json!([
+            {"actorId": 5886, "nickname": "Tsuri", "job": "", "jobId": 17},
+            {"actorId": 2883, "nickname": "An*a", "job": "", "jobId": 14}
+        ])).unwrap();
+        assert_eq!(uploader_in(&r, Some(5886), None), Some(5886));
+        // An id from before a zone change, or a party placeholder: the name decides.
+        assert_eq!(uploader_in(&r, Some(5844), Some("Tsuri".into())), Some(5886));
+        assert_eq!(uploader_in(&r, Some(90_000_001), Some("Tsuri".into())), Some(5886));
+        // Neither in the fight: no uploader rather than a wrong one.
+        assert_eq!(uploader_in(&r, Some(5844), Some("Naicha".into())), None);
+        assert_eq!(uploader_in(&r, None, None), None);
     }
 
     #[test]
