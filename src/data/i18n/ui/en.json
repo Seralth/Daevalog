@@ -185,9 +185,9 @@
     },
     "showPing": "Show ping",
     "startInTray": "Start in the tray",
-    "startInTrayHint": "The meter starts hidden. Open it from the tray icon.",
+    "startInTrayHint": "The meter starts hidden. Bring it back through the tray icon's menu.",
     "hideFromTaskbar": "Keep out of the taskbar",
-    "hideFromTaskbarHint": "The meter's windows take no taskbar slot. The tray icon shows and hides the meter.",
+    "hideFromTaskbarHint": "The meter's windows take no taskbar slot. The tray icon's menu shows and hides the meter.",
     "showTotalDps": "Show total DPS/DMG",
     "roundDps": "Round DPS",
     "autoHideMeter": "Auto-hide meter",
@@ -395,5 +395,11 @@
     "tierExpedition": "Expedition",
     "tierConquestNormal": "Conquest (Normal)",
     "tierConquestHard": "Conquest (Hard)"
+  },
+  "tray": {
+    "toggle": "Show or hide the meter",
+    "settings": "Settings",
+    "history": "History",
+    "quit": "Quit"
   }
 }

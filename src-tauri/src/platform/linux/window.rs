@@ -215,3 +215,30 @@ pub fn release_size(window: &tauri::WebviewWindow, min: tauri::LogicalSize<f64>)
         max_height: None,
     });
 }
+
+/// The libraries Tauri's tray loads at runtime, in the order it tries them.
+const TRAY_LIBRARIES: &[&str] = &["libayatana-appindicator3.so.1", "libappindicator3.so.1"];
+
+/// Whether a tray library is installed. Tauri panics when it builds a tray
+/// icon without one, so the meter checks first and goes without a tray.
+pub fn tray_available() -> bool {
+    // SAFETY: loading a shared library runs its initialisers; these are the
+    // libraries Tauri itself loads for the tray.
+    first_loadable(TRAY_LIBRARIES, |name| unsafe { libloading::Library::new(name) }.is_ok()).is_some()
+}
+
+fn first_loadable<'a>(names: &[&'a str], load: impl Fn(&str) -> bool) -> Option<&'a str> {
+    names.iter().copied().find(|name| load(name))
+}
+
+#[cfg(test)]
+mod tray_tests {
+    use super::*;
+
+    #[test]
+    fn the_tray_needs_one_of_its_libraries() {
+        assert_eq!(first_loadable(TRAY_LIBRARIES, |_| false), None);
+        assert_eq!(first_loadable(TRAY_LIBRARIES, |n| n == "libappindicator3.so.1"), Some("libappindicator3.so.1"));
+        assert_eq!(first_loadable(TRAY_LIBRARIES, |_| true), Some("libayatana-appindicator3.so.1"));
+    }
+}

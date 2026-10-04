@@ -73,3 +73,8 @@ pub fn resize_pointer_down(_window: &tauri::WebviewWindow) -> Option<bool> {
 pub async fn prepare_resize(_window: &tauri::WebviewWindow, _min: tauri::LogicalSize<f64>) -> Result<(), String> {
     Err("Compositor resize is unavailable".into())
 }
+
+/// Whether a tray icon can be built here. Nothing to check on this OS.
+pub fn tray_available() -> bool {
+    true
+}
