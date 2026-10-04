@@ -749,15 +749,17 @@ impl DpsCalculator {
         let party_members = self.data_storage.get_party_members();
         let supporters = self.data_storage.supporters();
         let battle_time = (target_data.last_damage_time - target_data.first_damage_time).max(0);
-        let (nickname_data, summon_data_snap, local_id, dungeon_id) = match identity {
+        let (nickname_data, summon_data_snap, local_id, identity_dungeon) = match identity {
             Some(i) => (i.nicknames.clone(), i.summons.clone(), i.local_player_id, i.dungeon_id),
             None => (
                 self.data_storage.get_nicknames(),
                 self.data_storage.get_summon_data(),
                 self.data_storage.local_player_id(),
-                self.data_storage.current_dungeon_id(),
+                0,
             ),
         };
+        // Where the fight happened, not where the player is now.
+        let dungeon_id = if target_data.dungeon_id != 0 { target_data.dungeon_id } else { identity_dungeon };
 
         let mut record_actors: HashMap<i32, (String, String)> = HashMap::new();
         for skill in &details.skills {
@@ -1421,6 +1423,62 @@ mod tests {
         assert_eq!(saved[0].duration_ms, 59_000);
         assert!(calc.fight_finished(&saved[0]));
         assert!(snapshot_at(&mut calc, 125_000).is_empty());
+        crate::clock::set_override(None);
+    }
+
+    fn dungeon_of(records: &[FightRecord], id: &str) -> i32 {
+        records.iter().find(|r| r.id == id).map(|r| r.dungeon_id).expect(id)
+    }
+
+    #[test]
+    fn a_fight_outside_after_leaving_an_instance_has_no_dungeon() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        spawn(&s, 900, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        s.set_current_dungeon(600002);
+        hits(&s, 2259, 800, 1_000, 8_000);
+        crate::clock::set_override(Some(12_000));
+        assert!(s.note_zone_change(), "the load out of the instance");
+        assert_eq!(s.current_dungeon_id(), 0);
+        let mut saved = snapshot_at(&mut calc, 12_000);
+        hits(&s, 2259, 900, 20_000, 30_000);
+        crate::clock::set_override(Some(31_000));
+        saved.extend(calc.snapshot_boss_fights_force());
+        assert_eq!(dungeon_of(&saved, "auto_800_1000"), 600002);
+        assert_eq!(dungeon_of(&saved, "auto_900_20000"), 0);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_fight_before_the_first_roster_still_gets_its_dungeon() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        hits(&s, 2259, 800, 1_000, 3_000);
+        s.set_current_dungeon(600002);
+        hits(&s, 2259, 800, 4_000, 8_000);
+        crate::clock::set_override(Some(9_000));
+        assert_eq!(dungeon_of(&calc.snapshot_boss_fights_force(), "auto_800_1000"), 600002);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_teleport_during_a_fight_in_an_instance_keeps_the_dungeon() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        s.set_current_dungeon(600002);
+        hits(&s, 2259, 800, 1_000, 5_000);
+        crate::clock::set_override(Some(5_500));
+        assert!(!s.note_zone_change(), "mid-fight: no combat reset");
+        assert_eq!(s.current_dungeon_id(), 0, "until the roster names it again");
+        hits(&s, 2259, 800, 6_000, 9_000);
+        crate::clock::set_override(Some(10_000));
+        assert_eq!(dungeon_of(&calc.snapshot_boss_fights_force(), "auto_800_1000"), 600002);
         crate::clock::set_override(None);
     }
 
