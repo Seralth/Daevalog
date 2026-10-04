@@ -754,6 +754,13 @@ impl DpsCalculator {
     /// auto-uploaded under the local player's account (issue #19). Without
     /// either a local id or a party to go on, every fight counts, as before.
     fn is_our_fight(&self, target: &TargetCombatData) -> bool {
+        // An instance holds only the party: every fight in it is ours. Slices
+        // from older meters often lack the self record and tie the party's
+        // names to stale ids, and the checks below refused the uploader's
+        // own dungeon runs when re-derived (2026-10-05).
+        if self.data_storage.current_dungeon_id() > 0 {
+            return true;
+        }
         let summon_data = self.data_storage.get_summon_data();
         let nicknames = self.data_storage.get_nicknames();
         let party = self.data_storage.get_party_members();
@@ -1606,6 +1613,10 @@ mod tests {
         let combat = storage.get_combat_snapshot_light();
         assert!(calc.is_our_fight(&combat[&50_000]));
         assert!(!calc.is_our_fight(&combat[&60_000]), "a stranger's boss is not saved or uploaded");
+
+        // In an instance only the party is there, whatever ids say.
+        storage.set_current_dungeon(600_021);
+        assert!(calc.is_our_fight(&combat[&60_000]));
     }
 
     #[test]
