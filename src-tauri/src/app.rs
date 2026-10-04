@@ -434,6 +434,9 @@ fn update_settings(
     value: String,
 ) {
     if state.settings.set(&key, &value) {
+        if key == crate::tray::HIDE_FROM_TASKBAR_KEY {
+            crate::tray::apply_taskbar(&app);
+        }
         let _ = app.emit("setting-changed", serde_json::json!({ "key": key, "value": value }));
     }
 }
@@ -693,6 +696,31 @@ fn set_manual_device(state: tauri::State<'_, AppState>, device: String) {
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
     save_fights_before_exit(&app);
+    app.exit(0);
+}
+
+/// Tray menu actions. Window creation runs as a task, off the event loop
+/// that delivers the menu click (see `open_settings_window`).
+pub(crate) fn open_settings_from_tray(app: &tauri::AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = open_settings_window(app).await {
+            tracing::warn!("tray: could not open Settings: {e}");
+        }
+    });
+}
+
+pub(crate) fn open_history_from_tray(app: &tauri::AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = request_details_view(app, serde_json::json!({ "kind": "history" })).await {
+            tracing::warn!("tray: could not open History: {e}");
+        }
+    });
+}
+
+pub(crate) fn quit_from_tray(app: &tauri::AppHandle) {
+    save_fights_before_exit(app);
     app.exit(0);
 }
 
@@ -1160,7 +1188,7 @@ fn open_details_on_monitor_inner(
     // monitor without being buried by whatever else is on that screen.
     .always_on_top(true)
     .resizable(true)
-    .skip_taskbar(false)
+    .skip_taskbar(crate::tray::taskbar_hidden(app))
     .position(lx, ly)
     .inner_size(lw, lh)
     // Visible from the start. Creating it hidden and having the page reveal
@@ -1355,7 +1383,7 @@ fn build_settings_window(app: &tauri::AppHandle) -> Result<(), String> {
     // that could fall behind it would be unreachable while the game is focused.
     .always_on_top(true)
     .resizable(true)
-    .skip_taskbar(false)
+    .skip_taskbar(crate::tray::taskbar_hidden(app))
     .inner_size(760.0, 820.0)
     .min_inner_size(520.0, 420.0)
     // Built visible, with the app's background colour to cover the load rather
@@ -1585,7 +1613,7 @@ fn open_fight_window(app: &tauri::AppHandle, label: &str) -> Result<(), String> 
     .transparent(false)
     .always_on_top(true)
     .resizable(true)
-    .skip_taskbar(false)
+    .skip_taskbar(crate::tray::taskbar_hidden(app))
     .inner_size(1180.0, 760.0)
     .min_inner_size(520.0, 360.0)
     .background_color(tauri::window::Color(10, 14, 22, 255))
@@ -1620,7 +1648,7 @@ fn open_history_window_inner(app: &tauri::AppHandle) -> Result<(), String> {
     .transparent(false)
     .always_on_top(true)
     .resizable(true)
-    .skip_taskbar(false)
+    .skip_taskbar(crate::tray::taskbar_hidden(app))
     .inner_size(1100.0, 720.0)
     .min_inner_size(480.0, 360.0)
     .background_color(tauri::window::Color(10, 14, 22, 255))
@@ -1657,7 +1685,7 @@ fn open_details_windowed(app: &tauri::AppHandle) -> Result<(), String> {
     .transparent(false)
     .always_on_top(true)
     .resizable(true)
-    .skip_taskbar(false)
+    .skip_taskbar(crate::tray::taskbar_hidden(app))
     .inner_size(1180.0, 760.0)
     .min_inner_size(520.0, 360.0)
     // Visible, with the app background painted behind the load — same reason as
@@ -2196,6 +2224,16 @@ pub fn run() {
 
             app.manage(state);
             crate::presence::spawn(app.handle().clone());
+
+            // Hidden into the tray only when there is a tray to bring it back
+            // from: a desktop without one would leave no way to the meter.
+            let has_tray = crate::tray::create(app.handle());
+            crate::tray::apply_taskbar(app.handle());
+            if has_tray && crate::tray::start_in_tray(app.handle()) {
+                if let Some(main) = app.get_webview_window("main") {
+                    let _ = main.hide();
+                }
+            }
 
             // Reopen the Details window if it was left enabled. Done here rather
             // than from JS because the backend already has settings loaded — the

@@ -2341,6 +2341,20 @@ class DpsApp {
     }
     this.refreshAccountPanel();
 
+    // Tray settings, off unless turned on. The backend applies them: the
+    // taskbar one at once, the start one at the next launch.
+    for (const [selector, key] of [
+      [".startInTrayCheckbox", "dpsMeter.startInTray"],
+      [".hideFromTaskbarCheckbox", "dpsMeter.hideFromTaskbar"],
+    ]) {
+      const checkbox = document.querySelector(selector);
+      if (!checkbox) continue;
+      checkbox.checked = this.safeGetSetting(key) === "true";
+      checkbox.addEventListener("change", (event) => {
+        this.safeSetSetting(key, String(!!event.target?.checked));
+      });
+    }
+
     // Off unless turned on: it shows others what you are playing. Offered
     // only when this build has a Discord application to show it under.
     const discordCheckbox = document.querySelector(".discordActivityCheckbox");

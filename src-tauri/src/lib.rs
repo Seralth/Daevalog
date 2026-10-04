@@ -35,6 +35,8 @@ pub mod platform;
 #[cfg(feature = "desktop")]
 mod presence;
 #[cfg(feature = "desktop")]
+mod tray;
+#[cfg(feature = "desktop")]
 pub mod share;
 
 #[cfg(feature = "desktop")]

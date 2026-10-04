@@ -184,6 +184,10 @@
       "dps": "DPS"
     },
     "showPing": "Show ping",
+    "startInTray": "Start in the tray",
+    "startInTrayHint": "The meter starts hidden. Open it from the tray icon.",
+    "hideFromTaskbar": "Keep out of the taskbar",
+    "hideFromTaskbarHint": "The meter's windows take no taskbar slot. The tray icon shows and hides the meter.",
     "showTotalDps": "Show total DPS/DMG",
     "roundDps": "Round DPS",
     "autoHideMeter": "Auto-hide meter",
