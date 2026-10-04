@@ -10,6 +10,8 @@
 //! A2_REPLAY_DUMP=0538              print framed packets with this opcode that
 //!                                  name the target, in the window
 //! A2_REPLAY_RESET_AT=04:48:00      clear combat data there, as the reset button does
+//! A2_REPLAY_FLAGS=1                print every hit's raw type, flag and direction
+//!                                  bytes (`hit_flags` lines, capture ms first)
 //! cargo test --lib replay_report -- --ignored --nocapture
 //! ```
 
@@ -103,6 +105,17 @@ fn replay_report() {
     let to = env("A2_REPLAY_TO");
     let show_hits = env("A2_REPLAY_HITS").is_some();
     let mut reset_at = env("A2_REPLAY_RESET_AT");
+    let _flags = env("A2_REPLAY_FLAGS").map(|_| {
+        tracing::subscriber::set_default(
+            tracing_subscriber::fmt()
+                .with_env_filter("hit_flags=trace")
+                .without_time()
+                .with_target(false)
+                .with_level(false)
+                .with_writer(std::io::stdout)
+                .finish(),
+        )
+    });
     let dump_op: Option<[u8; 2]> = env("A2_REPLAY_DUMP").and_then(|h| decode_hex(&h)).and_then(|v| v.try_into().ok());
 
     let data_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");

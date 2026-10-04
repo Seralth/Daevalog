@@ -1868,12 +1868,16 @@ impl StreamProcessor {
             // Special damage flags. Per the 2026-06 layout, the block after the
             // skill code is: <damage_type/crit> <modifications byte> 00 <direction byte>.
             let mut specials = Vec::new();
+            // The raw flag bytes, for `A2_REPLAY_FLAGS` in the replay report.
+            let mut raw_mods: Option<u8> = None;
+            let mut raw_dir: Option<u8> = None;
             if [5, 6, 7].contains(&and_result) && offset < packet.len() {
                 // Modifications byte = attack-quality flags. Confirmed against the
                 // game combat log: Perfect=0x04 (15,276 [Perfect Critical]),
                 // Double=0x08 (60,876 [Double Critical]); 0x0c = Perfect+Double.
                 // Parry/Smite/PowerShard follow the same contiguous shift (inferred).
                 let mods = packet[offset] as u32;
+                raw_mods = Some(packet[offset]);
                 if mods & 0x02 != 0 { specials.push(SpecialDamage::Parry); }
                 if mods & 0x04 != 0 { specials.push(SpecialDamage::Perfect); }
                 if mods & 0x08 != 0 { specials.push(SpecialDamage::Double); }
@@ -1884,6 +1888,7 @@ impl StreamProcessor {
                 // tag (untagged/parried hits), 0x01 = Back (12,030 [Back]),
                 // 0x02 = Front (14,561 [Front], 28,421 [Front Critical]).
                 if offset + 2 < packet.len() {
+                    raw_dir = Some(packet[offset + 2]);
                     match packet[offset + 2] {
                         0x01 => specials.push(SpecialDamage::Back),
                         0x02 => specials.push(SpecialDamage::Frontal),
@@ -2123,6 +2128,13 @@ impl StreamProcessor {
                 pdp.set_multi_hit_damage(multi_hit_damage);
                 pdp.set_heal_amount(heal_amount);
                 pdp.set_damage(final_damage);
+                tracing::trace!(
+                    target: "hit_flags",
+                    "{} actor={actor_value} target={target_value} skill={resolved_skill_code} damage={final_damage} type={dummy_type} layout={and_result} mods={} dir={} multi={multi_hit_count}",
+                    pdp.timestamp(),
+                    raw_mods.map_or("-".to_string(), |m| format!("{m:#04x}")),
+                    raw_dir.map_or("-".to_string(), |d| format!("{d:#04x}")),
+                );
 
                 self.data_storage.append_damage(pdp);
             } else if final_damage > 1 && self.data_storage.is_known_player(actor_value) {
