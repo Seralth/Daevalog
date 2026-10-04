@@ -67,6 +67,10 @@ pub struct DpsCalculator {
     /// Fights saved for good, as (target, segment start) -> last hit at the
     /// time. A segment that goes on after that is saved again.
     saved_fights: HashMap<(i32, i64), i64>,
+    /// The targets behind the rows on screen, and their battle time: what a
+    /// row's skill details cover.
+    displayed_targets: Vec<i32>,
+    displayed_battle_time: i64,
 }
 
 impl DpsCalculator {
@@ -89,6 +93,8 @@ impl DpsCalculator {
             all_targets_window_ms: 0,
             nickname_job_cache: HashMap::new(),
             saved_fights: HashMap::new(),
+            displayed_targets: Vec::new(),
+            displayed_battle_time: 0,
         }
     }
 
@@ -101,6 +107,7 @@ impl DpsCalculator {
             // something. Its rows are the old mode's too, so they go.
             self.last_damage_gen = -1;
             self.last_dps_snapshot = None;
+            self.displayed_targets.clear();
         }
         self.target_selection_mode = mode;
     }
@@ -138,6 +145,7 @@ impl DpsCalculator {
     pub fn restart_target_selection(&mut self, clear_damage: bool) {
         self.current_target = 0;
         self.last_dps_snapshot = None;
+        self.displayed_targets.clear();
         self.last_damage_gen = -1;
         if clear_damage {
             self.data_storage.flush();
@@ -150,6 +158,7 @@ impl DpsCalculator {
         // state so the meter resets this cycle instead of returning the stale snapshot.
         if self.data_storage.take_combat_reset_requested() {
             self.last_dps_snapshot = None;
+            self.displayed_targets.clear();
             self.last_damage_gen = -1;
             self.current_target = 0;
             self.data_storage.set_current_target(0);
@@ -186,6 +195,12 @@ impl DpsCalculator {
 
         // Decide target
         let (target_ids, target_name, tracking_id) = self.decide_target(&combat_data, &nickname_data, &summon_data);
+        // No target keeps the rows already on screen (see below), so their
+        // targets stay too.
+        if !target_ids.is_empty() {
+            self.displayed_targets = target_ids.iter().copied().collect();
+            self.displayed_targets.sort_unstable();
+        }
         dps_data.target_name = target_name;
         dps_data.target_mode = self.target_selection_mode.id().to_string();
         self.current_target = tracking_id;
@@ -365,6 +380,7 @@ impl DpsCalculator {
         self.finalize_rows(&mut dps_data);
 
         dps_data.battle_time = battle_time;
+        self.displayed_battle_time = battle_time;
         // total_damage here is the cumulative damage to the selected target(s).
         // Paired with target_max_hp it yields remaining = max(0, max_hp - dealt).
         dps_data.target_total_damage = total_damage as i64;
@@ -956,6 +972,21 @@ impl DpsCalculator {
         }
     }
 
+    /// Skill details behind a row on screen, in any mode: one target as
+    /// `get_target_details`, several (ALL, TRAIN) merged into one before the
+    /// rows are resolved, so a row's details match the row.
+    pub fn get_displayed_details(&self, actor_ids: Option<&[i32]>) -> TargetDetailsResponse {
+        if let [one] = self.displayed_targets.as_slice() {
+            return self.get_target_details(*one, actor_ids);
+        }
+        let combat_data = self.data_storage.get_combat_snapshot();
+        let merged = TargetCombatData::merged(self.displayed_targets.iter().filter_map(|t| combat_data.get(t)));
+        let Some(merged) = merged else { return self.get_target_details(0, actor_ids) };
+        let mut details = self.details_for(&merged, 0, &self.data_storage.get_heal_snapshot(), actor_ids, None);
+        details.battle_time = self.displayed_battle_time;
+        details
+    }
+
     pub fn get_target_details(&self, target_id: i32, actor_ids: Option<&[i32]>) -> TargetDetailsResponse {
         let combat_data = self.data_storage.get_combat_snapshot();
         let target_data = match combat_data.get(&target_id) {
@@ -1390,6 +1421,39 @@ mod tests {
         assert_eq!(saved[0].duration_ms, 59_000);
         assert!(calc.fight_finished(&saved[0]));
         assert!(snapshot_at(&mut calc, 125_000).is_empty());
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn row_details_cover_every_target_a_multi_target_mode_shows() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, DUMMY);
+        spawn(&s, 810, DUMMY);
+        let mut calc = meter_with_npcs(&s);
+        hits(&s, 2259, 800, 1_000, 4_000);
+        hits(&s, 2259, 810, 2_000, 6_000);
+        crate::clock::set_override(Some(7_000));
+        calc.set_target_selection_mode("trainTargets");
+        let shown = calc.get_dps();
+        assert_eq!(shown.target_id, 0, "two targets, no single one");
+        let details = calc.get_displayed_details(Some(&[2259]));
+        let hits: i32 = details.skills.iter().map(|s| s.time).sum();
+        let dmg: i64 = details.skills.iter().map(|s| s.dmg as i64).sum();
+        assert_eq!((hits, dmg), (9, 9 * 500), "4 hits on one dummy and 5 on the other");
+        assert_eq!(details.battle_time, shown.battle_time);
+
+        // One target: the same as that target's own details.
+        calc.set_target_selection_mode("lastHitByMe");
+        calc.get_dps();
+        let one = calc.get_displayed_details(Some(&[2259]));
+        assert_eq!(one.target_id, 810);
+        assert_eq!(one.skills.iter().map(|s| s.time).sum::<i32>(), 5);
+
+        // A reset leaves nothing to explain.
+        calc.restart_target_selection(true);
+        calc.get_dps();
+        assert!(calc.get_displayed_details(Some(&[2259])).skills.is_empty());
         crate::clock::set_override(None);
     }
 

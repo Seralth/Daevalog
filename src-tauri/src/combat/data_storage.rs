@@ -299,6 +299,23 @@ pub struct TargetCombatData {
 }
 
 impl TargetCombatData {
+    /// Several targets as one, for details over everything a multi-target
+    /// mode shows. Target id 0; each actor keeps one entry across the targets.
+    pub fn merged<'a>(targets: impl IntoIterator<Item = &'a TargetCombatData>) -> Option<Self> {
+        let mut out: Option<Self> = None;
+        for td in targets {
+            let m = out.get_or_insert_with(|| Self::new(0, td.first_damage_time));
+            m.total_damage += td.total_damage;
+            m.first_damage_time = m.first_damage_time.min(td.first_damage_time);
+            m.last_damage_time = m.last_damage_time.max(td.last_damage_time);
+            m.ours |= td.ours;
+            for (&actor, data) in &td.actors {
+                m.actors.entry(actor).or_insert_with(ActorCombatData::new).absorb(data.clone());
+            }
+        }
+        out
+    }
+
     fn new(target_id: i32, timestamp: i64) -> Self {
         Self {
             target_id,

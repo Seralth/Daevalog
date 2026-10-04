@@ -264,16 +264,15 @@
       }
     },
 
+    // The backend knows which targets the rows on screen stand for, one or
+    // several (ALL, TRAIN), and merges them the way it built the rows.
     async getBattleDetail(actorId) {
       try {
-        const dps = cachedDpsJson ? JSON.parse(cachedDpsJson) : null;
-        const targetId = Number(dps?.targetId) || 0;
-        if (targetId <= 0) return null;
         const aid = Number(actorId);
-        const result = await invoke("get_skill_details", {
-          targetId,
+        const result = await invoke("get_displayed_skill_details", {
           actorIds: Number.isFinite(aid) && aid > 0 ? [aid] : null,
         });
+        if (!result?.skills?.length) return null;
         return JSON.stringify(result);
       } catch {
         return null;

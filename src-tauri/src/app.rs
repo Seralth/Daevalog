@@ -169,6 +169,12 @@ fn get_skill_details(state: tauri::State<'_, AppState>, target_id: i32, actor_id
     state.dps_calculator.lock().get_target_details(target_id, actor_ids.as_deref())
 }
 
+/// Skill details behind a meter row, whatever the mode shows.
+#[tauri::command]
+fn get_displayed_skill_details(state: tauri::State<'_, AppState>, actor_ids: Option<Vec<i32>>) -> TargetDetailsResponse {
+    state.dps_calculator.lock().get_displayed_details(actor_ids.as_deref())
+}
+
 #[tauri::command]
 fn get_details_context(state: tauri::State<'_, AppState>) -> DetailsContext {
     state.dps_calculator.lock().get_details_context()
@@ -2586,6 +2592,7 @@ pub fn run() {
             get_app_version,
             get_dps_snapshot,
             get_skill_details,
+            get_displayed_skill_details,
             get_details_context,
             get_fight_history,
             save_fight,
