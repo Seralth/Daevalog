@@ -14,6 +14,21 @@ use crate::entity::fight_record::{FightRecord, FightSummary};
 /// find their history quietly truncated because a number was chosen tightly.
 const MAX_HISTORY_FIGHTS: usize = 500;
 
+/// Whether `name` is a single file name: no path separator, no "..", no
+/// drive prefix. Fight ids and icon keys come from the webview and become
+/// file names under the app data directory.
+pub fn is_plain_name(name: &str) -> bool {
+    !name.is_empty() && !name.contains(['/', '\\', ':', '\0']) && !name.contains("..")
+}
+
+fn check_id(id: &str) -> Result<(), String> {
+    if is_plain_name(id) {
+        Ok(())
+    } else {
+        Err(format!("Invalid fight id: {id:?}"))
+    }
+}
+
 /// Cheap fingerprint of the history directory: how many fight files there are
 /// and the newest write among them. Comparing this costs a directory scan;
 /// rebuilding the summaries costs reading and parsing every file.
@@ -71,6 +86,7 @@ impl FightHistoryManager {
     }
 
     pub fn save_fight(&self, record: &FightRecord) -> Result<(), String> {
+        check_id(&record.id)?;
         let file_path = self.history_dir.join(format!("{}.json", record.id));
         let json = serde_json::to_string_pretty(record)
             .map_err(|e| format!("Serialization error: {}", e))?;
@@ -128,6 +144,7 @@ impl FightHistoryManager {
     }
 
     pub fn load_fight(&self, id: &str) -> Result<FightRecord, String> {
+        check_id(id)?;
         let file_path = self.history_dir.join(format!("{}.json", id));
         let json = std::fs::read_to_string(&file_path)
             .map_err(|e| format!("Read error: {}", e))?;
@@ -136,6 +153,7 @@ impl FightHistoryManager {
     }
 
     pub fn delete_fight(&self, id: &str) -> Result<(), String> {
+        check_id(id)?;
         let file_path = self.history_dir.join(format!("{}.json", id));
         std::fs::remove_file(&file_path)
             .map_err(|e| format!("Delete error: {}", e))?;
@@ -201,5 +219,28 @@ impl FightHistoryManager {
     pub fn export_fight_json(&self, record: &FightRecord) -> Result<String, String> {
         serde_json::to_string(record)
             .map_err(|e| format!("Serialization error: {}", e))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ids_that_leave_the_directory_are_refused() {
+        for bad in ["", "..", "../settings", "a/b", "a\\b", "C:x", "auto..1"] {
+            assert!(!is_plain_name(bad), "{bad:?}");
+        }
+        assert!(is_plain_name("auto_36734_1759578598645"));
+        assert!(is_plain_name("Skill_Icon_01.png"));
+
+        let dir = std::env::temp_dir().join(format!("a2t-history-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let history = FightHistoryManager::new(dir.clone());
+        std::fs::write(dir.join("keep.json"), b"{}").unwrap();
+        assert!(history.delete_fight("../keep").is_err());
+        assert!(dir.join("keep.json").exists());
+        assert!(history.load_fight("../keep").is_err());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

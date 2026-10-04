@@ -614,9 +614,19 @@ pub fn save_slice(
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     std::fs::write(slice_path(app_data_dir, &record.id), &compressed).map_err(|e| e.to_string())?;
     let mut meta = read_meta(app_data_dir, &record.id);
-    meta.uploader_actor_id = storage.local_player_id().map(|v| v as i32);
+    meta.uploader_actor_id = uploader_in(record, storage);
     write_meta(app_data_dir, &record.id, &meta);
     Ok(compressed.len())
+}
+
+/// Your actor id in the fight. The record names you in full, so look for your
+/// name there: after a zone load your current id is a stranger's in the fight.
+fn uploader_in(record: &FightRecord, storage: &DataStorage) -> Option<i32> {
+    storage
+        .local_character_name()
+        .and_then(|name| record.actors.iter().find(|a| a.nickname == name))
+        .map(|a| a.actor_id)
+        .or_else(|| storage.local_player_id().map(|v| v as i32))
 }
 
 /// Remove a fight's slice along with the fight.
@@ -662,14 +672,23 @@ pub fn wants_auto_upload(app_data_dir: &Path, record: &FightRecord, finished: bo
 /// minutes; one more failure after the last and it stops.
 const AUTO_RETRY_MINUTES: [i64; 6] = [1, 2, 5, 15, 30, 60];
 
+/// How long to wait between tries while the keyring is locked.
+const KEYRING_RETRY_MINUTES: i64 = 5;
+
 /// An automatic upload of `id` failed. Schedule the next try, or stop: when
 /// the failure is one waiting cannot fix (not signed in, a refused fight),
-/// or the retries are used up.
-pub fn note_auto_upload_failure(app_data_dir: &Path, id: &str, retryable: bool, now_ms: i64) {
+/// or the retries are used up. A locked keyring uses up no retries.
+pub fn note_auto_upload_failure(app_data_dir: &Path, id: &str, failure: &UploadFailure, now_ms: i64) {
     let mut meta = read_meta(app_data_dir, id);
+    if failure.keyring_locked {
+        meta.auto_attempts = meta.auto_attempts.max(1);
+        meta.retry_at_ms = now_ms + KEYRING_RETRY_MINUTES * 60_000;
+        write_meta(app_data_dir, id, &meta);
+        return;
+    }
     meta.auto_attempts += 1;
     match AUTO_RETRY_MINUTES.get(meta.auto_attempts as usize - 1) {
-        Some(minutes) if retryable => meta.retry_at_ms = now_ms + minutes * 60_000,
+        Some(minutes) if failure.retryable => meta.retry_at_ms = now_ms + minutes * 60_000,
         _ => meta.gave_up = true,
     }
     write_meta(app_data_dir, id, &meta);
@@ -763,14 +782,19 @@ pub struct UploadFailure {
     /// Offline, a server error, or rate limited: worth another try later. Not
     /// signed in, or the service refused the fight: the same again would fail.
     pub retryable: bool,
+    /// The keyring did not hand over the token. Retried for as long as it takes.
+    pub keyring_locked: bool,
 }
 
 impl UploadFailure {
     fn retry(message: impl Into<String>) -> Self {
-        Self { message: message.into(), retryable: true }
+        Self { message: message.into(), retryable: true, keyring_locked: false }
     }
     fn fatal(message: impl Into<String>) -> Self {
-        Self { message: message.into(), retryable: false }
+        Self { message: message.into(), retryable: false, keyring_locked: false }
+    }
+    fn locked(message: impl Into<String>) -> Self {
+        Self { message: message.into(), retryable: true, keyring_locked: true }
     }
 }
 
@@ -780,8 +804,17 @@ pub async fn upload_detailed(
     app_data_dir: &Path,
     record: &FightRecord,
 ) -> Result<UploadResult, UploadFailure> {
-    let token = crate::account::secret::load(app_data_dir)
-        .ok_or_else(|| UploadFailure::fatal("Sign in under Settings → A2 Tools Account to upload fights."))?;
+    let token = match crate::account::secret::load_stored(app_data_dir) {
+        crate::account::secret::Stored::Token(token) => token,
+        crate::account::secret::Stored::Locked => {
+            return Err(UploadFailure::locked(
+                "The desktop keyring is locked. Unlock the keyring to upload fights.",
+            ))
+        }
+        crate::account::secret::Stored::Missing => {
+            return Err(UploadFailure::fatal("Sign in under Settings → A2 Tools Account to upload fights."))
+        }
+    };
 
     let compressed = match std::fs::read(slice_path(app_data_dir, &record.id)) {
         Ok(bytes) => bytes,
@@ -820,6 +853,7 @@ pub async fn upload_detailed(
 
     let response = client
         .post(format!("{}/api/logs", crate::account::base_url()))
+        .timeout(std::time::Duration::from_secs(60))
         .header("authorization", format!("Bearer {token}"))
         .header("content-type", "application/json")
         .body(body.to_string())
@@ -858,11 +892,11 @@ pub async fn upload_detailed(
     // A server that is down, busy or rate limiting may take it later; one that
     // refused the fight, or the sign-in, will refuse it again.
     let retryable = code == 408 || code == 429 || status.is_server_error();
-    Err(UploadFailure { message, retryable })
+    Err(UploadFailure { message, retryable, keyring_locked: false })
 }
 
 /// Standard base64. Small enough that a dependency is not worth having.
-fn base64(data: &[u8]) -> String {
+pub(crate) fn base64(data: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
@@ -903,21 +937,39 @@ mod upload_tests {
         write_meta(&dir, "f1", &SliceMeta::default());
         let t = 1_000_000;
         assert!(auto_upload_retries_due(&dir, t).is_empty(), "never failed: not a retry");
-        note_auto_upload_failure(&dir, "f1", true, t);
+        note_auto_upload_failure(&dir, "f1", &UploadFailure::retry("offline"), t);
         assert!(auto_upload_retries_due(&dir, t + 59_000).is_empty(), "first retry after a minute");
         assert_eq!(auto_upload_retries_due(&dir, t + 60_000), vec!["f1".to_string()]);
         for n in 2..=AUTO_RETRY_MINUTES.len() {
-            note_auto_upload_failure(&dir, "f1", true, t);
+            note_auto_upload_failure(&dir, "f1", &UploadFailure::retry("offline"), t);
             assert!(!read_meta(&dir, "f1").gave_up, "attempt {n}");
         }
-        note_auto_upload_failure(&dir, "f1", true, t);
+        note_auto_upload_failure(&dir, "f1", &UploadFailure::retry("offline"), t);
         assert!(read_meta(&dir, "f1").gave_up, "out of retries");
         assert!(auto_upload_retries_due(&dir, i64::MAX).is_empty());
 
         std::fs::write(slice_path(&dir, "f2"), b"slice").unwrap();
         write_meta(&dir, "f2", &SliceMeta::default());
-        note_auto_upload_failure(&dir, "f2", false, t);
+        note_auto_upload_failure(&dir, "f2", &UploadFailure::fatal("refused"), t);
         assert!(read_meta(&dir, "f2").gave_up, "a refused fight is not retried");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_locked_keyring_never_ends_the_auto_upload() {
+        let dir = std::env::temp_dir().join(format!("a2t-locked-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(slices_dir(&dir)).unwrap();
+        std::fs::write(slice_path(&dir, "f1"), b"slice").unwrap();
+        write_meta(&dir, "f1", &SliceMeta::default());
+        let t = 1_000_000;
+        for _ in 0..50 {
+            note_auto_upload_failure(&dir, "f1", &UploadFailure::locked("locked"), t);
+        }
+        let meta = read_meta(&dir, "f1");
+        assert!(!meta.gave_up);
+        assert_eq!(meta.auto_attempts, 1, "a locked keyring uses up no retries");
+        assert_eq!(auto_upload_retries_due(&dir, t + KEYRING_RETRY_MINUTES * 60_000), vec!["f1".to_string()]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

@@ -35,10 +35,46 @@ use serde::{Deserialize, Serialize};
 /// (`METER_SCOPES` on the server: profile, sync, characters).
 pub const CLIENT_ID: &str = "dps-meter";
 
-/// Where the account lives. Overridable so a local Worker can be pointed at
-/// without a rebuild — `wrangler dev` serves on 8787.
+const PRODUCTION_URL: &str = "https://a2tools.app";
+
+/// Every account request is small; a server that has not answered by then
+/// will not.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
+
+/// Where the account lives. `A2TOOLS_API` points the meter at another server
+/// without a rebuild.
 pub fn base_url() -> String {
-    std::env::var("A2TOOLS_API").unwrap_or_else(|_| "https://a2tools.app".to_string())
+    api_base(std::env::var("A2TOOLS_API").ok().as_deref())
+}
+
+/// The token goes to this server in a header, so an override must be https.
+/// Anything else falls back to production.
+fn api_base(override_url: Option<&str>) -> String {
+    let Some(value) = override_url.map(str::trim).filter(|v| !v.is_empty()) else {
+        return PRODUCTION_URL.to_string();
+    };
+    match reqwest::Url::parse(value) {
+        Ok(url) if url.scheme() == "https" && url.host_str().is_some() => {
+            value.trim_end_matches('/').to_string()
+        }
+        _ => {
+            tracing::warn!("A2TOOLS_API is not an https URL; using {PRODUCTION_URL}");
+            PRODUCTION_URL.to_string()
+        }
+    }
+}
+
+/// Whether a link the server sent may be opened in the browser: https on
+/// a2tools.app or a subdomain, default port, no user info.
+pub fn is_site_url(url: &str) -> bool {
+    let Ok(url) = reqwest::Url::parse(url) else { return false };
+    url.scheme() == "https"
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.port().is_none()
+        && url
+            .host_str()
+            .is_some_and(|h| h == "a2tools.app" || h.ends_with(".a2tools.app"))
 }
 
 /// A grant in progress: what to show the player, and what to poll with.
@@ -122,6 +158,7 @@ pub async fn start(client: &reqwest::Client, device_label: &str) -> Result<Devic
     let body = serde_json::json!({ "client": CLIENT_ID, "device_label": device_label });
     let response = client
         .post(format!("{}/api/device/code", base_url()))
+        .timeout(REQUEST_TIMEOUT)
         .header("content-type", "application/json")
         .body(body.to_string())
         .send()
@@ -142,6 +179,7 @@ pub async fn poll_once(client: &reqwest::Client, device_code: &str) -> PollOutco
     let body = serde_json::json!({ "device_code": device_code });
     match client
         .post(format!("{}/api/device/token", base_url()))
+        .timeout(REQUEST_TIMEOUT)
         .header("content-type", "application/json")
         .body(body.to_string())
         .send()
@@ -215,31 +253,59 @@ pub struct AccountSummary {
     pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
-/// Ask who we are. `None` means the token is gone or no longer valid.
-pub async fn whoami(
-    client: &reqwest::Client,
-    app_data_dir: &Path,
-) -> Option<AccountSummary> {
-    let token = secret::load(app_data_dir)?;
-    let response = client
+/// What `whoami` found.
+#[derive(Debug, Clone)]
+pub enum AccountState {
+    SignedIn(AccountSummary),
+    /// No token, or the server said the token is no longer valid.
+    SignedOut,
+    /// A token is stored but could not be checked now: the keyring is locked
+    /// or the server did not answer. Not a reason to ask for a new sign-in.
+    Unavailable(String),
+}
+
+/// Ask who we are.
+pub async fn whoami(client: &reqwest::Client, app_data_dir: &Path) -> AccountState {
+    let token = match secret::load_stored(app_data_dir) {
+        secret::Stored::Token(token) => token,
+        secret::Stored::Missing => return AccountState::SignedOut,
+        secret::Stored::Locked => {
+            return AccountState::Unavailable(
+                "The desktop keyring is locked, so the account cannot be checked. \
+                 Unlock the keyring and open Settings again."
+                    .into(),
+            )
+        }
+    };
+    let response = match client
         .get(format!("{}/api/me", base_url()))
+        .timeout(REQUEST_TIMEOUT)
         .header("authorization", format!("Bearer {token}"))
         .send()
         .await
-        .ok()?;
+    {
+        Ok(response) => response,
+        Err(_) => return AccountState::Unavailable("Could not reach a2tools.app to check the account.".into()),
+    };
 
     if response.status() == reqwest::StatusCode::UNAUTHORIZED {
         // Revoked from the website, or the account is gone. Drop it rather than
         // showing a connected account that cannot do anything.
         tracing::info!("Account token is no longer valid; signing out");
         secret::clear(app_data_dir);
-        return None;
+        return AccountState::SignedOut;
     }
     if !response.status().is_success() {
         // A server hiccup is not a reason to sign someone out.
-        return None;
+        return AccountState::Unavailable(format!(
+            "a2tools.app could not check the account ({}).",
+            response.status()
+        ));
     }
-    serde_json::from_str(&response.text().await.ok()?).ok()
+    match response.text().await.ok().and_then(|t| serde_json::from_str(&t).ok()) {
+        Some(summary) => AccountState::SignedIn(summary),
+        None => AccountState::Unavailable("Unexpected reply from a2tools.app.".into()),
+    }
 }
 
 /// A name for this install, so the approval page says what is being approved.
@@ -317,8 +383,28 @@ mod tests {
     }
 
     #[test]
-    fn the_api_base_can_be_pointed_at_a_local_worker() {
-        // Default must be production; the override exists for `wrangler dev`.
-        assert_eq!(base_url(), "https://a2tools.app");
+    fn the_api_base_accepts_only_an_https_override() {
+        assert_eq!(api_base(None), "https://a2tools.app");
+        assert_eq!(api_base(Some("")), "https://a2tools.app");
+        assert_eq!(api_base(Some("https://staging.example.org/")), "https://staging.example.org");
+        assert_eq!(api_base(Some("http://localhost:8787")), "https://a2tools.app");
+        assert_eq!(api_base(Some("ftp://a2tools.app")), "https://a2tools.app");
+        assert_eq!(api_base(Some("a2tools.app")), "https://a2tools.app");
+    }
+
+    #[test]
+    fn only_https_a2tools_links_are_opened() {
+        assert!(is_site_url("https://a2tools.app/link?code=ABCD-1234"));
+        assert!(is_site_url("https://logs.a2tools.app/abc"));
+        assert!(is_site_url("https://A2Tools.app/logs/abc"));
+        assert!(!is_site_url("http://a2tools.app/link"));
+        assert!(!is_site_url("https://a2tools.app.example.com/"));
+        assert!(!is_site_url("https://evila2tools.app/"));
+        assert!(!is_site_url("https://a2tools.app@example.com/"));
+        assert!(!is_site_url("https://user@a2tools.app/"));
+        assert!(!is_site_url("https://a2tools.app:8443/"));
+        assert!(!is_site_url("file:///etc/passwd"));
+        assert!(!is_site_url("javascript:alert(1)"));
+        assert!(!is_site_url(""));
     }
 }

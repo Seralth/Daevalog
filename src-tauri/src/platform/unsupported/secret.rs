@@ -10,6 +10,9 @@ pub fn protect(_plaintext: &[u8], _entropy: &[u8]) -> Option<Vec<u8>> {
     None
 }
 
-pub fn unprotect(_ciphertext: &[u8], _entropy: &[u8]) -> Option<Vec<u8>> {
-    None
+pub fn unprotect(
+    _ciphertext: &[u8],
+    _entropy: &[u8],
+) -> Result<Vec<u8>, crate::platform::UnsealError> {
+    Err(crate::platform::UnsealError::Unavailable)
 }

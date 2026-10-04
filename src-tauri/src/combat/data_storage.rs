@@ -293,6 +293,9 @@ pub struct TargetCombatData {
     pub last_packet_id: i64,
     /// Per raw-actor aggregated combat data
     pub actors: HashMap<i32, ActorCombatData>,
+    /// You or your party hit it. Decided at the hit: a zone load gives you a
+    /// new id before the fight is saved.
+    pub ours: bool,
 }
 
 impl TargetCombatData {
@@ -304,6 +307,7 @@ impl TargetCombatData {
             last_damage_time: timestamp,
             last_packet_id: -1,
             actors: HashMap::new(),
+            ours: false,
         }
     }
 }
@@ -315,6 +319,18 @@ pub struct EndedSegment {
     pub data: TargetCombatData,
     pub max_hp: i32,
     pub heals: HashMap<i32, HashMap<(i32, bool), HealSkillData>>,
+    pub identity: SegmentIdentity,
+}
+
+/// Who was who when a segment ended. A zone load hands every entity id out
+/// again, so a record built later from the live tables gave your spirits'
+/// damage to whoever holds your name now.
+#[derive(Debug, Clone, Default)]
+pub struct SegmentIdentity {
+    pub summons: HashMap<i32, i32>,
+    pub nicknames: HashMap<i32, String>,
+    pub local_player_id: Option<i64>,
+    pub dungeon_id: i32,
 }
 
 // ───── Main storage ─────
@@ -1342,6 +1358,7 @@ impl DataStorage {
                         last_damage_time: td.last_damage_time,
                         last_packet_id: td.last_packet_id,
                         actors,
+                        ours: td.ours,
                     },
                 )
             })
@@ -1487,9 +1504,11 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     }
 
     // Get or create target combat data
+    let ours = is_ours(inner, actor_id);
     let target_data = inner.target_combat.entry(target_id).or_insert_with(|| {
         TargetCombatData::new(target_id, timestamp)
     });
+    target_data.ours |= ours;
 
     // Update target timing
     if timestamp < target_data.first_damage_time {
@@ -1566,7 +1585,13 @@ fn retire_segment(inner: &mut Inner, data: TargetCombatData) {
     }
     let max_hp = inner.mob_hp_data.get(&tid).copied().unwrap_or(0);
     let heals = inner.heal_storage.clone();
-    inner.ended_segments.push(EndedSegment { data, max_hp, heals });
+    let identity = SegmentIdentity {
+        summons: inner.summon_storage.clone(),
+        nicknames: inner.nickname_storage.clone(),
+        local_player_id: inner.local_player_id,
+        dungeon_id: inner.current_dungeon_id,
+    };
+    inner.ended_segments.push(EndedSegment { data, max_hp, heals, identity });
 }
 
 /// Clear every target's segment, keeping the fights worth saving.

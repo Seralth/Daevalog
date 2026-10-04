@@ -210,6 +210,9 @@ fn load_fight(state: tauri::State<'_, AppState>, id: String) -> Result<FightReco
 
 #[tauri::command]
 fn delete_fight(state: tauri::State<'_, AppState>, id: String) -> Result<(), String> {
+    if !crate::history::fight_history::is_plain_name(&id) {
+        return Err(format!("Invalid fight id: {id:?}"));
+    }
     share::forget_slice(&state.app_data_dir, &id);
     state.fight_history.delete_fight(&id)
 }
@@ -232,18 +235,10 @@ async fn upload_fight(
 /// (offline, a server error, a rate limit) is tried again later, on the
 /// schedule in `share::note_auto_upload_failure`.
 fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
-    // One upload of a fight at a time: a retry must not start while the first
-    // try is still waiting on the network.
-    static IN_FLIGHT: std::sync::LazyLock<Mutex<std::collections::HashSet<String>>> =
-        std::sync::LazyLock::new(|| Mutex::new(std::collections::HashSet::new()));
-    if !IN_FLIGHT.lock().insert(record.id.clone()) {
-        return;
-    }
+    let Some(in_flight) = InFlight::start(&record.id) else { return };
     tauri::async_runtime::spawn(async move {
-        let Some(state) = app.try_state::<AppState>() else {
-            IN_FLIGHT.lock().remove(&record.id);
-            return;
-        };
+        let _in_flight = in_flight;
+        let Some(state) = app.try_state::<AppState>() else { return };
         match share::upload_detailed(&state.http, &state.app_data_dir, &record).await {
             Ok(result) => {
                 tracing::info!("Auto-uploaded {} -> {}", record.id, result.url);
@@ -253,7 +248,7 @@ fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
             }
             Err(failure) => {
                 share::note_auto_upload_failure(
-                    &state.app_data_dir, &record.id, failure.retryable, crate::clock::now_ms());
+                    &state.app_data_dir, &record.id, &failure, crate::clock::now_ms());
                 tracing::info!(
                     "Auto-upload of {} failed{}: {}",
                     record.id,
@@ -262,8 +257,28 @@ fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
                 );
             }
         }
-        IN_FLIGHT.lock().remove(&record.id);
     });
+}
+
+/// Fights with an automatic upload running. One upload of a fight at a time:
+/// a retry must not start while the first try is still waiting on the network.
+static IN_FLIGHT: std::sync::LazyLock<Mutex<HashSet<String>>> =
+    std::sync::LazyLock::new(|| Mutex::new(HashSet::new()));
+
+/// A fight's place in `IN_FLIGHT`, given up on drop: every way out of the
+/// upload task clears it, a panic included.
+struct InFlight(String);
+
+impl InFlight {
+    fn start(id: &str) -> Option<Self> {
+        IN_FLIGHT.lock().insert(id.to_string()).then(|| Self(id.to_string()))
+    }
+}
+
+impl Drop for InFlight {
+    fn drop(&mut self) {
+        IN_FLIGHT.lock().remove(&self.0);
+    }
 }
 
 /// Which fights have a slice to upload, and which already have a link.
@@ -317,7 +332,11 @@ async fn preview_share(
 async fn account_status(
     state: tauri::State<'_, AppState>,
 ) -> Result<Option<crate::account::AccountSummary>, String> {
-    let who = crate::account::whoami(&state.http, &state.app_data_dir).await;
+    let who = match crate::account::whoami(&state.http, &state.app_data_dir).await {
+        crate::account::AccountState::SignedIn(summary) => Some(summary),
+        crate::account::AccountState::SignedOut => None,
+        crate::account::AccountState::Unavailable(why) => return Err(why),
+    };
     *state.account_seen.lock() = Some(who.clone());
     Ok(who)
 }
@@ -354,7 +373,11 @@ async fn account_begin_link(
 
     // Open the browser straight onto the filled-in code. If it fails the player
     // still has the code and the URL in front of them.
-    open_url(grant.verification_uri_complete.clone());
+    if crate::account::is_site_url(&grant.verification_uri_complete) {
+        open_url(grant.verification_uri_complete.clone());
+    } else {
+        tracing::warn!("Not opening the sign-in page: the server sent a link outside a2tools.app");
+    }
 
     let http = state.http.clone();
     let app_data_dir = state.app_data_dir.clone();
@@ -685,6 +708,9 @@ fn save_fights_before_exit(app: &tauri::AppHandle) {
 
 #[tauri::command]
 fn read_cached_icon(state: tauri::State<'_, AppState>, key: String) -> Option<String> {
+    if !crate::history::fight_history::is_plain_name(&key) {
+        return None;
+    }
     let path = state.app_data_dir.join("icon_cache").join(&key);
     std::fs::read_to_string(&path).ok()
 }
@@ -739,6 +765,9 @@ fn log_from_ui(message: String) {
 
 #[tauri::command]
 fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, data: String) {
+    if !crate::history::fight_history::is_plain_name(&key) {
+        return;
+    }
     let cache_dir = state.app_data_dir.join("icon_cache");
     let _ = std::fs::create_dir_all(&cache_dir);
     let path = cache_dir.join(&key);
@@ -805,7 +834,14 @@ async fn download_and_install_update(app: &tauri::AppHandle, url: &str) -> Resul
     let app_clone = app.clone();
     let url_owned = url.to_string();
 
-    let response = reqwest::get(&url_owned).await.map_err(|e| e.to_string())?;
+    let response = app
+        .state::<AppState>()
+        .http
+        .get(&url_owned)
+        .timeout(Duration::from_secs(600))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
     if !response.status().is_success() {
         return Err(format!("HTTP {}", response.status()));
     }
@@ -855,9 +891,17 @@ async fn download_and_install_update(app: &tauri::AppHandle, url: &str) -> Resul
 }
 
 #[tauri::command]
-async fn fetch_url(url: String) -> Result<String, String> {
-    reqwest::get(&url).await.map_err(|e| e.to_string())?
-        .text().await.map_err(|e| e.to_string())
+async fn fetch_url(state: tauri::State<'_, AppState>, url: String) -> Result<String, String> {
+    state
+        .http
+        .get(&url)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())
 }
 
 /// Where the supporter roster lives. The same bucket the installer is served
@@ -917,7 +961,12 @@ fn load_supporter_override(app_data_dir: &std::path::Path) -> Option<crate::supp
 /// a cosmetic, and there is no version of "the CDN is down" that should produce
 /// a visible error, a retry storm, or a wrong answer.
 async fn fetch_supporter_roster(client: &reqwest::Client) -> Option<crate::supporters::Roster> {
-    let response = client.get(SUPPORTER_ROSTER_URL).send().await.ok()?;
+    let response = client
+        .get(SUPPORTER_ROSTER_URL)
+        .timeout(Duration::from_secs(30))
+        .send()
+        .await
+        .ok()?;
     if !response.status().is_success() {
         return None;
     }
@@ -2093,6 +2142,7 @@ pub fn run() {
                 i18n_data_dir: found_data_dir.clone(),
                 http: reqwest::Client::builder()
                     .user_agent(concat!("A2Tools-DPS-Meter/", env!("CARGO_PKG_VERSION")))
+                    .connect_timeout(Duration::from_secs(10))
                     .timeout(Duration::from_secs(30))
                     .build()
                     .unwrap_or_default(),
@@ -2581,6 +2631,53 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_csp_allows_every_inline_handler() {
+        use sha2::{Digest, Sha256};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let read = |p: std::path::PathBuf| std::fs::read_to_string(p).unwrap();
+        let conf: serde_json::Value =
+            serde_json::from_str(&read(root.join("src-tauri/tauri.conf.json"))).unwrap();
+        let mut pages = vec![read(root.join("index.html"))];
+        for entry in std::fs::read_dir(root.join("public/src/js")).unwrap() {
+            pages.push(read(entry.unwrap().path()));
+        }
+        // `onload="..."` and the like, in the page and in HTML the scripts build.
+        let mut handlers = Vec::new();
+        for page in &pages {
+            let mut rest = page.as_str();
+            while let Some(at) = rest.find(" on") {
+                rest = &rest[at + 3..];
+                let name = rest.bytes().take_while(|b| b.is_ascii_lowercase()).count();
+                if name > 0 && rest[name..].starts_with("=\"") {
+                    let body = &rest[name + 2..];
+                    handlers.push(body[..body.find('"').unwrap()].to_string());
+                }
+            }
+        }
+        assert!(handlers.len() >= 5);
+        for key in ["csp", "devCsp"] {
+            let script_src = conf["app"]["security"][key]["script-src"].as_str().unwrap();
+            for handler in &handlers {
+                let hash = format!("'sha256-{}'", crate::share::base64(&Sha256::digest(handler.as_bytes())));
+                assert!(script_src.contains(&hash), "{key} script-src has no {hash} for {handler}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_panicking_upload_still_frees_its_fight() {
+        let held = InFlight::start("in-flight-test").unwrap();
+        assert!(InFlight::start("in-flight-test").is_none(), "one upload of a fight at a time");
+        drop(held);
+        let outcome = std::panic::catch_unwind(|| {
+            let _held = InFlight::start("in-flight-test").unwrap();
+            panic!("upload task panicked");
+        });
+        assert!(outcome.is_err());
+        assert!(InFlight::start("in-flight-test").is_some());
+    }
 
     #[test]
     fn a_party_placeholder_is_never_bound_as_you() {

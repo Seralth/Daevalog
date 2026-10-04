@@ -80,12 +80,7 @@ impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for DebugFileLayer {
         let mut visitor = MessageVisitor(String::new());
         event.record(&mut visitor);
 
-        // Truncate long messages like the Kotlin version (240 chars max)
-        let msg = if visitor.0.len() > 240 {
-            format!("{}...", &visitor.0[..237])
-        } else {
-            visitor.0
-        };
+        let msg = shorten(visitor.0);
 
         let line = format!("{} {} {} - {}\n", now, level, short_module, msg);
         let len = line.len() as u64;
@@ -320,6 +315,19 @@ pub fn log_packet(cap: &CapturedPayload) {
     }
 }
 
+/// Cut a long message to 240 bytes like the Kotlin version, on a character
+/// boundary: names and chat in Korean are three bytes a character.
+fn shorten(msg: String) -> String {
+    if msg.len() <= 240 {
+        return msg;
+    }
+    let mut cut = 237;
+    while !msg.is_char_boundary(cut) {
+        cut -= 1;
+    }
+    format!("{}...", &msg[..cut])
+}
+
 #[cfg(test)]
 mod packet_log_tests {
     use super::*;
@@ -393,5 +401,14 @@ mod packet_log_tests {
         assert_ne!(p1, p2, "rolling over within one second must not reuse a path");
         assert!(p1.exists() && p2.exists());
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_long_korean_message_is_cut_between_characters() {
+        let msg = format!("a{}", "가".repeat(100));
+        let short = shorten(msg.clone());
+        assert!(short.len() <= 240 && short.ends_with("..."));
+        assert!(msg.starts_with(short.trim_end_matches("...")));
+        assert_eq!(shorten("short".into()), "short");
     }
 }
