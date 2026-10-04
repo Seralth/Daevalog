@@ -24,7 +24,6 @@ pub struct ParsedDamagePacket {
     multi_hit_count: i32,
     multi_hit_damage: i32,
     heal_amount: i32,
-    hex_payload: String,
     spec_flags: [bool; 5],
 }
 
@@ -43,7 +42,6 @@ impl ParsedDamagePacket {
             multi_hit_count: 0,
             multi_hit_damage: 0,
             heal_amount: 0,
-            hex_payload: String::new(),
             spec_flags: [false; 5],
         }
     }
@@ -59,7 +57,6 @@ impl ParsedDamagePacket {
     pub fn set_multi_hit_count(&mut self, c: i32) { self.multi_hit_count = c; }
     pub fn set_multi_hit_damage(&mut self, d: i32) { self.multi_hit_damage = d; }
     pub fn set_heal_amount(&mut self, h: i32) { self.heal_amount = h; }
-    pub fn set_hex_payload(&mut self, h: String) { self.hex_payload = h; }
     pub fn set_spec_flags(&mut self, f: [bool; 5]) { self.spec_flags = f; }
     pub fn set_timestamp(&mut self, ts: i64) { self.timestamp = ts; }
 
@@ -76,7 +73,6 @@ impl ParsedDamagePacket {
     pub fn multi_hit_count(&self) -> i32 { self.multi_hit_count }
     pub fn multi_hit_damage(&self) -> i32 { self.multi_hit_damage }
     pub fn heal_amount(&self) -> i32 { self.heal_amount }
-    pub fn hex_payload(&self) -> &str { &self.hex_payload }
     pub fn spec_flags(&self) -> &[bool; 5] { &self.spec_flags }
 
     pub fn is_crit(&self) -> bool {

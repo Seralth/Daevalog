@@ -117,30 +117,4 @@ impl JobClass {
 
         None
     }
-
-    /// Loose prefix-only job detection for orphan summon inference.
-    pub fn convert_from_skill_loose(skill_code: i32) -> Option<JobClass> {
-        if (100510..=103500).contains(&skill_code)
-            || (109300..=109362).contains(&skill_code)
-        {
-            return Some(JobClass::Elementalist);
-        }
-
-        if (10_000_000..=19_999_999).contains(&skill_code) {
-            let prefix = skill_code / 1_000_000;
-            let sub = (skill_code / 10000) % 100;
-            if sub == 0 {
-                if prefix == 16 {
-                    let command_range = (skill_code / 100) % 100;
-                    if (11..=13).contains(&command_range) {
-                        return Some(JobClass::Elementalist);
-                    }
-                }
-                return None;
-            }
-            return Self::from_prefix(prefix);
-        }
-
-        None
-    }
 }

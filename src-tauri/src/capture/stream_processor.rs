@@ -65,6 +65,9 @@ pub struct StreamProcessor {
     npc_lookup: Arc<NpcLookup>,
     seen_embedded_hexes: BoundedHashSet,
     dot_damage_skill_ids: HashSet<i32>,
+    /// Damage ticks dropped for a skill not on `dot_damage_skill_ids`, logged
+    /// once per skill.
+    unknown_dot_skills: HashSet<i32>,
     pending_compact_skill_context: Option<PendingCompactSkillContext>,
     /// When set, override the timestamp on all created packets (for replay mode).
     override_timestamp: Option<i64>,
@@ -78,6 +81,7 @@ impl StreamProcessor {
             npc_lookup,
             seen_embedded_hexes: BoundedHashSet::new(16_384),
             dot_damage_skill_ids: HashSet::new(), // loaded lazily
+            unknown_dot_skills: HashSet::new(),
             pending_compact_skill_context: None,
             override_timestamp: None,
         }
@@ -121,6 +125,12 @@ impl StreamProcessor {
                 }
             }
         }
+
+        // The scans below read only what was framed this pass. The tail is an
+        // incomplete packet that is kept for the next read; scanning it here
+        // read it again on every TCP segment until it completed (a party
+        // roster was read 18 times in one millisecond).
+        let buffer = &buffer[..offset];
 
         // Scan for embedded 04 8D ownership sub-packets
         if buffer.len() >= 4 {
@@ -168,15 +178,14 @@ impl StreamProcessor {
                 i += 1;
                 continue;
             }
-            // `<varint len> FF FF <size u32> <lz4>`, an outer bundle being one
-            // byte longer than its length says (see `framing`).
+            // `<varint len> FF FF <size u32> <lz4>`, sized as `framing` does.
             let bundle = (1..=3usize).rev().find_map(|n| {
                 let at = i.checked_sub(n)?;
                 let len = read_varint(packet, at);
-                if len.length != n as i32 || len.value <= 4 {
+                if len.length != n as i32 {
                     return None;
                 }
-                let end = at + (len.value as usize - 3) + 1;
+                let end = at + super::framing::frame_size(len.value, len.length)?;
                 let data = super::framing::decompress_bundle(packet.get(i..end)?)?;
                 Some((end, data))
             });
@@ -430,9 +439,19 @@ impl StreamProcessor {
             return;
         }
 
-        // Damage DoT: gated by the curated dot-skill allowlist.
+        // Damage DoT: gated by the curated dot-skill allowlist. What it keeps
+        // out is not damage on a mob: in five captures (2026-10-04) every such
+        // tick was a heal (Recuperation, Light of Regeneration, the last tick
+        // of Spirit's Benediction) or a mob's hit on a player.
         if !self.dot_damage_skill_ids.contains(&skill_code) {
-            tracing::trace!("DOT: skill {} not in dot_ids (set size={})", skill_code, self.dot_damage_skill_ids.len());
+            if self.unknown_dot_skills.insert(skill_code) {
+                tracing::debug!(
+                    "DOT: skill {} is not a known DoT, its ticks are not counted (actor {}, target {})",
+                    skill_code,
+                    actor_info.value,
+                    target_info.value
+                );
+            }
             return;
         }
 
@@ -1017,6 +1036,7 @@ impl StreamProcessor {
         };
         // 45/44 36 player spawn is an authoritative id↔name source.
         self.data_storage.note_low_id_entity(actor_id);
+        self.data_storage.note_player_spawn(actor_id);
         self.data_storage
             .append_nickname_authoritative(actor_id, &sanitized);
     }
@@ -1179,15 +1199,17 @@ impl StreamProcessor {
             return true;
         }
 
-        // Last resort for summons: the caster recorded on the entity's own buff
-        // block. It reads back as the summon itself for some skills, so `!= self`
-        // plus the known-player check keeps that from creating a bogus link.
-        if is_summon {
+        // Last resort for spirits: the caster recorded on the entity's own buff
+        // block, which is its owner. It reads back as the spirit itself for
+        // some skills, hence `!= self`. Other players' spirits (`0x1F`, `0x1D`,
+        // `0x5D`) spawn with no parent_key and no name, so this is their link
+        // at spawn. Checked against the spirit/owner link records in five
+        // captures (2026-10-04): 1,292 of 1,295 spirit spawns named the right
+        // owner, none a wrong one, the rest none; mobs and effect entities
+        // read back as themselves.
+        if matches!(kind, 0x5F | 0x1F | 0x1D | 0x5D) {
             let owner_id = self.extract_summon_owner_from_spawn(packet, offset);
-            if owner_id > 0
-                && owner_id != real_actor_id
-                && self.data_storage.is_known_player(owner_id)
-            {
+            if owner_id > 0 && owner_id != real_actor_id {
                 self.data_storage
                     .register_confirmed_summon_by_id(real_actor_id, owner_id);
                 return true;
@@ -1230,8 +1252,7 @@ impl StreamProcessor {
         for i in start_offset..=max_search {
             if packet[i..].starts_with(&anchor) {
                 let owner_info = read_varint(packet, i + anchor.len());
-                // Low ids are real (see `is_plausible_entity_id`); the caller
-                // additionally requires the result to be a known player.
+                // Low ids are real (see `is_plausible_entity_id`).
                 if owner_info.length > 0 && (1..=9_999_999).contains(&owner_info.value) {
                     return owner_info.value;
                 }
@@ -1901,9 +1922,7 @@ impl StreamProcessor {
             // The scalar is not a constant marker (as this once assumed): it is
             // the actor's damage multiplier in hundredths of a percent — mobs read
             // 10000 (= 100.00%), geared players 16000-22000 — and it shifts with
-            // buffs. Crucially a summon inherits its OWNER's value, which is what
-            // `note_power_scalar` records it for; see
-            // `DpsCalculator::infer_summon_owners`.
+            // buffs.
             if first_value == 0 {
                 let after_second_offset = offset;
                 if let Some(third) = try_read_varint(packet, &mut offset) {
@@ -1914,13 +1933,6 @@ impl StreamProcessor {
             }
 
             let first_is_damage = should_treat_first_value_as_damage(first_value, second_value, and_result, damage_type as i32);
-
-            // When the damage is in `second_value`, `first_value` is the actor's
-            // power scalar (see above). Recorded per actor so a summon whose spawn
-            // packet never arrived can still be tied to its owner.
-            if !first_is_damage && (1_000..=200_000).contains(&first_value) {
-                self.data_storage.note_power_scalar(actor_value, first_value);
-            }
 
             let mut final_damage = if first_is_damage {
                 offset = after_first_offset;
@@ -2092,7 +2104,6 @@ impl StreamProcessor {
                 pdp.set_multi_hit_damage(multi_hit_damage);
                 pdp.set_heal_amount(heal_amount);
                 pdp.set_damage(final_damage);
-                pdp.set_hex_payload(to_hex(packet));
 
                 self.data_storage.append_damage(pdp);
             } else if final_damage > 1 && self.data_storage.is_known_player(actor_value) {
@@ -2572,10 +2583,6 @@ fn to_hex_range(bytes: &[u8], start: usize, end: usize) -> String {
     bytes[s..e].iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ")
 }
 
-fn to_hex(bytes: &[u8]) -> String {
-    to_hex_range(bytes, 0, bytes.len())
-}
-
 /// The name the game gives a character that has not been named yet: `$` then
 /// letters and digits.
 fn is_placeholder_name(raw: &str) -> bool {
@@ -2685,6 +2692,25 @@ fn unicode_script(ch: char) -> UnicodeScript {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn another_players_spirit_is_linked_at_spawn_by_its_caster() {
+        let storage = Arc::new(DataStorage::new());
+        let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        // `41 36 <47324> <mask, kind 0x1F> … <caster anchor> <6332>`, no parent_key, no name.
+        let mut spirit = vec![0x41, 0x36, 0xdc, 0xf1, 0x02, 0x1f, 0x10, 0x00, 0xc6];
+        spirit.extend([0x22; 24]);
+        spirit.extend([0x80, 0x75, 0xd5, 0x2a, 0xbb, 0x03, 0x00, 0x00, 0xbc, 0x31, 0x0c, 0x02]);
+        assert!(p.parse_summon_spawn_at(&spirit, 2));
+        assert_eq!(storage.get_summon_data().get(&47324), Some(&6332));
+
+        // A mob's caster field is no owner.
+        let mut mob = spirit.clone();
+        mob[2] = 0xdd;
+        mob[5] = 0x0c;
+        assert!(!p.parse_summon_spawn_at(&mob, 2));
+        assert!(!storage.is_summon(47325));
+    }
 
     #[test]
     fn names_are_one_to_twelve_letters_or_digits_in_any_script() {

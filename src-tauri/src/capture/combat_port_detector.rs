@@ -173,10 +173,27 @@ impl CombatPortDetector {
     }
 }
 
+/// Npcap's loopback adapter, or Linux's `lo` (macOS `lo0`).
 fn is_loopback(name: &str) -> bool {
-    name.to_lowercase().contains("loopback")
+    let name = name.trim().to_lowercase();
+    name == "lo" || name == "lo0" || name.contains("loopback")
 }
 
 fn is_loopback_opt(name: &Option<String>) -> bool {
     name.as_ref().is_some_and(|n| is_loopback(n))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn loopback_is_recognised_on_each_platform() {
+        assert!(is_loopback("Adapter for loopback traffic capture"));
+        assert!(is_loopback("lo"));
+        assert!(is_loopback("lo0"));
+        assert!(!is_loopback("lowpan0"));
+        assert!(!is_loopback("wlan0"));
+        assert!(!is_loopback("Realtek PCIe GbE Family Controller"));
+    }
 }

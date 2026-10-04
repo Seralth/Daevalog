@@ -231,37 +231,6 @@ fn meter_rows_are_all_named_with_combat_power() {
     }
 }
 
-/// A Cleric's Divine Aura entities are created without any spawn packet, so the
-/// `parent_key` link cannot fire. They must still collapse onto the Cleric — who
-/// in this capture is himself unnamed, hence a pure id-to-id attribution.
-#[test]
-fn divine_auras_collapse_onto_an_unnamed_cleric() {
-    let Ok(path) = std::env::var("A2_REPLAY_AURA_CAPTURE") else {
-        eprintln!("A2_REPLAY_AURA_CAPTURE unset — skipping");
-        return;
-    };
-    let storage = replay(&path, "");
-    let mut calc = DpsCalculator::new(
-        storage.clone(),
-        Arc::new(SkillLookup::new()),
-        Arc::new(NpcLookup::new()),
-        Arc::new(PingTracker::new()),
-    );
-    calc.set_target_selection_mode("allTargets");
-    let dps = calc.get_dps();
-
-    let mut rows: Vec<_> = dps.map.iter().map(|(&id, d)| (id, d)).collect();
-    rows.sort_by(|a, b| b.1.amount.total_cmp(&a.1.amount));
-    for (id, d) in &rows {
-        println!("  #{id:<7} {:<12} dmg={:>10.0}", d.job, d.amount);
-    }
-    let ids: Vec<i32> = rows.iter().map(|(id, _)| *id).collect();
-    for aura in [31168, 21357, 31307, 37274] {
-        assert!(!ids.contains(&aura), "aura #{aura} still has its own row: {ids:?}");
-    }
-    assert!(ids.contains(&5492), "the Cleric (5492) should be a row: {ids:?}");
-}
-
 #[test]
 #[ignore = "diagnostic"]
 fn dump_party_roster() {

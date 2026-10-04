@@ -323,116 +323,11 @@ impl DpsCalculator {
             }
         }
 
-        // Orphan summon inference: attribute an entity that is really a summon to
-        // the player who owns it, for the summons the spawn packet never covered.
-        //
-        // Two things used to make this miss the case it exists for. It required the
-        // owner to be NAMED, and it skipped anything in `known_player_ids` — but a
-        // summon lands in that set automatically, because skills like Divine Aura
-        // (17153450) sit in the player band and `append_damage` classifies any
-        // actor using one as a player. So a Cleric's aura was filed as a player and
-        // then never reconsidered, which is why it showed as its own `#id` row next
-        // to an equally-unnamed Cleric.
-        //
-        // The discriminator is the power scalar carried in every damage record: a
-        // summon inherits its owner's (see `DataStorage::actor_power_scalars`).
-        // Matched against ground truth from a capture where the spawn packets DID
-        // arrive — 81 known summon/owner pairs — scalar + class + "the owner has a
-        // real rotation" decided 43 of them with **zero** wrong answers and never
-        // merged a real player into another.
-        let known_players = self.data_storage.get_known_player_ids();
-        let scalars = self.data_storage.get_power_scalars();
-        // Distinct skills per actor, taken from the combat aggregates — this fast
-        // path builds PersonalData from totals and leaves `analyzed_data` empty,
-        // so counting that instead would silently read zero for everyone.
-        let mut skill_counts: HashMap<i32, HashSet<i32>> = HashMap::new();
-        for &tid in &target_ids {
-            if let Some(target_data) = combat_data.get(&tid) {
-                for (&actor_id, actor_data) in &target_data.actors {
-                    let e = skill_counts.entry(actor_id).or_default();
-                    for &(code, _) in actor_data.skills.keys() {
-                        e.insert(code);
-                    }
-                }
-            }
-        }
-        let skill_counts: HashMap<i32, usize> =
-            skill_counts.into_iter().map(|(k, v)| (k, v.len())).collect();
-        let mut orphan_merges: Vec<(i32, i32)> = Vec::new();
-        for (&uid, data) in &dps_data.map {
-            if summon_data.contains_key(&uid) { continue; }
-            if nickname_data.contains_key(&uid) { continue; }
-            let job = &data.job;
-            // A classless entity was dropped here, and with it its damage. Some
-            // spirits only use skills that name no class (16110004, 100044…), so
-            // another Elementalist's spirits lost about a tenth of a boss fight
-            // (2026-10-03). One that never acted as a player can still go to
-            // its owner by power scalar, matched against players of any class;
-            // anything else classless is left for the row filter as before.
-            let classless = job.is_empty();
-            if classless && known_players.contains(&uid) { continue; }
-            let my_skills = skill_counts.get(&uid).copied().unwrap_or(0);
-
-            // Original path, unchanged: an entity never classified as a player,
-            // attributed to the one NAMED same-class player on the meter. The
-            // "named" test is what makes "exactly one candidate" meaningful here —
-            // without it, other unnamed orphans of the same class count as
-            // candidates and the rule stops firing at all.
-            if !classless && !known_players.contains(&uid) {
-                let same_job: Vec<_> = dps_data.map.iter()
-                    .filter(|(oid, od)| **oid != uid && od.job == *job && nickname_data.contains_key(oid))
-                    .map(|(&oid, _)| oid)
-                    .collect();
-                if same_job.len() == 1 {
-                    orphan_merges.push((uid, same_job[0]));
-                    continue;
-                }
-            }
-
-            // Scalar path, for a summon that skill band alone made look like a
-            // player. A summon spams one or two abilities; a real player runs a
-            // rotation, so requiring the candidate to show at least three times as
-            // many distinct skills keeps two genuine players apart even when their
-            // scalars happen to coincide.
-            let Some(my_scalars) = scalars.get(&uid) else { continue };
-            if my_scalars.is_empty() || my_skills == 0 {
-                continue;
-            }
-            // The skill-count guard is only for an actor that might be a real
-            // player. One that was never classified as a player (it spawned as
-            // a summon) cannot be, and holding it to the guard failed: another
-            // player's Elementalist spirits use four to six skills each, more
-            // than a third of what their owner showed in a one-minute boss
-            // fight, so each stayed its own `#id` row (2026-10-03, two
-            // Elementalists in one party). The owner must be a real player,
-            // so one orphan never claims another that shares its scalar.
-            let needs_rotation = known_players.contains(&uid);
-            let owners: Vec<i32> = dps_data.map.iter()
-                .filter(|(oid, od)| {
-                    **oid != uid
-                        && (od.job == *job || (classless && !od.job.is_empty()))
-                        && known_players.contains(*oid)
-                        && (!needs_rotation
-                            || skill_counts.get(*oid).copied().unwrap_or(0) >= 3 * my_skills)
-                        && scalars.get(*oid).is_some_and(|s| !s.is_disjoint(my_scalars))
-                })
-                .map(|(&oid, _)| oid)
-                .collect();
-            if owners.len() == 1 {
-                tracing::debug!(
-                    "Summon {} attributed to owner {} by power scalar {:?}",
-                    uid, owners[0], my_scalars
-                );
-                orphan_merges.push((uid, owners[0]));
-            }
-        }
-        for (orphan, owner) in orphan_merges {
-            if let Some(orphan_data) = dps_data.map.remove(&orphan) {
-                if let Some(owner_data) = dps_data.map.get_mut(&owner) {
-                    owner_data.merge_from(&orphan_data);
-                }
-            }
-        }
+        // A summon with no owner link stays its own row until a link arrives;
+        // then all it did, before the link too, is its owner's. No guessing by
+        // class or power scalar: both are shared between players, and guesses
+        // put a mob, a party member and the player into other rows
+        // (2026-10-04).
 
         // Filter and compute DPS
         let local_ids = self.resolve_local_ids(&summon_data);
@@ -967,34 +862,6 @@ impl DpsCalculator {
                 }
             }
 
-            // Orphan summon inference: merge true orphans (not known players) into
-            // the same-class player when there is exactly one — an unambiguous
-            // owner even if several such orphans share the class.
-            let target_actor_ids: HashSet<i32> = actor_damage.keys().copied().collect();
-            let known_players = self.data_storage.get_known_player_ids();
-            let mut orphan_merges: Vec<(i32, i32)> = Vec::new();
-            for (&uid, (_, job)) in &actor_meta {
-                if !target_actor_ids.contains(&uid) { continue; }
-                if summon_data.contains_key(&uid) { continue; }
-                if nickname_data.contains_key(&uid) { continue; }
-                if known_players.contains(&uid) { continue; }
-                if job.is_empty() { continue; }
-                let same_job: Vec<i32> = actor_meta.iter()
-                    .filter(|(oid, (_, oj))| **oid != uid && *oj == *job
-                        && nickname_data.contains_key(oid)
-                        && target_actor_ids.contains(oid))
-                    .map(|(oid, _)| *oid)
-                    .collect();
-                if same_job.len() == 1 {
-                    orphan_merges.push((uid, same_job[0]));
-                }
-            }
-            for (orphan, owner) in &orphan_merges {
-                if let Some(dmg) = actor_damage.remove(orphan) {
-                    *actor_damage.entry(*owner).or_insert(0) += dmg;
-                }
-                actor_meta.remove(orphan);
-            }
             // Remove actors with no job and no nickname
             let remove_ids: Vec<i32> = actor_damage.keys()
                 .filter(|id| {
@@ -1115,69 +982,6 @@ impl DpsCalculator {
             .collect();
         let canonical = build_nickname_canonical_map_from_aggregates(&actor_damage_map, &summon_data, &nickname_data, self.data_storage.local_player_id().map(|v| v as i32));
 
-        // Build orphan summon map
-        let mut orphan_to_owner: HashMap<i32, i32> = HashMap::new();
-        {
-            let known_players = self.data_storage.get_known_player_ids();
-            let mut actor_jobs: HashMap<i32, String> = HashMap::new();
-            for (&actor_id, actor_data) in &target_data.actors {
-                let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
-                if raw_uid <= 0 { continue; }
-                let uid = *canonical.get(&resolve_nickname(raw_uid, &nickname_data, &summon_data)).unwrap_or(&raw_uid);
-                if actor_jobs.contains_key(&uid) { continue; }
-                if let Some(job) = actor_data.job {
-                    actor_jobs.insert(uid, job.class_name().to_string());
-                }
-            }
-            let scalars = self.data_storage.get_power_scalars();
-            // Players who hit this target, as the rows they end up on.
-            let player_ids: HashSet<i32> = target_data.actors.keys()
-                .map(|&id| summon_resolver::resolve(id, &summon_data))
-                .filter(|id| known_players.contains(id))
-                .map(|id| *canonical.get(&resolve_nickname(id, &nickname_data, &summon_data)).unwrap_or(&id))
-                .collect();
-            let mut seen = HashSet::new();
-            for (&actor_id, actor_data) in &target_data.actors {
-                let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
-                if raw_uid <= 0 { continue; }
-                if summon_data.contains_key(&raw_uid) || nickname_data.contains_key(&raw_uid) { continue; }
-                // Never merge known players — they have their own identity
-                if known_players.contains(&raw_uid) { continue; }
-                if !seen.insert(raw_uid) { continue; }
-                // Use loose detection from any skill this actor used
-                let job = actor_data.skills.keys()
-                    .find_map(|&(sc, _)| JobClass::convert_from_skill_loose(sc))
-                    .map(|j| j.class_name().to_string());
-                if let Some(job) = &job {
-                    let matching: Vec<i32> = actor_jobs.iter()
-                        .filter(|(id, j)| **id != raw_uid && *j == job && nickname_data.contains_key(id))
-                        .map(|(id, _)| *id)
-                        .collect();
-                    if matching.len() == 1 {
-                        orphan_to_owner.insert(raw_uid, matching[0]);
-                        continue;
-                    }
-                }
-                // The power scalar, as in `get_dps`: with two players of a
-                // class named, the class says nothing, and a spirit whose
-                // skills name no class has none to go on. History showed
-                // another Elementalist's spirits as their own rows, or folded
-                // every spirit into one of the two (2026-10-03).
-                let Some(mine) = scalars.get(&raw_uid).filter(|s| !s.is_empty()) else { continue };
-                let owners: Vec<i32> = player_ids.iter()
-                    .copied()
-                    .filter(|&id| {
-                        id != raw_uid
-                            && job.as_ref().is_none_or(|j| actor_jobs.get(&id) == Some(j))
-                            && scalars.get(&id).is_some_and(|s| !s.is_disjoint(mine))
-                    })
-                    .collect();
-                if owners.len() == 1 {
-                    orphan_to_owner.insert(raw_uid, owners[0]);
-                }
-            }
-        }
-
         // Build expanded actor ID set for filtering
         let filter_uids: Option<HashSet<i32>> = actor_ids.map(|ids| {
             let canonical_ids: HashSet<i32> = ids.iter()
@@ -1187,21 +991,13 @@ impl DpsCalculator {
                 })
                 .collect();
             let mut expanded = HashSet::from_iter(ids.iter().copied());
-            for (&actor_id, _) in &target_data.actors {
+            for &actor_id in target_data.actors.keys() {
                 let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
                 if raw_uid <= 0 { continue; }
-                let remapped = *orphan_to_owner.get(&raw_uid).unwrap_or(&raw_uid);
-                let nick = resolve_nickname(remapped, &nickname_data, &summon_data);
-                let uid = *canonical.get(&nick).unwrap_or(&remapped);
+                let nick = resolve_nickname(raw_uid, &nickname_data, &summon_data);
+                let uid = *canonical.get(&nick).unwrap_or(&raw_uid);
                 if canonical_ids.contains(&uid) {
                     expanded.insert(raw_uid);
-                }
-            }
-            for (&orphan, &owner) in &orphan_to_owner {
-                let nick = resolve_nickname(owner, &nickname_data, &summon_data);
-                let uid = *canonical.get(&nick).unwrap_or(&owner);
-                if canonical_ids.contains(&uid) {
-                    expanded.insert(orphan);
                 }
             }
             expanded
@@ -1219,9 +1015,8 @@ impl DpsCalculator {
                 if !filter.contains(&raw_uid) { continue; }
             }
 
-            let remapped = *orphan_to_owner.get(&raw_uid).unwrap_or(&raw_uid);
-            let nickname = resolve_nickname(remapped, &nickname_data, &summon_data);
-            let uid = *canonical.get(&nickname).unwrap_or(&remapped);
+            let nickname = resolve_nickname(raw_uid, &nickname_data, &summon_data);
+            let uid = *canonical.get(&nickname).unwrap_or(&raw_uid);
 
             for (&(raw_skill, is_dot), skill_data) in &actor_data.skills {
                 // Normalize skill code
@@ -1306,15 +1101,14 @@ impl DpsCalculator {
         }
 
         // Healing done this segment, per healer/skill. Keyed by the canonical actor
-        // (same nickname/orphan resolution as damage). Reuses DetailSkillEntry:
+        // (same nickname/summon resolution as damage). Reuses DetailSkillEntry:
         // dmg = heal amount, time = tick count, is_dot = HoT.
         let mut heal_map: HashMap<(i32, i32), DetailSkillEntry> = HashMap::new();
         for (&actor_id, skills) in heals {
             let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
             if raw_uid <= 0 { continue; }
-            let remapped = *orphan_to_owner.get(&raw_uid).unwrap_or(&raw_uid);
-            let nickname = resolve_nickname(remapped, &nickname_data, &summon_data);
-            let uid = *canonical.get(&nickname).unwrap_or(&remapped);
+            let nickname = resolve_nickname(raw_uid, &nickname_data, &summon_data);
+            let uid = *canonical.get(&nickname).unwrap_or(&raw_uid);
             if let Some(ref filter) = filter_uids {
                 if !filter.contains(&uid) { continue; }
             }
@@ -1706,6 +1500,72 @@ mod tests {
         assert_eq!(active_time(std::iter::empty(), 0), 0);
     }
 
+    fn skill_hit(actor: i32, target: i32, at: i64, skill: i32, damage: i32) -> ParsedDamagePacket {
+        let mut p = hit(actor, target, at);
+        p.set_skill_code(skill);
+        p.set_damage(damage);
+        p
+    }
+
+    /// Per-row totals the saved fight would hold for `target`.
+    fn saved_totals(calc: &DpsCalculator, target: i32) -> HashMap<i32, i64> {
+        let mut totals = HashMap::new();
+        for skill in calc.get_target_details(target, None).skills {
+            *totals.entry(skill.actor_id).or_insert(0) += skill.dmg as i64;
+        }
+        totals
+    }
+
+    fn live_totals(calc: &mut DpsCalculator) -> HashMap<i32, i64> {
+        calc.get_dps().map.iter().filter(|(_, r)| r.amount > 0.0).map(|(&id, r)| (id, r.amount as i64)).collect()
+    }
+
+    #[test]
+    fn nothing_joins_an_owner_without_a_link() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(100));
+        s.append_nickname_authoritative(100, "Owner");
+        s.append_damage(skill_hit(100, 900, 1_000, 16_010_000, 1_000));
+        // Same class, never linked: a party member's spirit, or a party member.
+        s.note_summon_spawn(500);
+        s.append_damage(skill_hit(500, 900, 1_100, 16_010_000, 200));
+        s.append_damage(skill_hit(501, 900, 1_200, 16_010_000, 300));
+        // A mob the player hits, using a class-band skill of the same class.
+        s.append_damage(skill_hit(100, 700, 1_300, 16_010_000, 50));
+        s.append_damage(skill_hit(700, 100, 1_400, 16_020_000, 5));
+        let mut calc = meter(&s);
+        let live = live_totals(&mut calc);
+        assert_eq!(live.get(&100), Some(&1_000));
+        assert_eq!(live.get(&500), Some(&200));
+        assert_eq!(live.get(&501), Some(&300));
+        let saved = saved_totals(&calc, 900);
+        assert_eq!(saved.get(&100), Some(&1_000));
+        assert_eq!(saved.get(&500), Some(&200));
+    }
+
+    #[test]
+    fn a_link_brings_earlier_damage_and_live_and_saved_agree() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(100));
+        s.append_nickname_authoritative(100, "Owner");
+        s.append_damage(skill_hit(100, 900, 1_000, 16_010_000, 1_000));
+        s.note_summon_spawn(500);
+        s.append_damage(skill_hit(500, 900, 1_100, 16_110_004, 200));
+        s.append_damage(skill_hit(500, 900, 1_150, 100_018, 30));
+        s.append_damage(skill_hit(500, 100, 1_200, 16_990_002, 20));
+        s.append_damage(skill_hit(500, 900, 1_300, 16_010_000, 70));
+        // Someone else's spirit, linked to them.
+        s.append_damage(skill_hit(222, 900, 1_000, 16_010_000, 400));
+        s.append_damage(skill_hit(222, 600, 1_000, 16_770_000, 197));
+        s.append_damage(skill_hit(600, 900, 1_000, 16_010_000, 100));
+        let mut calc = meter(&s);
+        let live = live_totals(&mut calc);
+        assert_eq!(live.get(&100), Some(&1_300), "the spirit's damage before the link too");
+        assert_eq!(live.get(&222), Some(&500));
+        assert_eq!(live.len(), 2);
+        assert_eq!(saved_totals(&calc, 900), live);
+    }
+
     #[test]
     fn boss_mode_shows_your_trash_mob_in_the_open_world_only() {
         let open_world = Arc::new(DataStorage::new());
@@ -1727,5 +1587,123 @@ mod tests {
         let shown = meter(&dungeon).get_dps();
         assert_eq!(shown.target_id, 0);
         assert!(shown.map.is_empty());
+    }
+
+    /// Replay a capture file, calling `before` with each line's time of day
+    /// (ms) before that line is parsed.
+    fn replay_capture(path: &str, mut before: impl FnMut(i64, &Arc<DataStorage>)) -> Arc<DataStorage> {
+        use crate::capture::stream_processor::StreamProcessor;
+        let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
+        let skills = Arc::new(SkillLookup::new());
+        let npcs = Arc::new(NpcLookup::new());
+        crate::i18n::lookup::load_language(&skills, &npcs, &data, "en");
+        let s = Arc::new(DataStorage::new());
+        let mut p = StreamProcessor::new(s.clone(), skills, npcs);
+        let dots: Vec<i32> = serde_json::from_str(&std::fs::read_to_string(data.join("dot_skill_ids.json")).unwrap()).unwrap();
+        p.set_dot_skill_ids(dots.into_iter().collect());
+        for line in std::fs::read_to_string(path).unwrap().lines() {
+            let parts: Vec<&str> = line.splitn(3, '|').collect();
+            if line.starts_with('#') || parts.len() != 3 { continue; }
+            // `2026-10-04T04:21:16.849094363-07:00`
+            let t = parts[0];
+            let n = |a: usize, b: usize| t[a..b].parse::<i64>().unwrap();
+            let ts = ((n(11, 13) * 60 + n(14, 16)) * 60 + n(17, 19)) * 1000 + n(20, 23);
+            before(ts, &s);
+            p.set_override_timestamp(Some(ts));
+            let hex = parts[2];
+            let bytes: Vec<u8> = (0..hex.len() / 2).filter_map(|i| u8::from_str_radix(&hex[2 * i..2 * i + 2], 16).ok()).collect();
+            p.consume_stream(&bytes);
+        }
+        p.set_override_timestamp(None);
+        s
+    }
+
+    /// Spirit damage by owner, and unlinked summon-spawned actors with their damage.
+    fn spirit_damage(s: &DataStorage) -> (HashMap<i32, i64>, Vec<(i32, i64)>) {
+        let summons = s.get_summon_data();
+        let spawned = s.get_summon_spawn_ids();
+        let mut per_actor: HashMap<i32, i64> = HashMap::new();
+        for t in s.get_combat_snapshot_light().values() {
+            for (&a, d) in &t.actors {
+                *per_actor.entry(a).or_default() += d.total_damage;
+            }
+        }
+        let (mut by_owner, mut unlinked) = (HashMap::new(), Vec::new());
+        for (&a, &dmg) in &per_actor {
+            if !spawned.contains(&a) && !summons.contains_key(&a) {
+                continue;
+            }
+            let owner = summon_resolver::resolve(a, &summons);
+            if owner == a { unlinked.push((a, dmg)); } else { *by_owner.entry(owner).or_default() += dmg; }
+        }
+        unlinked.sort_by_key(|&(_, d)| -d);
+        (by_owner, unlinked)
+    }
+
+    /// The user's capture of 2026-10-04 04:21 (not in the repo): spirits of
+    /// three Spiritmasters, then the user's run at scarecrow 36734.
+    #[test]
+    #[ignore]
+    fn spirit_owners_in_a_capture() {
+        let path = std::env::var("A2_CAPTURE").unwrap_or("/caps/packets_20261004_042115.txt".into());
+        let hms = |h: i64, m: i64, sec: i64| ((h * 60 + m) * 60 + sec) * 1000;
+        let mut checked = [false; 2];
+        replay_capture(&path, |ts, s| {
+            if !checked[0] && ts >= hms(4, 44, 0) {
+                checked[0] = true;
+                let (by_owner, unlinked) = spirit_damage(s);
+                eprintln!("04:44:00 spirit damage by owner {by_owner:?}, unlinked {unlinked:?}");
+                let owners: HashSet<i32> = by_owner.keys().copied().collect();
+                assert_eq!(owners, HashSet::from([13600, 11147, 14570]));
+                assert!(unlinked.is_empty());
+                let summons = s.get_summon_data();
+                for player in [13600, 11147, 14570] {
+                    assert_eq!(summon_resolver::resolve(player, &summons), player);
+                }
+            }
+            if !checked[1] && ts >= hms(4, 46, 45) {
+                checked[1] = true;
+                let summons = s.get_summon_data();
+                let target = &s.get_combat_snapshot()[&36734];
+                let mut rows: HashMap<i32, i64> = HashMap::new();
+                for (&a, d) in &target.actors {
+                    *rows.entry(summon_resolver::resolve(a, &summons)).or_default() += d.total_damage;
+                }
+                let calc = meter(s);
+                eprintln!("scarecrow 36734 rows {rows:?}, saved {:?}", saved_totals(&calc, 36734));
+                // 138,109 dealt; the training-dummy rule holds back the 429 of
+                // DoT ticks after the last direct hit.
+                assert_eq!(rows, HashMap::from([(13600, 137_680)]));
+                assert_eq!(saved_totals(&calc, 36734), rows);
+            }
+        });
+        assert_eq!(checked, [true, true]);
+    }
+
+    /// Every capture in /caps: no player or hit target is anyone's summon, and
+    /// how much summon damage is left unlinked.
+    #[test]
+    #[ignore]
+    fn summon_links_in_all_captures() {
+        let mut caps: Vec<_> = std::fs::read_dir("/caps").unwrap().filter_map(|e| e.ok()).map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|x| x == "txt")).collect();
+        caps.sort();
+        for cap in caps {
+            let mut bad_players = HashSet::new();
+            let mut bad_targets = HashSet::new();
+            let mut last_minute = 0;
+            let s = replay_capture(cap.to_str().unwrap(), |ts, s| {
+                if ts / 60_000 == last_minute { return; }
+                last_minute = ts / 60_000;
+                let summons = s.get_summon_data();
+                bad_players.extend(s.get_known_player_ids().into_iter().chain(s.get_nicknames().into_keys())
+                    .filter(|id| summons.contains_key(id)));
+                bad_targets.extend(s.get_combat_snapshot_light().keys().copied().filter(|id| summons.contains_key(id)));
+            });
+            let (by_owner, unlinked) = spirit_damage(&s);
+            eprintln!("{}: players linked as summons {:?}, hit targets linked as summons {:?}, linked owners {}, unlinked {} with {} damage {:?}",
+                cap.display(), bad_players, bad_targets, by_owner.len(), unlinked.len(), unlinked.iter().map(|&(_, d)| d).sum::<i64>(),
+                &unlinked[..unlinked.len().min(8)]);
+        }
     }
 }

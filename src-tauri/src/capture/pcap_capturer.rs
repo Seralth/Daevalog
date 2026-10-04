@@ -59,6 +59,31 @@ struct PcapPkthdr {
 
 const PCAP_IF_LOOPBACK: c_uint = 0x00000001;
 
+/// Payloads dropped because the parser fell behind are reported at most this
+/// often, with how many there were.
+const DROP_WARN_INTERVAL_MS: i64 = 60_000;
+
+/// Counts payloads the channel had no room for, and says so now and then.
+struct DropCounter {
+    dropped: u64,
+    last_warn_ms: i64,
+}
+
+impl DropCounter {
+    fn note_drop(&mut self, label: &str, now: i64) {
+        self.dropped += 1;
+        self.report(label, now);
+    }
+
+    fn report(&mut self, label: &str, now: i64) {
+        if self.dropped > 0 && now - self.last_warn_ms >= DROP_WARN_INTERVAL_MS {
+            warn!("Capture on {}: {} packets dropped, the parser is falling behind", label, self.dropped);
+            self.dropped = 0;
+            self.last_warn_ms = now;
+        }
+    }
+}
+
 // ===== Device info =====
 
 #[derive(Clone)]
@@ -380,6 +405,7 @@ fn start_capture_thread(
 
         let link_type = unsafe { (pcap.datalink)(handle) };
         info!("Capture active on {} (link type {})", label, link_type);
+        let mut drops = DropCounter { dropped: 0, last_warn_ms: i64::MIN / 2 };
 
         while running.load(Ordering::SeqCst) {
             let mut header: *mut PcapPkthdr = ptr::null_mut();
@@ -402,10 +428,16 @@ fn start_capture_thread(
                     let frame = unsafe { std::slice::from_raw_parts(data, len) };
                     if let Some(mut payload) = parse_tcp_payload(frame, link_type, &label) {
                         payload.captured_at_ms = ts;
-                        let _ = sender.try_send(payload);
+                        if let Err(mpsc::error::TrySendError::Full(_)) = sender.try_send(payload) {
+                            drops.note_drop(&label, now_ms());
+                        }
                     }
                 }
-                0 => continue, // Timeout
+                0 => {
+                    // Timeout
+                    drops.report(&label, now_ms());
+                    continue;
+                }
                 -2 => break,   // EOF (savefile)
                 _ => {
                     warn!("Capture error on {} (ret={})", label, ret);
@@ -586,5 +618,18 @@ mod tests {
     fn non_ipv4_frames_are_ignored() {
         let arp = [[0u8; 12].as_slice(), &[0x08, 0x06], &[0u8; 28]].concat();
         assert!(parse_tcp_payload(&arp, 1, "dev").is_none());
+    }
+
+    #[test]
+    fn drops_are_reported_at_most_once_a_minute() {
+        let mut d = DropCounter { dropped: 0, last_warn_ms: i64::MIN / 2 };
+        d.note_drop("dev", 1_000);
+        assert_eq!(d.dropped, 0, "the first drop is reported at once");
+        d.note_drop("dev", 2_000);
+        d.note_drop("dev", 30_000);
+        d.report("dev", 60_999);
+        assert_eq!(d.dropped, 2, "held until a minute has passed");
+        d.report("dev", 61_000);
+        assert_eq!(d.dropped, 0);
     }
 }
