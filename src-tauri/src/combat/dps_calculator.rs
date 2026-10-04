@@ -509,7 +509,7 @@ impl DpsCalculator {
     fn decide_target(
         &mut self,
         combat_data: &HashMap<i32, TargetCombatData>,
-        _nickname_data: &HashMap<i32, String>,
+        nickname_data: &HashMap<i32, String>,
         summon_data: &HashMap<i32, i32>,
     ) -> (HashSet<i32>, String, i32) {
         let mob_data = self.data_storage.get_mob_data();
@@ -555,8 +555,22 @@ impl DpsCalculator {
                     let name = self.resolve_target_name(best);
                     (HashSet::from([best]), name, best)
                 } else {
-                    // Fall back to most damage
+                    // No boss: the mob with the most damage. Once you are
+                    // identified, only one you or your party hit. Any mob
+                    // within range counts otherwise, and in the open world
+                    // that put strangers fighting their own mobs on your
+                    // meter (2026-10-04: one player, then another, each alone
+                    // on a mob you never touched).
+                    let ours = self.resolve_local_ids(summon_data).map(|mut ids| {
+                        let party = self.data_storage.get_party_members();
+                        ids.extend(nickname_data.iter()
+                            .filter(|(_, name)| party.contains_key(name.as_str()))
+                            .map(|(&id, _)| id));
+                        ids
+                    });
                     let best = combat_data.iter()
+                        .filter(|(_, td)| ours.as_ref().is_none_or(|ids| td.actors.keys()
+                            .any(|&a| ids.contains(&summon_resolver::resolve(a, summon_data)))))
                         .max_by_key(|(_, td)| td.total_damage);
                     match best {
                         Some((&id, _)) => {
