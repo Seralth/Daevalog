@@ -95,7 +95,7 @@
         w.show();
         w.setFocus();
       } catch (e) {
-        console.error("[A2Tools] reveal failed", e);
+        console.error("[Daevalog] reveal failed", e);
       }
     };
     const scheduleReveal = () => requestAnimationFrame(() => requestAnimationFrame(reveal));
@@ -243,7 +243,7 @@
         });
         return JSON.stringify(result);
       } catch (e) {
-        console.error("[A2Tools] getTargetDetails error:", e);
+        console.error("[Daevalog] getTargetDetails error:", e);
         return null;
       }
     },
@@ -301,12 +301,12 @@
         w.show();
         w.setFocus();
       } catch (e) {
-        console.error("[A2Tools] revealSelf failed", e);
+        console.error("[Daevalog] revealSelf failed", e);
       }
       return invoke("details_window_ready").catch(() => {});
     },
     openSettingsWindow() {
-      return invoke("open_settings_window").catch((e) => console.error("[A2Tools] openSettingsWindow", e));
+      return invoke("open_settings_window").catch((e) => console.error("[Daevalog] openSettingsWindow", e));
     },
     closeSettingsWindow() {
       return invoke("close_settings_window").catch(() => {});
@@ -321,7 +321,7 @@
         w.show();
         w.setFocus();
       } catch (e) {
-        console.error("[A2Tools] revealSelf failed", e);
+        console.error("[Daevalog] revealSelf failed", e);
       }
       return invoke("tool_window_ready", { label: String(label) }).catch(() => {});
     },
@@ -910,7 +910,7 @@
         // The backend unpins the size first, then the window manager resizes.
         invoke("begin_tool_resize", { minWidth: minW, minHeight: minH })
           .then(() => window.__TAURI__.window.getCurrentWindow().startResizeDragging(DIRECTION[edge]))
-          .catch((err) => console.error("[A2Tools] tool window resize failed", err));
+          .catch((err) => console.error("[Daevalog] tool window resize failed", err));
         return;
       }
       const target = e.target?.nodeType === Node.TEXT_NODE ? e.target.parentElement : e.target;
@@ -967,11 +967,11 @@
 
   // Startup diagnostics
   invoke("debug_status").then((s) => {
-    console.log("[A2Tools] Debug status:", JSON.stringify(s));
+    console.log("[Daevalog] Debug status:", JSON.stringify(s));
     if (!s.isAdmin) {
-      console.warn("[A2Tools] NOT RUNNING AS ADMIN — packet capture will not work!");
+      console.warn("[Daevalog] NOT RUNNING AS ADMIN — packet capture will not work!");
     }
-  }).catch((e) => console.error("[A2Tools] debug_status failed:", e));
+  }).catch((e) => console.error("[Daevalog] debug_status failed:", e));
 
-  console.log("[A2Tools] Tauri bridge adapter loaded (javaBridge + dpsData)");
+  console.log("[Daevalog] Tauri bridge adapter loaded (javaBridge + dpsData)");
 })();

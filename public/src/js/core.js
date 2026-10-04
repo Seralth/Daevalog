@@ -3693,7 +3693,7 @@ class DpsApp {
    */
   openDetailsSurface(request, fallback) {
     const runFallback = () => {
-      try { fallback?.(); } catch (err) { console.error("[A2Tools] details fallback failed", err); }
+      try { fallback?.(); } catch (err) { console.error("[Daevalog] details fallback failed", err); }
     };
     // A Details window is already the destination, so it renders in place
     // rather than asking for yet another window. The overlay and the History
@@ -3712,12 +3712,12 @@ class DpsApp {
     try {
       result = send.call(window.javaBridge, request);
     } catch (err) {
-      console.error("[A2Tools] requestDetailsView failed", err);
+      console.error("[Daevalog] requestDetailsView failed", err);
       runFallback();
       return;
     }
     Promise.resolve(result).catch((err) => {
-      console.error("[A2Tools] requestDetailsView failed", err);
+      console.error("[Daevalog] requestDetailsView failed", err);
       runFallback();
     });
   }
@@ -3853,7 +3853,7 @@ class DpsApp {
           defaultTargetId: payload.defaultTargetId ?? null,
         });
       } catch (err) {
-        console.error("[A2Tools] details request failed", err);
+        console.error("[Daevalog] details request failed", err);
       } finally {
         this._detailsRequestsInFlight = Math.max(0, this._detailsRequestsInFlight - 1);
       }

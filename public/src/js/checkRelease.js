@@ -45,18 +45,18 @@
 
         const rawCurrent = String(window.dpsData.getVersion() || "").trim();
         const current = rawCurrent.startsWith("v") ? rawCurrent : "v" + rawCurrent;
-        console.log("[A2Tools] Update check: current =", current);
+        console.log("[Daevalog] Update check: current =", current);
 
         let result;
         try {
           const raw = await window.__TAURI__.core.invoke("fetch_url", { url: CDN_MANIFEST });
           const m = JSON.parse(raw);
-          console.log("[A2Tools] Update manifest:", JSON.stringify(m));
+          console.log("[Daevalog] Update manifest:", JSON.stringify(m));
           const v = m.version?.startsWith("v") ? m.version : "v" + m.version;
           // One package per platform; the backend picks the one it can install.
           result = { latest: v, msi: m.msiUrl || "", arch: m.archUrl || "", deb: m.debUrl || "", rpm: m.rpmUrl || "" };
         } catch (e) {
-          console.error("[A2Tools] Update check failed:", e);
+          console.error("[Daevalog] Update check failed:", e);
           return;
         }
 
@@ -71,7 +71,7 @@
 
         if (!hasUpdate) return;
 
-        console.log("[A2Tools] Update available:", current, "->", latest);
+        console.log("[Daevalog] Update available:", current, "->", latest);
         await window.__TAURI__.core.invoke("show_update_window", {
           current,
           latest,
@@ -81,7 +81,7 @@
           rpmUrl: result.rpm,
         });
       } catch (e) {
-        console.error("[A2Tools] Update check error:", e);
+        console.error("[Daevalog] Update check error:", e);
       }
     }, START_DELAY);
 

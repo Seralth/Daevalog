@@ -14,9 +14,9 @@
 pkgname=a2tools-dps-meter
 pkgver=0
 pkgrel=1
-pkgdesc="A2Tools DPS Meter: real-time DPS overlay for AION 2 (Linux/Proton)"
+pkgdesc="Daevalog DPS Meter: real-time DPS overlay for AION 2 (Linux/Proton)"
 arch=('x86_64')
-url="https://github.com/taengu/A2Tools-DPS-Meter"
+url="https://github.com/Seralth/Daevalog"
 license=('GPL-3.0-only')
 depends=('webkit2gtk-4.1' 'gtk3' 'libpcap' 'libcap' 'hicolor-icon-theme')
 makedepends=('rust' 'nodejs' 'npm' 'git' 'pkgconf')
@@ -70,7 +70,7 @@ package() {
   install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/a2tools-dps-meter.desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
-Name=A2Tools DPS Meter
+Name=Daevalog DPS Meter
 Comment=Real-time DPS overlay for AION 2
 Exec=a2tools-dps-meter
 Icon=a2tools-dps-meter
