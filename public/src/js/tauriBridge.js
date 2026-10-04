@@ -816,7 +816,7 @@
           finished = await invoke("finish_window_resize", { cancel: true });
         }
       } catch (error) {
-        console.error("[A2Tools] finishing native resize failed", error);
+        console.error("[Daevalog] finishing native resize failed", error);
       }
       if (!finished) {
         // WebKit can emit hover events during a grab; GTK must confirm release.
@@ -863,7 +863,7 @@
       if (held) return window.__TAURI__.window.getCurrentWindow().startResizeDragging(direction);
       queueMicrotask(() => finishNativeResize(true));
     }).catch((error) => {
-      console.error("[A2Tools] native window resize failed", error);
+      console.error("[Daevalog] native window resize failed", error);
       // Run after this promise settles, so finishing cannot await itself.
       queueMicrotask(() => finishNativeResize(true));
     });
@@ -1071,7 +1071,7 @@
               .then(() => window.__TAURI__.window.getCurrentWindow().startResizeDragging(DIRECTION[edge]));
           }
         })
-          .catch((err) => console.error("[A2Tools] tool window resize failed", err));
+          .catch((err) => console.error("[Daevalog] tool window resize failed", err));
         return;
       }
       const target = e.target?.nodeType === Node.TEXT_NODE ? e.target.parentElement : e.target;
