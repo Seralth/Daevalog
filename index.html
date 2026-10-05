@@ -11,10 +11,15 @@
       rel="stylesheet"
       type="text/css" />
     <!--
-      CJK webfonts, bundled (public/vendor/fonts), loaded without blocking
+      Webfonts, bundled (public/vendor/fonts), loaded without blocking
       first paint: the media="print" swap applies them once they load, so
-      Latin text renders at once and CJK text reflows once.
+      text renders at once in the fallback stack and reflows once.
     -->
+    <link
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+      href="/vendor/fonts/pretendard/index.css" />
     <link
       rel="stylesheet"
       media="print"
