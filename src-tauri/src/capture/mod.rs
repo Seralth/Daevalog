@@ -3,6 +3,7 @@ pub mod captured_payload;
 pub mod evidence_slice;
 pub mod framing;
 mod names;
+mod opcodes;
 pub mod packet_accumulator;
 pub mod stream_assembler;
 pub mod stream_processor;

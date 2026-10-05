@@ -37,6 +37,7 @@ use std::collections::{HashMap, HashSet};
 use sha2::{Digest, Sha256};
 
 use super::framing::{self, FrameKind};
+use super::opcodes;
 use super::packet_accumulator::PacketAccumulator;
 
 /// How far before the fight to keep packets. The party roster (`02 97`) and the
@@ -225,7 +226,7 @@ fn frame_packet(body: &[u8]) -> Option<Vec<u8>> {
 
 /// Opcodes that report what happened rather than who is there. Kept only in
 /// the fight window, so the prelude cannot carry another fight's numbers.
-const EVENT_OPCODES: &[[u8; 2]] = &[[0x04, 0x38], [0x05, 0x38], [0x1B, 0x92]];
+const EVENT_OPCODES: &[[u8; 2]] = &[opcodes::DAMAGE, opcodes::DOT, opcodes::HP_MP];
 
 /// Bundles nest. Four is far past anything observed and stops a crafted file
 /// from recursing us to death.
@@ -240,18 +241,18 @@ const MAX_BUNDLE_DEPTH: usize = 4;
 /// if an opcode the parser needs is missing here, the replayed slice produces
 /// different damage and the test fails.
 pub const ALLOWED_OPCODES: &[(&[u8; 2], &str)] = &[
-    (&[0x04, 0x38], "damage"),
-    (&[0x05, 0x38], "damage over time"),
-    (&[0x1B, 0x92], "hp/mp update"),
-    (&[0x04, 0x8D], "summon ownership"),
-    (&[0x23, 0x36], "zone change"),
-    (&[0x41, 0x36], "death / spawn"),
-    (&[0x42, 0x36], "death (post 2026-06 opcode shift)"),
-    (&[0x40, 0x36], "summon spawn"),
-    (&[0x44, 0x36], "player spawn"),
-    (&[0x45, 0x36], "player spawn"),
-    (&[0x33, 0x36], "self identity"),
-    (&[0x02, 0x97], "party roster"),
+    (&opcodes::DAMAGE, "damage"),
+    (&opcodes::DOT, "damage over time"),
+    (&opcodes::HP_MP, "hp/mp update"),
+    (&opcodes::SUMMON_OWNERSHIP, "summon ownership"),
+    (&opcodes::ZONE_CHANGE, "zone change"),
+    (&opcodes::SPAWN, "death / spawn"),
+    (&opcodes::DEATH, "death (post 2026-06 opcode shift)"),
+    (&opcodes::SPAWN_OLD, "summon spawn"),
+    (&opcodes::PLAYER_SPAWN_OLD, "player spawn"),
+    (&opcodes::PLAYER_SPAWN, "player spawn"),
+    (&opcodes::SELF_IDENTITY, "self identity"),
+    (&opcodes::PARTY_ROSTER, "party roster"),
 ];
 
 /// One captured buffer, as the packet logger recorded it.

@@ -3,6 +3,7 @@
 use std::collections::HashSet;
 
 use super::StreamProcessor;
+use crate::capture::opcodes::{PLAYER_SPAWN, PLAYER_SPAWN_OLD, SELF_IDENTITY, SPAWN, SPAWN_OLD};
 use crate::capture::names::{
     exact_name, is_placeholder_name, sanitize_nickname, unicode_script, UnicodeScript, NAME_FIELD_BYTES,
 };
@@ -106,13 +107,10 @@ impl StreamProcessor {
         }
         let mut i = 0;
         while i + 8 < data.len() {
-            if data[i + 1] != 0x36 {
-                i += 1;
-                continue;
-            }
+            let opcode = [data[i], data[i + 1]];
             // 0x33 = self, 0x45/0x44 = another player (pre/post the June 2026 shift).
-            let is_self = data[i] == 0x33;
-            if !is_self && data[i] != 0x45 && data[i] != 0x44 {
+            let is_self = opcode == SELF_IDENTITY;
+            if !is_self && opcode != PLAYER_SPAWN && opcode != PLAYER_SPAWN_OLD {
                 i += 1;
                 continue;
             }
@@ -244,7 +242,7 @@ impl StreamProcessor {
             if packet[i] == 0x36 {
                 // Skip spawn opcodes (40/41 36 mob, 44/45 36 player) — the
                 // 0x36 family shifted +1 in June 2026.
-                if i > 0 && matches!(packet[i - 1], 0x40 | 0x41 | 0x44 | 0x45) {
+                if i > 0 && [SPAWN_OLD, SPAWN, PLAYER_SPAWN_OLD, PLAYER_SPAWN].contains(&[packet[i - 1], packet[i]]) {
                     i += 1;
                     continue;
                 }

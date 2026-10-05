@@ -1,6 +1,7 @@
 //! Spawns and summons: who owns a summon, and what a spawned mob is.
 
 use super::StreamProcessor;
+use crate::capture::opcodes::{PLAYER_SPAWN, PLAYER_SPAWN_OLD, SPAWN, SPAWN_OLD, SUMMON_OWNERSHIP};
 use crate::capture::names::{exact_name, NAME_FIELD_BYTES};
 use crate::capture::varint::{find_pattern, parse_u32_le, read_varint, varint_ending_at};
 
@@ -16,7 +17,7 @@ impl StreamProcessor {
         if offset + 1 >= packet.len() {
             return false;
         }
-        if packet[offset] != 0x04 || packet[offset + 1] != 0x8D {
+        if packet[offset..offset + 2] != SUMMON_OWNERSHIP {
             return false;
         }
 
@@ -70,7 +71,7 @@ impl StreamProcessor {
     pub(super) fn scan_for_embedded_04_8d(&self, data: &[u8]) -> bool {
         let mut found_any = false;
         let mut search_offset = 0;
-        let pattern: [u8; 2] = [0x04, 0x8D];
+        let pattern: [u8; 2] = SUMMON_OWNERSHIP;
 
         while search_offset + 1 < data.len() {
             let idx = find_pattern(data, search_offset, &pattern);
@@ -167,14 +168,15 @@ impl StreamProcessor {
         while i + 5 < data.len() {
             // Spawn family shifted +1 in June 2026: mob/summon 0x40->0x41,
             // player 0x44->0x45. Accept both old and new leading bytes.
-            if data[i + 1] == 0x36 && matches!(data[i], 0x40 | 0x41 | 0x44 | 0x45) {
+            let opcode = [data[i], data[i + 1]];
+            if [SPAWN_OLD, SPAWN, PLAYER_SPAWN_OLD, PLAYER_SPAWN].contains(&opcode) {
                 if i > 0 && data[i - 1] == 0x00 {
                     i += 2;
                     continue;
                 }
                 let target_info = read_varint(data, i + 2);
                 if target_info.length > 0 && (100..=9_999_999).contains(&target_info.value) {
-                    if data[i] == 0x44 || data[i] == 0x45 {
+                    if opcode == PLAYER_SPAWN_OLD || opcode == PLAYER_SPAWN {
                         // 44/45 36 = player spawn — extract name
                         self.parse_player_spawn_name(data, i + 2);
                     } else {
@@ -206,16 +208,14 @@ impl StreamProcessor {
         if offset + 1 >= packet.len() {
             return false;
         }
-        if packet[offset + 1] != 0x36 {
-            return false;
-        }
+        let opcode = [packet[offset], packet[offset + 1]];
         // Player spawn: 0x3644 pre-2026-06, 0x3645 after the June 2026 +1 shift.
-        if packet[offset] == 0x44 || packet[offset] == 0x45 {
+        if opcode == PLAYER_SPAWN_OLD || opcode == PLAYER_SPAWN {
             self.parse_player_spawn_name(packet, offset + 2);
             return false;
         }
         // Mob/summon spawn: 0x3640 pre-2026-06, 0x3641 after the shift.
-        if packet[offset] != 0x40 && packet[offset] != 0x41 {
+        if opcode != SPAWN_OLD && opcode != SPAWN {
             return false;
         }
         self.parse_summon_spawn_at(packet, offset + 2)

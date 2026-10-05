@@ -1,6 +1,7 @@
 //! Damage, damage over time and the heals that ride on damage records.
 
 use super::{PendingCompactSkillContext, StreamProcessor};
+use crate::capture::opcodes::{DAMAGE, DOT};
 use crate::capture::varint::{parse_u32_le, read_varint, try_read_varint};
 use crate::combat::data_storage::NoDamageHit;
 use crate::entity::damage_packet::ParsedDamagePacket;
@@ -19,7 +20,7 @@ impl StreamProcessor {
         if packet.len() <= offset + 1 {
             return;
         }
-        if packet[offset] != 0x05 || packet[offset + 1] != 0x38 {
+        if packet[offset..offset + 2] != DOT {
             return;
         }
         let mut offset = offset + 2;
@@ -127,7 +128,7 @@ impl StreamProcessor {
         let mut search_offset = 0;
 
         while search_offset + 1 < packet.len() {
-            if packet[search_offset] != 0x04 || packet[search_offset + 1] != 0x38 {
+            if packet[search_offset..search_offset + 2] != DAMAGE {
                 search_offset += 1;
                 continue;
             }
@@ -171,7 +172,7 @@ impl StreamProcessor {
         }
 
         // STRICT GATEKEEPER: 04 38
-        if packet[offset] != 0x04 || packet[offset + 1] != 0x38 {
+        if packet[offset..offset + 2] != DAMAGE {
             if allow_embedded_scan {
                 return self.try_parse_embedded_damage_packet(packet);
             }
@@ -439,8 +440,7 @@ impl StreamProcessor {
                         && packet[offset + 1] == 0x00
                         && (1..=7).contains(&(packet[offset] as i32));
                     let is_next_packet = offset + 1 < packet.len()
-                        && packet[offset] == 0x04
-                        && packet[offset + 1] == 0x38;
+                        && packet[offset..offset + 2] == DAMAGE;
 
                     if is_marker_next || is_next_packet {
                         break;
@@ -754,7 +754,7 @@ fn parse_hit_tail_as(packet: &[u8], mut offset: usize, layout: i32, switch_value
     let rest = &packet[offset.min(packet.len())..];
     let clean_end = rest.is_empty()
         || (rest.len() >= 2 && rest[1] == 0x00 && (1..=7).contains(&rest[0]))
-        || rest.starts_with(&[0x04, 0x38]);
+        || rest.starts_with(&DAMAGE);
     clean_end.then_some((offset, field, count, damage as i32))
 }
 

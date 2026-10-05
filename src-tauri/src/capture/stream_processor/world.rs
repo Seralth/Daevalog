@@ -1,6 +1,7 @@
 //! Zone, map, death and HP records, and the party-scope record.
 
 use super::StreamProcessor;
+use crate::capture::opcodes::{DEATH, DEATH_OLD, HP_MP, MAP_LOAD, PARTY_SCOPE, ZONE_CHANGE};
 use crate::capture::varint::{parse_u32_le, read_varint};
 
 impl StreamProcessor {
@@ -15,7 +16,7 @@ impl StreamProcessor {
             return;
         }
         let offset = length_info.length as usize;
-        if offset + 3 >= packet.len() || packet[offset] != 0x06 || packet[offset + 1] != 0x38 {
+        if offset + 3 >= packet.len() || packet[offset..offset + 2] != PARTY_SCOPE {
             return;
         }
         let id = read_varint(packet, offset + 2);
@@ -41,7 +42,7 @@ impl StreamProcessor {
         if offset + 2 >= packet.len() {
             return;
         }
-        if packet[offset] != 0x23 || packet[offset + 1] != 0x36 {
+        if packet[offset..offset + 2] != ZONE_CHANGE {
             return;
         }
         // entity id 0 == the local player being teleported (a zone load), as opposed
@@ -64,7 +65,7 @@ impl StreamProcessor {
             return;
         }
         let offset = length_info.length as usize;
-        if offset + 10 > packet.len() || packet[offset] != 0x21 || packet[offset + 1] != 0x36 {
+        if offset + 10 > packet.len() || packet[offset..offset + 2] != MAP_LOAD {
             return;
         }
         let map_id = parse_u32_le(packet, offset + 6) as i32;
@@ -86,7 +87,7 @@ impl StreamProcessor {
         // update shifted the 0x36 spawn/death family by +1, so it is now 0x3642
         // ([0x42,0x36]). Accept both — the flag==3 check below rejects anything
         // that isn't actually a combat death.
-        if packet[offset + 1] != 0x36 || (packet[offset] != 0x41 && packet[offset] != 0x42) {
+        if packet[offset..offset + 2] != DEATH && packet[offset..offset + 2] != DEATH_OLD {
             return;
         }
         let mut pos = offset + 2;
@@ -128,7 +129,7 @@ impl StreamProcessor {
         if offset + 1 >= packet.len() {
             return false;
         }
-        if packet[offset] != 0x1B || packet[offset + 1] != 0x92 {
+        if packet[offset..offset + 2] != HP_MP {
             return false;
         }
 

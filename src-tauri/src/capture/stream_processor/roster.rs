@@ -1,6 +1,7 @@
 //! The party roster (02 97): who is in your party, their levels, gear and combat power.
 
 use super::StreamProcessor;
+use crate::capture::opcodes::PARTY_ROSTER;
 use crate::capture::varint::{parse_u32_le, read_varint};
 
 impl StreamProcessor {
@@ -45,7 +46,7 @@ impl StreamProcessor {
         }
         let mut i = 0;
         while i + 24 < data.len() {
-            if data[i] != 0x02 || data[i + 1] != 0x97 {
+            if data[i..i + 2] != PARTY_ROSTER {
                 i += 1;
                 continue;
             }
