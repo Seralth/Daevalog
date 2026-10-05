@@ -194,7 +194,11 @@ impl DpsCalculator {
 
         // Get pre-computed aggregates (cheap — small map, not 17K packets).
         // Light snapshot: skips per-hit timestamps (unused here, grows unbounded).
-        let combat_data = self.data_storage.get_combat_snapshot_light();
+        let combat_data = if self.target_selection_mode == TargetSelectionMode::Encounter {
+            self.data_storage.get_encounter_snapshot_light()
+        } else {
+            self.data_storage.get_combat_snapshot_light()
+        };
         let nickname_data = self.data_storage.get_nicknames();
         let summon_data = self.data_storage.get_summon_data();
 
@@ -1034,7 +1038,7 @@ impl DpsCalculator {
         if let [one] = self.displayed_targets.as_slice() {
             return self.get_target_details(*one, actor_ids);
         }
-        let combat_data = self.data_storage.get_combat_snapshot();
+        let combat_data = self.combat_snapshot();
         let merged = TargetCombatData::merged(self.displayed_targets.iter().filter_map(|t| combat_data.get(t)));
         let Some(merged) = merged else { return self.get_target_details(0, actor_ids) };
         let mut details = self.details_for(&merged, 0, &self.data_storage.get_heal_snapshot(), actor_ids, None);
@@ -1043,7 +1047,7 @@ impl DpsCalculator {
     }
 
     pub fn get_target_details(&self, target_id: i32, actor_ids: Option<&[i32]>) -> TargetDetailsResponse {
-        let combat_data = self.data_storage.get_combat_snapshot();
+        let combat_data = self.combat_snapshot();
         let target_data = match combat_data.get(&target_id) {
             Some(td) => td,
             None => return TargetDetailsResponse {
@@ -1059,6 +1063,15 @@ impl DpsCalculator {
         };
         let max_hp = self.data_storage.get_mob_hp(target_id).unwrap_or(0);
         self.details_for(target_data, max_hp, &self.data_storage.get_heal_snapshot(), actor_ids, None)
+    }
+
+    /// The live data; in ENC with what a boss pull cleared of the encounter.
+    fn combat_snapshot(&self) -> HashMap<i32, TargetCombatData> {
+        if self.target_selection_mode == TargetSelectionMode::Encounter {
+            self.data_storage.get_encounter_snapshot()
+        } else {
+            self.data_storage.get_combat_snapshot()
+        }
     }
 
     /// Details of one fight segment, live or already cleared out.
@@ -1718,6 +1731,45 @@ mod tests {
     }
 
     #[test]
+    fn a_boss_pull_keeps_the_trash_of_the_open_encounter() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, 1);
+        spawn(&s, 900, BOSS);
+        hits(&s, 2259, 800, 1_000, 10_000);
+        // The pull comes 10 s later, inside the encounter, and clears the trash.
+        hits(&s, 2259, 900, 20_000, 29_000);
+        crate::clock::set_override(Some(29_000));
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("encounter");
+        let shown = calc.get_dps();
+        let me = &shown.map[&2259];
+        assert_eq!(shown.battle_time, 28_000);
+        assert_eq!(me.amount, 20.0 * 500.0, "the trash before the pull still counts");
+        assert!((me.last30_dps - 20.0 * 500.0 / 30.0).abs() < 0.01);
+        // Trash hit again after the pull: one row of both parts.
+        hits(&s, 2259, 800, 30_000, 31_000);
+        assert_eq!(calc.get_dps().map[&2259].amount, 22.0 * 500.0);
+        assert_eq!(calc.get_displayed_details(None).total_target_damage, 22 * 500, "details too");
+        // The other modes still start clean at the pull.
+        calc.set_target_selection_mode("mostDamage");
+        assert_eq!(calc.get_dps().map[&2259].amount, 10.0 * 500.0);
+
+        // A pull after the encounter ended carries nothing over.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, 1);
+        spawn(&s, 900, BOSS);
+        hits(&s, 2259, 800, 1_000, 10_000);
+        hits(&s, 2259, 900, 40_000, 49_000);
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("encounter");
+        let shown = calc.get_dps();
+        assert_eq!((shown.battle_time, shown.map[&2259].amount), (9_000, 10.0 * 500.0));
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn encounter_rows_count_hits_crits_and_the_biggest_hit() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));
@@ -2250,5 +2302,91 @@ mod tests {
                 cap.display(), bad_players, bad_targets, by_owner.len(), unlinked.len(), unlinked.iter().map(|&(_, d)| d).sum::<i64>(),
                 &unlinked[..unlinked.len().min(8)]);
         }
+    }
+
+    /// Every boss pull in the captures of 2026-10-04 (not in the repo): the ENC
+    /// rows a second before and a second after, and the encounter's damage on
+    /// other targets just before. A2_CAPS: the capture folder.
+    #[test]
+    #[ignore]
+    fn enc_rows_around_boss_pulls() {
+        let dir = std::env::var("A2_CAPS").unwrap_or("/caps".into());
+        let mut caps: Vec<_> = std::fs::read_dir(&dir).unwrap().filter_map(|e| e.ok()).map(|e| e.path())
+            .filter(|p| p.file_name().unwrap().to_string_lossy().starts_with("packets_20261004_")).collect();
+        caps.sort();
+        let clock = |ts: i64| format!("{:02}:{:02}:{:02}", ts / 3_600_000 % 24, ts / 60_000 % 60, ts / 1000 % 60);
+        struct Sample {
+            ts: i64,
+            enc: Option<crate::combat::data_storage::Encounter>,
+            keys: HashSet<i32>,
+            /// Damage since the encounter's start on its targets that are not bosses.
+            trash: i64,
+            shown: DpsData,
+        }
+        let print = |label: &str, x: &Sample, me: Option<i64>| {
+            let start = x.enc.as_ref().map_or("-".into(), |e| clock(e.start));
+            let total: f64 = x.shown.map.values().map(|r| r.amount).sum();
+            eprintln!("    {label} {}: enc start {start}, targets {}, trash dmg in enc {}, ENC total {total:.0}, time {} ms",
+                clock(x.ts), x.enc.as_ref().map_or(0, |e| e.targets.len()), x.trash, x.shown.battle_time);
+            let mut rows: Vec<_> = x.shown.map.iter().filter(|(_, r)| r.amount > 0.0).collect();
+            rows.sort_by(|a, b| b.1.amount.total_cmp(&a.1.amount));
+            for (uid, r) in rows.iter().take(4) {
+                let you = if me == Some(**uid as i64) { " (you)" } else { "" };
+                eprintln!("      {uid}{you}: dmg {:.0} encdps {:.0} own {:.0} last10/30/60 {:.0}/{:.0}/{:.0}",
+                    r.amount, r.dps, r.active_dps, r.last10_dps, r.last30_dps, r.last60_dps);
+            }
+        };
+        let mut pulls = 0;
+        for cap in caps {
+            eprintln!("{}", cap.file_name().unwrap().to_string_lossy());
+            let mut calc: Option<DpsCalculator> = None;
+            let mut prev: Option<Sample> = None;
+            let mut last_sec = 0;
+            let mut later: Option<i64> = None;
+            replay_capture(cap.to_str().unwrap(), |ts, s| {
+                if ts / 1000 == last_sec { return; }
+                last_sec = ts / 1000;
+                crate::clock::set_override(Some(ts));
+                let calc = calc.get_or_insert_with(|| {
+                    let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
+                    let skills = Arc::new(SkillLookup::new());
+                    let npcs = Arc::new(NpcLookup::new());
+                    crate::i18n::lookup::load_language(&skills, &npcs, &data, "en");
+                    let mut c = DpsCalculator::new(s.clone(), skills, npcs, Arc::new(PingTracker::new()));
+                    c.set_target_selection_mode("encounter");
+                    c
+                });
+                let snap = s.get_combat_snapshot_light();
+                let shown = s.get_encounter_snapshot_light();
+                let enc = s.current_encounter();
+                let trash = enc.as_ref().map_or(0, |e| e.targets.iter()
+                    .filter(|t| !s.is_boss(**t))
+                    .filter_map(|t| shown.get(t))
+                    .flat_map(|td| td.actors.values().map(|a| a.damage_since(e.start)))
+                    .sum());
+                let x = Sample { ts, enc, keys: snap.keys().copied().collect(), trash, shown: calc.get_dps() };
+                let me = s.local_player_id();
+                if let Some(p) = &prev {
+                    let new_bosses: Vec<i32> = x.keys.difference(&p.keys).copied().filter(|t| s.is_boss(*t)).collect();
+                    if !new_bosses.is_empty() {
+                        pulls += 1;
+                        let dropped = p.keys.difference(&x.keys).count();
+                        let same = matches!((&p.enc, &x.enc), (Some(a), Some(b)) if a.start == b.start);
+                        eprintln!("  first hit on boss {new_bosses:?} at {}, dungeon {}, {dropped} targets cleared, same encounter {same}",
+                            clock(x.ts), s.current_dungeon_id());
+                        print("before  ", p, me);
+                        print("after   ", &x, me);
+                        later = Some(x.ts + 10_000);
+                    }
+                }
+                if later.is_some_and(|t| x.ts >= t) {
+                    later = None;
+                    print("after+10", &x, me);
+                }
+                prev = Some(x);
+                crate::clock::set_override(None);
+            });
+        }
+        assert!(pulls > 0);
     }
 }

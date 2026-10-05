@@ -543,6 +543,9 @@ struct Inner {
     /// what that has been used for. See `note_loot_owner`.
     loot_identity: LootIdentity,
     encounter: Option<Encounter>,
+    /// What a boss pull cleared of the open encounter's enemies: the
+    /// encounter still counts it. Dropped when the encounter ends.
+    encounter_carry: HashMap<i32, TargetCombatData>,
     /// Each character's home server, by name, from the records that state it:
     /// the self record and loot records. See `fight_server_id`.
     player_servers: HashMap<String, u16>,
@@ -605,6 +608,7 @@ impl DataStorage {
                 local_identity_from_game: false,
                 loot_identity: LootIdentity::default(),
                 encounter: None,
+                encounter_carry: HashMap::new(),
                 player_servers: HashMap::new(),
                 self_profile: None,
             }),
@@ -996,6 +1000,10 @@ impl DataStorage {
         if inner.boss_entity_ids.contains(&target_id) && is_ours(&inner, actor_id) {
             if !inner.has_boss_in_segment && !inner.target_combat.is_empty() {
                 tracing::info!("Boss encounter auto-reset: boss entity {} hit, clearing trash segment", target_id);
+                let timeout = self.encounter_timeout_ms.load(Ordering::Relaxed);
+                if !encounter_ended(&inner, timeout, pdp.timestamp()) {
+                    carry_encounter(&mut inner);
+                }
                 retire_all(&mut inner);
                 inner.held_dot_ticks.clear();
                 inner.dead_entity_ids.clear();
@@ -1473,51 +1481,21 @@ impl DataStorage {
     /// linearly — the root cause of the long-fight FPS drops.
     pub fn get_combat_snapshot_light(&self) -> HashMap<i32, TargetCombatData> {
         let inner = self.inner.read();
-        inner
-            .target_combat
-            .iter()
-            .map(|(&tid, td)| {
-                let actors = td
-                    .actors
-                    .iter()
-                    .map(|(&aid, ad)| {
-                        let skills = ad
-                            .skills
-                            .iter()
-                            .map(|(&k, sd)| (k, sd.clone_light()))
-                            .collect();
-                        (
-                            aid,
-                            ActorCombatData {
-                                total_damage: ad.total_damage,
-                                party_heal: ad.party_heal,
-                                regen: ad.regen,
-                                damage_received: ad.damage_received,
-                                hits_received: ad.hits_received,
-                                first_damage_time: ad.first_damage_time,
-                                last_damage_time: ad.last_damage_time,
-                                job: ad.job,
-                                skills,
-                                by_second: ad.by_second.clone(),
-                            },
-                        )
-                    })
-                    .collect();
-                (
-                    tid,
-                    TargetCombatData {
-                        target_id: td.target_id,
-                        total_damage: td.total_damage,
-                        first_damage_time: td.first_damage_time,
-                        last_damage_time: td.last_damage_time,
-                        last_packet_id: td.last_packet_id,
-                        actors,
-                        ours: td.ours,
-                        dungeon_id: td.dungeon_id,
-                    },
-                )
-            })
-            .collect()
+        inner.target_combat.iter().map(|(&tid, td)| (tid, light_clone(td))).collect()
+    }
+
+    /// `get_combat_snapshot`, with what a boss pull cleared of the open
+    /// encounter put back: what ENC reads.
+    pub fn get_encounter_snapshot(&self) -> HashMap<i32, TargetCombatData> {
+        let inner = self.inner.read();
+        with_carry(&inner, inner.target_combat.clone(), TargetCombatData::clone)
+    }
+
+    /// `get_combat_snapshot_light` with the encounter's carry, as above.
+    pub fn get_encounter_snapshot_light(&self) -> HashMap<i32, TargetCombatData> {
+        let inner = self.inner.read();
+        let live = inner.target_combat.iter().map(|(&tid, td)| (tid, light_clone(td))).collect();
+        with_carry(&inner, live, light_clone)
     }
 
     /// Clear combat. Who owns which summon is kept: a summon is linked when it
@@ -1528,6 +1506,7 @@ impl DataStorage {
         let mut inner = self.inner.write();
         retire_all(&mut inner);
         inner.encounter = None;
+        inner.encounter_carry.clear();
         inner.held_dot_ticks.clear();
         inner.actor_jobs.clear();
         inner.known_player_ids.clear();
@@ -1548,6 +1527,7 @@ impl DataStorage {
         let mut inner = self.inner.write();
         retire_all(&mut inner);
         inner.encounter = None;
+        inner.encounter_carry.clear();
         inner.held_dot_ticks.clear();
         inner.hostile_target_ids.clear();
         inner.dead_entity_ids.clear();
@@ -1763,6 +1743,76 @@ fn retire_segment(inner: &mut Inner, data: TargetCombatData) {
     inner.ended_segments.push(EndedSegment { data, max_hp, heals, identity });
 }
 
+fn light_clone(td: &TargetCombatData) -> TargetCombatData {
+    let actors = td
+        .actors
+        .iter()
+        .map(|(&aid, ad)| {
+            let skills = ad
+                .skills
+                .iter()
+                .map(|(&k, sd)| (k, sd.clone_light()))
+                .collect();
+            (
+                aid,
+                ActorCombatData {
+                    total_damage: ad.total_damage,
+                    party_heal: ad.party_heal,
+                    regen: ad.regen,
+                    damage_received: ad.damage_received,
+                    hits_received: ad.hits_received,
+                    first_damage_time: ad.first_damage_time,
+                    last_damage_time: ad.last_damage_time,
+                    job: ad.job,
+                    skills,
+                    by_second: ad.by_second.clone(),
+                },
+            )
+        })
+        .collect();
+    TargetCombatData {
+        target_id: td.target_id,
+        total_damage: td.total_damage,
+        first_damage_time: td.first_damage_time,
+        last_damage_time: td.last_damage_time,
+        last_packet_id: td.last_packet_id,
+        actors,
+        ours: td.ours,
+        dungeon_id: td.dungeon_id,
+    }
+}
+
+/// Put the open encounter's carry back into `out`, merged with any live data
+/// of the same target.
+fn with_carry(
+    inner: &Inner,
+    mut out: HashMap<i32, TargetCombatData>,
+    clone: fn(&TargetCombatData) -> TargetCombatData,
+) -> HashMap<i32, TargetCombatData> {
+    for (&tid, carried) in &inner.encounter_carry {
+        let td = match out.remove(&tid) {
+            Some(live) => {
+                let mut m = TargetCombatData::merged([&clone(carried), &live]).expect("two segments");
+                m.target_id = tid;
+                m.last_packet_id = live.last_packet_id;
+                m
+            }
+            None => clone(carried),
+        };
+        out.insert(tid, td);
+    }
+    out
+}
+
+/// Keep the open encounter's segments for it before a boss pull clears them.
+fn carry_encounter(inner: &mut Inner) {
+    let Some(e) = &inner.encounter else { return };
+    let kept: Vec<(i32, TargetCombatData)> = e.targets.iter()
+        .filter_map(|t| inner.target_combat.get(t).map(|td| (*t, td.clone())))
+        .collect();
+    inner.encounter_carry.extend(kept);
+}
+
 /// Clear every target's segment, keeping the fights worth saving.
 fn retire_all(inner: &mut Inner) {
     let segments: Vec<TargetCombatData> = inner.target_combat.drain().map(|(_, td)| td).collect();
@@ -1781,21 +1831,26 @@ fn note_encounter(inner: &mut Inner, timeout: i64, ts: i64, enemy: i32, ours: bo
         }
         return;
     }
-    let ended = inner.encounter.as_ref().is_some_and(|e| {
-        let quiet = ts - e.last_ours;
-        let boss_alive = e.targets.iter().any(|t| {
-            inner.boss_entity_ids.contains(t) && !inner.dead_entity_ids.contains(t)
-        });
-        quiet > timeout && !(boss_alive && quiet <= BOSS_HOLD_MAX_MS)
-    });
-    if ended || inner.encounter.is_none() {
+    if encounter_ended(inner, timeout, ts) || inner.encounter.is_none() {
         inner.encounter = Some(Encounter { start: ts, last_ours: ts, last_any: ts, targets: HashSet::new() });
+        inner.encounter_carry.clear();
     }
     if let Some(e) = inner.encounter.as_mut() {
         e.last_ours = e.last_ours.max(ts);
         e.last_any = e.last_any.max(ts);
         e.targets.insert(enemy);
     }
+}
+
+/// Whether a hit of yours at `ts` comes after the encounter ended.
+fn encounter_ended(inner: &Inner, timeout: i64, ts: i64) -> bool {
+    inner.encounter.as_ref().is_some_and(|e| {
+        let quiet = ts - e.last_ours;
+        let boss_alive = e.targets.iter().any(|t| {
+            inner.boss_entity_ids.contains(t) && !inner.dead_entity_ids.contains(t)
+        });
+        quiet > timeout && !(boss_alive && quiet <= BOSS_HOLD_MAX_MS)
+    })
 }
 
 /// Whether `actor_id` is you, your party, or a summon of either. Anyone
