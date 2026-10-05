@@ -7,10 +7,10 @@ use crate::app::{game_records, sharing, AppState};
 /// Upload a saved fight to a2tools.app as a log, and return its link.
 #[tauri::command]
 pub(crate) async fn upload_fight(
-    state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
     fight_id: String,
 ) -> Result<share::UploadResult, String> {
-    sharing::upload_fight(&state, fight_id).await
+    sharing::upload_fight(app, fight_id).await
 }
 
 /// Which fights have a slice to upload, and which already have a link.
@@ -25,18 +25,18 @@ pub(crate) async fn share_status(
 /// Async: a new record replays the fight's slice.
 #[tauri::command]
 pub(crate) async fn game_record_status(
-    state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
 ) -> Result<std::collections::HashMap<String, crate::game_record::files::FightStatus>, String> {
-    game_records::game_record_status(&state).await
+    game_records::game_record_status(app).await
 }
 
 /// A saved fight's game records, each beside the meter's numbers.
 #[tauri::command]
 pub(crate) async fn game_record_details(
-    state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
     fight_id: String,
 ) -> Result<Vec<crate::game_record::files::RecordView>, String> {
-    game_records::game_record_details(&state, fight_id).await
+    game_records::game_record_details(app, fight_id).await
 }
 
 /// Write what sharing this fight *would* upload, without uploading anything.
@@ -51,10 +51,10 @@ pub(crate) async fn game_record_details(
 /// and a sync command would hold the main thread (see `get_fight_history`).
 #[tauri::command]
 pub(crate) async fn preview_share(
-    state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
     fight_id: String,
 ) -> Result<share::PreviewResult, String> {
-    sharing::preview_share(&state, fight_id).await
+    sharing::preview_share(app, fight_id).await
 }
 
 /// Send the newest packet captures to the developer (Settings, beside packet

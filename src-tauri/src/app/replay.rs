@@ -1,21 +1,45 @@
 //! Replaying a packet log file into the meter.
 
+use tauri::Manager;
+
+use crate::blocking::HISTORY;
+use crate::entity::fight_record::FightRecord;
+
 use super::{data_folder, AppState};
 
-pub(crate) async fn replay_file(state: &AppState, file_path: String) -> Result<String, String> {
+/// Save fights from one snapshot in the history queue, off the meter's lock.
+async fn save_snapshot(app: &tauri::AppHandle, ticket: u64, records: Vec<FightRecord>) {
+    let app = app.clone();
+    let saved = HISTORY.run_waiting(move || {
+        let state = app.state::<AppState>();
+        for record in &records {
+            match state.fight_history.save_snapshot(record, ticket) {
+                Ok(()) => tracing::info!("Saved fight: {} ({})", record.boss_name, record.id),
+                Err(e) => tracing::warn!("Failed to save fight {}: {}", record.id, e),
+            }
+        }
+    }).await;
+    if let Err(e) = saved {
+        tracing::warn!("Fights not saved: {e}");
+    }
+}
+
+pub(crate) async fn replay_file(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
+    let state = app.state::<AppState>();
     // Only the meter's own packet logs, links resolved.
     let Some(file_path) = data_folder::inside(std::path::Path::new(&file_path), &state.app_data_dir) else {
         tracing::warn!("Not replaying a file outside the meter's data folder");
         return Err("Only files in the meter's data folder can be replayed".to_string());
     };
     // Keep the live fights, then reset existing data before replay
-    {
+    let (ticket, live) = {
         let mut calc = state.dps_calculator.lock();
-        for record in calc.snapshot_boss_fights_force() {
-            let _ = state.fight_history.save_fight(&record);
-        }
+        let ticket = state.fight_history.snapshot_ticket();
+        let live = calc.snapshot_boss_fights_force();
         calc.restart_target_selection(true);
-    }
+        (ticket, live)
+    };
+    save_snapshot(&app, ticket, live).await;
     state.data_storage.reset_nicknames();
     state.data_storage.forget_summon_links();
 
@@ -72,21 +96,17 @@ pub(crate) async fn replay_file(state: &AppState, file_path: String) -> Result<S
     }).await.map_err(|e| format!("Replay task failed: {}", e))?;
 
     // Force snapshot boss fights from the replay
-    {
+    let (ticket, mut sorted) = {
         let mut calc = state.dps_calculator.lock();
+        let ticket = state.fight_history.snapshot_ticket();
         let records = calc.snapshot_boss_fights_force();
-        let mut sorted = records;
-        sorted.sort_by(|a, b| b.total_damage.cmp(&a.total_damage));
-        for record in sorted.iter().take(10) {
-            if let Err(e) = state.fight_history.save_fight(record) {
-                tracing::warn!("Failed to save replay fight: {}", e);
-            } else {
-                tracing::info!("Saved replay fight: {} ({})", record.boss_name, record.id);
-            }
-        }
         // Mark all targets as saved so the periodic auto-save loop doesn't re-process them
         calc.mark_all_targets_saved();
-    }
+        (ticket, records)
+    };
+    sorted.sort_by(|a, b| b.total_damage.cmp(&a.total_damage));
+    sorted.truncate(10);
+    save_snapshot(&app, ticket, sorted).await;
 
     count
 }

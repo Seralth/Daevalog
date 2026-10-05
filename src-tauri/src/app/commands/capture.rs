@@ -55,6 +55,6 @@ pub(crate) fn debug_status(state: tauri::State<'_, AppState>) -> serde_json::Val
 }
 
 #[tauri::command]
-pub(crate) async fn replay_file(state: tauri::State<'_, AppState>, file_path: String) -> Result<String, String> {
-    replay::replay_file(&state, file_path).await
+pub(crate) async fn replay_file(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
+    replay::replay_file(app, file_path).await
 }
