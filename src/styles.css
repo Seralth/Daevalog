@@ -1556,6 +1556,28 @@ body.mainPlayerDpsBold .meter .item .content .dps > p {
   cursor: pointer;
   transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
 }
+.settingsPanel .settingsNumberInput {
+  flex: 0 0 76px;
+  width: 76px;
+  height: var(--set-field-h);
+  box-sizing: border-box;
+  padding: 0 8px;
+  border: 1px solid var(--set-field-border);
+  border-radius: 3px;
+  background: var(--set-field-bg);
+  color: rgba(255, 255, 255, 0.88);
+  font-family: var(--hud-tech);
+  font-size: 12px;
+  text-align: right;
+}
+.settingsPanel .settingsNumberInput:hover {
+  background: var(--set-field-bg-hover);
+  border-color: var(--set-field-border-hover);
+}
+.settingsPanel .settingsNumberInput:focus-visible {
+  outline: 2px solid var(--isUser-fill);
+  outline-offset: 1px;
+}
 .settingsPanel .settingsDropdownBtn:hover,
 .settingsPanel .keybindBtn:hover,
 .settingsPanel .settingsAction:hover {

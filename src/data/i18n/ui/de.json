@@ -287,6 +287,24 @@
       "sending": "Wird gesendet...",
       "sent": "Gesendet. Dein Berichtscode ist {code}: gib ihn dem Entwickler auf Discord.",
       "failed": "Senden fehlgeschlagen: {error}"
+    },
+    "encounterTimeout": {
+      "label": "Begegnung endet nach (Sekunden)",
+      "hint": "Sekunden ohne Kampf von dir oder deiner Gruppe, nach denen eine Begegnung endet. Ein Boss, den du getroffen hast und der noch lebt, hält sie offen."
+    },
+    "encColumns": {
+      "title": "ENC-Modus",
+      "hint": "Wann eine Begegnung endet und was jede Zeile im ENC-Modus zeigt. Ein schmales Fenster lässt Spalten von hinten weg.",
+      "encDps": "ENCDPS",
+      "dps": "DPS (eigene aktive Zeit)",
+      "pct": "Schaden %",
+      "total": "Gesamtschaden",
+      "crit": "Krit %",
+      "last10": "Letzte 10 s",
+      "last30": "Letzte 30 s",
+      "last60": "Letzte 60 s",
+      "maxHit": "Höchster Treffer",
+      "hits": "Treffer"
     }
   },
   "support": {
@@ -321,7 +339,19 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
-    "dpsSuffix": "/s"
+    "dpsSuffix": "/s",
+    "columns": {
+      "encDps": "ENC",
+      "dps": "DPS",
+      "pct": "%",
+      "total": "Ges.",
+      "crit": "Krit",
+      "last10": "10s",
+      "last30": "30s",
+      "last60": "60s",
+      "maxHit": "Max",
+      "hits": "Treff."
+    }
   },
   "skills": {
     "fallback": "Skill {code}",

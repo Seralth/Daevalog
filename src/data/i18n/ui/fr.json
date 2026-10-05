@@ -287,6 +287,24 @@
       "sending": "Envoi...",
       "sent": "Envoyé. Ton code de rapport est {code} : donne-le au développeur sur Discord.",
       "failed": "Envoi impossible : {error}"
+    },
+    "encounterTimeout": {
+      "label": "La rencontre se termine après (secondes)",
+      "hint": "Secondes sans combat de ta part ou de ton groupe qui mettent fin à une rencontre. Un boss que tu as touché et qui est encore en vie la garde ouverte."
+    },
+    "encColumns": {
+      "title": "Mode ENC",
+      "hint": "Quand une rencontre se termine et ce que chaque ligne affiche en mode ENC. Un compteur étroit retire les colonnes en partant de la fin.",
+      "encDps": "ENCDPS",
+      "dps": "DPS (temps actif propre)",
+      "pct": "Dégâts %",
+      "total": "Dégâts totaux",
+      "crit": "Crit %",
+      "last10": "10 dernières s",
+      "last30": "30 dernières s",
+      "last60": "60 dernières s",
+      "maxHit": "Coup max.",
+      "hits": "Coups"
     }
   },
   "support": {
@@ -321,7 +339,19 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
-    "dpsSuffix": "/s"
+    "dpsSuffix": "/s",
+    "columns": {
+      "encDps": "ENC",
+      "dps": "DPS",
+      "pct": "%",
+      "total": "Total",
+      "crit": "Crit",
+      "last10": "10s",
+      "last30": "30s",
+      "last60": "60s",
+      "maxHit": "Max",
+      "hits": "Coups"
+    }
   },
   "skills": {
     "fallback": "Compétence {code}",

@@ -294,6 +294,24 @@
       "sending": "发送中...",
       "sent": "已发送。你的反馈代码是 {code}，请在 Discord 上告诉开发者。",
       "failed": "无法发送：{error}"
+    },
+    "encounterTimeout": {
+      "label": "遭遇战结束时间（秒）",
+      "hint": "你或你的队伍在这么多秒内没有战斗，遭遇战就会结束。你攻击过且仍存活的首领会让它继续。"
+    },
+    "encColumns": {
+      "title": "ENC 模式",
+      "hint": "遭遇战何时结束，以及 ENC 模式下每行显示的内容。窗口较窄时从末尾开始隐藏列。",
+      "encDps": "ENCDPS",
+      "dps": "DPS（自身战斗时间）",
+      "pct": "伤害 %",
+      "total": "总伤害",
+      "crit": "暴击 %",
+      "last10": "最近10秒",
+      "last30": "最近30秒",
+      "last60": "最近60秒",
+      "maxHit": "最高单次伤害",
+      "hits": "命中次数"
     }
   },
   "support": {
@@ -328,7 +346,19 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
-    "dpsSuffix": "/秒"
+    "dpsSuffix": "/秒",
+    "columns": {
+      "encDps": "ENC",
+      "dps": "DPS",
+      "pct": "%",
+      "total": "总计",
+      "crit": "暴击",
+      "last10": "10秒",
+      "last30": "30秒",
+      "last60": "60秒",
+      "maxHit": "最大",
+      "hits": "命中"
+    }
   },
   "skills": {
     "fallback": "技能 {code}",

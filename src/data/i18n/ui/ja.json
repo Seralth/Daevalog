@@ -287,6 +287,24 @@
       "sending": "送信中...",
       "sent": "送信しました。報告コードは {code} です。Discord で開発者に伝えてください。",
       "failed": "送信できませんでした: {error}"
+    },
+    "encounterTimeout": {
+      "label": "エンカウント終了までの秒数",
+      "hint": "あなたやパーティーが戦闘しないままこの秒数が経つとエンカウントが終わります。攻撃したボスが生きている間は続きます。"
+    },
+    "encColumns": {
+      "title": "ENCモード",
+      "hint": "エンカウントの終了条件と、ENCモードで各行に表示する項目。幅が狭いと後ろの列から省かれます。",
+      "encDps": "ENCDPS",
+      "dps": "DPS（自分の戦闘時間）",
+      "pct": "ダメージ %",
+      "total": "総ダメージ",
+      "crit": "クリティカル %",
+      "last10": "直近10秒",
+      "last30": "直近30秒",
+      "last60": "直近60秒",
+      "maxHit": "最大ダメージ",
+      "hits": "ヒット数"
     }
   },
   "support": {
@@ -321,7 +339,19 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
-    "dpsSuffix": "/s"
+    "dpsSuffix": "/s",
+    "columns": {
+      "encDps": "ENC",
+      "dps": "DPS",
+      "pct": "%",
+      "total": "合計",
+      "crit": "クリ",
+      "last10": "10秒",
+      "last30": "30秒",
+      "last60": "60秒",
+      "maxHit": "最大",
+      "hits": "ヒット"
+    }
   },
   "skills": {
     "fallback": "スキル {code}",

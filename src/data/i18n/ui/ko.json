@@ -294,6 +294,24 @@
       "sending": "보내는 중...",
       "sent": "보냈습니다. 신고 코드는 {code}입니다. Discord에서 개발자에게 알려주세요.",
       "failed": "보내지 못했습니다: {error}"
+    },
+    "encounterTimeout": {
+      "label": "교전 종료 시간(초)",
+      "hint": "본인이나 파티가 이 시간 동안 전투하지 않으면 교전이 끝납니다. 공격한 보스가 살아 있는 동안에는 계속됩니다."
+    },
+    "encColumns": {
+      "title": "ENC 모드",
+      "hint": "교전이 끝나는 시점과 ENC 모드에서 각 줄에 표시할 항목. 미터가 좁으면 뒤쪽 열부터 숨겨집니다.",
+      "encDps": "ENCDPS",
+      "dps": "DPS (본인 전투 시간)",
+      "pct": "피해 %",
+      "total": "총 피해",
+      "crit": "치명타 %",
+      "last10": "최근 10초",
+      "last30": "최근 30초",
+      "last60": "최근 60초",
+      "maxHit": "최대 피해",
+      "hits": "타격"
     }
   },
   "support": {
@@ -328,7 +346,19 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
-    "dpsSuffix": "/초"
+    "dpsSuffix": "/초",
+    "columns": {
+      "encDps": "ENC",
+      "dps": "DPS",
+      "pct": "%",
+      "total": "합계",
+      "crit": "치명",
+      "last10": "10초",
+      "last30": "30초",
+      "last60": "60초",
+      "maxHit": "최대",
+      "hits": "타격"
+    }
   },
   "skills": {
     "fallback": "스킬 {code}",

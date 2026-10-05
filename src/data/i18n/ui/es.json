@@ -287,6 +287,24 @@
       "sending": "Enviando...",
       "sent": "Enviado. Tu código de informe es {code}: dáselo al desarrollador en Discord.",
       "failed": "No se pudo enviar: {error}"
+    },
+    "encounterTimeout": {
+      "label": "El encuentro termina tras (segundos)",
+      "hint": "Segundos sin combate tuyo o de tu grupo que terminan un encuentro. Un jefe al que golpeaste y que sigue vivo lo mantiene abierto."
+    },
+    "encColumns": {
+      "title": "Modo ENC",
+      "hint": "Cuándo termina un encuentro y qué muestra cada fila en el modo ENC. Un medidor estrecho quita columnas desde el final.",
+      "encDps": "ENCDPS",
+      "dps": "DPS (tiempo activo propio)",
+      "pct": "Daño %",
+      "total": "Daño total",
+      "crit": "Crít %",
+      "last10": "Últimos 10 s",
+      "last30": "Últimos 30 s",
+      "last60": "Últimos 60 s",
+      "maxHit": "Golpe máximo",
+      "hits": "Golpes"
     }
   },
   "support": {
@@ -321,7 +339,19 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
-    "dpsSuffix": "/s"
+    "dpsSuffix": "/s",
+    "columns": {
+      "encDps": "ENC",
+      "dps": "DPS",
+      "pct": "%",
+      "total": "Total",
+      "crit": "Crít",
+      "last10": "10s",
+      "last30": "30s",
+      "last60": "60s",
+      "maxHit": "Máx",
+      "hits": "Golpes"
+    }
   },
   "skills": {
     "fallback": "Habilidad {code}",

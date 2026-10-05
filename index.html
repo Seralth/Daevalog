@@ -715,7 +715,24 @@
                 class="settingsMiniTitle"
                 data-i18n="settings.encColumns.title"
                 title="What each row shows in ENC mode. A narrow meter drops columns from the end."
-                data-i18n-title="settings.encColumns.hint">ENC mode columns</div>
+                data-i18n-title="settings.encColumns.hint">ENC mode</div>
+              <div class="settingsGroupBody settingsGroupSplit">
+                <div class="settingsRow">
+                  <label class="settingsLabel" for="encounterTimeoutInput" data-i18n="settings.encounterTimeout.label">
+                    Encounter ends after (seconds)
+                  </label>
+                  <input
+                    id="encounterTimeoutInput"
+                    class="encounterTimeoutInput settingsNumberInput"
+                    type="number"
+                    min="5"
+                    max="300"
+                    step="1"
+                    inputmode="numeric"
+                    title="Seconds without combat by you or your party that end an encounter. A boss you hit that is still alive keeps it open."
+                    data-i18n-title="settings.encounterTimeout.hint" />
+                </div>
+              </div>
               <div class="settingsGroupBody settingsGroupSplit encColumnsList"></div>
             </section>
             <section class="settingsGroup">
@@ -865,21 +882,6 @@
                       </button>
                       <div class="settingsDropdownMenu allTargetsWindowDropdownMenu" role="menu"></div>
                     </div>
-                  </div>
-                  <div class="settingsRow settingsRowInput">
-                    <label class="settingsLabel" for="encounterTimeoutInput" data-i18n="settings.encounterTimeout.label">
-                      Encounter ends after (seconds)
-                    </label>
-                    <input
-                      id="encounterTimeoutInput"
-                      class="encounterTimeoutInput"
-                      type="number"
-                      min="5"
-                      max="300"
-                      step="1"
-                      inputmode="numeric"
-                      title="Seconds without combat by you or your party that end an encounter. A boss you hit that is still alive keeps it open."
-                      data-i18n-title="settings.encounterTimeout.hint" />
                   </div>
                   <div class="settingsRow settingsRowAction">
                     <button
