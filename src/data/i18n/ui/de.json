@@ -339,7 +339,7 @@
     "sendLogs": {
       "hint": "Sendet deine 3 neuesten Paket-Logs an a2tools.app, die Seite des A2-Tools-Entwicklers.",
       "button": "Logs an a2tools.app senden",
-      "confirm": "Deine 3 neuesten Paket-Logs an a2tools.app senden?\n\nPaket-Logs sind der rohe Spielverkehr, aufgezeichnet während die Paketaufzeichnung an war, einschließlich Charakternamen. Dort kann sie nur der A2-Tools-Entwickler öffnen, und sie werden nach 30 Tagen gelöscht. Einmal gesendet, kann Daevalog sie weder sehen noch dabei helfen.",
+      "confirm": "Deine 3 neuesten Paket-Logs an a2tools.app senden?\n\nPaket-Logs sind der rohe Spielverkehr, aufgezeichnet während die Paketaufzeichnung an war, einschließlich Charakternamen. a2tools.app wird vom A2-Tools-Entwickler betrieben, der entscheidet, wer sie sehen kann und wie lange sie aufbewahrt werden. Daevalog kann das weder prüfen noch ändern und kann sie nach dem Senden weder sehen noch dabei helfen.",
       "sending": "Wird gesendet...",
       "sent": "An a2tools.app gesendet. Dein Berichtscode ist {code}. Bei dort gesendeten Logs kann Daevalog nicht helfen. Für ein Problem mit Daevalog nutze „Problem melden“.",
       "failed": "Senden fehlgeschlagen: {error}",

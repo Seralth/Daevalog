@@ -339,7 +339,7 @@
     "sendLogs": {
       "hint": "Envia seus 3 logs de pacotes mais recentes para a2tools.app, o site do desenvolvedor do A2 Tools.",
       "button": "Enviar logs para a2tools.app",
-      "confirm": "Enviar seus 3 logs de pacotes mais recentes para a2tools.app?\n\nLogs de pacotes são o tráfego bruto do jogo gravado enquanto o registro de pacotes estava ligado, incluindo nomes de personagens. Lá, só o desenvolvedor do A2 Tools pode abri-los, e eles são apagados após 30 dias. Depois de enviados, o Daevalog não pode vê-los nem ajudar com eles.",
+      "confirm": "Enviar seus 3 logs de pacotes mais recentes para a2tools.app?\n\nLogs de pacotes são o tráfego bruto do jogo gravado enquanto o registro de pacotes estava ligado, incluindo nomes de personagens. O a2tools.app é mantido pelo desenvolvedor do A2 Tools, que decide quem pode vê-los e por quanto tempo são guardados. O Daevalog não pode verificar nem mudar isso e, depois de enviados, não pode vê-los nem ajudar com eles.",
       "sending": "Enviando...",
       "sent": "Enviado para a2tools.app. Seu código de relatório é {code}. O Daevalog não pode ajudar com logs enviados para lá. Para um problema com o Daevalog, use \"Relatar um problema\".",
       "failed": "Não foi possível enviar: {error}",

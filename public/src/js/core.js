@@ -2194,9 +2194,9 @@ class DpsApp {
       const ok = window.confirm(t("settings.sendLogs.confirm",
         "Send your 3 newest packet logs to a2tools.app?\n\n" +
         "Packet logs are raw game traffic recorded while packet logging was on, " +
-        "including character names. Only the A2 Tools developer can open them " +
-        "there, and they are deleted after 30 days. Once sent, Daevalog cannot " +
-        "see or help with them."));
+        "including character names. a2tools.app is run by the A2 Tools developer, " +
+        "who decides who can see them and how long they are kept. Daevalog cannot " +
+        "check or change that, and once they are sent it cannot see or help with them."));
       if (!ok) return;
       btn.disabled = true;
       show(t("settings.sendLogs.sending", "Sending..."));

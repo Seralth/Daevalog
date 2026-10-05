@@ -339,7 +339,7 @@
     "sendLogs": {
       "hint": "Envía tus 3 registros de paquetes más recientes a a2tools.app, el sitio del desarrollador de A2 Tools.",
       "button": "Enviar registros a a2tools.app",
-      "confirm": "¿Enviar tus 3 registros de paquetes más recientes a a2tools.app?\n\nLos registros de paquetes son el tráfico bruto del juego grabado mientras el registro de paquetes estaba activado, incluidos los nombres de personajes. Allí solo el desarrollador de A2 Tools puede abrirlos, y se borran a los 30 días. Una vez enviados, Daevalog no puede verlos ni ayudar con ellos.",
+      "confirm": "¿Enviar tus 3 registros de paquetes más recientes a a2tools.app?\n\nLos registros de paquetes son el tráfico bruto del juego grabado mientras el registro de paquetes estaba activado, incluidos los nombres de personajes. a2tools.app lo gestiona el desarrollador de A2 Tools, que decide quién puede verlos y cuánto tiempo se guardan. Daevalog no puede comprobarlo ni cambiarlo y, una vez enviados, no puede verlos ni ayudar con ellos.",
       "sending": "Enviando...",
       "sent": "Enviado a a2tools.app. Tu código de informe es {code}. Daevalog no puede ayudar con los registros enviados allí. Para un problema con Daevalog, usa «Informar de un problema».",
       "failed": "No se pudo enviar: {error}",

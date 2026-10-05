@@ -339,7 +339,7 @@
     "sendLogs": {
       "hint": "Sends your 3 newest packet logs to a2tools.app, the A2 Tools developer's site.",
       "button": "Send logs to a2tools.app",
-      "confirm": "Send your 3 newest packet logs to a2tools.app?\n\nPacket logs are raw game traffic recorded while packet logging was on, including character names. Only the A2 Tools developer can open them there, and they are deleted after 30 days. Once sent, Daevalog cannot see or help with them.",
+      "confirm": "Send your 3 newest packet logs to a2tools.app?\n\nPacket logs are raw game traffic recorded while packet logging was on, including character names. a2tools.app is run by the A2 Tools developer, who decides who can see them and how long they are kept. Daevalog cannot check or change that, and once they are sent it cannot see or help with them.",
       "sending": "Sending...",
       "sent": "Sent to a2tools.app. Your report code is {code}. Daevalog cannot help with logs sent there. For a problem with Daevalog, use Report a problem.",
       "failed": "Could not send: {error}",
