@@ -54,6 +54,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - Discord activity is off by default.
 - Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).
 - Packet capture takes TCP only, and only the game server's port once the meter has found it.
+- The fonts come with the meter. A window no longer loads them from unpkg.com.
 
 ### Left out
 - Guessing who an unnamed actor is from its class.
