@@ -36,18 +36,21 @@ fn bases() -> Vec<PathBuf> {
     bases
 }
 
-pub fn from_a2tools() {
+/// Runs before logging starts, so it returns what it did for the log.
+pub fn from_a2tools() -> Vec<String> {
+    let mut notes = Vec::new();
     for base in bases() {
         match move_dir(&base, OLD_IDENTIFIER, IDENTIFIER) {
-            Ok(true) => tracing::info!(
+            Ok(true) => notes.push(format!(
                 "Moved {} to {}",
                 base.join(OLD_IDENTIFIER).display(),
                 base.join(IDENTIFIER).display()
-            ),
+            )),
             Ok(false) => {}
-            Err(e) => tracing::warn!("Could not move {}: {e}", base.join(OLD_IDENTIFIER).display()),
+            Err(e) => notes.push(format!("Could not move {}: {e}", base.join(OLD_IDENTIFIER).display())),
         }
     }
+    notes
 }
 
 #[cfg(test)]

@@ -34,14 +34,18 @@ pub fn run() {
     if platform::hotkeys::run_helper_if_asked() {
         return;
     }
+    // Before Tauri or WebKit opens anything in the data folders, and before
+    // `prepare` reads the saved settings.
+    let moved = crate::migrate::from_a2tools();
     // Before anything starts a thread: it may set environment variables.
     let process_note = platform::process::prepare();
     logging::logger::init_logging();
+    for note in moved {
+        tracing::info!("{note}");
+    }
     if let Some(note) = process_note {
         tracing::info!("{note}");
     }
-    // Before Tauri or WebKit opens anything in the data folders.
-    crate::migrate::from_a2tools();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
