@@ -138,6 +138,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - The one-time popups that offer Discord activity, and sign-in with automatic upload.
 - The update check and the updater.
 - The Discord button in Settings.
+- The supporter roster (gold names for A2Tools donors), which downloaded a list from a2tools.app every few hours.
 
 Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull requests.
 

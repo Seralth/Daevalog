@@ -1,8 +1,8 @@
 # What leaves your machine
 
 Daevalog is its own meter. It started as a fork of A2Tools DPS Meter. Sign-in,
-uploads, sent logs and the supporter list go to a2tools.app and its CDN, a site
-run by the A2Tools developer, not by Daevalog. What this document says the site
+uploads and sent logs go to a2tools.app, a site run by the A2Tools developer,
+not by Daevalog. What this document says the site
 does comes from the A2Tools project; Daevalog cannot check it.
 
 This document is written to be checkable. Everything in the "today" section can
@@ -17,10 +17,6 @@ sends, what it keeps, and what an upload contains.
 ---
 
 ## What the meter sends
-
-**The supporter list.** The list of A2Tools supporters, downloaded from the
-a2tools.app CDN every few hours and matched on your machine (see below).
-Nothing about your party is sent.
 
 **Your account, if you connect one.** Signing in under *Settings → A2 Tools
 Account* opens a2tools.app in your browser to approve the meter, which then
@@ -205,24 +201,6 @@ as numbers with no names.
 **Diagnostic captures are separate and opt-in.** Debugging a parser problem
 sometimes needs the packets an allowlist would strip. *Send logs to a2tools.app*
 is its own action: it asks every time, and no other setting turns it on.
-
-### Supporter names are resolved on your machine
-
-Supporters' names render gold on everyone's meter. The obvious way to build that
-is for the meter to ask a server "is this player a supporter?", and it would mean
-sending that server a list of who you play with, every fight, in exchange for a colour.
-
-So it works the other way round: a small file listing supporters is published to
-the CDN, your meter downloads it every few hours, and the matching happens
-locally. Nothing about your party is transmitted, and it works offline.
-
-The entries in that file are hashed. That is anti-scraping, not secrecy — the
-salt travels with the file, so anyone can test a name they already have. What it
-prevents is downloading the list and reading off who has given money.
-
-Gold is cosmetic and only cosmetic. It never changes ordering, bar colour, or any
-number, and there is a test asserting the damage figures are identical with the
-roster on and off. You can turn the colour off entirely in Settings.
 
 ### How to check any of this yourself
 
