@@ -86,6 +86,9 @@ pub struct DataStorage {
 struct Inner {
     /// Aggregated combat data per target (replaces raw packet storage)
     target_combat: HashMap<i32, TargetCombatData>,
+    /// Idle segments were retired since combat was last cleared: there was
+    /// combat to clear, as if they were still in `target_combat`.
+    idle_retired: bool,
     /// Boss and dummy fights cleared out of `target_combat` before they were
     /// saved. See `take_ended_segments`.
     ended_segments: Vec<EndedSegment>,
@@ -188,6 +191,7 @@ impl DataStorage {
         Self {
             inner: RwLock::new(Inner {
                 target_combat: HashMap::new(),
+                idle_retired: false,
                 ended_segments: Vec::new(),
                 actor_jobs: HashMap::new(),
                 nickname_storage: HashMap::new(),
@@ -250,7 +254,7 @@ impl DataStorage {
         }
         {
             let inner = self.inner.read();
-            if inner.target_combat.is_empty() {
+            if inner.target_combat.is_empty() && !inner.idle_retired {
                 return false; // nothing to clear
             }
         }

@@ -6,7 +6,7 @@ use std::sync::atomic::Ordering;
 use super::heal::heals_between;
 use super::{
     DataStorage, Encounter, EndedSegment, Inner, SegmentIdentity, TargetCombatData, BOSS_HOLD_MAX_MS,
-    MAX_ENDED_SEGMENTS, MIN_SAVED_FIGHT_MS,
+    IDLE_RESET_MS, MAX_ENDED_SEGMENTS, MIN_SAVED_FIGHT_MS,
 };
 
 impl DataStorage {
@@ -24,6 +24,33 @@ impl DataStorage {
     /// party ending) before the auto-save wrote them. Each is returned once.
     pub fn take_ended_segments(&self) -> Vec<EndedSegment> {
         std::mem::take(&mut self.inner.write().ended_segments)
+    }
+
+    /// Retire the segments last hit over `IDLE_RESET_MS` before `now`, as a
+    /// new hit on them would, unless `keep` holds them (what the meter
+    /// shows) or the encounter has them. Fights worth saving go to the
+    /// auto-save. Returns how many went.
+    pub fn retire_idle(&self, now: i64, keep: impl Fn(i32, &TargetCombatData) -> bool) -> usize {
+        let mut inner = self.inner.write();
+        let idle: Vec<i32> = inner.target_combat.iter()
+            .filter(|&(&tid, td)| {
+                now - td.last_damage_time > IDLE_RESET_MS
+                    && !inner.encounter.as_ref().is_some_and(|e| e.targets.contains(&tid))
+                    && !keep(tid, td)
+            })
+            .map(|(&tid, _)| tid)
+            .collect();
+        for tid in &idle {
+            if let Some(td) = inner.target_combat.remove(tid) {
+                retire_segment(&mut inner, td);
+            }
+        }
+        if !idle.is_empty() {
+            inner.idle_retired = true;
+            drop(inner);
+            self.touch();
+        }
+        idle.len()
     }
 }
 
@@ -83,6 +110,7 @@ pub(super) fn carry_encounter(inner: &mut Inner) {
 
 /// Clear every target's segment, keeping the fights worth saving.
 pub(super) fn retire_all(inner: &mut Inner) {
+    inner.idle_retired = false;
     let segments: Vec<TargetCombatData> = inner.target_combat.drain().map(|(_, td)| td).collect();
     for td in segments {
         retire_segment(inner, td);

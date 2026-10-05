@@ -105,7 +105,7 @@ impl DataStorage {
         // stranger hitting a field boss nearby wiped everything you were
         // fighting.
         if inner.boss_entity_ids.contains(&target_id) && is_ours(&inner, actor_id) {
-            if !inner.has_boss_in_segment && !inner.target_combat.is_empty() {
+            if !inner.has_boss_in_segment && (!inner.target_combat.is_empty() || inner.idle_retired) {
                 tracing::info!("Boss encounter auto-reset: boss entity {} hit, clearing trash segment", target_id);
                 let timeout = self.encounter_timeout_ms.load(Ordering::Relaxed);
                 if !encounter_ended(&inner, timeout, pdp.timestamp()) {

@@ -38,6 +38,8 @@ pub struct DpsCalculator {
     displayed_battle_time: i64,
     /// The above, as details readers see them.
     view: Arc<RwLock<DetailsView>>,
+    /// When idle targets were last retired. See `retire_idle_targets`.
+    last_retire_ms: i64,
 }
 
 /// What Details needs of the meter beyond storage: the mode and the targets
@@ -100,6 +102,7 @@ impl DpsCalculator {
                 displayed_targets: Vec::new(),
                 displayed_battle_time: 0,
             })),
+            last_retire_ms: i64::MIN,
         }
     }
 
@@ -115,6 +118,8 @@ impl DpsCalculator {
 
     pub fn get_dps(&mut self) -> DpsData {
         let dps = self.compute_dps();
+        // After the rows: a mode just switched to has picked its targets.
+        self.retire_idle_targets();
         self.publish_view();
         dps
     }
@@ -696,6 +701,33 @@ mod tests {
         assert_eq!(calc.get_dps().target_id, 801, "dead, and still the last thing you hit");
         hits(&s, 2259, 900, 30_000, 31_000);
         assert_eq!(calc.get_dps().target_id, 900, "dead, and you moved on");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn idle_targets_the_meter_does_not_show_are_retired() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        hits(&s, 2259, 800, 1_000, 10_000);
+        s.mark_entity_dead(800);
+        // Each pull a new encounter: the encounter keeps its own.
+        hits(&s, 2259, 900, 30_000, 32_000);
+        hits(&s, 2259, 901, 60_000, 62_000);
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("allTargets");
+        crate::clock::set_override(Some(100_000));
+        calc.get_dps();
+        assert_eq!(s.get_combat_snapshot_light().len(), 3, "ALL without a window shows them all");
+
+        calc.set_target_selection_mode("lastHitByMe");
+        crate::clock::set_override(Some(110_000));
+        assert_eq!(calc.get_dps().target_id, 901);
+        let mut left: Vec<i32> = s.get_combat_snapshot_light().into_keys().collect();
+        left.sort();
+        assert_eq!(left, vec![901], "the target on screen stays");
+        // The boss fight went to the auto-save, as an idle restart sends it.
+        assert_eq!(ids(&snapshot_at(&mut calc, 110_000)), vec!["auto_800_1000"]);
         crate::clock::set_override(None);
     }
 

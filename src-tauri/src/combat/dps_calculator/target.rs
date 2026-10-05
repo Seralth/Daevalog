@@ -8,6 +8,9 @@ use crate::entity::summon_resolver;
 
 use super::DpsCalculator;
 
+/// How often idle targets are retired. See `retire_idle_targets`.
+const RETIRE_EVERY_MS: i64 = 5_000;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TargetSelectionMode {
     BossTargets,
@@ -88,6 +91,31 @@ impl DpsCalculator {
         }
         self.data_storage.set_current_target(0);
         self.publish_view();
+    }
+
+    /// Retire the idle targets this mode does not show, every few seconds:
+    /// in the open world they piled up for as long as the meter ran. The
+    /// rows on screen stay; so does everything ALL shows, which without a
+    /// window is everything since the zone change.
+    pub(super) fn retire_idle_targets(&mut self) {
+        let now = now_ms();
+        if now.saturating_sub(self.last_retire_ms) < RETIRE_EVERY_MS {
+            return;
+        }
+        self.last_retire_ms = now;
+        let shown: HashSet<i32> = self.displayed_targets.iter().copied().collect();
+        let mode = self.target_selection_mode;
+        let since = self.window_since();
+        let mob_data = if mode == TargetSelectionMode::TrainTargets { self.data_storage.get_mob_data() } else { HashMap::new() };
+        let npc_lookup = &self.npc_lookup;
+        self.data_storage.retire_idle(now, |tid, td| {
+            shown.contains(&tid)
+                || match mode {
+                    TargetSelectionMode::AllTargets => since.is_none_or(|since| td.last_damage_time >= since),
+                    TargetSelectionMode::TrainTargets => mob_data.get(&tid).is_some_and(|&code| npc_lookup.is_training_dummy(code)),
+                    _ => false,
+                }
+        });
     }
 
     pub(super) fn decide_target(
