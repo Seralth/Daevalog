@@ -1454,23 +1454,19 @@ fn resolve_nickname(uid: i32, nicknames: &HashMap<i32, String>, summon_data: &Ha
 ///
 /// The NPC table names the instance of 563 bosses, and that wins: the roster
 /// is not sent again after a load inside an instance until well after a fight
-/// can be over, and it never says when you have left one. So a boss the
-/// table places is in its instance; a boss of no instance, fought while the
-/// roster names one whose bosses the table knows, was fought outside it, after
-/// leaving; anything else keeps the roster's id, as for instances the table
-/// does not cover (Gargaum's, 610073).
+/// can be over, and it never says when you have left one. Any other boss
+/// keeps the roster's id.
 ///
 /// Checked on replays (2026-10-05): the last boss of a 600011 run, fought
 /// after a teleport and before the roster came back, keeps 600011, which
-/// clearing the id on every load (PR #25) lost.
+/// clearing the id on every load (PR #25) lost. On the 2,080 uploaded logs it
+/// gives 134 a dungeon they lacked and moves 57 off a stale one (Urugugu
+/// bosses filed under Vakron Sky Island). It does not clear a dungeon for a
+/// boss the table leaves unplaced: the table misses bosses of instances it
+/// otherwise covers (Vakron, in 175 logs of Vakron Sky Island), so "not one
+/// of that instance's bosses" cannot be told from "not in an instance".
 fn fight_dungeon(npcs: &NpcLookup, mob_code: i32, roster: i32) -> i32 {
-    if let Some(dungeon) = npcs.dungeon_of(mob_code) {
-        return dungeon;
-    }
-    if roster > 0 && npcs.is_boss(mob_code) && npcs.knows_bosses_of(roster) {
-        return 0;
-    }
-    roster
+    npcs.dungeon_of(mob_code).unwrap_or(roster)
 }
 
 fn build_nickname_canonical_map_from_aggregates(
@@ -1692,12 +1688,14 @@ mod tests {
         // After a teleport, before the roster names the instance again.
         assert_eq!(fight_dungeon(&npcs, 2310218, 0), 600011);
         assert_eq!(fight_dungeon(&npcs, 2310206, 600011), 600011);
-        // A field boss after leaving that instance: the roster id is stale.
-        assert_eq!(fight_dungeon(&npcs, 2701090, 600011), 0);
-        // An instance the table has no bosses for keeps the roster's id.
+        // A stale roster id gives way to the boss's own instance.
+        assert_eq!(fight_dungeon(&npcs, 2310206, 600072), 600011);
+        // A boss the table does not place keeps the roster's id: Gargaum in
+        // its instance, or a boss of a covered instance the table misses.
         assert_eq!(fight_dungeon(&npcs, 2300475, 610073), 610073);
+        assert_eq!(fight_dungeon(&npcs, 2701090, 600011), 600011);
         assert_eq!(fight_dungeon(&npcs, 2701090, 0), 0);
-        // Trash keeps the roster's: it is not what is being placed.
+        // Trash keeps the roster's.
         assert_eq!(fight_dungeon(&npcs, 2310219, 600011), 600011);
     }
 }
