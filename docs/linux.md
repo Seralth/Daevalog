@@ -14,6 +14,7 @@ Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, D
 - **[Update](#update):** [how each install updates](#how-each-install-updates) · [the update prompt](#the-update-prompt) · [by hand](#update-by-hand) · [which version do I have?](#which-version-do-i-have)
 - **[Start and remove](#start-and-remove)**
 - **[What works on Linux](#what-works-on-linux)**
+- **[Display backend](#display-backend)**
 - **[GNOME: keep the meter above other windows](#gnome-keep-the-meter-above-other-windows)**
 - **[Build from source](#build-from-source-other-distributions)**, for distributions with no package
 - **[Sending us your logs](#sending-us-your-logs)**
@@ -219,9 +220,24 @@ To remove it:
 | Screenshots | Works from 2.0.41, to the clipboard and a folder (`~/Pictures/A2Tools DPS Meter` by default). On Linux the meter pictures itself on a plain background, since Wayland lets no app copy the screen |
 | Auto-hide when the game loses focus | Not yet (the meter stays visible) |
 
+## Display backend
+
+The meter picks how it draws on each desktop when it starts. The log says which: `display backend: ...`.
+
+| Desktop | Backend |
+| --- | --- |
+| X11 sessions (Xfce, Cinnamon, Plasma X11) | X11 |
+| GNOME | XWayland, see below |
+| KDE Plasma, Hyprland, Sway (Wayland) | Native Wayland, with the overlay as a layer above every window, a fullscreen game too |
+| Other Wayland desktops | Native Wayland |
+
+The layer needs `gtk-layer-shell`. **Settings > Overlay: Wayland layer** turns it off; it takes effect at the next start. With the layer off or `gtk-layer-shell` missing, KDE Plasma runs the meter through XWayland, where KWin keeps it on top, and Hyprland and Sway open a normal window (see [Tiling desktops](#tiling-desktops-hyprland-sway-i3)). On other Wayland desktops the switch turns the layer on, when the desktop offers one.
+
+A `GDK_BACKEND` you set yourself always wins. A launcher with `env GDK_BACKEND=x11` is no longer needed on KDE Plasma.
+
 ## GNOME: keep the meter above other windows
 
-In a GNOME Wayland session, the meter automatically prefers XWayland when an X11 display is available. This lets its always-on-top request work without installing a GNOME Shell component. Only the meter uses XWayland; the desktop session stays on Wayland. KDE and other desktops keep their default backend.
+In a GNOME Wayland session, the meter automatically prefers XWayland when an X11 display is available. This lets its always-on-top request work without installing a GNOME Shell component. Only the meter uses XWayland; the desktop session stays on Wayland.
 
 An explicit `GDK_BACKEND` takes precedence. To select XWayland manually:
 

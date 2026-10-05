@@ -247,7 +247,7 @@
     "showSuspendBtn": "Mostrar botón de pausa",
     "showLockBtn": "Mostrar botón de bloqueo (clic a través)",
     "waylandLayer": "Superposición: capa de Wayland",
-    "waylandLayerHint": "En Wayland nativo (KDE Plasma, Hyprland, Sway) la superposición queda encima de todas las ventanas, también de un juego a pantalla completa. No en GNOME ni con XWayland. Se aplica en el próximo inicio.",
+    "waylandLayerHint": "En KDE Plasma, Hyprland y Sway la superposición queda encima de todas las ventanas, también de un juego a pantalla completa. Activada allí por defecto. Desactivada, KDE Plasma ejecuta el medidor con XWayland. No en GNOME. Se aplica en el próximo inicio.",
     "playerLimit": {
       "label": "Máx. jugadores mostrados"
     },

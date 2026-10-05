@@ -33,7 +33,8 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - **Tray icon,** with "Start in the tray" and "Keep out of the taskbar". The tray menu shows, hides, locks and unlocks the meter. Every control also stays in the meter's own window, so the meter works on a desktop without a tray.
 - **Click-through lock** on X11 and on native Wayland. A locked meter always shows its lock button.
 - **Lock hotkey** through the desktop's global shortcuts (the GlobalShortcuts portal), on desktops that offer them.
-- **Wayland layer overlay** (optional) on KDE Plasma, Hyprland and Sway: the meter stays above a fullscreen game.
+- **Display backend per desktop.** At start the meter picks X11, XWayland or native Wayland to fit the desktop, so KDE Plasma needs no `GDK_BACKEND=x11` launcher. A `GDK_BACKEND` you set yourself still wins.
+- **Wayland layer overlay** on KDE Plasma, Hyprland and Sway, on by default there: the meter stays above a fullscreen game. Settings turns it off.
 - Windows behave correctly under KDE Plasma (KWin), and the overlay draws on WebKitGTK 2.54.
 
 ### Parsing

@@ -399,15 +399,20 @@ Object.assign(DpsApp.prototype, {
     }
 
     // Shown where the session has layer-shell, or while it is on, so it can
-    // always be turned off again.
+    // always be turned off again. Unset, it follows the desktop's default
+    // (on for KDE Plasma, Hyprland and Sway on Wayland).
     const waylandLayerCheckbox = document.querySelector(".waylandLayerCheckbox");
     if (waylandLayerCheckbox && /Linux/.test(navigator.userAgent)) {
-      waylandLayerCheckbox.checked = this.safeGetSetting(this.storageKeys.waylandLayer) === "true";
+      const savedLayer = this.safeGetSetting(this.storageKeys.waylandLayer);
+      waylandLayerCheckbox.checked = savedLayer === "true";
       waylandLayerCheckbox.addEventListener("change", (event) => {
         this.safeSetSetting(this.storageKeys.waylandLayer, String(!!event.target?.checked));
       });
       Promise.resolve(window.__TAURI__?.core?.invoke?.("wayland_layer_state"))
         .then((layer) => {
+          if (savedLayer !== "true" && savedLayer !== "false") {
+            waylandLayerCheckbox.checked = !!layer?.byDefault;
+          }
           if (layer?.supported || waylandLayerCheckbox.checked) {
             document.querySelector(".waylandLayerSetting")?.style.removeProperty("display");
           }

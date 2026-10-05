@@ -247,7 +247,7 @@
     "showSuspendBtn": "Afficher le bouton pause",
     "showLockBtn": "Afficher le bouton de verrouillage (clics traversants)",
     "waylandLayer": "Overlay : couche Wayland",
-    "waylandLayerHint": "Sous Wayland natif (KDE Plasma, Hyprland, Sway), l'overlay reste au-dessus de toutes les fenêtres, même d'un jeu en plein écran. Pas sous GNOME ni sous XWayland. Prend effet au prochain démarrage.",
+    "waylandLayerHint": "Sous KDE Plasma, Hyprland et Sway, l'overlay reste au-dessus de toutes les fenêtres, même d'un jeu en plein écran. Activé par défaut sur ces bureaux. Désactivé, KDE Plasma lance le meter via XWayland. Pas sous GNOME. Prend effet au prochain démarrage.",
     "playerLimit": {
       "label": "Joueurs affichés max."
     },

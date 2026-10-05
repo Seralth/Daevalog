@@ -247,7 +247,7 @@
     "showSuspendBtn": "Show suspend button",
     "showLockBtn": "Show lock button (click-through)",
     "waylandLayer": "Overlay: Wayland layer",
-    "waylandLayerHint": "On native Wayland (KDE Plasma, Hyprland, Sway) the overlay stays above every window, a fullscreen game too. Not on GNOME or under XWayland. Takes effect at the next start.",
+    "waylandLayerHint": "On KDE Plasma, Hyprland and Sway the overlay stays above every window, a fullscreen game too. On there by default. Turned off, KDE Plasma runs the meter through XWayland. Not on GNOME. Takes effect at the next start.",
     "playerLimit": {
       "label": "Max players shown"
     },

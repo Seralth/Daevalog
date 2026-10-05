@@ -247,7 +247,7 @@
     "showSuspendBtn": "Pause-Schaltfläche anzeigen",
     "showLockBtn": "Sperrtaste anzeigen (durchklickbar)",
     "waylandLayer": "Overlay: Wayland-Ebene",
-    "waylandLayerHint": "Unter nativem Wayland (KDE Plasma, Hyprland, Sway) bleibt das Overlay über jedem Fenster, auch über einem Spiel im Vollbild. Nicht unter GNOME oder XWayland. Wirkt ab dem nächsten Start.",
+    "waylandLayerHint": "Unter KDE Plasma, Hyprland und Sway bleibt das Overlay über jedem Fenster, auch über einem Spiel im Vollbild. Dort standardmäßig an. Ausgeschaltet läuft das Meter unter KDE Plasma über XWayland. Nicht unter GNOME. Wirkt ab dem nächsten Start.",
     "playerLimit": {
       "label": "Max. angezeigte Spieler"
     },

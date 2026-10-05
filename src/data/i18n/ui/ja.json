@@ -247,7 +247,7 @@
     "showSuspendBtn": "一時停止ボタンを表示",
     "showLockBtn": "ロックボタンを表示（クリック透過）",
     "waylandLayer": "オーバーレイ: Wayland レイヤー",
-    "waylandLayerHint": "ネイティブの Wayland（KDE Plasma、Hyprland、Sway）では、オーバーレイがフルスクリーンのゲームも含めてすべてのウィンドウの上に表示されます。GNOME と XWayland では使えません。次回の起動から有効になります。",
+    "waylandLayerHint": "KDE Plasma、Hyprland、Sway では、オーバーレイがフルスクリーンのゲームも含めてすべてのウィンドウの上に表示されます。これらのデスクトップでは最初からオンです。オフにすると、KDE Plasma ではメーターを XWayland で動かします。GNOME では使えません。次回の起動から有効になります。",
     "playerLimit": {
       "label": "表示する最大プレイヤー数"
     },

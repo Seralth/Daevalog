@@ -247,7 +247,7 @@
     "showSuspendBtn": "显示暂停按钮",
     "showLockBtn": "显示锁定按钮（点击穿透）",
     "waylandLayer": "悬浮窗：Wayland 图层",
-    "waylandLayerHint": "在原生 Wayland（KDE Plasma、Hyprland、Sway）下，悬浮窗会显示在所有窗口之上，包括全屏游戏。GNOME 和 XWayland 下不可用。下次启动时生效。",
+    "waylandLayerHint": "在 KDE Plasma、Hyprland、Sway 下，悬浮窗会显示在所有窗口之上，包括全屏游戏。这些桌面上默认开启。关闭后，KDE Plasma 会通过 XWayland 运行计量器。GNOME 下不可用。下次启动时生效。",
     "playerLimit": {
       "label": "最大显示人数"
     },

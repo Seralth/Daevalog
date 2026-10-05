@@ -247,7 +247,7 @@
     "showSuspendBtn": "일시정지 버튼 표시",
     "showLockBtn": "잠금 버튼 표시 (클릭 통과)",
     "waylandLayer": "오버레이: Wayland 레이어",
-    "waylandLayerHint": "네이티브 Wayland(KDE Plasma, Hyprland, Sway)에서는 오버레이가 전체 화면 게임을 포함한 모든 창 위에 표시됩니다. GNOME과 XWayland에서는 동작하지 않습니다. 다음 실행부터 적용됩니다.",
+    "waylandLayerHint": "KDE Plasma, Hyprland, Sway에서는 오버레이가 전체 화면 게임을 포함한 모든 창 위에 표시됩니다. 이 데스크톱에서는 기본으로 켜져 있습니다. 끄면 KDE Plasma에서는 미터를 XWayland로 실행합니다. GNOME에서는 동작하지 않습니다. 다음 실행부터 적용됩니다.",
     "playerLimit": {
       "label": "최대 표시 인원"
     },

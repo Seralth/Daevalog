@@ -247,7 +247,7 @@
     "showSuspendBtn": "顯示暫停按鈕",
     "showLockBtn": "顯示鎖定按鈕（點擊穿透）",
     "waylandLayer": "懸浮視窗：Wayland 圖層",
-    "waylandLayerHint": "在原生 Wayland（KDE Plasma、Hyprland、Sway）下，懸浮視窗會顯示在所有視窗之上，包括全螢幕遊戲。GNOME 和 XWayland 下無法使用。下次啟動時生效。",
+    "waylandLayerHint": "在 KDE Plasma、Hyprland、Sway 下，懸浮視窗會顯示在所有視窗之上，包括全螢幕遊戲。這些桌面上預設開啟。關閉後，KDE Plasma 會透過 XWayland 執行計量器。GNOME 下無法使用。下次啟動時生效。",
     "playerLimit": {
       "label": "最大顯示人數"
     },
