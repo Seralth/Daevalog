@@ -32,3 +32,8 @@ pub(crate) fn get_available_devices() -> Vec<String> {
         Err(_) => Vec::new(),
     }
 }
+
+pub(crate) fn set_manual_device(state: &AppState, device: String) {
+    let dev = if device.trim().is_empty() { None } else { Some(device) };
+    state.port_detector.set_preferred_device(dev);
+}

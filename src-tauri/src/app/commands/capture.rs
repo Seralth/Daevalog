@@ -26,8 +26,7 @@ pub(crate) fn get_available_devices() -> Vec<String> {
 
 #[tauri::command]
 pub(crate) fn set_manual_device(state: tauri::State<'_, AppState>, device: String) {
-    let dev = if device.trim().is_empty() { None } else { Some(device) };
-    state.port_detector.set_preferred_device(dev);
+    capture_control::set_manual_device(&state, device);
 }
 
 #[tauri::command]
