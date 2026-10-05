@@ -343,11 +343,11 @@
       "autoUploadHint": "首領戰結束時會以你在 a2tools.app 選擇的公開設定上傳到你的帳號。其他玩家的名稱會被遮蔽。木樁戰鬥不會上傳。"
     },
     "sendLogs": {
-      "hint": "將最新的 3 個封包紀錄傳送給開發者，用於回報問題。",
-      "button": "傳送紀錄給開發者",
-      "confirm": "要將最新的 3 個封包紀錄傳送給 A2 Tools 開發者嗎？\n\n封包紀錄是開啟封包紀錄期間錄下的原始遊戲通訊，包含角色名稱。只有開發者能開啟，並會在 30 天後刪除。",
+      "hint": "將最新的 3 個封包紀錄傳送到 a2tools.app，也就是 A2 Tools 開發者的網站。",
+      "button": "傳送紀錄到 a2tools.app",
+      "confirm": "要將最新的 3 個封包紀錄傳送到 a2tools.app 嗎？\n\n封包紀錄是開啟封包記錄期間錄下的原始遊戲通訊，包含角色名稱。在那裡只有 A2 Tools 開發者能開啟，並會在 30 天後刪除。傳送後，Daevalog 無法查看，也無法提供協助。",
       "sending": "傳送中...",
-      "sent": "已傳送。你的回報代碼是 {code}，請在 Discord 上告訴開發者。",
+      "sent": "已傳送到 a2tools.app。你的回報代碼是 {code}。傳送到那裡的紀錄 Daevalog 無法提供協助。如果是 Daevalog 的問題，請把本機紀錄附加到 github.com/Seralth/Daevalog 的 issue 中。",
       "failed": "無法傳送：{error}"
     },
     "encounterTimeout": {

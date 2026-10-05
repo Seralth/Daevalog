@@ -343,11 +343,11 @@
       "autoUploadHint": "首领战结束时会以你在 a2tools.app 选择的公开设置上传到你的账号。其他玩家的名称会被遮蔽。木桩战斗不会上传。"
     },
     "sendLogs": {
-      "hint": "将最新的 3 个数据包日志发送给开发者，用于反馈问题。",
-      "button": "发送日志给开发者",
-      "confirm": "要将最新的 3 个数据包日志发送给 A2 Tools 开发者吗？\n\n数据包日志是开启数据包记录期间录下的原始游戏通信，包含角色名称。只有开发者能打开，并会在 30 天后删除。",
+      "hint": "将最新的 3 个数据包日志发送到 a2tools.app，即 A2 Tools 开发者的网站。",
+      "button": "发送日志到 a2tools.app",
+      "confirm": "要将最新的 3 个数据包日志发送到 a2tools.app 吗？\n\n数据包日志是开启数据包记录期间录下的原始游戏通信，包含角色名称。在那里只有 A2 Tools 开发者能打开，并会在 30 天后删除。发送后，Daevalog 无法查看，也无法提供帮助。",
       "sending": "发送中...",
-      "sent": "已发送。你的反馈代码是 {code}，请在 Discord 上告诉开发者。",
+      "sent": "已发送到 a2tools.app。你的反馈代码是 {code}。发送到那里的日志 Daevalog 无法提供帮助。如果是 Daevalog 的问题，请把本地日志附加到 github.com/Seralth/Daevalog 的 issue 中。",
       "failed": "无法发送：{error}"
     },
     "encounterTimeout": {

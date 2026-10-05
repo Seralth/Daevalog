@@ -343,11 +343,11 @@
       "autoUploadHint": "Cuando termina un combate de jefe, se sube a tu cuenta con la visibilidad que elegiste en a2tools.app. Los demás jugadores quedan ocultos. Los combates contra muñecos de entrenamiento nunca se suben."
     },
     "sendLogs": {
-      "hint": "Envía tus 3 registros de paquetes más recientes al desarrollador, para un informe de errores.",
-      "button": "Enviar registros al dev",
-      "confirm": "¿Enviar tus 3 registros de paquetes más recientes al desarrollador de A2 Tools?\n\nLos registros de paquetes son el tráfico del juego en bruto grabado mientras el registro de paquetes estaba activado, incluidos los nombres de personajes. Solo el desarrollador puede abrirlos y se eliminan a los 30 días.",
+      "hint": "Envía tus 3 registros de paquetes más recientes a a2tools.app, el sitio del desarrollador de A2 Tools.",
+      "button": "Enviar registros a a2tools.app",
+      "confirm": "¿Enviar tus 3 registros de paquetes más recientes a a2tools.app?\n\nLos registros de paquetes son el tráfico bruto del juego grabado mientras el registro de paquetes estaba activado, incluidos los nombres de personajes. Allí solo el desarrollador de A2 Tools puede abrirlos, y se borran a los 30 días. Una vez enviados, Daevalog no puede verlos ni ayudar con ellos.",
       "sending": "Enviando...",
-      "sent": "Enviado. Tu código de informe es {code}: dáselo al desarrollador en Discord.",
+      "sent": "Enviado a a2tools.app. Tu código de informe es {code}. Daevalog no puede ayudar con los registros enviados allí. Para un problema con Daevalog, adjunta tu registro local a una incidencia en github.com/Seralth/Daevalog.",
       "failed": "No se pudo enviar: {error}"
     },
     "encounterTimeout": {

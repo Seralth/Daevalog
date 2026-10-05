@@ -2184,8 +2184,9 @@ class DpsApp {
     }
   }
 
-  // "Send logs to dev": the newest packet captures, for a bug report. Packet
-  // logs are raw game traffic, names included, so it asks first, every time.
+  // "Send logs to a2tools.app": the newest packet captures, for the A2 Tools
+  // developer. Packet logs are raw game traffic, names included, so it asks
+  // first, every time. Daevalog cannot see logs once they are sent there.
   initSendLogs() {
     const btn = this.sendLogsBtn;
     const status = this.sendLogsStatus;
@@ -2201,10 +2202,11 @@ class DpsApp {
     };
     btn.addEventListener("click", async () => {
       const ok = window.confirm(t("settings.sendLogs.confirm",
-        "Send your 3 newest packet logs to the A2 Tools developer?\n\n" +
+        "Send your 3 newest packet logs to a2tools.app?\n\n" +
         "Packet logs are raw game traffic recorded while packet logging was on, " +
-        "including character names. Only the developer can open them, and they " +
-        "are deleted after 30 days."));
+        "including character names. Only the A2 Tools developer can open them " +
+        "there, and they are deleted after 30 days. Once sent, Daevalog cannot " +
+        "see or help with them."));
       if (!ok) return;
       btn.disabled = true;
       show(t("settings.sendLogs.sending", "Sending..."));
@@ -2212,7 +2214,9 @@ class DpsApp {
         const result = await window.javaBridge?.sendLogsToDev?.();
         const code = result?.code || "?";
         show(t("settings.sendLogs.sent",
-          `Sent. Your report code is ${code}: give it to the developer on Discord.`,
+          `Sent to a2tools.app. Your report code is ${code}. Daevalog cannot help with ` +
+          "logs sent there. For a problem with Daevalog, attach your local log to an " +
+          "issue at github.com/Seralth/Daevalog.",
           { code }));
       } catch (err) {
         const msg = String(err?.message || err || "");

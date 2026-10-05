@@ -343,11 +343,11 @@
       "autoUploadHint": "When a boss fight ends it is uploaded to your account, with the visibility you chose on a2tools.app. Other players stay masked. Training dummies are never uploaded."
     },
     "sendLogs": {
-      "hint": "Sends your 3 newest packet logs to the developer, for a bug report.",
-      "button": "Send logs to dev",
-      "confirm": "Send your 3 newest packet logs to the A2 Tools developer?\n\nPacket logs are raw game traffic recorded while packet logging was on, including character names. Only the developer can open them, and they are deleted after 30 days.",
+      "hint": "Sends your 3 newest packet logs to a2tools.app, the A2 Tools developer's site.",
+      "button": "Send logs to a2tools.app",
+      "confirm": "Send your 3 newest packet logs to a2tools.app?\n\nPacket logs are raw game traffic recorded while packet logging was on, including character names. Only the A2 Tools developer can open them there, and they are deleted after 30 days. Once sent, Daevalog cannot see or help with them.",
       "sending": "Sending...",
-      "sent": "Sent. Your report code is {code}: give it to the developer on Discord.",
+      "sent": "Sent to a2tools.app. Your report code is {code}. Daevalog cannot help with logs sent there. For a problem with Daevalog, attach your local log to an issue at github.com/Seralth/Daevalog.",
       "failed": "Could not send: {error}"
     },
     "encounterTimeout": {

@@ -343,11 +343,11 @@
       "autoUploadHint": "À la fin d'un combat de boss, il est envoyé sur votre compte avec la visibilité choisie sur a2tools.app. Les autres joueurs restent masqués. Les combats contre les épouvantails d'entraînement ne sont jamais envoyés."
     },
     "sendLogs": {
-      "hint": "Envoie tes 3 derniers journaux de paquets au développeur, pour un rapport de bug.",
-      "button": "Envoyer les journaux au dev",
-      "confirm": "Envoyer tes 3 derniers journaux de paquets au développeur d'A2 Tools ?\n\nLes journaux de paquets sont le trafic brut du jeu enregistré pendant que la journalisation était activée, noms de personnages compris. Seul le développeur peut les ouvrir, et ils sont supprimés au bout de 30 jours.",
+      "hint": "Envoie vos 3 derniers journaux de paquets à a2tools.app, le site du développeur d'A2 Tools.",
+      "button": "Envoyer les journaux à a2tools.app",
+      "confirm": "Envoyer vos 3 derniers journaux de paquets à a2tools.app ?\n\nLes journaux de paquets sont le trafic brut du jeu enregistré pendant que la journalisation était activée, noms de personnages compris. Là-bas, seul le développeur d'A2 Tools peut les ouvrir, et ils sont supprimés après 30 jours. Une fois envoyés, Daevalog ne peut ni les voir ni vous aider avec.",
       "sending": "Envoi...",
-      "sent": "Envoyé. Ton code de rapport est {code} : donne-le au développeur sur Discord.",
+      "sent": "Envoyé à a2tools.app. Votre code de rapport est {code}. Daevalog ne peut pas vous aider avec les journaux envoyés là-bas. Pour un problème avec Daevalog, joignez votre journal local à un ticket sur github.com/Seralth/Daevalog.",
       "failed": "Envoi impossible : {error}"
     },
     "encounterTimeout": {

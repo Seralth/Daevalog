@@ -343,11 +343,11 @@
       "autoUploadHint": "Wenn ein Bosskampf endet, wird er mit der auf a2tools.app gewählten Sichtbarkeit in dein Konto hochgeladen. Andere Spieler bleiben verdeckt. Kämpfe gegen Trainingspuppen werden nie hochgeladen."
     },
     "sendLogs": {
-      "hint": "Sendet deine 3 neuesten Paket-Logs für einen Fehlerbericht an den Entwickler.",
-      "button": "Logs an Entwickler senden",
-      "confirm": "Deine 3 neuesten Paket-Logs an den A2-Tools-Entwickler senden?\n\nPaket-Logs sind der rohe Spielverkehr, aufgezeichnet während die Paketaufzeichnung an war, einschließlich Charakternamen. Nur der Entwickler kann sie öffnen, und sie werden nach 30 Tagen gelöscht.",
+      "hint": "Sendet deine 3 neuesten Paket-Logs an a2tools.app, die Seite des A2-Tools-Entwicklers.",
+      "button": "Logs an a2tools.app senden",
+      "confirm": "Deine 3 neuesten Paket-Logs an a2tools.app senden?\n\nPaket-Logs sind der rohe Spielverkehr, aufgezeichnet während die Paketaufzeichnung an war, einschließlich Charakternamen. Dort kann sie nur der A2-Tools-Entwickler öffnen, und sie werden nach 30 Tagen gelöscht. Einmal gesendet, kann Daevalog sie weder sehen noch dabei helfen.",
       "sending": "Wird gesendet...",
-      "sent": "Gesendet. Dein Berichtscode ist {code}: gib ihn dem Entwickler auf Discord.",
+      "sent": "An a2tools.app gesendet. Dein Berichtscode ist {code}. Bei dort gesendeten Logs kann Daevalog nicht helfen. Bei einem Problem mit Daevalog hänge dein lokales Log an ein Issue auf github.com/Seralth/Daevalog an.",
       "failed": "Senden fehlgeschlagen: {error}"
     },
     "encounterTimeout": {
