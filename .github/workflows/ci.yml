@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [daevalog]
   pull_request:
   # By hand, for a branch: gh workflow run ci.yml --ref <branch>
   workflow_dispatch:

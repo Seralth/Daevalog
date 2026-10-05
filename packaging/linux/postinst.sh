@@ -5,7 +5,7 @@
 # WebKit) runs with none and never as root. A new binary (every upgrade)
 # needs it again. The Arch package does the same in
 # packaging/arch/daevalog-dps-meter.install; the .rpm declares it in the
-# package instead (packaging/linux/a2-tools-dps-meter.spec).
+# package instead (packaging/linux/daevalog-dps-meter.spec).
 
 HELPER=/usr/bin/daevalog-capture
 METER=/usr/bin/daevalog-dps-meter

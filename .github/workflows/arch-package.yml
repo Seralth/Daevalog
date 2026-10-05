@@ -11,18 +11,21 @@ name: Linux packages
 #
 # Every package grants packet-capture permission to the capture helper
 # (daevalog-capture) and to nothing else, so the meter runs with no capability
-# and never as root. Nothing here publishes anything: the files go to
-# the CDN by hand.
+# and never as root. Nothing here publishes anything: the packages stay
+# as downloads of the run.
 #
 # Versions: the Arch package is <release>.r<commits>.g<hash> (PKGBUILD
 # pkgver); the .deb and .rpm carry the version in src-tauri/Cargo.toml.
+#
+# For a release, run it on the release tag (`gh workflow run arch-package.yml
+# -f ref=<tag>`).
 on:
   workflow_dispatch:
     inputs:
       ref:
         description: "Tag or branch to build (a release tag for a release)"
         required: false
-        default: main
+        default: daevalog
 
 # Jobs that check out the repository read it; the rest need no token at all.
 permissions:
@@ -38,7 +41,7 @@ jobs:
       - name: Build dependencies
         run: |
           pacman -Syu --noconfirm --needed git rust nodejs npm pkgconf \
-            webkit2gtk-4.1 gtk3 libpcap libcap hicolor-icon-theme
+            webkit2gtk-4.1 gtk3 libayatana-appindicator libpcap libcap hicolor-icon-theme
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ inputs.ref }}
@@ -113,13 +116,13 @@ jobs:
             done
           ) > rpm-files.txt
           head -20 rpm-files.txt
-          rpmbuild -bb packaging/linux/a2-tools-dps-meter.spec \
+          rpmbuild -bb packaging/linux/daevalog-dps-meter.spec \
             --define "_topdir $PWD/rpmbuild" \
             --define "pkgversion $version" \
             --define "payload $PWD/rpmpayload" \
             --define "filelist $PWD/rpm-files.txt"
-      # Tauri names the .deb after the product ("Daevalog DPS Meter_2.0.44_amd64.deb");
-      # the CDN and the updater use the package name instead.
+      # Tauri names the .deb after the product ("Daevalog DPS Meter_<version>_amd64.deb");
+      # the downloads use the package name instead.
       - name: Name the packages
         run: |
           version=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2)
@@ -180,8 +183,8 @@ jobs:
           ldconfig -p | grep -qE 'libpcap\.so\.(1|0\.8) ' || { echo "libpcap missing"; exit 1; }
           ls /usr/share/applications/ | grep -i daevalog
 
-  # The RPM repository on the CDN (linux/rpm/), which Fedora and the
-  # image-based Fedoras install and update the meter from.
+  # An RPM repository over the .rpm, which Fedora and the image-based
+  # Fedoras can install and update the meter from.
   rpm-repo:
     name: RPM repository
     permissions: {}
@@ -205,7 +208,7 @@ jobs:
         run: |
           printf '[daevalog]\nname=Daevalog DPS Meter (test)\nbaseurl=file://%s/repo/rpm/\ngpgcheck=0\n' "$PWD" \
             > /etc/yum.repos.d/daevalog.repo
-          dnf install -y a2-tools-dps-meter
+          dnf install -y daevalog-dps-meter
           getcap /usr/bin/daevalog-capture | grep cap_net_raw
           test -z "$(getcap /usr/bin/daevalog-dps-meter)"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -240,11 +243,11 @@ jobs:
           sudo podman run --rm -v "$PWD/repo:/repo:ro" ghcr.io/ublue-os/bazzite:stable bash -euc '
             cat /etc/os-release | grep -E "^(NAME|VERSION)="
             printf "[daevalog]\nname=Daevalog DPS Meter (test)\nbaseurl=file:///repo/rpm/\ngpgcheck=0\n" > /etc/yum.repos.d/daevalog.repo
-            if rpm-ostree install a2-tools-dps-meter; then
+            if rpm-ostree install daevalog-dps-meter; then
               echo "installed with rpm-ostree"
             else
               echo "rpm-ostree could not install here; trying dnf"
-              dnf install -y a2-tools-dps-meter
+              dnf install -y daevalog-dps-meter
             fi
             getcap /usr/bin/daevalog-capture | tee /dev/stderr | grep -q cap_net_raw
             test -z "$(getcap /usr/bin/daevalog-dps-meter)"
@@ -261,9 +264,7 @@ jobs:
     name: SteamOS route (rootful distrobox)
     permissions: {}
     needs: package
-    # Not yet working: distrobox will not create a rootful box here without
-    # its interactive password prompt (the skip flag is misread as a box
-    # name). Kept to finish, but it does not hold up a release; the route is
+    # Not confirmed yet, so it does not hold up a release; the route is
     # marked unconfirmed in docs/linux.md.
     continue-on-error: true
     runs-on: ubuntu-24.04
@@ -283,7 +284,8 @@ jobs:
           distrobox version
           # A rootful box asks for a password for the user inside it on first
           # entry; a player types one, CI cannot.
-          distrobox create --root --yes --name daevalog --image docker.io/library/archlinux:latest \n            --absolutely-disable-root-password-i-am-really-positively-sure
+          distrobox create --root --yes --name daevalog --image docker.io/library/archlinux:latest \
+            --absolutely-disable-root-password-i-am-really-positively-sure
           distrobox enter --root daevalog -- sudo pacman -Syu --noconfirm
           distrobox enter --root daevalog -- sudo pacman -U --noconfirm "$PWD"/pkg/*.pkg.tar.zst
       - name: Capture permission

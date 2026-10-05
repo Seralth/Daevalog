@@ -23,8 +23,11 @@ Summary:        Daevalog DPS Meter - AION 2 real-time DPS overlay
 License:        GPL-3.0-only
 URL:            https://github.com/Seralth/Daevalog
 ExclusiveArch:  x86_64
-# Replaces the A2Tools package of the same program.
-Obsoletes:      a2-tools-dps-meter
+# Replaces the A2Tools package of the same program (upstream's releases are
+# 2.0.x). Obsoletes is matched against installed packages of that name only,
+# so this package's own version does not matter to it.
+Provides:       a2-tools-dps-meter = %{version}-%{release}
+Obsoletes:      a2-tools-dps-meter < 3
 
 # libpcap is loaded at runtime, so rpmbuild cannot find it among the binary's
 # libraries; the rest (WebKitGTK, GTK) it adds by itself.
