@@ -107,8 +107,7 @@ fn ring_check(packets: &[CapturedPacket], storage: &DataStorage, w: &FightRecord
     let fresh = { let mut fed = FED.lock().unwrap(); if fed.contains(&mark) { false } else { fed.push(mark); true } };
     for p in packets.iter().filter(|_| fresh) {
         a2tools_dps_meter_lib::clock::set_override(Some(p.captured_at_ms));
-        let port: u16 = p.stream.trim_start_matches("Client:").parse().unwrap_or(0);
-        a2tools_dps_meter_lib::share::ring::record(port, &p.bytes);
+        a2tools_dps_meter_lib::share::ring::record(p.stream.clone(), &p.bytes);
     }
     a2tools_dps_meter_lib::clock::set_override(None);
     let dir = std::env::temp_dir().join(format!("a2t-ring-{}", std::process::id()));
