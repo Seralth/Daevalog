@@ -1,3 +1,17 @@
+// The healing in merged Details. Healing is not kept per target, so every
+// target's details carry the same heals: take them once.
+const combinedHealFields = (detailsList = []) => {
+  const first = detailsList.find((d) => d && typeof d === "object") || {};
+  return {
+    healSkills: Array.isArray(first.healSkills) ? first.healSkills : [],
+    totalHeal: Number(first.totalHeal) || 0,
+    healTicks: Number(first.healTicks) || 0,
+    healHotTicks: Number(first.healHotTicks) || 0,
+    healSkillCount: Number(first.healSkillCount) || 0,
+    healPerSecText: first.healPerSecText ?? "-",
+  };
+};
+
 const createDetailsUI = ({
   detailsPanel,
   detailsClose,
@@ -2002,6 +2016,7 @@ const createDetailsUI = ({
       combatTime: formatBattleTime(battleTimeMs),
       battleTimeMs,
       skills,
+      ...combinedHealFields(detailsList),
       showSkillIcons,
       perActorStats: combinePerActorStats(detailsList),
       showCombinedTotals: !selectedAttackerIds || selectedAttackerIds.length === 0,
