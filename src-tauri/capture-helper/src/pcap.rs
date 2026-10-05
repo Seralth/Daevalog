@@ -396,13 +396,28 @@ impl PcapLib {
         let Live { handle, label, link_type, applied } = live;
         let handle = handle as PcapT;
 
+        // A filter change that failed is tried again a second later, and
+        // logged once per wanted port.
+        let mut retry_at = 0;
+        let mut failed: Option<u32> = None;
         while running.load(Ordering::SeqCst) {
-            let want = wanted_filter_port(now_ms());
-            if want.map_or(0, u32::from) != applied.load(Ordering::Relaxed) {
-                applied.store(want.map_or(0, u32::from), Ordering::Relaxed);
+            let now = now_ms();
+            let want = wanted_filter_port(now);
+            let want_port = want.map_or(0, u32::from);
+            if want_port != applied.load(Ordering::Relaxed) && now >= retry_at {
                 match self.set_filter(handle, want) {
-                    Ok(expr) => log(Level::Info, &format!("Capture filter on {}: {}", label, expr)),
-                    Err(e) => log(Level::Warn, &format!("Capture filter on {} not changed: {}", label, e)),
+                    Ok(expr) => {
+                        applied.store(want_port, Ordering::Relaxed);
+                        failed = None;
+                        log(Level::Info, &format!("Capture filter on {}: {}", label, expr));
+                    }
+                    Err(e) => {
+                        retry_at = now + FILTER_WATCH_MS as i64;
+                        if failed != Some(want_port) {
+                            failed = Some(want_port);
+                            log(Level::Warn, &format!("Capture filter on {} not changed: {}", label, e));
+                        }
+                    }
                 }
             }
 
