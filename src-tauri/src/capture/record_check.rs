@@ -96,6 +96,11 @@ fn rows_between(
             for s in a.skills.values() {
                 let r = out.entry((owner, skill_group::row_skill(s.skill_code, skills))).or_default();
                 r.damage += sign * s.total_damage as i64;
+                // Ticks over time add damage only: the game, like the details
+                // panel's skill row, counts casts as hits.
+                if s.is_dot {
+                    continue;
+                }
                 let c = [s.hit_count, s.crit_count, s.perfect_count, s.double_count,
                          s.frontal_count, s.back_count, s.multi_hit_count];
                 for (i, v) in c.iter().enumerate() {
