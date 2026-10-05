@@ -6,7 +6,7 @@ use super::AppState;
 
 pub(crate) async fn upload_fight(state: &AppState, fight_id: String) -> Result<share::UploadResult, String> {
     let record = state.fight_history.load_fight(&fight_id)?;
-    share::upload(&state.http, &state.app_data_dir, &record).await
+    share::upload(&state.http, &state.app_data_dir, &state.settings, &record).await
 }
 
 pub(crate) async fn share_status(state: &AppState) -> Result<std::collections::HashMap<String, share::ShareStatus>, String> {

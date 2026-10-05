@@ -26,7 +26,7 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 use super::overlay_lock::{toggle_overlay_lock, OverlayLock};
 use super::setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use super::tool_windows::open_details_on_monitor;
-use super::tray_actions::save_fights_before_exit;
+use super::tray_actions::{flush_settings_before_exit, save_fights_before_exit};
 use super::{commands, drag_resize, overlay_lock, screenshots, supporter_roster, tasks, tool_windows, updater, AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -77,6 +77,8 @@ pub fn run() {
                 }
             }
 
+            // One instance: it owns the writer of settings.json.
+            let settings = Settings::new(app_data_dir.clone());
             if let Some(ref data_dir) = found_data_dir {
                 // Load DOT skill IDs (language-independent)
                 if let Ok(text) = std::fs::read_to_string(data_dir.join("dot_skill_ids.json")) {
@@ -87,8 +89,7 @@ pub fn run() {
                 }
 
                 // Load skill/NPC data in the user's language
-                let language = Settings::new(app_data_dir.clone())
-                    .get("dpsMeter.language")
+                let language = settings.get("dpsMeter.language")
                     .unwrap_or_else(|| "en".to_string());
                 i18n::lookup::load_language(&skill_lookup, &npc_lookup, data_dir, &language);
             } else {
@@ -109,7 +110,6 @@ pub fn run() {
                 ping_tracker.clone(),
             );
 
-            let settings = Settings::new(app_data_dir.clone());
             apply_encounter_timeout(&data_storage, settings.get(ENCOUNTER_TIMEOUT_KEY).as_deref());
 
             // Load logging settings from saved state
@@ -340,6 +340,7 @@ pub fn run() {
             // However the meter closes, the fight in progress is kept.
             if let tauri::RunEvent::Exit = event {
                 save_fights_before_exit(app);
+                flush_settings_before_exit(app);
             }
         });
 }

@@ -22,7 +22,7 @@ pub(super) fn auto_upload(app: tauri::AppHandle, record: FightRecord) {
     tauri::async_runtime::spawn(async move {
         let _in_flight = in_flight;
         let Some(state) = app.try_state::<AppState>() else { return };
-        match share::upload_detailed(&state.http, &state.app_data_dir, &record).await {
+        match share::upload_detailed(&state.http, &state.app_data_dir, &state.settings, &record).await {
             Ok(result) => {
                 tracing::info!("Auto-uploaded {} -> {}", record.id, result.url);
                 let _ = app.emit("fight-uploaded", serde_json::json!({

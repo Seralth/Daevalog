@@ -45,3 +45,12 @@ pub(super) fn save_fights_before_exit(app: &tauri::AppHandle) {
         }
     }
 }
+
+/// Write the last settings changes before the meter closes. Capped: a stuck
+/// disk cannot keep the process alive.
+pub(super) fn flush_settings_before_exit(app: &tauri::AppHandle) {
+    let Some(state) = app.try_state::<AppState>() else { return };
+    if let Err(e) = state.settings.flush() {
+        tracing::error!("Could not save settings before exit: {e}");
+    }
+}

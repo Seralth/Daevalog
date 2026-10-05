@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::preview::{find_captures, gzip, slice_for};
 use super::slices::{read_meta, slice_path, slices_dir, write_meta};
+use crate::config::settings::Settings;
 use crate::entity::fight_record::FightRecord;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,18 +20,15 @@ pub struct UploadResult {
     pub duplicate: bool,
 }
 
-/// The meter's display language, as the settings file holds it (`ko`, `en`, …).
+/// The meter's display language, as the settings hold it (`ko`, `en`, …).
 ///
 /// Sent with an upload because a server id cannot tell Korea from Taiwan:
 /// both number their servers 1001–1058 and 2001–2058. The language and the
 /// computer's time zone are what the site has to go on; a player on Korean
 /// servers almost always has one or the other Korean.
-fn ui_language(app_data_dir: &Path) -> String {
-    std::fs::read_to_string(app_data_dir.join("settings.json"))
-        .ok()
-        .and_then(|text| serde_json::from_str::<HashMap<String, String>>(&text).ok())
-        .and_then(|values| values.get("dpsMeter.language").cloned())
-        .unwrap_or_default()
+fn ui_language(settings: &Settings) -> String {
+    // In memory: settings.json is written a moment after a change.
+    settings.get("dpsMeter.language").unwrap_or_default()
 }
 
 /// Upload a saved fight as a log.
@@ -42,9 +40,10 @@ fn ui_language(app_data_dir: &Path) -> String {
 pub async fn upload(
     client: &reqwest::Client,
     app_data_dir: &Path,
+    settings: &Settings,
     record: &FightRecord,
 ) -> Result<UploadResult, String> {
-    upload_detailed(client, app_data_dir, record).await.map_err(|f| f.message)
+    upload_detailed(client, app_data_dir, settings, record).await.map_err(|f| f.message)
 }
 
 /// Why an upload failed, and whether trying the same upload later could work.
@@ -74,6 +73,7 @@ impl UploadFailure {
 pub async fn upload_detailed(
     client: &reqwest::Client,
     app_data_dir: &Path,
+    settings: &Settings,
     record: &FightRecord,
 ) -> Result<UploadResult, UploadFailure> {
     let token = match crate::account::secret::load_stored(app_data_dir) {
@@ -119,7 +119,7 @@ pub async fn upload_detailed(
         // Korea and Taiwan number their servers alike (10xx/20xx), so the
         // slice cannot say which a fight was on; these two settle it. See
         // `region_hints`.
-        "uiLanguage": ui_language(app_data_dir),
+        "uiLanguage": ui_language(settings),
         "utcOffsetMinutes": chrono::Local::now().offset().local_minus_utc() / 60,
     });
 
@@ -185,6 +185,21 @@ pub(crate) fn base64(data: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn the_upload_language_is_the_unsaved_setting() {
+        let dir = std::env::temp_dir().join(format!("a2t-language-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("settings.json"), r#"{"dpsMeter.language":"en"}"#).unwrap();
+        let settings = Settings::new(dir.clone());
+        settings.set("dpsMeter.language", "ko");
+        assert_eq!(ui_language(&settings), "ko");
+        settings.remove("dpsMeter.language");
+        assert_eq!(ui_language(&settings), "");
+        drop(settings);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     use super::*;
 
     #[test]
