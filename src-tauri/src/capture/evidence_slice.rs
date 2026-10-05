@@ -454,13 +454,35 @@ impl Blinder {
             }
             // Safe: `looks_like_text` already required valid UTF-8.
             let text = std::str::from_utf8(span).unwrap().to_string();
-            let token = token_for(&text, 0, len);
-            self.discovered.insert(token.clone(), 0);
-            buf[i + 1..i + 1 + len].copy_from_slice(token.as_bytes());
+            // A token must not spell a known name with the bytes around it:
+            // "13b87050fe08" before a `44` byte spelled the player name "8D".
+            let mut salt = 0u32;
+            let token = loop {
+                let token = match salt {
+                    0 => token_for(&text, 0, len),
+                    _ => token_for(&format!("{text}\0{salt}"), 0, len),
+                };
+                buf[i + 1..i + 1 + len].copy_from_slice(token.as_bytes());
+                if salt == 15 || !self.spells_known_name(buf, i + 1, i + 1 + len) {
+                    break token;
+                }
+                salt += 1;
+            };
+            self.discovered.insert(token, 0);
             replaced += 1;
             i += 1 + len;
         }
         replaced
+    }
+
+    /// Does any known name overlap `buf[from..to]`?
+    fn spells_known_name(&self, buf: &[u8], from: usize, to: usize) -> bool {
+        self.known.iter().any(|(name, _)| {
+            let n = name.len();
+            let start = (from + 1).saturating_sub(n);
+            let end = (to + n - 1).min(buf.len());
+            end >= start + n && buf[start..end].windows(n).any(|w| w == name.as_slice())
+        })
     }
 }
 
@@ -1025,6 +1047,25 @@ mod tests {
         let mut packet = frame_packet(&body).unwrap();
         Blinder::new(&[]).blind(&mut packet);
         assert!(!packet.windows(2).any(|w| w == b"M7"));
+    }
+
+    #[test]
+    fn a_token_never_spells_a_known_name_with_its_neighbours() {
+        // Capture 2026-10-04 01:45, a `45 36` player spawn: the run
+        // "d\dddd:^ddZl" became "13b87050fe08", and with the `44` after it
+        // spelled "8D", the name of another player in the capture.
+        let mut body = vec![0x45, 0x36, 0x3c, 0x03, 0x00, 0x00, 0xde, 0x02, 0x0c, 0x64, 0x5c, 0x64, 0x64, 0x64, 0x64, 0x3a, 0x5e, 0x64, 0x64, 0x5a, 0x6c, 0x44, 0xb2, 0x64, 0x6a, 0x64, 0x64, 0x58, 0x64, 0x48, 0x7c, 0x8a];
+        body.resize(64, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        let before = packet.clone();
+        let name = "8D".to_string();
+        Blinder::new(&[(&name, &0)]).blind(&mut packet);
+        assert!(!packet.windows(2).any(|w| w == b"8D"));
+        // Still blinded, and nothing but the run changed.
+        let at = before.windows(3).position(|w| w == [0xde, 0x02, 0x0c]).unwrap() + 3;
+        assert_ne!(packet[at..at + 12], before[at..at + 12]);
+        assert_eq!(packet[..at], before[..at]);
+        assert_eq!(packet[at + 12..], before[at + 12..]);
     }
 
     #[test]
