@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
+import { loadScripts } from "./scripts.mjs";
 
 function details(skills) {
   const window = { addEventListener() {}, _historyDetailsOverride: { skills, battleTime: 1000 } };
-  const context = vm.createContext({ window, console, document: { readyState: "loading", addEventListener() {} } });
-  vm.runInContext(readFileSync(new URL("../public/src/js/core.js", import.meta.url), "utf8"), context);
+  const context = loadScripts(["core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
   const app = vm.runInContext("Object.create(DpsApp.prototype)", context);
   app.dpsFormatter = new Intl.NumberFormat("en-US");
   return app.getDetails({ id: 1 }, {});

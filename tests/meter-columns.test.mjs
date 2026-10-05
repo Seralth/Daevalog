@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
+import { loadScripts } from "./scripts.mjs";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -13,8 +14,7 @@ function columns() {
 
 function app(MeterColumns) {
   const window = { addEventListener() {}, MeterColumns };
-  const context = vm.createContext({ window, console, document: { readyState: "loading", addEventListener() {} } });
-  vm.runInContext(read("../public/src/js/core.js"), context);
+  const context = loadScripts(["core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
   return vm.runInContext("Object.create(DpsApp.prototype)", context);
 }
 

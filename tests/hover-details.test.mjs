@@ -1,16 +1,14 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
+import { loadScripts } from "./scripts.mjs";
 
-const source = readFileSync(new URL("../public/src/js/core.js", import.meta.url), "utf8");
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
 function setup(getBattleDetail) {
   const logs = [];
   const window = { addEventListener() {}, dpsData: { getBattleDetail }, javaBridge: { logToDebug: (s) => logs.push(s) } };
-  const context = vm.createContext({ window, console, document: { readyState: "loading", addEventListener() {} } });
-  vm.runInContext(source, context);
+  const context = loadScripts(["core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
   const app = vm.runInContext("Object.create(DpsApp.prototype)", context);
   app.dpsFormatter = new Intl.NumberFormat("en-US");
   app.elList = { querySelector: () => ({}) };
