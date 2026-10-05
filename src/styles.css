@@ -2263,10 +2263,13 @@ body.mainPlayerNamesBold .settingsPanel .themeDropdownMenu .settingsDropdownItem
    is still gold and still legible rather than turning invisible. */
 .meter .item .content .name.isSupporter,
 body.legacyUi .meter .item .content .name.isSupporter,
-.detailsPartyBarName.isSupporter,
+.detailsPanel .detailsPartyBarName.isSupporter,
 .hoverDetailsTooltipHeader .isSupporter {
   /* !important for the details party bars, which set colour inline from
-     jobColorMap and would otherwise win. */
+     jobColorMap and would otherwise win. Their selector carries .detailsPanel
+     because `.detailsPanel .detailsPartyBarName` comes later with the same
+     weight: its name shadow then showed through the transparent glyphs of
+     the sweep and the name turned dark instead of gold. */
   color: var(--supporter-name, #ffcf5c) !important;
   text-shadow:
     0 0 6px rgba(255, 191, 60, 0.45),
@@ -2329,7 +2332,7 @@ body.legacyUi .meter .item .content .name.isSupporter,
 @supports ((background-clip: text) or (-webkit-background-clip: text)) {
   .meter .item .content .name.isSupporter,
   body.legacyUi .meter .item .content .name.isSupporter,
-  .detailsPartyBarName.isSupporter,
+  .detailsPanel .detailsPartyBarName.isSupporter,
   .hoverDetailsTooltipHeader .isSupporter {
     /* Two highlight bands, not one. The element only ever shows about a third of
        the gradient at a time, so with a single band most of the cycle is flat
@@ -2376,7 +2379,7 @@ body.legacyUi .meter .item .content .name.isSupporter,
 @media (prefers-reduced-motion: reduce) {
   .meter .item .content .name.isSupporter,
   body.legacyUi .meter .item .content .name.isSupporter,
-  .detailsPartyBarName.isSupporter,
+  .detailsPanel .detailsPartyBarName.isSupporter,
   .hoverDetailsTooltipHeader .isSupporter {
     animation: none;
     background-position: 50% 50%;
