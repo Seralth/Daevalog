@@ -12,14 +12,13 @@ use crate::entity::personal_data::PersonalData;
 use crate::entity::summon_resolver;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
+mod rows;
 mod target;
 
+pub use rows::PARTY_ROW_ID_BASE;
 pub use target::TargetSelectionMode;
 
-/// Synthetic row ids for party members whose entity id we do not know yet. Sits
-/// above the entity-id range (real ids top out at 9,999,999) so it can never
-/// collide, and stays positive because the frontend discards non-positive ids.
-pub const PARTY_ROW_ID_BASE: i32 = 90_000_000;
+use rows::{build_nickname_canonical_map_from_aggregates, resolve_nickname};
 
 pub struct DpsCalculator {
     data_storage: Arc<DataStorage>,
@@ -365,95 +364,6 @@ impl DpsCalculator {
         }
         self.last_dps_snapshot = Some(dps_data.clone());
         dps_data
-    }
-
-    /// Give every party member a row as soon as they join, damage or not, so the
-    /// meter shows the group you are actually in rather than only whoever has
-    /// swung. The roster is keyed by character name — its `dbid` is an account
-    /// id, unrelated to the session entity ids used everywhere else — so bind to
-    /// the entity id when it is known and otherwise use a synthetic key placed
-    /// above the entity-id range (ids top out at 9,999,999), so it cannot collide
-    /// with a real one. The placeholder disappears on its own once real damage
-    /// arrives under the player's true id. Not a negative key: the frontend drops
-    /// non-positive ids as junk.
-    /// Everything that has to happen to a row set before it goes on screen,
-    /// in one place so a new return path cannot quietly skip half of it.
-    fn finalize_rows(&self, dps_data: &mut DpsData) {
-        self.add_party_rows(dps_data);
-        self.mark_supporters(dps_data);
-    }
-
-    /// Flag supporters so the UI can render their names gold.
-    ///
-    /// Resolved here rather than in the frontend because the roster is hashed
-    /// and the join needs `dbid`, which the frontend never sees. Runs on the
-    /// 500ms tick, so it returns immediately when there is no roster — which is
-    /// the normal case until one is published.
-    fn mark_supporters(&self, dps_data: &mut DpsData) {
-        let roster = self.data_storage.supporters();
-        if roster.is_empty() {
-            return;
-        }
-        let party = self.data_storage.get_party_members();
-        for row in dps_data.map.values_mut() {
-            let name = row.nickname.trim();
-            if name.is_empty() {
-                continue;
-            }
-            let dbid = party.get(name).map(|m| m.dbid).unwrap_or(0);
-            row.is_supporter = roster.contains(name, dbid);
-        }
-    }
-
-    fn add_party_rows(&self, dps_data: &mut DpsData) {
-        if !self.data_storage.party_placeholders_wanted() {
-            return;
-        }
-        let party_members = self.data_storage.get_party_members();
-        if party_members.is_empty() {
-            return;
-        }
-        let present: HashSet<String> = dps_data
-            .map
-            .values()
-            .map(|d| d.nickname.trim().to_string())
-            .collect();
-        for (name, member) in &party_members {
-            if present.contains(name.trim()) {
-                continue;
-            }
-            let uid = self
-                .data_storage
-                .find_id_by_nickname(name)
-                .filter(|id| !dps_data.map.contains_key(id))
-                .unwrap_or(PARTY_ROW_ID_BASE + member.slot.min(64) as i32);
-            let mut entry = PersonalData::new(name.clone());
-            // The row filter drops anything without a job. These have not
-            // attacked yet: their class from the roster, else from earlier
-            // this session, else "Unknown", which draws no icon (issue #9).
-            entry.job = member
-                .job
-                .map(|j| j.class_name().to_string())
-                .or_else(|| self.cached_job(name))
-                .unwrap_or_else(|| "Unknown".to_string());
-            entry.combat_power = member.combat_power;
-            dps_data.map.entry(uid).or_insert(entry);
-        }
-    }
-
-    fn cached_job(&self, nickname: &str) -> Option<String> {
-        let key = nickname.trim().to_lowercase();
-        if key.is_empty() || key.chars().all(|c| c.is_ascii_digit()) { return None; }
-        self.nickname_job_cache.get(&key)
-            .filter(|j| !j.is_empty() && *j != "Unknown")
-            .cloned()
-    }
-
-    fn cache_job(&mut self, nickname: &str, job: &str) {
-        if job.is_empty() || job == "Unknown" { return; }
-        let key = nickname.trim().to_lowercase();
-        if key.is_empty() || key.chars().all(|c| c.is_ascii_digit()) { return; }
-        self.nickname_job_cache.insert(key, job.to_string());
     }
 
     pub fn snapshot_boss_fights(&mut self) -> Vec<FightRecord> {
@@ -1120,53 +1030,6 @@ impl ActorExtra {
 /// stamped id (from taengu/A2Tools-DPS-Meter 19b98ba and c6e08a9).
 fn fight_dungeon(npcs: &NpcLookup, mob_code: i32, stamped: i32) -> i32 {
     npcs.dungeon_of(mob_code).unwrap_or(stamped)
-}
-
-fn resolve_nickname(uid: i32, nicknames: &HashMap<i32, String>, summon_data: &HashMap<i32, i32>) -> String {
-    if let Some(name) = nicknames.get(&uid) {
-        return name.clone();
-    }
-    let resolved = summon_resolver::resolve(uid, summon_data);
-    if let Some(name) = nicknames.get(&resolved) {
-        return name.clone();
-    }
-    uid.to_string()
-}
-
-fn build_nickname_canonical_map_from_aggregates(
-    actor_damage: &HashMap<i32, i64>,
-    summon_data: &HashMap<i32, i32>,
-    nickname_data: &HashMap<i32, String>,
-    local_player_id: Option<i32>,
-) -> HashMap<String, i32> {
-    let mut nickname_damage: HashMap<String, HashMap<i32, i64>> = HashMap::new();
-
-    for (&actor_id, &damage) in actor_damage {
-        let uid = summon_resolver::resolve(actor_id, summon_data);
-        if uid <= 0 { continue; }
-        let nickname = resolve_nickname(uid, nickname_data, summon_data);
-        *nickname_damage.entry(nickname).or_default().entry(uid).or_insert(0) += damage;
-    }
-
-    let mut result = HashMap::new();
-    for (nickname, id_damage) in &nickname_damage {
-        // Pin the local player's row to their bound id so it doesn't oscillate
-        // between co-existing self-ids as damage accumulates (which made the
-        // frontend re-bind and thrash the meter).
-        if let Some(lid) = local_player_id {
-            if id_damage.contains_key(&lid) {
-                result.insert(nickname.clone(), lid);
-                continue;
-            }
-        }
-        let direct_owner = id_damage.keys().find(|&&id| nickname_data.get(&id).is_some_and(|n| n == nickname));
-        let canonical = direct_owner.copied()
-            .or_else(|| id_damage.iter().max_by_key(|(_, d)| *d).map(|(id, _)| *id));
-        if let Some(id) = canonical {
-            result.insert(nickname.clone(), id);
-        }
-    }
-    result
 }
 
 #[cfg(test)]
