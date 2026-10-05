@@ -254,7 +254,6 @@
     "debugLogging": "Activer la journalisation de débogage",
     "quit": "Quitter",
     "discord": {
-      "title": "Discord",
       "activity": "Afficher dans Discord ce à quoi je joue",
       "activityHint": "Tant qu'AION2 est ouvert, votre statut Discord affiche le nom de votre personnage, sa classe, son niveau, votre serveur et le boss que vous combattez. Cela passe par l'application Discord de cet ordinateur ; aucun compte n'est nécessaire."
     },

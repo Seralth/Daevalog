@@ -177,10 +177,6 @@
     window._dpsApp?.updatePing?.(event.payload);
   });
 
-  listen("capture-status-changed", (event) => {
-    cachedCaptureStatus = event.payload;
-  });
-
   // Settings live in their own window, so a change there has to reach the meter.
   // Refresh the local cache and hand the app the key so it can re-apply just
   // that option — see applyRemoteSettingChange() in core.js.

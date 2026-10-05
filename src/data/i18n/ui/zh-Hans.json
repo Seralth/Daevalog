@@ -254,7 +254,6 @@
     "debugLogging": "启用调试日志",
     "quit": "退出",
     "discord": {
-      "title": "Discord",
       "activity": "在 Discord 显示我正在玩的内容",
       "activityHint": "AION2 打开时，你的 Discord 状态会显示角色名、职业、等级、服务器，以及正在对战的首领。通过这台电脑上的 Discord 应用显示，不需要账号。"
     },

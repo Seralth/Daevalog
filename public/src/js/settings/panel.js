@@ -52,7 +52,6 @@ Object.assign(DpsApp.prototype, {
     this.bossNameSizeValue = document.querySelector(".bossNameSizeValue");
     this.windowOpacityInput = document.querySelector(".windowOpacityInput");
     this.windowOpacityValue = document.querySelector(".windowOpacityValue");
-    this.discordButton = document.querySelector(".discordButton");
     this.supportWidget = document.querySelector(".supportWidget");
     this.supportButton = document.querySelector(".supportButton");
     this.supportModal = document.querySelector("#supportModal");
@@ -62,7 +61,6 @@ Object.assign(DpsApp.prototype, {
     this.supportPrimaryButton = document.querySelector(".supportPrimaryButton");
     this.supportCopyStatus = document.querySelector(".supportCopyStatus");
     this.supportActionButtons = Array.from(document.querySelectorAll(".supportIconButton"));
-    this.kofiButton = document.querySelector(".kofiButton");
     this.kofiWidget = document.querySelector(".kofiWidget");
     this.quitButton = document.querySelector(".quitButton");
     this.settingsVersionValue = document.querySelector(".settingsVersionValue");
@@ -603,10 +601,6 @@ Object.assign(DpsApp.prototype, {
       this.resetAllSettings();
     });
 
-    this.discordButton?.addEventListener("click", () => {
-      window.javaBridge?.openBrowser?.("https://discord.gg/Aion2Global");
-    });
-
     this.supportButton?.addEventListener("click", () => {
       this.openSupportModal();
     });
@@ -626,12 +620,8 @@ Object.assign(DpsApp.prototype, {
       button.addEventListener("click", () => this.handleSupportAction(button));
     });
 
-    this.kofiButton?.addEventListener("click", () => {
-      window.javaBridge?.openBrowser?.("https://ko-fi.com/W7W51T1YW9");
-    });
-
     this.settingsVersionLink?.addEventListener("click", () => {
-      window.javaBridge?.openBrowser?.("https://github.com/taengu/AION2-DPS-Meter/releases");
+      window.javaBridge?.openBrowser?.("https://github.com/Seralth/Daevalog/releases");
     });
 
     // Quit is wired in startApp, before anything that can be slow.

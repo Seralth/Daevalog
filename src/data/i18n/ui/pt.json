@@ -254,7 +254,6 @@
     "debugLogging": "Ativar registro de depuração",
     "quit": "Sair",
     "discord": {
-      "title": "Discord",
       "activity": "Mostrar no Discord o que estou jogando",
       "activityHint": "Enquanto o AION2 estiver aberto, seu status do Discord mostra o nome do seu personagem, classe, nível e servidor, e o chefe que você está enfrentando. Isso passa pelo aplicativo do Discord neste computador; não é preciso conta."
     },
