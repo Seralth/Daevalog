@@ -1,5 +1,7 @@
 //! Bounded CPU and disk work, separate from both GTK and Tokio's async workers.
-use tokio::sync::Semaphore;
+use std::time::{Duration, Instant};
+
+use tokio::sync::{Semaphore, SemaphorePermit};
 
 pub(crate) static CALCULATIONS: WorkQueue = WorkQueue::new(16);
 /// The 500 ms meter tick. Details readers do not take the calculator mutex,
@@ -43,6 +45,22 @@ impl WorkQueue {
     {
         let admitted = self.admitted.acquire().await.map_err(|e| e.to_string())?;
         self.execute(admitted, work).await
+    }
+
+    /// For the exit save, from any thread: wait at most `wait` for the jobs
+    /// ahead, then go on without them. Never refused and never skipped.
+    /// `None` when the queue was still busy.
+    pub(crate) fn wait_turn(&'static self, wait: Duration) -> Option<SemaphorePermit<'static>> {
+        let deadline = Instant::now() + wait;
+        loop {
+            if let Ok(permit) = self.running.try_acquire() {
+                return Some(permit);
+            }
+            if Instant::now() >= deadline {
+                return None;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
     }
 
     async fn execute<T, F>(
@@ -124,5 +142,28 @@ mod tests {
         release_tx.send(()).unwrap();
         details.await.unwrap().unwrap();
         assert_eq!(queued_details.await.unwrap().unwrap(), 1);
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn the_exit_save_waits_for_a_busy_queue_only_so_long() {
+        static QUEUE: WorkQueue = WorkQueue::new(4);
+        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let (release_tx, release_rx) = std::sync::mpsc::channel::<()>();
+        let job = tokio::spawn(QUEUE.run(move || {
+            started_tx.send(()).unwrap();
+            release_rx.recv().unwrap();
+        }));
+        started_rx.await.unwrap();
+        let waited = tokio::task::spawn_blocking(|| {
+            let started = Instant::now();
+            let turn = QUEUE.wait_turn(Duration::from_millis(50));
+            (turn.is_some(), started.elapsed())
+        }).await.unwrap();
+        assert!(!waited.0, "the queue was busy");
+        assert!(waited.1 < Duration::from_secs(1));
+        release_tx.send(()).unwrap();
+        job.await.unwrap().unwrap();
+        let free = tokio::task::spawn_blocking(|| QUEUE.wait_turn(Duration::from_secs(1)).is_some()).await.unwrap();
+        assert!(free, "a free queue gives its turn at once");
     }
 }

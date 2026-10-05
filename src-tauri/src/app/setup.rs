@@ -26,7 +26,7 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 use super::overlay_lock::{toggle_overlay_lock, OverlayLock};
 use super::setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use super::tool_windows::open_details_on_monitor;
-use super::tray_actions::{flush_settings_before_exit, save_fights_before_exit};
+use super::tray_actions::{flush_settings_before_exit, quit, save_fights_before_exit};
 use super::{commands, drag_resize, overlay_lock, screenshots, supporter_roster, tasks, tool_windows, updater, AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -47,6 +47,13 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
+        .on_window_event(|window, event| {
+            // Closing the overlay quits, even with another window still open.
+            if let (tauri::WindowEvent::CloseRequested { api, .. }, "main") = (event, window.label()) {
+                api.prevent_close();
+                quit(window.app_handle());
+            }
+        })
         .setup(|app| {
             // Resolve data directory
             let app_data_dir = app.path().app_data_dir()
