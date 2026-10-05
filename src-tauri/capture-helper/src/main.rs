@@ -95,6 +95,9 @@ mod helper {
             Err(e) => fail(&e),
         };
         pcap::log_devices(&devices);
+        // The devices found, before the status: the meter starts the helper
+        // again when the list changes.
+        send(&Report::Devices(devices.iter().map(|d| d.label().to_string()).collect()));
 
         // Every device is opened now, while the capability is held; an open
         // socket keeps capturing without it.

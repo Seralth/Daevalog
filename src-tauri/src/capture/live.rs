@@ -7,42 +7,55 @@ use tokio::sync::mpsc;
 use tracing::error;
 
 use super::captured_payload::CapturedPayload;
-use super::helper_process::Helper;
+use super::helper_process::Supervisor;
 use super::pcap_capturer::{self, PcapCapturer};
 use crate::platform;
 
-static HELPER: OnceLock<Arc<Helper>> = OnceLock::new();
+static SUPERVISOR: OnceLock<Arc<Supervisor>> = OnceLock::new();
 
-/// Start capturing; payloads go to `sender`.
-pub fn start(sender: mpsc::Sender<CapturedPayload>) {
+/// Start capturing; payloads go to `sender`. Where a capture helper does the
+/// capturing, `notify(false)` says when capture is not available and
+/// `notify(true)` when it is again.
+pub fn start(sender: mpsc::Sender<CapturedPayload>, notify: impl Fn(bool) + Send + Sync + 'static) {
     let Some(name) = platform::pcap::HELPER else {
         PcapCapturer::new(sender).start();
         return;
     };
     // Next to the meter's own file, never from PATH.
-    let started = std::env::current_exe()
-        .map_err(|e| e.to_string())
-        .and_then(|exe| Helper::start(&exe.with_file_name(name), sender));
-    match started {
-        Ok(helper) => {
-            let _ = HELPER.set(helper);
+    match std::env::current_exe() {
+        Ok(exe) => {
+            let _ = SUPERVISOR.set(Supervisor::start(exe.with_file_name(name), sender, notify));
         }
-        Err(e) => error!("Packet capture is off: the capture helper did not start ({}). {}", e, platform::pcap::MISSING_HELP),
+        Err(e) => {
+            error!("Packet capture is off: the meter's own path is unknown ({}). {}", e, platform::pcap::MISSING_HELP);
+            notify(false);
+        }
+    }
+}
+
+/// Stop the capture helper, if there is one. The meter is quitting.
+pub fn stop() {
+    if let Some(supervisor) = SUPERVISOR.get() {
+        supervisor.stop();
     }
 }
 
 /// Called when the combat port locks (`Some`) or the lock is cleared (`None`).
 pub fn set_filter_port(port: Option<u16>) {
-    pcap_capturer::set_filter_port(port);
-    if let Some(helper) = HELPER.get() {
-        helper.set_filter_port(port);
+    match platform::pcap::HELPER {
+        Some(_) => {
+            if let Some(supervisor) = SUPERVISOR.get() {
+                supervisor.set_filter_port(port);
+            }
+        }
+        None => pcap_capturer::set_filter_port(port),
     }
 }
 
 /// The capture device labels, for the Settings list.
 pub fn list_device_labels() -> Result<Vec<String>, String> {
     match platform::pcap::HELPER {
-        Some(_) => HELPER.get().ok_or("the capture helper is not running")?.list_device_labels(),
+        Some(_) => SUPERVISOR.get().ok_or("the capture helper is not running")?.list_device_labels(),
         None => pcap_capturer::list_device_labels(),
     }
 }
@@ -51,7 +64,7 @@ pub fn list_device_labels() -> Result<Vec<String>, String> {
 /// process has the rights to open one.
 pub fn can_capture() -> bool {
     match platform::pcap::HELPER {
-        Some(_) => HELPER.get().is_some_and(|helper| helper.can_capture()),
+        Some(_) => SUPERVISOR.get().is_some_and(|supervisor| supervisor.can_capture()),
         None => platform::admin::is_admin(),
     }
 }

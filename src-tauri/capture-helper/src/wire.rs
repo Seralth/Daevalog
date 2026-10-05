@@ -21,8 +21,8 @@ pub enum Report {
     Log(Level, String),
     /// Sent once the capture handles are open.
     Status(Status),
-    /// The answer to `Control::ListDevices`: the labels of the devices worth
-    /// capturing on.
+    /// The labels of the devices worth capturing on: once before `Status`,
+    /// the devices found at start, then as the answer to `Control::ListDevices`.
     Devices(Vec<String>),
 }
 

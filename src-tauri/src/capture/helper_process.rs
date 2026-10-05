@@ -2,25 +2,42 @@
 //! `capture-helper/`): starts it from the meter's own folder, feeds its packets
 //! to the dispatcher, and passes on filter changes. The helper holds the
 //! capture permission, so the meter holds none.
+//!
+//! The helper opens its devices once, at start, and then gives up the
+//! permission, so it cannot open a device that shows up later. `Supervisor`
+//! starts it again when it dies, and, while no port is locked, when the list
+//! of devices changes (Wi-Fi that came up after the meter did).
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::io::{BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::RecvTimeoutError;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use daevalog_capture::wire::{read_frame, Control, Report, Status, MAX_FRAME};
 use parking_lot::Mutex;
 use tokio::sync::mpsc;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use super::captured_payload::CapturedPayload;
 use super::pcap_capturer::{log_line, to_payload, DropCounter};
 
 /// How long the device list may take.
 const DEVICES_TIMEOUT: Duration = Duration::from_secs(3);
+
+/// How often the device list is compared with the one the helper opened.
+const DEVICE_POLL: Duration = Duration::from_secs(30);
+
+/// The wait before starting a helper that stopped: doubled after each try
+/// that fails, up to the most.
+const RESTART_FIRST: Duration = Duration::from_secs(1);
+const RESTART_MOST: Duration = Duration::from_secs(60);
+
+/// A helper that captured this long starts the waits over when it stops.
+const RAN_WELL: Duration = Duration::from_secs(60);
 
 fn now_ms() -> i64 {
     SystemTime::now()
@@ -29,11 +46,21 @@ fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
-pub struct Helper {
+/// What the helper's reader tells the supervisor.
+enum Event {
+    Status(Status),
+    Exited,
+}
+
+struct Helper {
     path: PathBuf,
-    input: Mutex<ChildStdin>,
+    /// `None` once closed: the helper quits when its input ends.
+    input: Mutex<Option<ChildStdin>>,
     status: Mutex<Option<Status>>,
     alive: AtomicBool,
+    /// The devices the helper found when it started, from the list it sends
+    /// before its status.
+    found: Mutex<Option<Vec<String>>>,
     /// One device-list question at a time, and where its answer goes.
     asking: Mutex<()>,
     devices: Mutex<Option<std::sync::mpsc::Sender<Vec<String>>>>,
@@ -41,7 +68,11 @@ pub struct Helper {
 
 impl Helper {
     /// Start the helper at `path`, with an empty environment.
-    pub fn start(path: &Path, sender: mpsc::Sender<CapturedPayload>) -> Result<Arc<Self>, String> {
+    fn start(
+        path: &Path,
+        sender: mpsc::Sender<CapturedPayload>,
+        events: std::sync::mpsc::Sender<Event>,
+    ) -> Result<Arc<Self>, String> {
         let mut child = Command::new(path)
             .env_clear()
             .current_dir("/")
@@ -55,9 +86,10 @@ impl Helper {
         };
         let helper = Arc::new(Self {
             path: path.to_path_buf(),
-            input: Mutex::new(input),
+            input: Mutex::new(Some(input)),
             status: Mutex::new(None),
             alive: AtomicBool::new(true),
+            found: Mutex::new(None),
             asking: Mutex::new(()),
             devices: Mutex::new(None),
         });
@@ -65,12 +97,18 @@ impl Helper {
         let reader = helper.clone();
         std::thread::Builder::new()
             .name("capture-helper".into())
-            .spawn(move || reader.read(output, child, sender))
+            .spawn(move || reader.read(output, child, sender, events))
             .map_err(|e| e.to_string())?;
         Ok(helper)
     }
 
-    fn read(&self, output: ChildStdout, mut child: Child, sender: mpsc::Sender<CapturedPayload>) {
+    fn read(
+        &self,
+        output: ChildStdout,
+        mut child: Child,
+        sender: mpsc::Sender<CapturedPayload>,
+        events: std::sync::mpsc::Sender<Event>,
+    ) {
         let mut output = BufReader::with_capacity(MAX_FRAME, output);
         let mut drops: HashMap<String, DropCounter> = HashMap::new();
         let reason = loop {
@@ -93,6 +131,11 @@ impl Helper {
                 Ok(Report::Status(status)) => {
                     self.note_status(status);
                     *self.status.lock() = Some(status);
+                    let _ = events.send(Event::Status(status));
+                }
+                // Before the status: the devices it found. After: an answer.
+                Ok(Report::Devices(labels)) if self.status.lock().is_none() => {
+                    *self.found.lock() = Some(labels);
                 }
                 Ok(Report::Devices(labels)) => {
                     if let Some(answer) = self.devices.lock().take() {
@@ -105,7 +148,12 @@ impl Helper {
         self.alive.store(false, Ordering::SeqCst);
         let _ = child.kill();
         let exit = child.wait().map(|s| s.to_string()).unwrap_or_default();
-        error!("Capture helper stopped ({reason}, {exit}); no more packets until the meter restarts");
+        if self.input.lock().is_some() {
+            warn!("Capture helper stopped ({reason}, {exit})");
+        } else {
+            info!("Capture helper stopped, as asked ({exit})");
+        }
+        let _ = events.send(Event::Exited);
     }
 
     fn note_status(&self, status: Status) {
@@ -126,19 +174,28 @@ impl Helper {
     }
 
     fn send(&self, control: Control) -> Result<(), String> {
-        self.input.lock().write_all(&control.encode()).map_err(|e| e.to_string())
+        match self.input.lock().as_mut() {
+            Some(input) => input.write_all(&control.encode()).map_err(|e| e.to_string()),
+            None => Err("the capture helper is stopping".into()),
+        }
+    }
+
+    /// Ask the helper to quit, then close its input.
+    fn stop(&self) {
+        let _ = self.send(Control::Stop);
+        self.input.lock().take();
     }
 
     /// Whether the helper runs and has a device open.
-    pub fn can_capture(&self) -> bool {
+    fn can_capture(&self) -> bool {
         self.alive.load(Ordering::SeqCst) && self.status.lock().is_some_and(|s| s.opened > 0)
     }
 
-    pub fn set_filter_port(&self, port: Option<u16>) {
+    fn set_filter_port(&self, port: Option<u16>) {
         let _ = self.send(Control::SetFilterPort(port));
     }
 
-    pub fn list_device_labels(&self) -> Result<Vec<String>, String> {
+    fn list_device_labels(&self) -> Result<Vec<String>, String> {
         if !self.alive.load(Ordering::SeqCst) {
             return Err("the capture helper is not running".into());
         }
@@ -148,4 +205,167 @@ impl Helper {
         self.send(Control::ListDevices)?;
         labels.recv_timeout(DEVICES_TIMEOUT).map_err(|e| e.to_string())
     }
+}
+
+/// Keeps a capture helper running. `notify(false)` when capture is not
+/// available (the helper will not start, opens no device, or quits before
+/// capturing), `notify(true)` when it is again after that.
+pub struct Supervisor {
+    path: PathBuf,
+    sender: mpsc::Sender<CapturedPayload>,
+    notify: Box<dyn Fn(bool) + Send + Sync>,
+    /// The locked port, sent to each helper it starts. Locked before `current`.
+    port: Mutex<Option<u16>>,
+    current: Mutex<Option<Arc<Helper>>>,
+    stopping: AtomicBool,
+}
+
+impl Supervisor {
+    pub fn start(
+        path: PathBuf,
+        sender: mpsc::Sender<CapturedPayload>,
+        notify: impl Fn(bool) + Send + Sync + 'static,
+    ) -> Arc<Self> {
+        let supervisor = Arc::new(Self {
+            path,
+            sender,
+            notify: Box::new(notify),
+            port: Mutex::new(None),
+            current: Mutex::new(None),
+            stopping: AtomicBool::new(false),
+        });
+        let runner = supervisor.clone();
+        if let Err(e) = std::thread::Builder::new().name("capture-supervisor".into()).spawn(move || runner.run()) {
+            error!("Packet capture is off: {e}");
+            (supervisor.notify)(false);
+        }
+        supervisor
+    }
+
+    fn run(&self) {
+        let mut wait = RESTART_FIRST;
+        let mut notified = false;
+        while !self.stopping.load(Ordering::SeqCst) {
+            let (events, received) = std::sync::mpsc::channel();
+            let started = match Helper::start(&self.path, self.sender.clone(), events) {
+                Ok(helper) => {
+                    let port = self.port.lock();
+                    *self.current.lock() = Some(helper.clone());
+                    if port.is_some() {
+                        helper.set_filter_port(*port);
+                    }
+                    drop(port);
+                    let outcome = self.watch(&helper, &received, &mut notified);
+                    self.current.lock().take();
+                    outcome
+                }
+                Err(e) => {
+                    error!(
+                        "Packet capture is off: the capture helper did not start ({}). {}",
+                        e,
+                        crate::platform::pcap::MISSING_HELP
+                    );
+                    Outcome::Failed
+                }
+            };
+            if self.stopping.load(Ordering::SeqCst) {
+                break;
+            }
+            match started {
+                Outcome::DevicesChanged => {
+                    wait = RESTART_FIRST;
+                    continue;
+                }
+                Outcome::Failed => {
+                    if !notified {
+                        notified = true;
+                        (self.notify)(false);
+                    }
+                }
+                Outcome::Captured(ran) if ran >= RAN_WELL => wait = RESTART_FIRST,
+                Outcome::Captured(_) => {}
+            }
+            info!("Starting the capture helper again in {} s", wait.as_secs());
+            std::thread::sleep(wait);
+            wait = (wait * 2).min(RESTART_MOST);
+        }
+    }
+
+    /// Until `helper` stops: say when it captures, and stop it when the
+    /// devices change while no port is locked.
+    fn watch(&self, helper: &Helper, events: &std::sync::mpsc::Receiver<Event>, notified: &mut bool) -> Outcome {
+        let mut capturing: Option<Instant> = None;
+        let mut devices_changed = false;
+        loop {
+            match events.recv_timeout(DEVICE_POLL) {
+                Ok(Event::Status(status)) => {
+                    if status.opened > 0 {
+                        capturing = Some(Instant::now());
+                        if *notified {
+                            *notified = false;
+                            (self.notify)(true);
+                        }
+                    }
+                }
+                Ok(Event::Exited) | Err(RecvTimeoutError::Disconnected) => break,
+                Err(RecvTimeoutError::Timeout) => {
+                    if devices_changed || capturing.is_none() || self.port.lock().is_some() {
+                        continue;
+                    }
+                    let found = helper.found.lock().clone();
+                    if let (Some(found), Ok(now)) = (found, helper.list_device_labels()) {
+                        let before: BTreeSet<_> = found.iter().collect();
+                        let after: BTreeSet<_> = now.iter().collect();
+                        if before != after {
+                            info!("Capture devices changed ({:?} -> {:?}): starting the capture helper again", before, after);
+                            devices_changed = true;
+                            helper.stop();
+                        }
+                    }
+                }
+            }
+        }
+        match (devices_changed, capturing) {
+            (true, _) => Outcome::DevicesChanged,
+            (false, Some(since)) => Outcome::Captured(since.elapsed()),
+            (false, None) => Outcome::Failed,
+        }
+    }
+
+    fn helper(&self) -> Option<Arc<Helper>> {
+        self.current.lock().clone()
+    }
+
+    pub fn set_filter_port(&self, port: Option<u16>) {
+        let mut locked = self.port.lock();
+        *locked = port;
+        if let Some(helper) = self.helper() {
+            helper.set_filter_port(port);
+        }
+    }
+
+    pub fn list_device_labels(&self) -> Result<Vec<String>, String> {
+        self.helper().ok_or("the capture helper is not running")?.list_device_labels()
+    }
+
+    pub fn can_capture(&self) -> bool {
+        self.helper().is_some_and(|helper| helper.can_capture())
+    }
+
+    /// Stop the helper for good: the meter is quitting.
+    pub fn stop(&self) {
+        self.stopping.store(true, Ordering::SeqCst);
+        if let Some(helper) = self.helper() {
+            helper.stop();
+        }
+    }
+}
+
+enum Outcome {
+    /// It never had a device open.
+    Failed,
+    /// It captured for this long.
+    Captured(Duration),
+    /// Stopped to open the devices there are now.
+    DevicesChanged,
 }

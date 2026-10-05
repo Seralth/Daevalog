@@ -199,12 +199,9 @@ impl PcapCapturer {
         }
     }
 
+    /// Used by diagnostics/packet_dump.rs.
     pub fn stop(&self) {
         self.running.store(false, Ordering::SeqCst);
-    }
-
-    pub fn is_running(&self) -> bool {
-        self.running.load(Ordering::SeqCst)
     }
 }
 

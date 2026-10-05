@@ -204,9 +204,10 @@
     window._dpsApp?._onOverlayLockChanged?.(!!event?.payload);
   });
 
-  // The capture library (Npcap on Windows, libpcap elsewhere) did not load,
-  // so nothing is captured. Only the overlay says so.
-  listen("npcap-missing", () => {
+  // Nothing is captured: the capture library (Npcap on Windows, libpcap
+  // elsewhere) did not load, or the capture helper cannot capture. Only the
+  // overlay says so.
+  listen("capture-unavailable", () => {
     if (window.A2_VIEW !== "main") return;
     if (/Windows/.test(navigator.userAgent)) {
       const msg = window.i18n?.t?.("connection.npcapMissing", "") ||
@@ -222,6 +223,12 @@
     notice.querySelector(".captureNoticeClose")?.addEventListener("click", () => {
       notice.hidden = true;
     }, { once: true });
+  });
+
+  // Capture works again (the helper was started again and opened a device).
+  listen("capture-available", () => {
+    const notice = document.querySelector(".captureNotice");
+    if (notice) notice.hidden = true;
   });
 
   listen("combat-reset", () => {
@@ -1222,7 +1229,7 @@
   // Startup diagnostics
   invoke("debug_status").then((s) => {
     console.log("[Daevalog] Debug status:", JSON.stringify(s));
-    if (!s.isAdmin) {
+    if (!s.isAdmin && /Windows/.test(navigator.userAgent)) {
       console.warn("[Daevalog] NOT RUNNING AS ADMIN — packet capture will not work!");
     }
   }).catch((e) => console.error("[Daevalog] debug_status failed:", e));

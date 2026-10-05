@@ -19,17 +19,6 @@ pub fn is_aion2_process(comm: &str, cmdline: &[u8]) -> bool {
     argv0.rsplit(['/', '\\']).next().is_some_and(is_game)
 }
 
-/// Whether `/proc/self/status` shows the effective capabilities packet capture
-/// needs (CAP_NET_RAW, bit 13). Root has every bit set, so this covers root too.
-pub fn can_capture(status: &str) -> bool {
-    const CAP_NET_RAW: u32 = 13;
-    status
-        .lines()
-        .find_map(|line| line.strip_prefix("CapEff:"))
-        .and_then(|hex| u64::from_str_radix(hex.trim(), 16).ok())
-        .is_some_and(|caps| caps & (1 << CAP_NET_RAW) != 0)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -52,16 +41,5 @@ mod tests {
             b"python3\0/proton\0waitforexitandrun\0Z:\\games\\AION2.exe\0"
         ));
         assert!(!is_aion2_process("AION2Launcher", b"AION2Launcher.exe\0"));
-    }
-
-    #[test]
-    fn reads_the_capture_capability() {
-        let with = "Name:\tmeter\nCapInh:\t0000000000000000\nCapEff:\t0000000000003000\n";
-        let without = "Name:\tmeter\nCapEff:\t0000000000000000\n";
-        let root = "CapEff:\t000001ffffffffff\n";
-        assert!(can_capture(with));
-        assert!(!can_capture(without));
-        assert!(can_capture(root));
-        assert!(!can_capture("garbage"));
     }
 }

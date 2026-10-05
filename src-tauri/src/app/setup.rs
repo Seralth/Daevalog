@@ -213,24 +213,39 @@ pub fn run() {
                 }
             }
 
-            // Check if Npcap is available before starting capture
-            let npcap_available = platform::pcap::library_available();
-            if !npcap_available {
-                tracing::error!("Npcap is not installed — packet capture disabled");
-                // Notify frontend to show install prompt
-                let handle_npcap = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    // Small delay so frontend has time to initialize
-                    tokio::time::sleep(Duration::from_secs(2)).await;
-                    let _ = handle_npcap.emit("npcap-missing", ());
-                });
+            // The page shows a notice while capture is not available. It
+            // listens from about two seconds after start; only the latest
+            // change is sent.
+            let notify_capture = {
+                let handle = app.handle().clone();
+                let started = std::time::Instant::now();
+                let latest = Arc::new(std::sync::atomic::AtomicU64::new(0));
+                move |available: bool| {
+                    let handle = handle.clone();
+                    let latest = latest.clone();
+                    let this = latest.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+                    let wait = Duration::from_secs(2).saturating_sub(started.elapsed());
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(wait).await;
+                        if latest.load(std::sync::atomic::Ordering::SeqCst) == this {
+                            let _ = handle.emit(if available { "capture-available" } else { "capture-unavailable" }, ());
+                        }
+                    });
+                }
+            };
+
+            // Check that the capture library loads before starting capture.
+            let capture_library_available = platform::pcap::library_available();
+            if !capture_library_available {
+                tracing::error!("The capture library did not load: packet capture is off. {}", platform::pcap::MISSING_HELP);
+                notify_capture(false);
             }
 
             // Start capture pipeline
             let (tx, rx) = mpsc::channel::<CapturedPayload>(4096);
 
-            if npcap_available {
-                crate::capture::live::start(tx);
+            if capture_library_available {
+                crate::capture::live::start(tx, notify_capture);
             }
 
             let mut dispatcher = CaptureDispatcher::new(
@@ -340,6 +355,7 @@ pub fn run() {
             if let tauri::RunEvent::Exit = event {
                 save_fights_before_exit(app);
                 flush_settings_before_exit(app);
+                crate::capture::live::stop();
             }
         });
 }
