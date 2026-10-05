@@ -576,15 +576,18 @@ impl DpsCalculator {
                     // put the first trash pull of each run on the meter.
                     (HashSet::new(), String::new(), 0)
                 } else {
-                    // No boss: the mob with the most damage. Once you are
-                    // identified, only one you or your party hit. Any mob
-                    // within range counts otherwise, and in the open world
-                    // that put strangers fighting their own mobs on your
-                    // meter (2026-10-04: one player, then another, each alone
-                    // on a mob you never touched).
+                    // No boss: the mob with the most damage that you or your
+                    // party hit, and nothing until the meter knows who you
+                    // are. Any mob within range used to count then, and in
+                    // the open world that put strangers fighting their own
+                    // mobs on your meter (2026-10-04: one player, then
+                    // another, each alone on a mob you never touched), and
+                    // still did for the seconds after opening the meter or
+                    // entering a zone, before you were identified
+                    // (taengu/A2Tools-DPS-Meter db1079f).
                     // Any boss here is one that gave way above.
                     let best = combat_data.iter()
-                        .filter(|(tid, td)| !is_boss(**tid) && is_ours(*td))
+                        .filter(|(tid, td)| !is_boss(**tid) && ours.is_some() && is_ours(*td))
                         .max_by_key(|(_, td)| td.total_damage);
                     match best {
                         Some((&id, _)) => {
@@ -2022,6 +2025,17 @@ mod tests {
         let shown = meter(&open_world).get_dps();
         assert_eq!(shown.target_id, 50_000);
         assert_eq!(shown.map.keys().copied().collect::<Vec<_>>(), vec![2259]);
+
+        // Before you are identified (a meter just opened, a new zone), no
+        // mob is anyone's: a stranger's fight is not put up in your place.
+        let unknown = Arc::new(DataStorage::new());
+        unknown.append_damage(hit(2259, 50_000, 1_000));
+        for t in 0..5 {
+            unknown.append_damage(hit(11_345, 60_000, 1_000 + t));
+        }
+        let shown = meter(&unknown).get_dps();
+        assert_eq!(shown.target_id, 0);
+        assert!(shown.map.is_empty());
 
         // In a dungeon, a mob that is not a boss is not shown at all.
         let dungeon = Arc::new(DataStorage::new());
