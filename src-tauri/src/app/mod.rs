@@ -29,6 +29,7 @@ mod fights;
 mod local_player;
 mod meter;
 mod overlay_lock;
+mod page_support;
 mod replay;
 mod screenshots;
 mod setting_changes;

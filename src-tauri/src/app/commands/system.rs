@@ -5,7 +5,7 @@ use std::time::Duration;
 use crate::platform;
 
 use crate::app::tray_actions::save_fights_before_exit;
-use crate::app::AppState;
+use crate::app::{page_support, AppState};
 
 #[tauri::command]
 pub(crate) fn quit_app(app: tauri::AppHandle) {
@@ -15,11 +15,7 @@ pub(crate) fn quit_app(app: tauri::AppHandle) {
 
 #[tauri::command]
 pub(crate) fn read_cached_icon(state: tauri::State<'_, AppState>, key: String) -> Option<String> {
-    if !crate::history::fight_history::is_plain_name(&key) {
-        return None;
-    }
-    let path = state.app_data_dir.join("icon_cache").join(&key);
-    std::fs::read_to_string(&path).ok()
+    page_support::read_cached_icon(&state, key)
 }
 
 #[tauri::command]
