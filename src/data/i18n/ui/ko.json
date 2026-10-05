@@ -325,7 +325,7 @@
       "title": "A2 Tools 계정",
       "signedOut": "로그인되어 있지 않습니다",
       "signedIn": "{name}(으)로 로그인됨",
-      "hint": "로그인하면 캐릭터와 설정이 a2tools.app과 동기화됩니다.",
+      "hint": "a2tools.app에 로그인하면 캐릭터와 설정을 동기화할 수 있습니다. a2tools.app과 계정은 Daevalog가 아니라 A2Tools 개발자가 운영합니다.",
       "connect": "로그인",
       "signOut": "로그아웃",
       "codePrompt": "브라우저에서 이 코드를 승인하세요:",
@@ -401,12 +401,13 @@
       "last60": "최근 60초",
       "maxHit": "최대 피해",
       "hits": "타격"
-    }
+    },
+    "footerNote": "A2Tools.app과 팁 링크는 A2Tools 개발자의 것입니다. Daevalog는 돈을 받지 않습니다."
   },
   "support": {
-    "button": "지원하기",
-    "title": "Ko-fi에서 제작자 후원하기",
-    "titleWechat": "WeChat으로 제작자 후원하기",
+    "button": "A2Tools 개발자에게 팁 보내기",
+    "title": "A2Tools 개발자 taengu에게 Ko-fi로 팁 보내기",
+    "titleWechat": "A2Tools 개발자 taengu에게 WeChat으로 팁 보내기",
     "label": {
       "wechat": "WeChat"
     },

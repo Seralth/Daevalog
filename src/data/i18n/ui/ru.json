@@ -325,7 +325,7 @@
       "title": "Аккаунт A2 Tools",
       "signedOut": "Вы не вошли",
       "signedIn": "Вы вошли как {name}",
-      "hint": "Войдите, чтобы синхронизировать персонажей и настройки с a2tools.app.",
+      "hint": "Войдите, чтобы синхронизировать персонажей и настройки с a2tools.app. a2tools.app и его аккаунтами управляет разработчик A2Tools, а не Daevalog.",
       "connect": "Войти",
       "signOut": "Выйти",
       "codePrompt": "Подтвердите этот код в браузере:",
@@ -401,12 +401,13 @@
       "last60": "Последние 60 с",
       "maxHit": "Макс. удар",
       "hits": "Попадания"
-    }
+    },
+    "footerNote": "A2Tools.app и ссылки для чаевых принадлежат разработчику A2Tools. Daevalog не принимает денег."
   },
   "support": {
-    "button": "Поддержать",
-    "title": "Поддержать автора на Ko-fi",
-    "titleWechat": "Поддержать автора через WeChat",
+    "button": "Поддержать разработчика A2Tools",
+    "title": "Чаевые для taengu, разработчика A2Tools, через Ko-fi",
+    "titleWechat": "Чаевые для taengu, разработчика A2Tools, через WeChat",
     "label": {
       "wechat": "WeChat"
     },

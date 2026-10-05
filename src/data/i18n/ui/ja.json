@@ -325,7 +325,7 @@
       "title": "A2 Toolsアカウント",
       "signedOut": "サインインしていません",
       "signedIn": "{name} としてサインイン中",
-      "hint": "サインインすると、キャラクターと設定を a2tools.app と同期できます。",
+      "hint": "a2tools.app にサインインすると、キャラクターと設定を同期できます。a2tools.app とそのアカウントは Daevalog ではなく A2Tools の開発者が運営しています。",
       "connect": "サインイン",
       "signOut": "サインアウト",
       "codePrompt": "ブラウザでこのコードを承認してください:",
@@ -401,12 +401,13 @@
       "last60": "直近60秒",
       "maxHit": "最大ダメージ",
       "hits": "ヒット数"
-    }
+    },
+    "footerNote": "A2Tools.app とチップのリンクは A2Tools の開発者のものです。Daevalog はお金を受け取りません。"
   },
   "support": {
-    "button": "支援する",
-    "title": "Ko-fiで作者を支援",
-    "titleWechat": "WeChatで作者を支援",
+    "button": "A2Tools の開発者にチップを送る",
+    "title": "A2Tools の開発者 taengu に Ko-fi でチップを送る",
+    "titleWechat": "A2Tools の開発者 taengu に WeChat でチップを送る",
     "label": {
       "wechat": "WeChat"
     },

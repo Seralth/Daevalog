@@ -148,10 +148,10 @@ Object.assign(DpsApp.prototype, {
     const isWeChat = type === "wechat";
     const titleKey = isWeChat ? "support.titleWechat" : "support.title";
     const fallback = isWeChat
-      ? "Support the author on WeChat"
+      ? "Tip taengu, the A2Tools developer, on WeChat"
       : isChinese
-        ? "Support the author on Afdian"
-        : "Support the author on Ko-fi";
+        ? "Tip taengu, the A2Tools developer, on Afdian"
+        : "Tip taengu, the A2Tools developer, on Ko-fi";
     this.supportModalTitle.textContent = this.i18n?.t?.(titleKey, fallback) || fallback;
   },
 });

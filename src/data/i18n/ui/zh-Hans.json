@@ -325,7 +325,7 @@
       "title": "A2 Tools 账号",
       "signedOut": "未登录",
       "signedIn": "已登录：{name}",
-      "hint": "登录后可将角色与设置同步到 a2tools.app。",
+      "hint": "登录后可与 a2tools.app 同步角色和设置。a2tools.app 及其账户由 A2Tools 开发者运营，而非 Daevalog。",
       "connect": "登录",
       "signOut": "退出登录",
       "codePrompt": "请在浏览器中确认此代码：",
@@ -401,12 +401,13 @@
       "last60": "最近60秒",
       "maxHit": "最高单次伤害",
       "hits": "命中次数"
-    }
+    },
+    "footerNote": "A2Tools.app 和打赏链接属于 A2Tools 开发者。Daevalog 不收取任何费用。"
   },
   "support": {
-    "button": "支持我一下",
-    "title": "在爱发电支持作者",
-    "titleWechat": "在微信支持作者",
+    "button": "打赏 A2Tools 开发者",
+    "title": "在爱发电上打赏 A2Tools 开发者 taengu",
+    "titleWechat": "在微信上打赏 A2Tools 开发者 taengu",
     "label": {
       "wechat": "微信"
     },

@@ -325,7 +325,7 @@
       "title": "A2 Tools Account",
       "signedOut": "Not signed in",
       "signedIn": "Signed in as {name}",
-      "hint": "Sign in to sync characters and settings with a2tools.app.",
+      "hint": "Sign in to sync characters and settings with a2tools.app. a2tools.app and its accounts are run by the A2Tools developer, not by Daevalog.",
       "connect": "Sign in",
       "signOut": "Sign out",
       "codePrompt": "Approve this code in your browser:",
@@ -401,12 +401,13 @@
       "last60": "Last 60 s",
       "maxHit": "Max hit",
       "hits": "Hits"
-    }
+    },
+    "footerNote": "A2Tools.app and the tip links belong to the A2Tools developer. Daevalog takes no money."
   },
   "support": {
-    "button": "Support Me",
-    "title": "Support the author on Ko-fi",
-    "titleWechat": "Support the author on WeChat",
+    "button": "Tip the A2Tools developer",
+    "title": "Tip taengu, the A2Tools developer, on Ko-fi",
+    "titleWechat": "Tip taengu, the A2Tools developer, on WeChat",
     "label": {
       "wechat": "WeChat"
     },

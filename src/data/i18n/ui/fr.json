@@ -325,7 +325,7 @@
       "title": "Compte A2 Tools",
       "signedOut": "Non connecté",
       "signedIn": "Connecté en tant que {name}",
-      "hint": "Connectez-vous pour synchroniser vos personnages et paramètres avec a2tools.app.",
+      "hint": "Connectez-vous pour synchroniser vos personnages et paramètres avec a2tools.app. a2tools.app et ses comptes sont gérés par le développeur d'A2Tools, pas par Daevalog.",
       "connect": "Se connecter",
       "signOut": "Se déconnecter",
       "codePrompt": "Validez ce code dans votre navigateur :",
@@ -401,12 +401,13 @@
       "last60": "60 dernières s",
       "maxHit": "Coup max.",
       "hits": "Coups"
-    }
+    },
+    "footerNote": "A2Tools.app et les liens de dons appartiennent au développeur d'A2Tools. Daevalog n'accepte pas d'argent."
   },
   "support": {
-    "button": "Me soutenir",
-    "title": "Soutenir l'auteur sur Ko-fi",
-    "titleWechat": "Soutenir l'auteur sur WeChat",
+    "button": "Faire un don au développeur d'A2Tools",
+    "title": "Don à taengu, le développeur d'A2Tools, sur Ko-fi",
+    "titleWechat": "Don à taengu, le développeur d'A2Tools, via WeChat",
     "label": {
       "wechat": "WeChat"
     },

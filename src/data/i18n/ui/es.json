@@ -325,7 +325,7 @@
       "title": "Cuenta de A2 Tools",
       "signedOut": "No has iniciado sesión",
       "signedIn": "Sesión iniciada como {name}",
-      "hint": "Inicia sesión para sincronizar personajes y ajustes con a2tools.app.",
+      "hint": "Inicia sesión para sincronizar personajes y ajustes con a2tools.app. a2tools.app y sus cuentas los gestiona el desarrollador de A2Tools, no Daevalog.",
       "connect": "Iniciar sesión",
       "signOut": "Cerrar sesión",
       "codePrompt": "Aprueba este código en tu navegador:",
@@ -401,12 +401,13 @@
       "last60": "Últimos 60 s",
       "maxHit": "Golpe máximo",
       "hits": "Golpes"
-    }
+    },
+    "footerNote": "A2Tools.app y los enlaces de propinas son del desarrollador de A2Tools. Daevalog no acepta dinero."
   },
   "support": {
-    "button": "Apóyame",
-    "title": "Apoya al autor en Ko-fi",
-    "titleWechat": "Apoya al autor en WeChat",
+    "button": "Dar una propina al desarrollador de A2Tools",
+    "title": "Propina para taengu, el desarrollador de A2Tools, en Ko-fi",
+    "titleWechat": "Propina para taengu, el desarrollador de A2Tools, por WeChat",
     "label": {
       "wechat": "WeChat"
     },
