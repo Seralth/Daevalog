@@ -376,8 +376,7 @@ fn register_hotkeys(app: &tauri::AppHandle) {
             move || {
                 tracing::info!("Hotkey: reload triggered");
                 if let Some(state) = h.try_state::<AppState>() {
-                    state.dps_calculator.lock().restart_target_selection(true);
-                    state.data_storage.reset_nicknames();
+                    super::meter::reset_combat(&state);
                 }
                 // Notify frontend to clear UI
                 let _ = h.emit("combat-reset", ());
