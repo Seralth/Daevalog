@@ -141,10 +141,6 @@ pub fn set_debug_enabled(enabled: bool, log_dir: &std::path::Path) {
     }
 }
 
-pub fn is_debug_enabled() -> bool {
-    DEBUG_ENABLED.load(Ordering::Relaxed)
-}
-
 // ===== Raw Packet Logger =====
 
 static PACKET_LOG_ENABLED: AtomicBool = AtomicBool::new(false);
@@ -262,10 +258,6 @@ pub fn set_packet_log_enabled(enabled: bool, log_dir: &std::path::Path) {
             tracing::info!("Raw packet logging stopped: {}", p);
         }
     }
-}
-
-pub fn is_packet_log_enabled() -> bool {
-    PACKET_LOG_ENABLED.load(Ordering::Relaxed)
 }
 
 pub fn log_packet(cap: &CapturedPayload) {

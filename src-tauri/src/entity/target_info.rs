@@ -63,9 +63,4 @@ impl TargetInfo {
     pub fn last_damage_time(&self) -> i64 {
         self.target_damage_ended
     }
-
-    /// Take and clear the idle reset timestamp, if any.
-    pub fn take_idle_reset(&mut self) -> Option<i64> {
-        self.idle_reset_at.take()
-    }
 }

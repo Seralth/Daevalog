@@ -315,14 +315,8 @@ impl DataStorage {
         inner.target_combat.iter().map(|(&tid, td)| (tid, light_clone(td))).collect()
     }
 
-    /// `get_combat_snapshot`, with what a boss pull cleared of the open
+    /// `get_combat_snapshot_light`, with what a boss pull cleared of the open
     /// encounter put back: what ENC reads.
-    pub fn get_encounter_snapshot(&self) -> HashMap<i32, TargetCombatData> {
-        let inner = self.inner.read();
-        with_carry(&inner, inner.target_combat.clone(), TargetCombatData::clone, |_| true)
-    }
-
-    /// `get_combat_snapshot_light` with the encounter's carry, as above.
     pub fn get_encounter_snapshot_light(&self) -> HashMap<i32, TargetCombatData> {
         let inner = self.inner.read();
         let live = inner.target_combat.iter().map(|(&tid, td)| (tid, light_clone(td))).collect();
@@ -331,7 +325,7 @@ impl DataStorage {
 
     /// Only the targets asked for, as the snapshots above hold them: Details
     /// never copies other targets' hits. `encounter` adds the encounter's
-    /// carry as `get_encounter_snapshot` does; `light` leaves out the hit
+    /// carry as `get_encounter_snapshot_light` does; `light` leaves out the hit
     /// timelines as `get_combat_snapshot_light` does.
     pub fn get_target_snapshots(&self, targets: &[i32], encounter: bool, light: bool) -> HashMap<i32, TargetCombatData> {
         let clone: fn(&TargetCombatData) -> TargetCombatData = if light { light_clone } else { TargetCombatData::clone };

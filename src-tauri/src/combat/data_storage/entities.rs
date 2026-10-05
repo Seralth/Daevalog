@@ -45,10 +45,6 @@ impl DataStorage {
         self.inner.read().dead_entity_ids.contains(&entity_id)
     }
 
-    pub fn get_dead_entities(&self) -> HashSet<i32> {
-        self.inner.read().dead_entity_ids.clone()
-    }
-
     pub fn register_boss(&self, entity_id: i32) {
         self.inner.write().boss_entity_ids.insert(entity_id);
     }
