@@ -8,6 +8,8 @@ pub mod stream_processor;
 
 #[cfg(test)]
 mod replay_report;
+#[cfg(test)]
+mod record_check;
 
 // Live capture. pcap needs libloading, the port detector reads the wall clock,
 // and the file replay drives them both — none of which exist on wasm32.
