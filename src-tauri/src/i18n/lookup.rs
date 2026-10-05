@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use parking_lot::RwLock;
 
@@ -49,6 +49,8 @@ impl SkillLookup {
 /// NPC/boss code to name lookup. Thread-safe and reloadable.
 pub struct NpcLookup {
     npcs: RwLock<HashMap<i32, NpcInfo>>,
+    /// Instances the table names a boss of (`dungeonId`).
+    dungeons_with_bosses: RwLock<HashSet<i32>>,
 }
 
 struct NpcInfo {
@@ -56,6 +58,9 @@ struct NpcInfo {
     is_boss: bool,
     /// A training dummy: a scarecrow, a punching bag, a test target.
     is_dummy: bool,
+    /// The instance (dungeon and difficulty) this boss is fought in; 0 when
+    /// the table does not say, as for field bosses and some instances.
+    dungeon_id: i32,
 }
 
 /// English names of training dummies, for a table that does not flag them all
@@ -64,13 +69,15 @@ const DUMMY_NAMES: &[&str] = &["Training Scarecrow", "Punching Bag"];
 
 impl NpcLookup {
     pub fn new() -> Self {
-        Self { npcs: RwLock::new(HashMap::new()) }
+        Self { npcs: RwLock::new(HashMap::new()), dungeons_with_bosses: RwLock::new(HashSet::new()) }
     }
 
     pub fn load_from_json(&self, json_text: &str) {
         if let Ok(map) = serde_json::from_str::<HashMap<String, serde_json::Value>>(json_text) {
             let mut npcs = self.npcs.write();
             npcs.clear();
+            let mut dungeons = self.dungeons_with_bosses.write();
+            dungeons.clear();
             for (key, value) in &map {
                 let code = match key.parse::<i32>() {
                     Ok(c) => c,
@@ -86,10 +93,14 @@ impl NpcLookup {
                         .unwrap_or(false);
                     let is_dummy = obj.get("isDummy").and_then(|v| v.as_bool()).unwrap_or(false)
                         || DUMMY_NAMES.iter().any(|d| name.contains(d));
-                    npcs.insert(code, NpcInfo { name, is_boss, is_dummy });
+                    let dungeon_id = obj.get("dungeonId").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                    if is_boss && dungeon_id > 0 {
+                        dungeons.insert(dungeon_id);
+                    }
+                    npcs.insert(code, NpcInfo { name, is_boss, is_dummy, dungeon_id });
                 } else if let Some(name) = value.as_str() {
                     let is_dummy = DUMMY_NAMES.iter().any(|d| name.contains(d));
-                    npcs.insert(code, NpcInfo { name: name.to_string(), is_boss: false, is_dummy });
+                    npcs.insert(code, NpcInfo { name: name.to_string(), is_boss: false, is_dummy, dungeon_id: 0 });
                 }
             }
         }
@@ -101,6 +112,16 @@ impl NpcLookup {
 
     pub fn is_boss(&self, code: i32) -> bool {
         self.npcs.read().get(&code).is_some_and(|n| n.is_boss)
+    }
+
+    /// The instance the table says boss `code` is fought in, if it says.
+    pub fn dungeon_of(&self, code: i32) -> Option<i32> {
+        self.npcs.read().get(&code).map(|n| n.dungeon_id).filter(|&d| d > 0)
+    }
+
+    /// Whether the table names any boss of instance `dungeon_id`.
+    pub fn knows_bosses_of(&self, dungeon_id: i32) -> bool {
+        self.dungeons_with_bosses.read().contains(&dungeon_id)
     }
 
     /// Whether `code` is a training dummy. Fights against one are training,

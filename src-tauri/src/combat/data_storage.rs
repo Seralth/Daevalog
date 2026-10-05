@@ -1248,6 +1248,11 @@ impl DataStorage {
         self.inner.read().heal_storage.clone()
     }
 
+    /// The NPC code entity `id` spawned as, if it is a known mob.
+    pub fn mob_code(&self, id: i32) -> Option<i32> {
+        self.inner.read().mob_storage.get(&id).copied()
+    }
+
     pub fn get_mob_data(&self) -> HashMap<i32, i32> {
         self.inner.read().mob_storage.clone()
     }

@@ -389,7 +389,7 @@ impl DpsCalculator {
         let rows: Vec<(i32, String, usize, i64)> = dps_data.map.iter()
             .map(|(&id, d)| (id, d.job.clone(), skill_counts.get(&id).copied().unwrap_or(0), d.amount as i64))
             .collect();
-        if let Some(owners) = self.instance_class_owners(&rows) {
+        if let Some(owners) = self.instance_class_owners(self.target_dungeon(self.current_target), &rows) {
             let merged: HashSet<i32> = orphan_merges.iter().map(|(o, _)| *o).collect();
             for (id, job, _, _) in &rows {
                 if merged.contains(id) {
@@ -681,10 +681,11 @@ impl DpsCalculator {
     /// unknown, or when more actors run a rotation than the party has members:
     /// then another party is in the fight and a class says nothing.
     ///
+    /// `dungeon_id`: the fight's, from `target_dungeon`.
     /// `actors`: (row id, class name, distinct skills, damage).
-    fn instance_class_owners(&self, actors: &[(i32, String, usize, i64)]) -> Option<HashMap<String, i32>> {
+    fn instance_class_owners(&self, dungeon_id: i32, actors: &[(i32, String, usize, i64)]) -> Option<HashMap<String, i32>> {
         const ROTATION_SKILLS: usize = 5;
-        if self.data_storage.current_dungeon_id() <= 0 {
+        if dungeon_id <= 0 {
             return None;
         }
         let party = self.data_storage.get_party_members();
@@ -708,6 +709,15 @@ impl DpsCalculator {
             }
         }
         Some(best.into_iter().map(|(job, (id, _, _))| (job, id)).collect())
+    }
+
+    /// The instance a fight on `target_id` was in; see `fight_dungeon`.
+    fn target_dungeon(&self, target_id: i32) -> i32 {
+        let roster = self.data_storage.current_dungeon_id();
+        match self.data_storage.mob_code(target_id) {
+            Some(code) => fight_dungeon(&self.npc_lookup, code, roster),
+            None => roster,
+        }
     }
 
     fn resolve_target_name(&self, target_id: i32) -> String {
@@ -758,7 +768,7 @@ impl DpsCalculator {
         // from older meters often lack the self record and tie the party's
         // names to stale ids, and the checks below refused the uploader's
         // own dungeon runs when re-derived (2026-10-05).
-        if self.data_storage.current_dungeon_id() > 0 {
+        if self.target_dungeon(target.target_id) > 0 {
             return true;
         }
         let summon_data = self.data_storage.get_summon_data();
@@ -792,7 +802,7 @@ impl DpsCalculator {
         // behind a lock, and it does not change between targets here.
         let party_members = self.data_storage.get_party_members();
         let supporters = self.data_storage.supporters();
-        let dungeon_id = self.data_storage.current_dungeon_id();
+        let roster_dungeon = self.data_storage.current_dungeon_id();
         let now_ms = crate::clock::now_ms();
 
         let mut records = Vec::new();
@@ -939,7 +949,7 @@ impl DpsCalculator {
                 is_train,
                 app_version: crate::entity::fight_record::APP_VERSION.to_string(),
                 mob_code,
-                dungeon_id,
+                dungeon_id: fight_dungeon(&self.npc_lookup, mob_code, roster_dungeon),
                 server_id: self.data_storage.fight_server_id(),
             };
 
@@ -1214,7 +1224,7 @@ impl DpsCalculator {
             let rows: Vec<(i32, String, usize, i64)> = rows.into_iter()
                 .map(|(id, (job, skills, damage))| (id, job, skills.len(), damage))
                 .collect();
-            if let Some(owners) = self.instance_class_owners(&rows) {
+            if let Some(owners) = self.instance_class_owners(self.target_dungeon(target_id), &rows) {
                 for (id, job, _, _) in &rows {
                     if let Some(&owner) = owners.get(job) {
                         if owner != *id {
@@ -1436,6 +1446,30 @@ fn resolve_nickname(uid: i32, nicknames: &HashMap<i32, String>, summon_data: &Ha
     uid.to_string()
 }
 
+/// The instance a fight on NPC `mob_code` was in, given the one the party
+/// roster last named (`roster`, 0 for none).
+///
+/// The NPC table names the instance of 563 bosses, and that wins: the roster
+/// is not sent again after a load inside an instance until well after a fight
+/// can be over, and it never says when you have left one. So a boss the
+/// table places is in its instance; a boss of no instance, fought while the
+/// roster names one whose bosses the table knows, was fought outside it, after
+/// leaving; anything else keeps the roster's id, as for instances the table
+/// does not cover (Gargaum's, 610073).
+///
+/// Checked on replays (2026-10-05): the last boss of a 600011 run, fought
+/// after a teleport and before the roster came back, keeps 600011, which
+/// clearing the id on every load (PR #25) lost.
+fn fight_dungeon(npcs: &NpcLookup, mob_code: i32, roster: i32) -> i32 {
+    if let Some(dungeon) = npcs.dungeon_of(mob_code) {
+        return dungeon;
+    }
+    if roster > 0 && npcs.is_boss(mob_code) && npcs.knows_bosses_of(roster) {
+        return 0;
+    }
+    roster
+}
+
 fn build_nickname_canonical_map_from_aggregates(
     actor_damage: &HashMap<i32, i64>,
     summon_data: &HashMap<i32, i32>,
@@ -1640,5 +1674,27 @@ mod tests {
         let shown = meter(&dungeon).get_dps();
         assert_eq!(shown.target_id, 0);
         assert!(shown.map.is_empty());
+    }
+
+    #[test]
+    fn a_fight_takes_its_dungeon_from_the_boss_when_the_table_names_it() {
+        let npcs = NpcLookup::new();
+        npcs.load_from_json(r#"{
+            "2310218": {"name": "Divine Auldor", "isBoss": true, "dungeonId": 600011},
+            "2310206": {"name": "Guardian Captain Raur", "isBoss": true, "dungeonId": 600011},
+            "2300475": {"name": "Gargaum", "isBoss": true},
+            "2701090": {"name": "Mutated Bargott", "isBoss": true},
+            "2310219": {"name": "Auldor Sanctum Gatekeeper"}
+        }"#);
+        // After a teleport, before the roster names the instance again.
+        assert_eq!(fight_dungeon(&npcs, 2310218, 0), 600011);
+        assert_eq!(fight_dungeon(&npcs, 2310206, 600011), 600011);
+        // A field boss after leaving that instance: the roster id is stale.
+        assert_eq!(fight_dungeon(&npcs, 2701090, 600011), 0);
+        // An instance the table has no bosses for keeps the roster's id.
+        assert_eq!(fight_dungeon(&npcs, 2300475, 610073), 610073);
+        assert_eq!(fight_dungeon(&npcs, 2701090, 0), 0);
+        // Trash keeps the roster's: it is not what is being placed.
+        assert_eq!(fight_dungeon(&npcs, 2310219, 600011), 600011);
     }
 }
