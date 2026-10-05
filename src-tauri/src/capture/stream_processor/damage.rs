@@ -798,8 +798,9 @@ fn should_use_repeated_hit_damage(switch_value: i32, encoded_damage: i32, multi_
     };
     if switch_value != MULTI_HIT_SWITCH { return false; }
     if multi_hit_count <= 0 || !all_match { return false; }
-    let main_component = encoded_damage - multi_hit_count * repeated;
-    if main_component > repeated { return false; }
+    // i64: 25 hits of up to 99,999,999 do not fit an i32.
+    let main_component = i64::from(encoded_damage) - i64::from(multi_hit_count) * i64::from(repeated);
+    if main_component > i64::from(repeated) { return false; }
     encoded_damage / 10 == repeated
 }
 

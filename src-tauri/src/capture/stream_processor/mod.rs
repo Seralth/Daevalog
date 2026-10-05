@@ -305,6 +305,25 @@ mod tests {
         assert_eq!(parse("b1ea011600f30a40c0f40063028000010b199b5f01000000ac52d007"), (976, 1, 0, 0, 0));
     }
 
+    /// Switch 0x36 with 25 additional hits of 99,999,999 each: their sum
+    /// does not fit an i32, and a debug build must not overflow on it.
+    #[test]
+    fn twenty_five_huge_additional_hits_do_not_overflow() {
+        let huge = "ffc1d72f"; // 99,999,999
+        // The value, then a 0 (no strict tail), then 25 hits.
+        let record = format!("b1ea013600f30a40c0f4007a03800001 0b199b5f01000000ac52{huge}0019{}", huge.repeat(25)).replace(' ', "");
+        let (storage, mut p) = processor();
+        let mut packet = hex(&record);
+        packet.splice(0..0, [0x04, 0x38]);
+        let len = packet.len() + 2;
+        packet.splice(0..0, [(len as u8) | 0x80, (len >> 7) as u8]);
+        assert!(p.parsing_damage(&packet, false, false));
+        let combat = storage.get_combat_snapshot();
+        let skill = combat.values().next().unwrap().actors.values().next().unwrap().skills.values().next().unwrap().clone();
+        // The value does not include them, so they add on: 26 hits in all.
+        assert_eq!(skill.total_damage, 26 * 99_999_999);
+    }
+
     fn hex(s: &str) -> Vec<u8> {
         (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
     }
