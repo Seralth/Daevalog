@@ -17,24 +17,6 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
   const filterDateEl = panel.querySelector(".historyFilterDate");
   const gameRecordFilterEl = panel.querySelector(".historyGameRecordFilter input");
 
-  // Map from the Korean class name stored in fight records → stable enum key used for i18n
-  const JOB_KEY_MAP = {
-    "검성": "GLADIATOR",
-    "수호성": "TEMPLAR",
-    "궁성": "RANGER",
-    "살성": "ASSASSIN",
-    "마도성": "SORCERER",
-    "치유성": "CLERIC",
-    "정령성": "ELEMENTALIST",
-    "호법성": "CHANTER",
-    "권성": "FIGHTER",
-  };
-
-  // Class-filter icons that exist as assets (Korean class names). Guarding on
-  // this set avoids requesting a missing file on every render (which spammed
-  // "asset not found" for classes without an icon).
-  const CLASS_ICON_JOBS = new Set(["검성", "궁성", "마도성", "살성", "수호성", "정령성", "치유성", "호법성", "권성"]);
-
   let showDeleteMode = false;
   let filterBoss = "";
   let filterPlayer = "";
@@ -91,28 +73,11 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     );
   };
 
-  const formatTime = (ms) => {
-    const totalMs = Number(ms);
-    if (!Number.isFinite(totalMs) || totalMs <= 0) return "00:00";
-    const totalSeconds = Math.floor(totalMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  };
-
   const formatDate = (ms) => {
     const d = new Date(Number(ms));
     if (isNaN(d.getTime())) return "-";
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
-
-  const formatDamage = (v) => {
-    const n = Number(v);
-    if (!Number.isFinite(n)) return "-";
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}m`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-    return `${Math.round(n)}`;
   };
 
   const getJobLabel = (job) => {
@@ -433,7 +398,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
     const durEl = document.createElement("span");
     durEl.className = "historyRowDuration";
-    durEl.textContent = formatTime(fight.durationMs);
+    durEl.textContent = formatBattleTime(fight.durationMs);
 
     const dmgEl = document.createElement("span");
     dmgEl.className = "historyRowDamage";

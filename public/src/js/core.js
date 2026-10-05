@@ -101,27 +101,7 @@ class DpsApp {
       kofi: "./assets/kofi.png",
       wechat: "./assets/wechat.png",
     };
-    this.jobColorMap = {
-      정령성: "#E06BFF",
-      Spiritmaster: "#E06BFF",
-      궁성: "#41D98A",
-      Ranger: "#41D98A",
-      살성: "#7BE35A",
-      Assassin: "#7BE35A",
-      수호성: "#5F8CFF",
-      Templar: "#5F8CFF",
-      마도성: "#9A6BFF",
-      Sorcerer: "#9A6BFF",
-      호법성: "#FF9A3D",
-      Chanter: "#FF9A3D",
-      치유성: "#F2C15A",
-      Cleric: "#F2C15A",
-      검성: "#4FD1C5",
-      Gladiator: "#4FD1C5",
-      권성: "#E85D5D",
-      Brawler: "#E85D5D",
-      Fighter: "#E85D5D",
-    };
+    this.jobColorMap = jobColorMap;
 
     // 빈데이터 덮어쓰기 방지 스냅샷
     this.lastSnapshot = null;
@@ -573,15 +553,6 @@ class DpsApp {
       this.deferFetchUntilHoverEnd = false;
       this.fetchDps();
     }
-  }
-
-  formatBattleTime(ms) {
-    const totalMs = Number(ms);
-    if (!Number.isFinite(totalMs) || totalMs <= 0) return "00:00";
-    const totalSeconds = Math.floor(totalMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
   safeParseJSON(raw, fallback = {}) {
@@ -1753,7 +1724,7 @@ class DpsApp {
         : fallbackContribution;
     const battleTimeMsRaw = Number(detailObj?.battleTime);
     const combatTime = Number.isFinite(battleTimeMsRaw)
-      ? this.formatBattleTime(battleTimeMsRaw)
+      ? formatBattleTime(battleTimeMsRaw)
       : this.battleTime?.getCombatTimeText?.() ?? "00:00";
 
     const perActorStats = [...perActorStatsMap.values()]
@@ -1884,7 +1855,7 @@ class DpsApp {
       this._setOverlayLocked(!this._overlayLocked);
     });
     this.targetModeBtn?.addEventListener("click", () => {
-      const modes = ["lastHitByMe", "bossTargets", "trainTargets", "allTargets", "encounter"];
+      const modes = TARGET_MODE_CYCLE;
       const currentIndex = modes.indexOf(this.targetSelection);
       const nextMode = modes[(currentIndex + 1) % modes.length];
       console.log("[Target Mode Toggle]", {
@@ -2152,7 +2123,7 @@ class DpsApp {
     if (mainPlayerDpsBoldSetting === null || mainPlayerDpsBoldSetting === undefined || mainPlayerDpsBoldSetting === "") {
       this.safeSetSetting(this.storageKeys.mainPlayerDpsBold, "true");
     }
-    const validModes = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets", "encounter"];
+    const validModes = TARGET_MODES;
     const normalizedDefaultMode = validModes.includes(storedDefaultMeterMode)
       ? storedDefaultMeterMode : "bossTargets";
     this.settingsSelections.defaultMeterMode = normalizedDefaultMode;
@@ -4061,7 +4032,7 @@ class DpsApp {
 
   setTargetSelection(mode, { persist = false, syncBackend = false, reason = "update" } = {}) {
     const previousSelection = this.targetSelection;
-    this.targetSelection = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets", "encounter"].includes(mode)
+    this.targetSelection = TARGET_MODES.includes(mode)
       ? mode
        : "lastHitByMe";
     if (persist) {
@@ -4268,7 +4239,7 @@ class DpsApp {
       return;
     }
     if (key === this.storageKeys.defaultMeterMode) {
-      const validModes = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets", "encounter"];
+      const validModes = TARGET_MODES;
       if (!validModes.includes(value)) return;
       if (this.settingsSelections) this.settingsSelections.defaultMeterMode = value;
       if (window.A2_VIEW !== "main" || value === this.targetSelection) return;

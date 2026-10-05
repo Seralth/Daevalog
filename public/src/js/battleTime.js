@@ -26,14 +26,6 @@ const createBattleTimeUI = ({
 
   let analysisTextProvider = getAnalysisText;
 
-  const formatMMSS = (ms) => {
-    const v = Math.max(0, Math.floor(Number(ms) || 0));
-    const sec = Math.floor(v / 1000);
-    const mm = String(Math.floor(sec / 60)).padStart(2, "0");
-    const ss = String(sec % 60).padStart(2, "0");
-    return `${mm}:${ss}`;
-  };
-
   const setState = (state) => {
     const next = state || "";
     if (currentState === next) return;

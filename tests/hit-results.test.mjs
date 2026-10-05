@@ -5,7 +5,7 @@ import { loadScripts } from "./scripts.mjs";
 
 function details(skills) {
   const window = { addEventListener() {}, _historyDetailsOverride: { skills, battleTime: 1000 } };
-  const context = loadScripts(["core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
+  const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/targetModes.js", "core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
   const app = vm.runInContext("Object.create(DpsApp.prototype)", context);
   app.dpsFormatter = new Intl.NumberFormat("en-US");
   return app.getDetails({ id: 1 }, {});

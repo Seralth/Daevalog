@@ -61,30 +61,6 @@ const createDetailsUI = ({
     }
     return dpsFormatter.format(n);
   };
-  const pctText = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? `${n.toFixed(1)}%` : "-";
-  };
-  const formatDamageCompact = (v) => {
-    const n = Number(v);
-    if (!Number.isFinite(n)) return "-";
-    const abs = Math.abs(n);
-    if (abs >= 1_000_000) {
-      return `${(n / 1_000_000).toFixed(2)}m`;
-    }
-    if (abs >= 1_000) {
-      return `${(n / 1_000).toFixed(2)}k`;
-    }
-    return `${Math.round(n)}`;
-  };
-  const formatBattleTime = (ms) => {
-    const totalMs = Number(ms);
-    if (!Number.isFinite(totalMs) || totalMs <= 0) return "00:00";
-    const totalSeconds = Math.floor(totalMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  };
   const i18n = window.i18n;
   const labelText = (key, fallback) => i18n?.t?.(key, fallback) ?? fallback;
 
@@ -204,28 +180,6 @@ const createDetailsUI = ({
       ? (i18n?.getNpcName?.(targetId, targetName) ?? targetName)
       : targetName;
     return localizedName || `Mob #${target.targetId}`;
-  };
-
-  const jobColorMap = {
-    정령성: "#E06BFF",
-    Spiritmaster: "#E06BFF",
-    궁성: "#41D98A",
-    Ranger: "#41D98A",
-    살성: "#7BE35A",
-    Assassin: "#7BE35A",
-    수호성: "#5F8CFF",
-    Templar: "#5F8CFF",
-    마도성: "#9A6BFF",
-    Sorcerer: "#9A6BFF",
-    호법성: "#FF9A3D",
-    Chanter: "#FF9A3D",
-    치유성: "#F2C15A",
-    Cleric: "#F2C15A",
-    검성: "#4FD1C5",
-    Gladiator: "#4FD1C5",
-    권성: "#E85D5D",
-    Brawler: "#E85D5D",
-    Fighter: "#E85D5D",
   };
 
   const getJobColor = (job) => jobColorMap[job] || "";
@@ -1558,11 +1512,6 @@ const createDetailsUI = ({
     }
 
     // ── Y-axis labels ──
-    const fmtDps = (v) => {
-      if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-      if (v >= 1_000) return (v / 1_000).toFixed(v >= 10_000 ? 0 : 1).replace(/\.0$/, "") + "K";
-      return String(Math.round(v));
-    };
     ctx.font = "10px sans-serif";
     ctx.textBaseline = "middle";
     // Left axis — DPS
