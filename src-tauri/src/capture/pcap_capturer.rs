@@ -1,10 +1,11 @@
 use std::ffi::{c_char, c_int, c_long, c_uint, CStr, CString};
 use std::ptr;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use libloading::{Library, Symbol};
+use parking_lot::Mutex;
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 
@@ -57,7 +58,82 @@ struct PcapPkthdr {
     len: c_uint,
 }
 
+/// `struct bpf_program`, filled by `pcap_compile`.
+#[repr(C)]
+struct BpfProgram {
+    bf_len: c_uint,
+    bf_insns: *mut std::ffi::c_void,
+}
+
 const PCAP_IF_LOOPBACK: c_uint = 0x00000001;
+const PCAP_NETMASK_UNKNOWN: c_uint = 0xffffffff;
+
+/// The game's server port while it is locked (0 = none), and when a packet on
+/// it was last captured. Capture threads narrow their filter to that port.
+static FILTER_PORT: AtomicU32 = AtomicU32::new(0);
+static FILTER_PORT_SEEN_MS: AtomicI64 = AtomicI64::new(0);
+
+/// With no packet on the locked port for this long, the filter widens back to
+/// all TCP, so the dispatcher sees traffic again and can drop a dead lock.
+const FILTER_PORT_QUIET_MS: i64 = 10_000;
+
+/// How often the watcher looks for capture threads with an outdated filter.
+const FILTER_WATCH_MS: u64 = 1_000;
+
+/// An open capture handle and the filter port it has set (0 = plain `tcp`).
+struct LiveHandle {
+    handle: usize,
+    applied: Arc<AtomicU32>,
+}
+
+static LIVE_HANDLES: Mutex<Vec<LiveHandle>> = Mutex::new(Vec::new());
+
+/// Called when the combat port locks (`Some`) or the lock is cleared (`None`).
+pub fn set_filter_port(port: Option<u16>) {
+    FILTER_PORT_SEEN_MS.store(now_ms(), Ordering::Relaxed);
+    FILTER_PORT.store(port.map_or(0, u32::from), Ordering::Relaxed);
+}
+
+/// An idle interface on Linux blocks in `pcap_next_ex` until a packet comes,
+/// timeout or not, so its thread would never see a filter change. Wake each
+/// thread whose filter is out of date.
+fn start_filter_watcher(pcap: Arc<PcapLib>, running: Arc<AtomicBool>) {
+    std::thread::spawn(move || {
+        while running.load(Ordering::SeqCst) {
+            std::thread::sleep(std::time::Duration::from_millis(FILTER_WATCH_MS));
+            let want = wanted_filter_port(now_ms()).map_or(0, u32::from);
+            for live in LIVE_HANDLES.lock().iter() {
+                if live.applied.load(Ordering::Relaxed) != want {
+                    unsafe { (pcap.breakloop)(live.handle as PcapT) };
+                }
+            }
+        }
+    });
+}
+
+fn note_filter_port_packet(payload: &CapturedPayload) {
+    let port = FILTER_PORT.load(Ordering::Relaxed) as u16;
+    if port != 0 && (payload.src_port == port || payload.dst_port == port) {
+        FILTER_PORT_SEEN_MS.store(now_ms(), Ordering::Relaxed);
+    }
+}
+
+/// The port the filter should be narrowed to now, if any.
+fn wanted_filter_port(now: i64) -> Option<u16> {
+    let port = FILTER_PORT.load(Ordering::Relaxed) as u16;
+    let quiet = now - FILTER_PORT_SEEN_MS.load(Ordering::Relaxed) >= FILTER_PORT_QUIET_MS;
+    (port != 0 && !quiet).then_some(port)
+}
+
+/// Filter expressions to try, in order: VLAN-tagged frames too (the parser
+/// reads up to two tags), then plain, for link types that have no VLAN.
+fn filter_exprs(port: Option<u16>) -> [String; 2] {
+    let tcp = match port {
+        Some(p) => format!("tcp port {p}"),
+        None => "tcp".to_string(),
+    };
+    [format!("{tcp} or (vlan and ({tcp} or (vlan and {tcp})))"), tcp]
+}
 
 /// Payloads dropped because the parser fell behind are reported at most this
 /// often, with how many there were.
@@ -125,6 +201,13 @@ struct PcapLib {
     close: unsafe extern "C" fn(PcapT),
     next_ex: unsafe extern "C" fn(PcapT, *mut *mut PcapPkthdr, *mut *const u8) -> c_int,
     datalink: unsafe extern "C" fn(PcapT) -> c_int,
+    compile: unsafe extern "C" fn(PcapT, *mut BpfProgram, *const c_char, c_int, c_uint) -> c_int,
+    setfilter: unsafe extern "C" fn(PcapT, *mut BpfProgram) -> c_int,
+    freecode: unsafe extern "C" fn(*mut BpfProgram),
+    geterr: unsafe extern "C" fn(PcapT) -> *const c_char,
+    breakloop: unsafe extern "C" fn(PcapT),
+    /// Older libpcap's filter compiler is not thread-safe.
+    compile_lock: Mutex<()>,
 }
 
 impl PcapLib {
@@ -166,6 +249,17 @@ impl PcapLib {
             > = lib.get(b"pcap_next_ex").map_err(|e| format!("pcap_next_ex: {}", e))?;
             let datalink: Symbol<unsafe extern "C" fn(PcapT) -> c_int> =
                 lib.get(b"pcap_datalink").map_err(|e| format!("pcap_datalink: {}", e))?;
+            let compile: Symbol<
+                unsafe extern "C" fn(PcapT, *mut BpfProgram, *const c_char, c_int, c_uint) -> c_int,
+            > = lib.get(b"pcap_compile").map_err(|e| format!("pcap_compile: {}", e))?;
+            let setfilter: Symbol<unsafe extern "C" fn(PcapT, *mut BpfProgram) -> c_int> =
+                lib.get(b"pcap_setfilter").map_err(|e| format!("pcap_setfilter: {}", e))?;
+            let freecode: Symbol<unsafe extern "C" fn(*mut BpfProgram)> =
+                lib.get(b"pcap_freecode").map_err(|e| format!("pcap_freecode: {}", e))?;
+            let geterr: Symbol<unsafe extern "C" fn(PcapT) -> *const c_char> =
+                lib.get(b"pcap_geterr").map_err(|e| format!("pcap_geterr: {}", e))?;
+            let breakloop: Symbol<unsafe extern "C" fn(PcapT)> =
+                lib.get(b"pcap_breakloop").map_err(|e| format!("pcap_breakloop: {}", e))?;
 
             Ok(Self {
                 findalldevs: *findalldevs,
@@ -174,6 +268,12 @@ impl PcapLib {
                 close: *close,
                 next_ex: *next_ex,
                 datalink: *datalink,
+                compile: *compile,
+                setfilter: *setfilter,
+                freecode: *freecode,
+                geterr: *geterr,
+                breakloop: *breakloop,
+                compile_lock: Mutex::new(()),
                 _lib: lib,
             })
         }
@@ -250,6 +350,45 @@ impl PcapLib {
 
         Ok(handle)
     }
+
+    /// Set a kernel packet filter on `handle`: the first of `filter_exprs(port)`
+    /// that compiles. Returns the expression set.
+    fn set_filter(&self, handle: PcapT, port: Option<u16>) -> Result<String, String> {
+        let mut errors = Vec::new();
+        for expr in filter_exprs(port) {
+            match self.try_filter(handle, &expr) {
+                Ok(()) => return Ok(expr),
+                Err(e) => errors.push(e),
+            }
+        }
+        Err(errors.join("; "))
+    }
+
+    fn try_filter(&self, handle: PcapT, expr: &str) -> Result<(), String> {
+        let c_expr = CString::new(expr).map_err(|e| e.to_string())?;
+        let mut program = BpfProgram { bf_len: 0, bf_insns: ptr::null_mut() };
+        let compiled = {
+            let _guard = self.compile_lock.lock();
+            unsafe { (self.compile)(handle, &mut program, c_expr.as_ptr(), 1, PCAP_NETMASK_UNKNOWN) }
+        };
+        if compiled != 0 {
+            return Err(format!("pcap_compile \"{}\": {}", expr, self.last_error(handle)));
+        }
+        let set = unsafe { (self.setfilter)(handle, &mut program) };
+        unsafe { (self.freecode)(&mut program) };
+        if set != 0 {
+            return Err(format!("pcap_setfilter \"{}\": {}", expr, self.last_error(handle)));
+        }
+        Ok(())
+    }
+
+    fn last_error(&self, handle: PcapT) -> String {
+        let err = unsafe { (self.geterr)(handle) };
+        if err.is_null() {
+            return String::new();
+        }
+        unsafe { CStr::from_ptr(err) }.to_string_lossy().to_string()
+    }
 }
 
 // Safety: PcapLib function pointers are thread-safe (each thread gets its own pcap handle)
@@ -318,6 +457,8 @@ impl PcapCapturer {
                 dev.has_addresses
             );
         }
+
+        start_filter_watcher(pcap.clone(), self.running.clone());
 
         let virtual_devices: Vec<_> = devices.iter().filter(|d| d.is_virtual()).cloned().collect();
         let physical_devices: Vec<_> = devices.iter().filter(|d| !d.is_virtual()).cloned().collect();
@@ -404,10 +545,27 @@ fn start_capture_thread(
         };
 
         let link_type = unsafe { (pcap.datalink)(handle) };
-        info!("Capture active on {} (link type {})", label, link_type);
+        // Only TCP reaches the meter. A filter that fails leaves the capture
+        // unfiltered, as it was before filters.
+        let filter = pcap.set_filter(handle, None).unwrap_or_else(|e| {
+            warn!("No packet filter on {}: {}", label, e);
+            "none".to_string()
+        });
+        info!("Capture active on {} (link type {}, filter {})", label, link_type, filter);
+        let applied = Arc::new(AtomicU32::new(0));
+        LIVE_HANDLES.lock().push(LiveHandle { handle: handle as usize, applied: applied.clone() });
         let mut drops = DropCounter { dropped: 0, last_warn_ms: i64::MIN / 2 };
 
         while running.load(Ordering::SeqCst) {
+            let want = wanted_filter_port(now_ms());
+            if want.map_or(0, u32::from) != applied.load(Ordering::Relaxed) {
+                applied.store(want.map_or(0, u32::from), Ordering::Relaxed);
+                match pcap.set_filter(handle, want) {
+                    Ok(expr) => info!("Capture filter on {}: {}", label, expr),
+                    Err(e) => warn!("Capture filter on {} not changed: {}", label, e),
+                }
+            }
+
             let mut header: *mut PcapPkthdr = ptr::null_mut();
             let mut data: *const u8 = ptr::null();
 
@@ -428,6 +586,7 @@ fn start_capture_thread(
                     let frame = unsafe { std::slice::from_raw_parts(data, len) };
                     if let Some(mut payload) = parse_tcp_payload(frame, link_type, &label) {
                         payload.captured_at_ms = ts;
+                        note_filter_port_packet(&payload);
                         if let Err(mpsc::error::TrySendError::Full(_)) = sender.try_send(payload) {
                             drops.note_drop(&label, now_ms());
                         }
@@ -438,7 +597,7 @@ fn start_capture_thread(
                     drops.report(&label, now_ms());
                     continue;
                 }
-                -2 => break,   // EOF (savefile)
+                -2 => continue, // woken by the filter watcher
                 _ => {
                     warn!("Capture error on {} (ret={})", label, ret);
                     break;
@@ -446,6 +605,7 @@ fn start_capture_thread(
             }
         }
 
+        LIVE_HANDLES.lock().retain(|live| live.handle != handle as usize);
         unsafe { (pcap.close)(handle) };
         info!("Capture stopped on {}", label);
     });
@@ -618,6 +778,20 @@ mod tests {
     fn non_ipv4_frames_are_ignored() {
         let arp = [[0u8; 12].as_slice(), &[0x08, 0x06], &[0u8; 28]].concat();
         assert!(parse_tcp_payload(&arp, 1, "dev").is_none());
+    }
+
+    #[test]
+    fn the_filter_narrows_to_the_locked_port_while_it_carries_traffic() {
+        assert_eq!(filter_exprs(None)[1], "tcp");
+        assert_eq!(filter_exprs(Some(13328))[1], "tcp port 13328");
+        assert!(filter_exprs(Some(13328))[0].starts_with("tcp port 13328 or (vlan and"));
+
+        set_filter_port(Some(13328));
+        let now = now_ms();
+        assert_eq!(wanted_filter_port(now), Some(13328));
+        assert_eq!(wanted_filter_port(now + FILTER_PORT_QUIET_MS), None, "quiet port: all TCP again");
+        set_filter_port(None);
+        assert_eq!(wanted_filter_port(now), None);
     }
 
     #[test]

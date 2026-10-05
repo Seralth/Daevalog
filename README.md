@@ -53,6 +53,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - An upload is always your own choice. No upload option is turned on for you.
 - Discord activity is off by default.
 - Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).
+- Packet capture takes TCP only, and only the game server's port once the meter has found it.
 
 ### Left out
 - Guessing who an unnamed actor is from its class.

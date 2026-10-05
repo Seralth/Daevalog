@@ -108,7 +108,7 @@ not need them.
 ### The other capture tool
 
 `src-tauri/diagnostics/packet_dump.rs` is a developer tool that is **not compiled
-into the released app**. It captures on every network adapter with no filter, so
+into the released app**. It captures all TCP traffic on every network adapter, so
 it records traffic from other applications on your machine. It writes
 `rawpackets_*.txt`.
 
