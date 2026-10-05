@@ -18,10 +18,7 @@ pub(crate) async fn upload_fight(
 pub(crate) async fn share_status(
     state: tauri::State<'_, AppState>,
 ) -> Result<std::collections::HashMap<String, share::ShareStatus>, String> {
-    let dir = state.app_data_dir.clone();
-    tokio::task::spawn_blocking(move || share::share_status(&dir))
-        .await
-        .map_err(|e| e.to_string())
+    sharing::share_status(&state).await
 }
 
 /// What the checks of the game's own Damage Analyzer records need.
