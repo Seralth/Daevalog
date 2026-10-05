@@ -846,6 +846,26 @@ class DpsApp {
     if (!forceRefresh && this.hoverTooltipPendingRowIds.has(rowId)) {
       return;
     }
+    this.fetchHoverTooltip(row, rowId, rowEl);
+  }
+
+  // An open tooltip follows the fight: refetched at most once a second and
+  // drawn over the old numbers, with no loading state in between.
+  refreshHoverTooltip() {
+    const rowId = this.hoveredDetailsRowId;
+    if (rowId === null || !this.hoverTooltipEl?.classList.contains("isVisible")) return;
+    if (this.pinnedDetailsRowId !== null || this.detailsUI?.isOpen?.()) return;
+    if (this.hoverTooltipPendingRowIds.has(rowId)) return;
+    const now = this.nowMs();
+    if (this._hoverTooltipRefreshAt && now - this._hoverTooltipRefreshAt < 1000) return;
+    const row = this.latestRowsById?.get(String(rowId));
+    const rowEl = this.elList?.querySelector?.(`.item[data-row-id="${rowId}"]`);
+    if (!row || !rowEl) return;
+    this._hoverTooltipRefreshAt = now;
+    this.fetchHoverTooltip(row, rowId, rowEl, { keepOnError: true });
+  }
+
+  fetchHoverTooltip(row, rowId, rowEl, { keepOnError = false } = {}) {
     const requestSeq = (this.hoverTooltipRequestSeqByRowId.get(rowId) || 0) + 1;
     this.hoverTooltipRequestSeqByRowId.set(rowId, requestSeq);
     this.hoverTooltipPendingRowIds.add(rowId);
@@ -864,7 +884,7 @@ class DpsApp {
         const currentSeq = this.hoverTooltipRequestSeqByRowId.get(rowId);
         if (currentSeq !== requestSeq || this.hoveredDetailsRowId !== rowId) return;
         window.javaBridge?.logToDebug?.(`Hover skill details failed: ${error?.message || error}`);
-        this.renderHoverTooltip({ skills: [], state: "error" }, row, rowEl);
+        if (!keepOnError) this.renderHoverTooltip({ skills: [], state: "error" }, row, rowEl);
       });
   }
 
@@ -1123,6 +1143,7 @@ class DpsApp {
     this.hoverTooltipCacheByRowId.clear();
     this.updateMeterTotalBar(rowsToRender);
     this.meterUI.updateFromRows(rowsToRender);
+    this.refreshHoverTooltip();
   }
 
   buildRowsFromPayload(raw) {

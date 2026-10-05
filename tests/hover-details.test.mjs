@@ -72,3 +72,51 @@ test("hover asks for the summary, without hit timelines", async () => {
   await tick();
   assert.deepEqual(asked, [true]);
 });
+
+test("an open tooltip refreshes with the meter, at most once a second, without a loading state", async () => {
+  let dmg = 100;
+  const { app, rendered } = setup(async () => JSON.stringify({ battleTime: 1000, skills: [{ code: 18010000, name: "A", dmg, time: 1, actorId: 1 }] }));
+  let now = 5000;
+  app.nowMs = () => now;
+  app.pinnedDetailsRowId = null;
+  app.hoverTooltipEl = { classList: { contains: (c) => c === "isVisible" } };
+  app.latestRowsById = new Map([["1", { id: 1 }]]);
+  app.refreshHoverTooltip();
+  await tick();
+  assert.equal(rendered.length, 1);
+  assert.equal(rendered[0].skills[0].dmg, 100);
+  dmg = 250;
+  now += 500;
+  app.refreshHoverTooltip();
+  await tick();
+  assert.equal(rendered.length, 1);
+  now += 600;
+  app.refreshHoverTooltip();
+  await tick();
+  assert.equal(rendered.length, 2);
+  assert.equal(rendered[1].skills[0].dmg, 250);
+  assert.ok(rendered.every((r) => r.state !== "loading"));
+});
+
+test("a failed refresh keeps the numbers already shown", async () => {
+  const { app, rendered } = setup(async () => { throw new Error("IPC failed"); });
+  app.nowMs = () => 5000;
+  app.pinnedDetailsRowId = null;
+  app.hoverTooltipEl = { classList: { contains: () => true } };
+  app.latestRowsById = new Map([["1", { id: 1 }]]);
+  app.refreshHoverTooltip();
+  await tick();
+  assert.equal(rendered.length, 0);
+});
+
+test("a hidden tooltip is not refreshed", async () => {
+  const asked = [];
+  const { app } = setup(async () => { asked.push(1); return "{}"; });
+  app.nowMs = () => 5000;
+  app.pinnedDetailsRowId = null;
+  app.hoverTooltipEl = { classList: { contains: () => false } };
+  app.latestRowsById = new Map([["1", { id: 1 }]]);
+  app.refreshHoverTooltip();
+  await tick();
+  assert.equal(asked.length, 0);
+});
