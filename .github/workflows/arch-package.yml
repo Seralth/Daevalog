@@ -15,7 +15,9 @@ name: Linux packages
 # as downloads of the run.
 #
 # Versions: the Arch package is <release>.r<commits>.g<hash> (PKGBUILD
-# pkgver); the .deb and .rpm carry the version in src-tauri/Cargo.toml.
+# pkgver); the .deb is <Cargo version>+r<commits> and the .rpm has the
+# Cargo version with the commit count as its release, so every build is an
+# update for pacman, apt and dnf.
 #
 # For a release, run it on the release tag (`gh workflow run arch-package.yml
 # -f ref=<tag>`).
@@ -119,6 +121,7 @@ jobs:
           rpmbuild -bb packaging/linux/daevalog-dps-meter.spec \
             --define "_topdir $PWD/rpmbuild" \
             --define "pkgversion $version" \
+            --define "pkgrelease $(git rev-list --count HEAD)" \
             --define "payload $PWD/rpmpayload" \
             --define "filelist $PWD/rpm-files.txt"
       # Tauri names the .deb after the product ("Daevalog DPS Meter_<version>_amd64.deb");
@@ -126,9 +129,15 @@ jobs:
       - name: Name the packages
         run: |
           version=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2)
-          mkdir -p out
-          cp src-tauri/target/release/bundle/deb/*.deb "out/daevalog-dps-meter_${version}_amd64.deb"
-          cp rpmbuild/RPMS/x86_64/*.rpm "out/daevalog-dps-meter-${version}-1.x86_64.rpm"
+          rev=$(git rev-list --count HEAD)
+          mkdir -p out debroot
+          # The .deb gets the revision in its version, and our maintainer line.
+          dpkg-deb -R src-tauri/target/release/bundle/deb/*.deb debroot
+          sed -i -e "s/^Version: .*/Version: ${version}+r${rev}/" \
+            -e "s/^Maintainer: .*/Maintainer: Seralth <packages@seralth.com>/" debroot/DEBIAN/control
+          grep -q '^Maintainer:' debroot/DEBIAN/control || echo "Maintainer: Seralth <packages@seralth.com>" >> debroot/DEBIAN/control
+          dpkg-deb --root-owner-group -b debroot "out/daevalog-dps-meter_${version}+r${rev}_amd64.deb"
+          cp rpmbuild/RPMS/x86_64/*.rpm "out/daevalog-dps-meter-${version}-${rev}.x86_64.rpm"
           ls -la out
       - name: What is in them
         run: |
@@ -163,6 +172,8 @@ jobs:
             install: apt-get update && apt-get install -y ./daevalog-dps-meter_*_amd64.deb
           - image: fedora:41
             install: dnf install -y ./daevalog-dps-meter-*.x86_64.rpm
+          - image: opensuse/tumbleweed
+            install: zypper -n install libcap-progs findutils && zypper -n --no-gpg-checks install --allow-unsigned-rpm ./daevalog-dps-meter-*.x86_64.rpm
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:

@@ -18,7 +18,7 @@
 
 Name:           daevalog-dps-meter
 Version:        %{pkgversion}
-Release:        1
+Release:        %{?pkgrelease}%{!?pkgrelease:1}
 Summary:        Daevalog DPS Meter - AION 2 real-time DPS overlay
 License:        GPL-3.0-only
 URL:            https://github.com/Seralth/Daevalog
