@@ -15,15 +15,29 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Windows is a second-class platform: built and tested here on every push,
+  # checked by hand only at major releases, fixed when someone reports a break.
   desktop:
-    name: Desktop build and tests
+    name: Windows build, tests and start-up
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
       - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: src-tauri
+      - name: Front end
+        run: |
+          npm ci
+          npm run build
+          node --test tests/
+      - name: Check
+        working-directory: src-tauri
+        run: cargo check --workspace --all-targets --all-features
       - name: Test
         working-directory: src-tauri
         # The replay tests skip without A2_REPLAY_CAPTURE, which is a real packet
@@ -31,13 +45,137 @@ jobs:
         # people playing. They run locally; everything else runs here.
         run: cargo test --all-targets
       # The capture crate: libpcap, which Windows captures with too, and the
-      # Linux helper's pipe.
+      # Linux helper's pipe. The helper binary itself is Linux only.
       - name: Test capture crate
         working-directory: src-tauri
-        run: cargo test -p daevalog-capture
-      - name: Build binaries
-        working-directory: src-tauri
-        run: cargo build --bins
+        run: cargo test -p daevalog-capture --lib
+      # As the packages build it: a plain cargo build would load the page from
+      # the development server instead of the built-in files.
+      - name: Build the meter
+        run: npx tauri build --no-bundle
+      # Start the release build as a player would, without Npcap (the runner has
+      # none): the window has to open, the log has to say capture is off, the
+      # page has to load and show its Npcap notice (a confirm() dialog, found
+      # through UI Automation and cancelled), and the meter has to quit cleanly
+      # when its window is closed.
+      #
+      # The data folder is %APPDATA%\com.daevalog.dps-meter (Tauri asks Windows
+      # for the Roaming folder, so the APPDATA variable cannot move it). A fresh
+      # runner has none, so this is a first start.
+      - name: Start-up
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
+          Add-Type @'
+          using System;
+          using System.Collections.Generic;
+          using System.Runtime.InteropServices;
+          using System.Text;
+          public static class Wins {
+            delegate bool EnumProc(IntPtr h, IntPtr l);
+            [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc f, IntPtr l);
+            [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+            [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+            [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+            [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassName(IntPtr h, StringBuilder s, int n);
+            [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint msg, IntPtr w, IntPtr l);
+            public class Win { public IntPtr Handle; public uint Pid; public string Class; public string Title; }
+            public static List<Win> Visible() {
+              var list = new List<Win>();
+              EnumWindows((h, l) => {
+                if (IsWindowVisible(h)) {
+                  uint pid; GetWindowThreadProcessId(h, out pid);
+                  var t = new StringBuilder(256); GetWindowText(h, t, 256);
+                  var c = new StringBuilder(256); GetClassName(h, c, 256);
+                  list.Add(new Win { Handle = h, Pid = pid, Class = c.ToString(), Title = t.ToString() });
+                }
+                return true;
+              }, IntPtr.Zero);
+              return list;
+            }
+          }
+          '@
+          $Tree = [System.Windows.Automation.TreeScope]::Descendants
+          $Any = [System.Windows.Automation.Condition]::TrueCondition
+
+          $data = Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'com.daevalog.dps-meter'
+          if (Test-Path $data) { throw "The data folder exists before the first start: $data" }
+          $out = Join-Path $env:RUNNER_TEMP 'meter-out.log'
+          $err = Join-Path $env:RUNNER_TEMP 'meter-err.log'
+          # From the repository root, where the meter finds src/data as in development.
+          $meter = Start-Process -FilePath 'src-tauri\target\release\daevalog-dps-meter.exe' `
+            -WorkingDirectory $PWD -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+          $null = $meter.Handle
+
+          # The meter and the WebView2 processes it starts.
+          function Family {
+            $all = Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId
+            $ids = @($meter.Id)
+            do {
+              $more = @($all | Where-Object { $ids -contains $_.ParentProcessId -and $ids -notcontains $_.ProcessId } | ForEach-Object { $_.ProcessId })
+              $ids += $more
+            } while ($more.Count -gt 0)
+            $ids
+          }
+          function Windows { $ids = Family; @([Wins]::Visible() | Where-Object { $ids -contains $_.Pid }) }
+          function Show($why) {
+            Write-Host "== $why"
+            foreach ($w in Windows) {
+              Write-Host "window: pid $($w.Pid) class '$($w.Class)' title '$($w.Title)'"
+              try {
+                $names = [System.Windows.Automation.AutomationElement]::FromHandle($w.Handle).FindAll($Tree, $Any) |
+                  ForEach-Object { "$($_.Current.ControlType.ProgrammaticName) '$($_.Current.Name)'" } | Select-Object -First 40
+                $names | ForEach-Object { Write-Host "    $_" }
+              } catch { Write-Host "    (UI Automation: $_)" }
+            }
+            Write-Host '-- stdout'; Get-Content $out -ErrorAction SilentlyContinue
+            Write-Host '-- stderr'; Get-Content $err -ErrorAction SilentlyContinue
+          }
+
+          $deadline = (Get-Date).AddSeconds(60)
+          $main = $null; $logged = $false; $notice = $null; $seen = @{}
+          while ((Get-Date) -lt $deadline -and -not ($main -and $logged -and $notice)) {
+            Start-Sleep -Milliseconds 500
+            if ($meter.HasExited) { Show 'exited'; throw "The meter exited during start-up with code $($meter.ExitCode)" }
+            if (-not $logged) { $logged = (Get-Content $out -Raw -ErrorAction SilentlyContinue) -match 'The capture library did not load' }
+            foreach ($w in Windows) {
+              if (-not $seen.ContainsKey($w.Handle)) {
+                $seen[$w.Handle] = $true
+                Write-Host "new window: pid $($w.Pid) class '$($w.Class)' title '$($w.Title)'"
+              }
+              if ($w.Pid -eq $meter.Id -and $w.Title -eq 'Daevalog DPS Meter') { $main = $w }
+              # The notice: the page's own confirm(), so the page loaded, ran
+              # and got the backend's capture-unavailable event.
+              if (-not $notice) {
+                try {
+                  $text = [System.Windows.Automation.AutomationElement]::FromHandle($w.Handle).FindAll($Tree, $Any) |
+                    Where-Object { $_.Current.Name -match 'Npcap' } | Select-Object -First 1
+                  if ($text) { $notice = $w; Write-Host "notice: $($text.Current.Name)" }
+                } catch {}
+              }
+            }
+          }
+          Show 'started'
+          if (-not $main) { throw 'The meter window did not open within 60 s' }
+          if (-not $logged) { throw 'The log does not say that capture is off' }
+          if (-not $notice) { throw 'The page did not show its Npcap notice within 60 s' }
+          if (-not (Test-Path $data)) { throw "No data folder at $data" }
+
+          # Cancel the notice, then close the meter window as a player would.
+          $cancel = [System.Windows.Automation.AutomationElement]::FromHandle($notice.Handle).FindAll($Tree, $Any) |
+            Where-Object { $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button -and $_.Current.Name -eq 'Cancel' } |
+            Select-Object -First 1
+          if (-not $cancel) { throw 'The notice has no Cancel button' }
+          $cancel.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+          Start-Sleep -Seconds 1
+          [void][Wins]::PostMessage($main.Handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) # WM_CLOSE
+          if (-not $meter.WaitForExit(20000)) {
+            Show 'not closing'
+            Stop-Process -Id $meter.Id -Force
+            throw 'The meter did not quit within 20 s of its window closing'
+          }
+          Show 'closed'
+          if ($meter.ExitCode -ne 0) { throw "The meter quit with code $($meter.ExitCode)" }
 
   platform-boundary:
     name: OS code stays in src/platform
