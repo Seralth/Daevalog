@@ -308,6 +308,20 @@
     "encounterTimeout": {
       "label": "Encounter ends after (seconds)",
       "hint": "Seconds without combat by you or your party that end an encounter. A boss you hit that is still alive keeps it open."
+    },
+    "encColumns": {
+      "title": "ENC mode columns",
+      "hint": "What each row shows in ENC mode. A narrow meter drops columns from the end.",
+      "encDps": "ENCDPS",
+      "dps": "DPS (own active time)",
+      "pct": "Damage %",
+      "total": "Total damage",
+      "crit": "Crit %",
+      "last10": "Last 10 s",
+      "last30": "Last 30 s",
+      "last60": "Last 60 s",
+      "maxHit": "Max hit",
+      "hits": "Hits"
     }
   },
   "support": {
@@ -342,7 +356,19 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
-    "dpsSuffix": "/s"
+    "dpsSuffix": "/s",
+    "columns": {
+      "encDps": "ENC",
+      "dps": "DPS",
+      "pct": "%",
+      "total": "Total",
+      "crit": "Crit",
+      "last10": "10s",
+      "last30": "30s",
+      "last60": "60s",
+      "maxHit": "Max",
+      "hits": "Hits"
+    }
   },
   "skills": {
     "fallback": "Skill {code}",
