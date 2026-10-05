@@ -87,49 +87,6 @@ pub struct AppState {
 
 // ===== TAURI COMMANDS =====
 
-#[tauri::command]
-/// `async` keeps this off the main thread. Sync commands run there, and even
-/// with the summary cache a cold call reads every fight file — measured at
-/// ~350ms, during which no other IPC and no window painting can proceed. Each
-/// window calls this at startup and again every 10s, which is what made opening
-/// History feel like it hung.
-async fn get_fight_history(state: tauri::State<'_, AppState>) -> Result<Vec<FightSummary>, String> {
-    Ok(state.fight_history.list_fights())
-}
-
-#[tauri::command]
-fn save_fight(state: tauri::State<'_, AppState>, record: FightRecord) -> Result<(), String> {
-    state.fight_history.save_fight(&record)
-}
-
-#[tauri::command]
-fn load_fight(state: tauri::State<'_, AppState>, id: String) -> Result<FightRecord, String> {
-    let mut record = state.fight_history.load_fight(&id)?;
-
-    // Re-resolve supporter status against the roster as it is *now*, rather
-    // than trusting the flag written when the fight was saved. Supporter status
-    // changes; a fight from last month opened today should show who is a
-    // supporter today, and every record saved before this feature existed has
-    // no flag at all.
-    //
-    // Party members are the honest limitation here. `obscure_nickname` masks
-    // their names before the record is written, so a name-keyed roster can only
-    // ever match the local player, whose name is stored intact. `dbid` is kept
-    // on each actor precisely so a dbid-keyed roster resolves everyone — see
-    // `crate::supporters::KeyKind`.
-    crate::supporters::apply_to_record(&mut record, &state.data_storage.supporters());
-    Ok(record)
-}
-
-#[tauri::command]
-fn delete_fight(state: tauri::State<'_, AppState>, id: String) -> Result<(), String> {
-    if !crate::history::fight_history::is_plain_name(&id) {
-        return Err(format!("Invalid fight id: {id:?}"));
-    }
-    share::forget_slice(&state.app_data_dir, &id);
-    state.fight_history.delete_fight(&id)
-}
-
 /// Upload a saved fight to a2tools.app as a log, and return its link.
 #[tauri::command]
 async fn upload_fight(
@@ -186,11 +143,6 @@ async fn game_record_details(
     tokio::task::spawn_blocking(move || checker.views(&fight_id))
         .await
         .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn export_fight_json(state: tauri::State<'_, AppState>, record: FightRecord) -> Result<String, String> {
-    state.fight_history.export_fight_json(&record)
 }
 
 /// Write what sharing this fight *would* upload, without uploading anything.
@@ -1107,11 +1059,11 @@ pub fn run() {
             commands::meter::get_skill_details,
             commands::meter::get_displayed_skill_details,
             commands::meter::get_details_context,
-            get_fight_history,
-            save_fight,
-            load_fight,
-            delete_fight,
-            export_fight_json,
+            commands::history::get_fight_history,
+            commands::history::save_fight,
+            commands::history::load_fight,
+            commands::history::delete_fight,
+            commands::history::export_fight_json,
             preview_share,
             upload_fight,
             share_status,
