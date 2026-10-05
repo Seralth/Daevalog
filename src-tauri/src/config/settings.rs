@@ -191,10 +191,13 @@ impl Shared {
         // The new file is on disk before it replaces the old one, so a crash or
         // power loss right after cannot leave an empty settings.json.
         let temporary = self.file_path.with_extension("json.tmp");
-        let written = std::fs::File::create(&temporary).and_then(|mut file| {
-            file.write_all(&json)?;
-            file.sync_all()
-        });
+        let written = crate::platform::files::private_options()
+            .write(true).create(true).truncate(true)
+            .open(&temporary)
+            .and_then(|mut file| {
+                file.write_all(&json)?;
+                file.sync_all()
+            });
         if let Err(e) = written {
             let _ = std::fs::remove_file(&temporary);
             return Err(e.to_string());
