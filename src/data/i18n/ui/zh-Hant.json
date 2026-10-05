@@ -87,6 +87,13 @@
       "minDmgTooltip": "最小傷害",
       "avgDmg": "平均",
       "avgDmgTooltip": "平均傷害",
+      "ticks": "跳數",
+      "ticksTooltip": "治療跳數",
+      "heal": "治療",
+      "healTooltip": "總治療量",
+      "healPct": "治%",
+      "healPctTooltip": "治療量 %",
+      "avgHealTooltip": "平均治療量",
       "maxDmg": "最大",
       "maxDmgTooltip": "最大傷害"
     },

@@ -87,6 +87,13 @@
       "minDmgTooltip": "最小ダメージ",
       "avgDmg": "平均",
       "avgDmgTooltip": "平均ダメージ",
+      "ticks": "ティック",
+      "ticksTooltip": "回復ティック",
+      "heal": "回復",
+      "healTooltip": "総回復量",
+      "healPct": "回%",
+      "healPctTooltip": "回復量 %",
+      "avgHealTooltip": "平均回復量",
       "maxDmg": "最大",
       "maxDmgTooltip": "最大ダメージ"
     },

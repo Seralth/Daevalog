@@ -773,8 +773,9 @@ const createDetailsUI = ({
   };
 
   const compareSkillSort = (a, b) => {
-    const key = skillSortKey;
-    const dir = skillSortDir === "asc" ? 1 : -1;
+    // A column HEAL hides sorts nothing there: fall back to the amount.
+    const key = isHiddenForMode(skillSortKey) ? "dmg" : skillSortKey;
+    const dir = isHiddenForMode(skillSortKey) ? -1 : skillSortDir === "asc" ? 1 : -1;
     const aVal = getSkillSortValue(a, key);
     const bVal = getSkillSortValue(b, key);
     if (key === "name") {
@@ -831,6 +832,39 @@ const createDetailsUI = ({
   const GRID_COL_ORDER = ["name", "hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "parry", "perfect", "double", "back", "frontal",
     ...HIT_RESULTS.map(([col]) => col), "regen", "mindmg", "avgdmg", "maxdmg"];
 
+  // HEAL keeps ticks, amount, share and average: heals carry no hit flags and
+  // no min or max. styles.css hides the same columns under .isHealMode.
+  const HEAL_HIDDEN_COLS = new Set(["mhit", "mdmg", "crit", "parry", "perfect", "double", "back", "frontal",
+    ...HIT_RESULTS.map(([col]) => col), "regen", "mindmg", "maxdmg"]);
+  // Header labels per mode: column -> [label key, label fallback, tip key, tip fallback].
+  const HEAL_HEADERS = {
+    hit: ["details.skills.ticks", "Ticks", "details.skills.ticksTooltip", "Heal ticks"],
+    dmg: ["details.skills.heal", "Heal", "details.skills.healTooltip", "Total Heal"],
+    dmgpct: ["details.skills.healPct", "H%", "details.skills.healPctTooltip", "Heal %"],
+    avgdmg: ["details.skills.avgDmg", "Avg", "details.skills.avgHealTooltip", "Avg Heal"],
+  };
+  const dmgHeaders = {};
+  const isHiddenForMode = (col) => detailsMode === "heal" && HEAL_HIDDEN_COLS.has(col);
+
+  const applySkillTableMode = () => {
+    if (!detailsPanel) return;
+    const heal = detailsMode === "heal";
+    detailsPanel.classList.toggle("isHealMode", heal);
+    detailsPanel.querySelectorAll?.(".detailsSkills .skillHeader .cell[data-sort-key]")?.forEach?.((cell) => {
+      const col = cell.dataset.sortKey;
+      if (!HEAL_HEADERS[col]) return;
+      if (!dmgHeaders[col]) {
+        dmgHeaders[col] = [cell.dataset.i18n, cell.textContent, cell.dataset.i18nTip, cell.getAttribute("data-tip")];
+      }
+      const [key, fallback, tipKey, tipFallback] = heal ? HEAL_HEADERS[col] : dmgHeaders[col];
+      cell.dataset.i18n = key;
+      cell.dataset.i18nTip = tipKey;
+      cell.textContent = labelText(key, fallback);
+      cell.setAttribute("data-tip", labelText(tipKey, tipFallback));
+    });
+    updateGridColumns();
+  };
+
   let lastMeasuredNameWidth = 0;
   const updateGridColumns = () => {
     if (!detailsPanel) return;
@@ -844,7 +878,7 @@ const createDetailsUI = ({
       skillsContainer.style.setProperty("--scrollbar-w", `${scrollbarW}px`);
     }
 
-    const visibleCols = GRID_COL_ORDER.filter((col) => !detailsPanel.classList.contains(`hide-col-${col}`));
+    const visibleCols = GRID_COL_ORDER.filter((col) => !detailsPanel.classList.contains(`hide-col-${col}`) && !isHiddenForMode(col));
     if (lastMeasuredNameWidth > 0) {
       const dataCols = visibleCols.filter((c) => c !== "name");
       const template = `${lastMeasuredNameWidth}px ${dataCols.map((col) => GRID_COL_DEFS[col]).join(" ")}`;
@@ -2187,7 +2221,7 @@ const createDetailsUI = ({
   ) => {
     const rowId = row?.id ?? null;
     // if (!rowId) return;
-    detailsMode = "dmg";
+    resetDetailsMode();
 
     const isOpen = detailsPanel.classList.contains("open");
     const isSame = isOpen && openedRowId === rowId;
@@ -2325,7 +2359,7 @@ const createDetailsUI = ({
 
   const openHistoryFight = async (record) => {
     if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
-    detailsMode = "dmg";
+    resetDetailsMode();
     historyRecord = record;
     openSeq++;
     const seq = openSeq;
@@ -2428,6 +2462,7 @@ const createDetailsUI = ({
     detailsPanel?.querySelectorAll?.(".detailsModeBtn")?.forEach?.((btn) => {
       btn.classList.toggle("isActive", btn?.dataset?.mode === detailsMode);
     });
+    applySkillTableMode();
   };
   const rerenderForMode = () => {
     if (!lastDetails) return;

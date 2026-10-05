@@ -87,6 +87,13 @@
       "minDmgTooltip": "Minimaler Schaden",
       "avgDmg": "Ø",
       "avgDmgTooltip": "Durchschnittlicher Schaden",
+      "ticks": "Ticks",
+      "ticksTooltip": "Heilticks",
+      "heal": "Regen",
+      "healTooltip": "Gesamtregeneration",
+      "healPct": "R%",
+      "healPctTooltip": "Regeneration %",
+      "avgHealTooltip": "Durchschnittliche Regeneration",
       "maxDmg": "Max",
       "maxDmgTooltip": "Maximaler Schaden"
     },

@@ -87,6 +87,13 @@
       "minDmgTooltip": "Минимальный урон",
       "avgDmg": "Срд",
       "avgDmgTooltip": "Средний урон",
+      "ticks": "Тики",
+      "ticksTooltip": "Тики лечения",
+      "heal": "Восст",
+      "healTooltip": "Общее восстановление",
+      "healPct": "В%",
+      "healPctTooltip": "Восстановление %",
+      "avgHealTooltip": "Среднее восстановление",
       "maxDmg": "Макс",
       "maxDmgTooltip": "Максимальный урон"
     },

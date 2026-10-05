@@ -87,6 +87,13 @@
       "minDmgTooltip": "Dano mínimo",
       "avgDmg": "Méd",
       "avgDmgTooltip": "Dano médio",
+      "ticks": "Ticks",
+      "ticksTooltip": "Ticks de cura",
+      "heal": "Recup",
+      "healTooltip": "Recuperação Total",
+      "healPct": "R%",
+      "healPctTooltip": "Recuperação %",
+      "avgHealTooltip": "Recuperação média",
       "maxDmg": "Máx",
       "maxDmgTooltip": "Dano máximo"
     },

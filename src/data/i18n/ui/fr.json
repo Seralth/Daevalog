@@ -87,6 +87,13 @@
       "minDmgTooltip": "Dégâts min.",
       "avgDmg": "Moy",
       "avgDmgTooltip": "Dégâts moyens",
+      "ticks": "Ticks",
+      "ticksTooltip": "Ticks de soin",
+      "heal": "Régén",
+      "healTooltip": "Régénération totale",
+      "healPct": "R%",
+      "healPctTooltip": "Régénération %",
+      "avgHealTooltip": "Régénération moyenne",
       "maxDmg": "Max",
       "maxDmgTooltip": "Dégâts max."
     },

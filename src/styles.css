@@ -3567,6 +3567,26 @@ body.mainPlayerNamesBold .settingsPanel .themeDropdownMenu .settingsDropdownItem
 .detailsPanel.hide-col-maxdmg .detailsSkills .cell.maxdmg {
   display: none;
 }
+/* HEAL: heals have no hit flags and no min or max (HEAL_HIDDEN_COLS in details.js) */
+.detailsPanel.isHealMode .detailsSkills .cell.mhit,
+.detailsPanel.isHealMode .detailsSkills .cell.mdmg,
+.detailsPanel.isHealMode .detailsSkills .cell.crit,
+.detailsPanel.isHealMode .detailsSkills .cell.parry,
+.detailsPanel.isHealMode .detailsSkills .cell.perfect,
+.detailsPanel.isHealMode .detailsSkills .cell.double,
+.detailsPanel.isHealMode .detailsSkills .cell.back,
+.detailsPanel.isHealMode .detailsSkills .cell.frontal,
+.detailsPanel.isHealMode .detailsSkills .cell.block,
+.detailsPanel.isHealMode .detailsSkills .cell.perfectblock,
+.detailsPanel.isHealMode .detailsSkills .cell.ironwall,
+.detailsPanel.isHealMode .detailsSkills .cell.regeneration,
+.detailsPanel.isHealMode .detailsSkills .cell.miss,
+.detailsPanel.isHealMode .detailsSkills .cell.resist,
+.detailsPanel.isHealMode .detailsSkills .cell.regen,
+.detailsPanel.isHealMode .detailsSkills .cell.mindmg,
+.detailsPanel.isHealMode .detailsSkills .cell.maxdmg {
+  display: none;
+}
 .detailsPanel .detailsSkills .skillHeader .cell[data-sort-key] {
   cursor: pointer;
 }

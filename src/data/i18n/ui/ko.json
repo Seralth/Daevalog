@@ -87,6 +87,13 @@
       "minDmgTooltip": "최소 피해",
       "avgDmg": "평균",
       "avgDmgTooltip": "평균 피해",
+      "ticks": "틱",
+      "ticksTooltip": "회복 틱",
+      "heal": "회복",
+      "healTooltip": "총 회복량",
+      "healPct": "회%",
+      "healPctTooltip": "회복량 %",
+      "avgHealTooltip": "평균 회복량",
       "maxDmg": "최대",
       "maxDmgTooltip": "최대 피해"
     },

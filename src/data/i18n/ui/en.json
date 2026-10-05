@@ -87,6 +87,13 @@
       "minDmgTooltip": "Min Damage",
       "avgDmg": "Avg",
       "avgDmgTooltip": "Avg Damage",
+      "ticks": "Ticks",
+      "ticksTooltip": "Heal ticks",
+      "heal": "Heal",
+      "healTooltip": "Total Heal",
+      "healPct": "H%",
+      "healPctTooltip": "Heal %",
+      "avgHealTooltip": "Avg Heal",
       "maxDmg": "Max",
       "maxDmgTooltip": "Max Damage"
     },
