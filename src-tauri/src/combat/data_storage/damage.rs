@@ -46,12 +46,9 @@ impl DataStorage {
             }
             if inner.known_player_ids.contains(&resolved_target) {
                 let dmg = pdp.total_damage() as i64;
-                for target_data in inner.target_combat.values_mut() {
-                    if let Some(actor_data) = target_data.actors.get_mut(&resolved_target) {
-                        actor_data.damage_received += dmg;
-                        actor_data.hits_received += 1;
-                        break;
-                    }
+                if let Some(actor_data) = fight_of(&mut inner, resolved_target, Some(actor_id)) {
+                    actor_data.damage_received += dmg;
+                    actor_data.hits_received += 1;
                 }
             }
             return;
@@ -73,12 +70,8 @@ impl DataStorage {
         if is_friendly_action(&inner, actor_id, target_id) {
             let heal_amount = pdp.total_damage();
             if heal_amount > 0 {
-                // Record party heal on the actor's data in all targets they appear in
-                for target_data in inner.target_combat.values_mut() {
-                    if let Some(actor_data) = target_data.actors.get_mut(&actor_id) {
-                        actor_data.party_heal += heal_amount as i64;
-                        break;
-                    }
+                if let Some(actor_data) = fight_of(&mut inner, actor_id, None) {
+                    actor_data.party_heal += heal_amount as i64;
                 }
                 // Also record per-skill so ally heals show in the HEAL view (the
                 // self-heal path does this via append_heal; mirror it for ally heals).
@@ -291,6 +284,23 @@ fn is_ours(inner: &Inner, actor_id: i32) -> bool {
     let owner = summon_resolver::resolve(actor_id, &inner.summon_storage);
     owner == local as i32
         || inner.nickname_storage.get(&owner).is_some_and(|n| inner.party_members.contains_key(n.as_str()))
+}
+
+/// Where healing or damage taken by `actor` counts: neither has a target of
+/// its own. The fight against `mob` when the actor is in it, else the target
+/// the actor hit last (ties to the lowest id), so it is never left to the
+/// map's order.
+fn fight_of(inner: &mut Inner, actor: i32, mob: Option<i32>) -> Option<&mut ActorCombatData> {
+    let fights = |tid: &i32| inner.target_combat.get(tid).is_some_and(|td| td.actors.contains_key(&actor));
+    let tid = mob.filter(fights).or_else(|| {
+        inner
+            .target_combat
+            .iter()
+            .filter_map(|(&tid, td)| td.actors.get(&actor).map(|a| (a.last_damage_time, std::cmp::Reverse(tid))))
+            .max()
+            .map(|(_, std::cmp::Reverse(tid))| tid)
+    })?;
+    inner.target_combat.get_mut(&tid)?.actors.get_mut(&actor)
 }
 
 fn is_friendly_action(inner: &Inner, actor_id: i32, target_id: i32) -> bool {
