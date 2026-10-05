@@ -1483,7 +1483,6 @@ class DpsApp {
     let totalDouble = 0;
     let totalMultiHitCount = 0;
     let totalMultiHitDamage = 0;
-    let totalMultiHitHits = 0;
     let totalRegen = 0;
 
     const pushSkill = ({
@@ -1535,7 +1534,6 @@ class DpsApp {
         totalDouble += Number(double) || 0;
         totalMultiHitCount += Number(multiHitCount) || 0;
         totalMultiHitDamage += Number(multiHitDamage) || 0;
-        totalMultiHitHits += Number(multiHitHits) || 0;
       }
       skills.push({
         code: String(codeKey),
@@ -1811,7 +1809,7 @@ class DpsApp {
       totalHits: totalTimes,
       multiHitCount: totalMultiHitCount,
       multiHitDamage: totalMultiHitDamage,
-      multiHitPct: totalTimes > 0 ? Math.round((totalMultiHitHits / totalTimes) * 1000) / 10 : 0,
+      multiHitPct: pct(totalMultiHitCount, totalTimes),
       totalRegen,
       combatTime,
       battleTimeMs: Number.isFinite(battleTimeMsRaw) ? battleTimeMsRaw : 0,

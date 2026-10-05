@@ -27,3 +27,9 @@ test("a fight saved before the rename reads its flags under the new names", asyn
   const d = await details([{ actorId: 1, code: 16000000, name: "Hit", time: 2, dmg: 200, smite: 1, powershard: 2 }]);
   assert.deepEqual([d.skills[0].regeneration, d.skills[0].perfectBlock], [1, 2]);
 });
+
+test("the additional-hit rate counts hits that had additional hits, as the skill rows do", async () => {
+  // Four hits, one of them with three additional hits.
+  const d = await details([{ actorId: 1, code: 16000000, name: "Hit", time: 4, dmg: 400, multiHitCount: 1, multiHitHits: 3 }]);
+  assert.equal(d.multiHitPct, 25);
+});
