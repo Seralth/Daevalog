@@ -21,4 +21,8 @@ pub mod combat_port_detector;
 #[cfg(feature = "desktop")]
 pub mod file_replay;
 #[cfg(feature = "desktop")]
+mod helper_process;
+#[cfg(feature = "desktop")]
+pub mod live;
+#[cfg(feature = "desktop")]
 pub mod pcap_capturer;

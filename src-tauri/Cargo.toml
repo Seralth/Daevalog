@@ -9,6 +9,11 @@ edition = "2024"
 # app and refuses to start.
 default-run = "daevalog-dps-meter"
 
+# The capture helper (capture-helper/) builds in the same workspace:
+#   cargo build --release -p daevalog-capture
+[workspace]
+members = ["capture-helper"]
+
 [lib]
 name = "a2tools_dps_meter_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
@@ -29,6 +34,7 @@ desktop = [
     "dep:tauri-plugin-opener",
     "dep:tauri-plugin-process",
     "dep:libloading",
+    "dep:daevalog-capture",
     "dep:tokio",
     "dep:tracing-subscriber",
     "dep:reqwest",
@@ -87,6 +93,8 @@ tauri-plugin-process = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 libloading = { version = "0.8", optional = true }
+# libpcap and the capture helper's pipe (capture-helper/).
+daevalog-capture = { path = "capture-helper", optional = true }
 lz4_flex = "0.11"
 tokio = { version = "1", features = ["full"], optional = true }
 # The per-user folders, for moving the A2Tools build's data (see migrate.rs).

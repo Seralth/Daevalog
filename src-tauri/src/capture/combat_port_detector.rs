@@ -149,7 +149,7 @@ impl CombatPortDetector {
             inner.locked_port = Some(port);
             inner.locked_device = device.clone();
             info!("Combat port locked: {}", port);
-            super::pcap_capturer::set_filter_port(Some(port));
+            super::live::set_filter_port(Some(port));
             inner.candidates.clear();
             inner.device_flows.clear();
         }
@@ -168,7 +168,7 @@ impl CombatPortDetector {
         inner.device_flows.clear();
         inner.first_candidate_ms = 0;
         self.last_parsed_at_ms.store(0, Ordering::Relaxed);
-        super::pcap_capturer::set_filter_port(None);
+        super::live::set_filter_port(None);
         if was_locked {
             info!("Combat port lock cleared");
         }

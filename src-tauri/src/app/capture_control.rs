@@ -31,7 +31,7 @@ pub(crate) async fn get_available_devices() -> Vec<String> {
     // Load the OS's pcap library and enumerate devices. That can block in the
     // library, so not on the main thread.
     tauri::async_runtime::spawn_blocking(|| {
-        crate::capture::pcap_capturer::list_device_labels().unwrap_or_default()
+        crate::capture::live::list_device_labels().unwrap_or_default()
     }).await.unwrap_or_default()
 }
 
@@ -63,7 +63,7 @@ pub(crate) fn debug_status(state: &AppState) -> serde_json::Value {
     let ping = state.ping_tracker.current_ping_ms();
     let dmg_gen = state.data_storage.damage_generation();
     let window = platform::window_detector::find_aion2_window_title();
-    let admin = platform::admin::is_admin();
+    let admin = crate::capture::live::can_capture();
     serde_json::json!({
         "port": port,
         "device": device,

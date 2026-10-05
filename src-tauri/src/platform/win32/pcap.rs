@@ -5,6 +5,9 @@
 /// that loads).
 pub const LIBRARIES: &[&str] = &["wpcap.dll"];
 
+/// No capture helper: the meter captures in its own process.
+pub const HELPER: Option<&str> = None;
+
 /// What to tell the player when it will not load.
 pub const MISSING_HELP: &str = "Is Npcap installed? Download from https://npcap.com";
 

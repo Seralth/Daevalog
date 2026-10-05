@@ -11,7 +11,7 @@ pub(crate) fn get_capture_status(state: tauri::State<'_, AppState>) -> serde_jso
 
 #[tauri::command]
 pub(crate) fn is_admin() -> bool {
-    platform::admin::is_admin()
+    crate::capture::live::can_capture()
 }
 
 #[tauri::command]

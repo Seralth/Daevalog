@@ -1,0 +1,23 @@
+[package]
+name = "daevalog-capture"
+version = "2.0.44"
+description = "Daevalog DPS Meter - packet capture, and the helper process that holds the capture permission on Linux"
+authors = ["taengu"]
+edition = "2024"
+license = "GPL-3.0-only"
+
+# The helper runs with cap_net_raw, so it stays small: libpcap is loaded at
+# run time, and nothing here may pull in GTK, WebKit or Tauri.
+[lib]
+name = "daevalog_capture"
+path = "src/lib.rs"
+
+[[bin]]
+name = "daevalog-capture"
+path = "src/main.rs"
+
+[dependencies]
+libloading = "0.8"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"

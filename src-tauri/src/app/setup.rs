@@ -14,7 +14,6 @@ use tokio::sync::mpsc;
 
 use crate::capture::captured_payload::CapturedPayload;
 use crate::capture::combat_port_detector::CombatPortDetector;
-use crate::capture::pcap_capturer::PcapCapturer;
 use crate::combat::capture_dispatcher::CaptureDispatcher;
 use crate::combat::data_storage::DataStorage;
 use crate::combat::dps_calculator::DpsCalculator;
@@ -232,9 +231,8 @@ pub fn run() {
             // Start capture pipeline
             let (tx, rx) = mpsc::channel::<CapturedPayload>(4096);
 
-            let capturer = PcapCapturer::new(tx);
             if npcap_available {
-                capturer.start();
+                crate::capture::live::start(tx);
             }
 
             let mut dispatcher = CaptureDispatcher::new(

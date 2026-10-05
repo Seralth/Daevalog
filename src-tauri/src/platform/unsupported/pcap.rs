@@ -2,6 +2,9 @@
 /// not supported here yet.
 pub const LIBRARIES: &[&str] = &["libpcap.so.1"];
 
+/// No capture helper: the meter would capture in its own process.
+pub const HELPER: Option<&str> = None;
+
 pub const MISSING_HELP: &str = "Packet capture is not supported on this platform yet.";
 
 pub fn library_available() -> bool {
