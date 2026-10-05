@@ -47,9 +47,9 @@ impl WorkQueue {
         self.execute(admitted, work).await
     }
 
-    /// For the exit save, from any thread: wait at most `wait` for the jobs
-    /// ahead, then go on without them. Never refused and never skipped.
-    /// `None` when the queue was still busy.
+    /// For the exit save, from any thread: wait at most `wait` for the job
+    /// running now. `Some` holds the queue's turn; `None` when the queue was
+    /// still busy after `wait`, and the caller goes on without the turn.
     pub(crate) fn wait_turn(&'static self, wait: Duration) -> Option<SemaphorePermit<'static>> {
         let deadline = Instant::now() + wait;
         loop {
@@ -122,18 +122,18 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn tick_queue_runs_while_details_queue_is_busy() {
-        static DETAILS: WorkQueue = WorkQueue::new(16);
-        static TICK: WorkQueue = WorkQueue::new(1);
+        // The app's own queues: Details work in CALCULATIONS, the meter tick
+        // in DPS_TICK. No other test uses them.
         let (started_tx, started_rx) = tokio::sync::oneshot::channel();
         let (release_tx, release_rx) = std::sync::mpsc::channel();
-        let details = tokio::spawn(DETAILS.run(move || {
+        let details = tokio::spawn(CALCULATIONS.run(move || {
             started_tx.send(()).unwrap();
             release_rx.recv().unwrap();
         }));
         started_rx.await.unwrap();
-        let queued_details = tokio::spawn(DETAILS.run(|| 1));
+        let queued_details = tokio::spawn(CALCULATIONS.run(|| 1));
         assert_eq!(
-            tokio::time::timeout(std::time::Duration::from_secs(1), TICK.run_waiting(|| 42))
+            tokio::time::timeout(std::time::Duration::from_secs(1), DPS_TICK.run_waiting(|| 42))
                 .await
                 .expect("tick waited behind details work")
                 .unwrap(),
