@@ -436,10 +436,13 @@ class DpsApp {
         const meterRect = !ownWindow ? document.querySelector(".meter")?.getBoundingClientRect?.() : null;
         const rects = [detailsRect, includeMeter ? meterRect : null].filter(Boolean);
         if (!rects.length) return;
-        const left = Math.min(...rects.map((r) => r.left));
-        const top = Math.min(...rects.map((r) => r.top));
-        const right = Math.max(...rects.map((r) => r.right));
-        const bottom = Math.max(...rects.map((r) => r.bottom));
+        // Kept inside the window: in its own window the panel's side and
+        // bottom padding overhang the edges by 10px, and the capture took
+        // whatever was behind the window there (issue #6).
+        const left = Math.max(0, Math.min(...rects.map((r) => r.left)));
+        const top = Math.max(0, Math.min(...rects.map((r) => r.top)));
+        const right = Math.min(window.innerWidth, Math.max(...rects.map((r) => r.right)));
+        const bottom = Math.min(window.innerHeight, Math.max(...rects.map((r) => r.bottom)));
         const saveFile = !!this.saveScreenshotToFolder;
         const result = await window.javaBridge?.captureScreenshot?.({
           x: left,
