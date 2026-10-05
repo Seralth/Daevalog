@@ -2026,12 +2026,14 @@ body.mainPlayerNamesBold .settingsPanel .themeDropdownMenu .settingsDropdownItem
   position: relative;
   display: inline-flex;
 }
+/* Opens to the left of the icon: the list scrolls in its own box, which
+   clipped a tooltip above the first row under the filters. */
 .historyIconWrap[data-tip]::after {
   content: attr(data-tip);
   position: absolute;
-  bottom: calc(100% + 5px);
-  left: 50%;
-  transform: translateX(-50%);
+  right: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
   background: rgba(10, 10, 14, 0.95);
   color: #e0e0e0;
   font-size: 13px;
