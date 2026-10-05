@@ -138,14 +138,7 @@ pub fn run() {
                 npc_lookup: npc_lookup.clone(),
                 app_data_dir: app_data_dir.clone(),
                 i18n_data_dir: found_data_dir.clone(),
-                http: reqwest::Client::builder()
-                    .user_agent(concat!("A2Tools-DPS-Meter/", env!("CARGO_PKG_VERSION")))
-                    // Every request is to a2tools.app or its CDN.
-                    .https_only(true)
-                    .connect_timeout(Duration::from_secs(10))
-                    .timeout(Duration::from_secs(30))
-                    .build()
-                    .unwrap_or_default(),
+                http: http_client(),
                 capture_suspended: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 overlay_lock: Arc::new(OverlayLock::default()),
                 account_seen: Mutex::new(None),
@@ -353,6 +346,23 @@ pub fn run() {
         });
 }
 
+/// The one HTTP client. No fallback without these settings: a meter that
+/// cannot build it stops here rather than send plain-HTTP requests or wait
+/// forever.
+fn http_client() -> reqwest::Client {
+    reqwest::Client::builder()
+        .user_agent(concat!("A2Tools-DPS-Meter/", env!("CARGO_PKG_VERSION")))
+        // Every request is to a2tools.app or its CDN.
+        .https_only(true)
+        .connect_timeout(Duration::from_secs(10))
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap_or_else(|e| {
+            tracing::error!("Could not build the HTTP client: {e}");
+            panic!("could not build the HTTP client: {e}");
+        })
+}
+
 fn register_hotkeys(app: &tauri::AppHandle) {
     // Register global hotkeys from saved settings (or defaults)
     let hotkey_handle = app.clone();
@@ -408,4 +418,13 @@ fn register_hotkeys(app: &tauri::AppHandle) {
             move || toggle_overlay_lock(&h)
         },
     );
+}
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test(flavor = "current_thread")]
+    async fn the_http_client_refuses_plain_http() {
+        let err = super::http_client().get("http://127.0.0.1:9/").send().await.unwrap_err();
+        assert!(err.is_builder(), "{err}");
+    }
 }
