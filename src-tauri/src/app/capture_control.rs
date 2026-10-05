@@ -24,3 +24,11 @@ pub(crate) fn reset_auto_detection(state: &AppState) {
     state.port_detector.reset();
     state.ping_tracker.reset();
 }
+
+pub(crate) fn get_available_devices() -> Vec<String> {
+    // Load the OS's pcap library and enumerate devices
+    match crate::capture::pcap_capturer::list_device_labels() {
+        Ok(labels) => labels,
+        Err(_) => Vec::new(),
+    }
+}
