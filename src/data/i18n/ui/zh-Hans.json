@@ -341,10 +341,46 @@
       "button": "发送日志到 a2tools.app",
       "confirm": "要将最新的 3 个数据包日志发送到 a2tools.app 吗？\n\n数据包日志是开启数据包记录期间录下的原始游戏通信，包含角色名称。在那里只有 A2 Tools 开发者能打开，并会在 30 天后删除。发送后，Daevalog 无法查看，也无法提供帮助。",
       "sending": "发送中...",
-      "sent": "已发送到 a2tools.app。你的反馈代码是 {code}。发送到那里的日志 Daevalog 无法提供帮助。如果是 Daevalog 的问题，请在 github.com/Seralth/Daevalog 创建 issue，并从“打开日志文件夹”附加 debug.log；数值不对时，也请附加一个数据包日志。数据包日志包含角色名称，且 issue 是公开的。",
+      "sent": "已发送到 a2tools.app。你的反馈代码是 {code}。发送到那里的日志 Daevalog 无法提供帮助。Daevalog 的问题请用“报告问题”。",
       "failed": "无法发送：{error}",
       "openFolder": "打开日志文件夹",
-      "openFolderTip": "debug.log 和数据包日志。请附加到 github.com/Seralth/Daevalog 的 issue 中。"
+      "openFolderTip": "debug.log、数据包日志和已准备的副本。Daevalog 的问题请用“报告问题”。"
+    },
+    "report": {
+      "button": "报告问题",
+      "title": "报告问题",
+      "close": "关闭",
+      "intro": "请选择出了什么问题。表单会在浏览器中的 GitHub 上打开，并已填好下面的报告信息。在那里提交之前，不会发送任何内容。",
+      "kind": {
+        "wrongNumbers": "数值不对",
+        "crash": "崩溃或无法启动",
+        "other": "其他",
+        "security": "安全问题"
+      },
+      "hint": {
+        "wrongNumbers": "请附加这场战斗的已准备数据包日志；如果有的话，再附加游戏伤害分析（Ctrl+X）的记录。",
+        "crash": "请从“打开日志文件夹”附加 debug.log。如果“启用调试日志”是关闭的，请先打开它，再让问题重现一次。",
+        "other": "其他所有问题，也包括新功能的想法。",
+        "security": "公开后可能伤害其他玩家或用户的任何问题。只有开发者能看到这份报告。"
+      },
+      "prepare": {
+        "title": "准备数据包日志",
+        "hint": "数据包日志包含你遇到的每个玩家的名字，而 issue 是公开的。“准备日志”会在日志文件夹中保存一份副本，其中每个角色名都已替换。副本的名字以 report_ 开头。请附加这份副本。聊天消息可能仍留在其中。",
+        "log": "数据包日志",
+        "button": "准备日志",
+        "working": "正在准备...",
+        "done": "已保存 {name}。日志文件夹已打开。",
+        "failed": "无法准备日志：{error}",
+        "none": "还没有数据包日志。请打开“启用数据包日志”，再打一次这场战斗，然后准备日志。"
+      },
+      "recordFolder": "打开伤害分析文件夹",
+      "recordFolderTip": "游戏自己的记录：每次使用伤害分析（Ctrl+X）都会生成一个 record_*.dat 文件。",
+      "info": "报告信息",
+      "infoHint": "这段文字会放进 issue。其中没有用户名、角色名或文件夹路径。",
+      "copy": "复制",
+      "copied": "已复制",
+      "copyFailed": "无法复制",
+      "open": "打开表单"
     },
     "encounterTimeout": {
       "label": "遭遇战结束时间（秒）",

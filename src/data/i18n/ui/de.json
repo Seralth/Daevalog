@@ -341,10 +341,46 @@
       "button": "Logs an a2tools.app senden",
       "confirm": "Deine 3 neuesten Paket-Logs an a2tools.app senden?\n\nPaket-Logs sind der rohe Spielverkehr, aufgezeichnet während die Paketaufzeichnung an war, einschließlich Charakternamen. Dort kann sie nur der A2-Tools-Entwickler öffnen, und sie werden nach 30 Tagen gelöscht. Einmal gesendet, kann Daevalog sie weder sehen noch dabei helfen.",
       "sending": "Wird gesendet...",
-      "sent": "An a2tools.app gesendet. Dein Berichtscode ist {code}. Bei dort gesendeten Logs kann Daevalog nicht helfen. Bei einem Problem mit Daevalog öffne ein Issue auf github.com/Seralth/Daevalog und hänge debug.log aus „Log-Ordner öffnen“ an; bei falschen Zahlen auch ein Paket-Log. Paket-Logs enthalten Charakternamen, und Issues sind öffentlich.",
+      "sent": "An a2tools.app gesendet. Dein Berichtscode ist {code}. Bei dort gesendeten Logs kann Daevalog nicht helfen. Für ein Problem mit Daevalog nutze „Problem melden“.",
       "failed": "Senden fehlgeschlagen: {error}",
       "openFolder": "Log-Ordner öffnen",
-      "openFolderTip": "debug.log und die Paket-Logs. Hänge sie an ein Issue auf github.com/Seralth/Daevalog an."
+      "openFolderTip": "debug.log, die Paket-Logs und vorbereitete Kopien. Für ein Problem mit Daevalog nutze „Problem melden“."
+    },
+    "report": {
+      "button": "Problem melden",
+      "title": "Problem melden",
+      "close": "Schließen",
+      "intro": "Wähle, was schiefgelaufen ist. Das Formular öffnet sich auf GitHub in deinem Browser, mit den Berichtsangaben unten schon eingetragen. Gesendet wird erst, wenn du es dort abschickst.",
+      "kind": {
+        "wrongNumbers": "Falsche Zahlen",
+        "crash": "Absturz oder startet nicht",
+        "other": "Etwas anderes",
+        "security": "Sicherheitsproblem"
+      },
+      "hint": {
+        "wrongNumbers": "Hänge ein vorbereitetes Paket-Log des Kampfes an und, falls vorhanden, die Aufzeichnung der Kampfanalyse des Spiels (Strg+X).",
+        "crash": "Hänge debug.log aus „Log-Ordner öffnen“ an. Ist „Debug-Logging aktivieren“ aus, schalte es ein und lass das Problem noch einmal passieren.",
+        "other": "Alles andere, auch Ideen für neue Funktionen.",
+        "security": "Für alles, was anderen Spielern oder Nutzern schaden könnte, wenn es öffentlich steht. Nur der Entwickler sieht diesen Bericht."
+      },
+      "prepare": {
+        "title": "Paket-Log vorbereiten",
+        "hint": "Paket-Logs enthalten den Namen jedes Spielers, dem du begegnet bist, und Issues sind öffentlich. „Log vorbereiten“ speichert im Log-Ordner eine Kopie, in der jeder Charaktername ersetzt ist. Ihr Name beginnt mit report_. Hänge diese Kopie an. Chatnachrichten können darin bleiben.",
+        "log": "Paket-Log",
+        "button": "Log vorbereiten",
+        "working": "Wird vorbereitet...",
+        "done": "{name} gespeichert. Der Log-Ordner ist offen.",
+        "failed": "Log konnte nicht vorbereitet werden: {error}",
+        "none": "Noch keine Paket-Logs. Schalte „Paket-Logging aktivieren“ ein, spiele den Kampf noch einmal und bereite dann ein Log vor."
+      },
+      "recordFolder": "Kampfanalyse-Ordner öffnen",
+      "recordFolderTip": "Die Aufzeichnungen des Spiels: eine record_*.dat-Datei für jede Kampfanalyse (Strg+X).",
+      "info": "Berichtsangaben",
+      "infoHint": "Dieser Text kommt in das Issue. Er enthält keinen Benutzernamen, keine Charakternamen und keine Ordnerpfade.",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "copyFailed": "Kopieren fehlgeschlagen",
+      "open": "Formular öffnen"
     },
     "encounterTimeout": {
       "label": "Begegnung endet nach (Sekunden)",

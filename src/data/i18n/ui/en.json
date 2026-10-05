@@ -341,10 +341,46 @@
       "button": "Send logs to a2tools.app",
       "confirm": "Send your 3 newest packet logs to a2tools.app?\n\nPacket logs are raw game traffic recorded while packet logging was on, including character names. Only the A2 Tools developer can open them there, and they are deleted after 30 days. Once sent, Daevalog cannot see or help with them.",
       "sending": "Sending...",
-      "sent": "Sent to a2tools.app. Your report code is {code}. Daevalog cannot help with logs sent there. For a problem with Daevalog, open an issue at github.com/Seralth/Daevalog and attach debug.log from Open log folder; for wrong numbers, a packet log too. Packet logs include character names, and issues are public.",
+      "sent": "Sent to a2tools.app. Your report code is {code}. Daevalog cannot help with logs sent there. For a problem with Daevalog, use Report a problem.",
       "failed": "Could not send: {error}",
       "openFolder": "Open log folder",
-      "openFolderTip": "debug.log and the packet logs. Attach them to an issue at github.com/Seralth/Daevalog."
+      "openFolderTip": "debug.log, the packet logs and prepared copies. For a problem with Daevalog, use Report a problem."
+    },
+    "report": {
+      "button": "Report a problem",
+      "title": "Report a problem",
+      "close": "Close",
+      "intro": "Choose what went wrong. The form opens on GitHub in your browser, with the report info below filled in. Nothing is sent until you submit it there.",
+      "kind": {
+        "wrongNumbers": "Wrong numbers",
+        "crash": "Crash or won't start",
+        "other": "Something else",
+        "security": "Security problem"
+      },
+      "hint": {
+        "wrongNumbers": "Attach a prepared packet log of the fight, and the game's Combat Analysis record (Ctrl+X) if you have one.",
+        "crash": "Attach debug.log from Open log folder. If Enable debug logging is off, turn it on and make the problem happen again first.",
+        "other": "Anything else, ideas for new features too.",
+        "security": "For anything that could hurt other players or users if posted in public. Only the developer sees this report."
+      },
+      "prepare": {
+        "title": "Prepare a packet log",
+        "hint": "Packet logs hold the name of every player you met, and issues are public. Prepare log saves a copy to the log folder with every character name replaced. Its name starts with report_. Attach that copy. Chat messages can stay in it.",
+        "log": "Packet log",
+        "button": "Prepare log",
+        "working": "Preparing...",
+        "done": "Saved {name}. The log folder is open.",
+        "failed": "Could not prepare the log: {error}",
+        "none": "No packet logs yet. Turn on Enable packet logging, play the fight again, then prepare a log."
+      },
+      "recordFolder": "Open Combat Analysis folder",
+      "recordFolderTip": "The game's own records: one record_*.dat file each time you use Combat Analysis (Ctrl+X).",
+      "info": "Report info",
+      "infoHint": "This text goes into the issue. It holds no user name, character names or folder paths.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Could not copy",
+      "open": "Open the form"
     },
     "encounterTimeout": {
       "label": "Encounter ends after (seconds)",

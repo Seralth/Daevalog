@@ -341,10 +341,46 @@
       "button": "Enviar logs para a2tools.app",
       "confirm": "Enviar seus 3 logs de pacotes mais recentes para a2tools.app?\n\nLogs de pacotes são o tráfego bruto do jogo gravado enquanto o registro de pacotes estava ligado, incluindo nomes de personagens. Lá, só o desenvolvedor do A2 Tools pode abri-los, e eles são apagados após 30 dias. Depois de enviados, o Daevalog não pode vê-los nem ajudar com eles.",
       "sending": "Enviando...",
-      "sent": "Enviado para a2tools.app. Seu código de relatório é {code}. O Daevalog não pode ajudar com logs enviados para lá. Para um problema com o Daevalog, abra uma issue em github.com/Seralth/Daevalog e anexe o debug.log de \"Abrir pasta de logs\"; para números errados, um log de pacotes também. Logs de pacotes incluem nomes de personagens, e as issues são públicas.",
+      "sent": "Enviado para a2tools.app. Seu código de relatório é {code}. O Daevalog não pode ajudar com logs enviados para lá. Para um problema com o Daevalog, use \"Relatar um problema\".",
       "failed": "Não foi possível enviar: {error}",
       "openFolder": "Abrir pasta de logs",
-      "openFolderTip": "debug.log e os logs de pacotes. Anexe-os a uma issue em github.com/Seralth/Daevalog."
+      "openFolderTip": "debug.log, os logs de pacotes e as cópias preparadas. Para um problema com o Daevalog, use \"Relatar um problema\"."
+    },
+    "report": {
+      "button": "Relatar um problema",
+      "title": "Relatar um problema",
+      "close": "Fechar",
+      "intro": "Escolha o que deu errado. O formulário abre no GitHub no seu navegador, com as informações do relatório abaixo já preenchidas. Nada é enviado até você enviar lá.",
+      "kind": {
+        "wrongNumbers": "Números errados",
+        "crash": "Travou ou não abre",
+        "other": "Outra coisa",
+        "security": "Problema de segurança"
+      },
+      "hint": {
+        "wrongNumbers": "Anexe um log de pacotes preparado da luta e, se tiver, o registro da Análise de Combate do jogo (Ctrl+X).",
+        "crash": "Anexe o debug.log de \"Abrir pasta de logs\". Se \"Ativar registro de depuração\" estiver desligado, ligue-o e faça o problema acontecer de novo.",
+        "other": "Qualquer outra coisa, ideias de novas funções também.",
+        "security": "Para tudo o que poderia prejudicar outros jogadores ou usuários se fosse publicado. Só o desenvolvedor vê este relatório."
+      },
+      "prepare": {
+        "title": "Preparar um log de pacotes",
+        "hint": "Logs de pacotes contêm o nome de cada jogador que você encontrou, e as issues são públicas. \"Preparar log\" salva na pasta de logs uma cópia com cada nome de personagem trocado. O nome dela começa com report_. Anexe essa cópia. Mensagens de chat podem ficar nela.",
+        "log": "Log de pacotes",
+        "button": "Preparar log",
+        "working": "Preparando...",
+        "done": "{name} salvo. A pasta de logs está aberta.",
+        "failed": "Não foi possível preparar o log: {error}",
+        "none": "Ainda não há logs de pacotes. Ligue \"Ativar registro de pacotes\", jogue a luta de novo e depois prepare um log."
+      },
+      "recordFolder": "Abrir pasta da Análise de Combate",
+      "recordFolderTip": "Os registros do próprio jogo: um arquivo record_*.dat para cada uso da Análise de Combate (Ctrl+X).",
+      "info": "Informações do relatório",
+      "infoHint": "Este texto vai para a issue. Ele não contém nome de usuário, nomes de personagens nem caminhos de pastas.",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyFailed": "Não foi possível copiar",
+      "open": "Abrir o formulário"
     },
     "encounterTimeout": {
       "label": "O encontro termina após (segundos)",

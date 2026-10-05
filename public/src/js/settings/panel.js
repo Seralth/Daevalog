@@ -324,6 +324,7 @@ Object.assign(DpsApp.prototype, {
       });
     }
     this.initSendLogs();
+    this.initReportProblem?.();
     if (this.pinMeToTopCheckbox) {
       this.pinMeToTopCheckbox.checked = this.pinMeToTop;
       this.pinMeToTopCheckbox.addEventListener("change", (event) => {

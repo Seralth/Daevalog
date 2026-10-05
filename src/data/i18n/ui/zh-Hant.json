@@ -341,10 +341,46 @@
       "button": "傳送紀錄到 a2tools.app",
       "confirm": "要將最新的 3 個封包紀錄傳送到 a2tools.app 嗎？\n\n封包紀錄是開啟封包記錄期間錄下的原始遊戲通訊，包含角色名稱。在那裡只有 A2 Tools 開發者能開啟，並會在 30 天後刪除。傳送後，Daevalog 無法查看，也無法提供協助。",
       "sending": "傳送中...",
-      "sent": "已傳送到 a2tools.app。你的回報代碼是 {code}。傳送到那裡的紀錄 Daevalog 無法提供協助。如果是 Daevalog 的問題，請在 github.com/Seralth/Daevalog 建立 issue，並從「開啟紀錄資料夾」附加 debug.log；數值不對時，也請附加一個封包紀錄。封包紀錄包含角色名稱，且 issue 是公開的。",
+      "sent": "已傳送到 a2tools.app。你的回報代碼是 {code}。傳送到那裡的紀錄 Daevalog 無法提供協助。Daevalog 的問題請用「回報問題」。",
       "failed": "無法傳送：{error}",
       "openFolder": "開啟紀錄資料夾",
-      "openFolderTip": "debug.log 和封包紀錄。請附加到 github.com/Seralth/Daevalog 的 issue 中。"
+      "openFolderTip": "debug.log、封包紀錄和已準備的副本。Daevalog 的問題請用「回報問題」。"
+    },
+    "report": {
+      "button": "回報問題",
+      "title": "回報問題",
+      "close": "關閉",
+      "intro": "請選擇出了什麼問題。表單會在瀏覽器中的 GitHub 上開啟，並已填好下方的回報資訊。在那裡送出之前，不會傳送任何內容。",
+      "kind": {
+        "wrongNumbers": "數值不對",
+        "crash": "當機或無法啟動",
+        "other": "其他",
+        "security": "安全性問題"
+      },
+      "hint": {
+        "wrongNumbers": "請附加這場戰鬥的已準備封包紀錄；如果有的話，再附加遊戲傷害分析（Ctrl+X）的紀錄。",
+        "crash": "請從「開啟紀錄資料夾」附加 debug.log。如果「啟用除錯記錄」是關閉的，請先開啟，再讓問題重現一次。",
+        "other": "其他所有問題，也包括新功能的想法。",
+        "security": "公開後可能傷害其他玩家或使用者的任何問題。只有開發者能看到這份回報。"
+      },
+      "prepare": {
+        "title": "準備封包紀錄",
+        "hint": "封包紀錄包含你遇到的每位玩家的名字，而 issue 是公開的。「準備紀錄」會在紀錄資料夾中儲存一份副本，其中每個角色名稱都已替換。副本的名稱以 report_ 開頭。請附加這份副本。聊天訊息可能仍留在其中。",
+        "log": "封包紀錄",
+        "button": "準備紀錄",
+        "working": "準備中...",
+        "done": "已儲存 {name}。紀錄資料夾已開啟。",
+        "failed": "無法準備紀錄：{error}",
+        "none": "還沒有封包紀錄。請開啟「啟用封包日誌」，再打一次這場戰鬥，然後準備紀錄。"
+      },
+      "recordFolder": "開啟傷害分析資料夾",
+      "recordFolderTip": "遊戲自己的紀錄：每次使用傷害分析（Ctrl+X）都會產生一個 record_*.dat 檔案。",
+      "info": "回報資訊",
+      "infoHint": "這段文字會放進 issue。其中沒有使用者名稱、角色名稱或資料夾路徑。",
+      "copy": "複製",
+      "copied": "已複製",
+      "copyFailed": "無法複製",
+      "open": "開啟表單"
     },
     "encounterTimeout": {
       "label": "遭遇戰結束時間（秒）",

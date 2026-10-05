@@ -451,6 +451,19 @@
       invoke("open_data_folder").catch(() => {});
     },
 
+    // --- Report a problem ---
+    reportInfo() {
+      return invoke("report_info");
+    },
+
+    prepareReportLog(name) {
+      return invoke("prepare_report_log", { name: name || null });
+    },
+
+    openGameRecordFolder() {
+      invoke("open_game_record_folder").catch(() => {});
+    },
+
     // --- Ping ---
     getPingMs() {
       return cachedPing;

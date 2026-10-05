@@ -2205,10 +2205,7 @@ class DpsApp {
         const code = result?.code || "?";
         show(t("settings.sendLogs.sent",
           `Sent to a2tools.app. Your report code is ${code}. Daevalog cannot help with ` +
-          "logs sent there. For a problem with Daevalog, open an issue at " +
-          "github.com/Seralth/Daevalog and attach debug.log from Open log folder; for " +
-          "wrong numbers, a packet log too. Packet logs include character names, and " +
-          "issues are public.",
+          "logs sent there. For a problem with Daevalog, use Report a problem.",
           { code }));
       } catch (err) {
         const msg = String(err?.message || err || "");

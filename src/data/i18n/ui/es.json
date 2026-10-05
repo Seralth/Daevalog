@@ -341,10 +341,46 @@
       "button": "Enviar registros a a2tools.app",
       "confirm": "¿Enviar tus 3 registros de paquetes más recientes a a2tools.app?\n\nLos registros de paquetes son el tráfico bruto del juego grabado mientras el registro de paquetes estaba activado, incluidos los nombres de personajes. Allí solo el desarrollador de A2 Tools puede abrirlos, y se borran a los 30 días. Una vez enviados, Daevalog no puede verlos ni ayudar con ellos.",
       "sending": "Enviando...",
-      "sent": "Enviado a a2tools.app. Tu código de informe es {code}. Daevalog no puede ayudar con los registros enviados allí. Para un problema con Daevalog, abre una incidencia en github.com/Seralth/Daevalog y adjunta debug.log desde «Abrir carpeta de registros»; si los números son incorrectos, también un registro de paquetes. Los registros de paquetes incluyen nombres de personajes, y las incidencias son públicas.",
+      "sent": "Enviado a a2tools.app. Tu código de informe es {code}. Daevalog no puede ayudar con los registros enviados allí. Para un problema con Daevalog, usa «Informar de un problema».",
       "failed": "No se pudo enviar: {error}",
       "openFolder": "Abrir carpeta de registros",
-      "openFolderTip": "debug.log y los registros de paquetes. Adjúntalos a una incidencia en github.com/Seralth/Daevalog."
+      "openFolderTip": "debug.log, los registros de paquetes y las copias preparadas. Para un problema con Daevalog, usa «Informar de un problema»."
+    },
+    "report": {
+      "button": "Informar de un problema",
+      "title": "Informar de un problema",
+      "close": "Cerrar",
+      "intro": "Elige qué ha fallado. El formulario se abre en GitHub en tu navegador, con los datos del informe de abajo ya puestos. No se envía nada hasta que lo envíes allí.",
+      "kind": {
+        "wrongNumbers": "Números incorrectos",
+        "crash": "Se cierra o no arranca",
+        "other": "Otra cosa",
+        "security": "Problema de seguridad"
+      },
+      "hint": {
+        "wrongNumbers": "Adjunta un registro de paquetes preparado del combate y, si lo tienes, el registro del Analizador de combate del juego (Ctrl+X).",
+        "crash": "Adjunta debug.log desde «Abrir carpeta de registros». Si «Activar registro de depuración» está desactivado, actívalo y haz que el problema vuelva a ocurrir.",
+        "other": "Cualquier otra cosa, también ideas para funciones nuevas.",
+        "security": "Para todo lo que podría dañar a otros jugadores o usuarios si se publica. Solo el desarrollador ve este informe."
+      },
+      "prepare": {
+        "title": "Preparar un registro de paquetes",
+        "hint": "Los registros de paquetes contienen el nombre de cada jugador con el que te cruzaste, y las incidencias son públicas. «Preparar registro» guarda en la carpeta de registros una copia con cada nombre de personaje cambiado. Su nombre empieza por report_. Adjunta esa copia. Los mensajes de chat pueden quedar en ella.",
+        "log": "Registro de paquetes",
+        "button": "Preparar registro",
+        "working": "Preparando...",
+        "done": "Guardado {name}. La carpeta de registros está abierta.",
+        "failed": "No se pudo preparar el registro: {error}",
+        "none": "Aún no hay registros de paquetes. Activa «Activar registro de paquetes», vuelve a jugar el combate y luego prepara un registro."
+      },
+      "recordFolder": "Abrir carpeta del Analizador de combate",
+      "recordFolderTip": "Los registros del propio juego: un archivo record_*.dat por cada uso del Analizador de combate (Ctrl+X).",
+      "info": "Datos del informe",
+      "infoHint": "Este texto va en la incidencia. No contiene nombre de usuario, nombres de personajes ni rutas de carpetas.",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyFailed": "No se pudo copiar",
+      "open": "Abrir el formulario"
     },
     "encounterTimeout": {
       "label": "El encuentro termina tras (segundos)",

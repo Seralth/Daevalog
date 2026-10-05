@@ -341,10 +341,46 @@
       "button": "Envoyer les journaux à a2tools.app",
       "confirm": "Envoyer vos 3 derniers journaux de paquets à a2tools.app ?\n\nLes journaux de paquets sont le trafic brut du jeu enregistré pendant que la journalisation était activée, noms de personnages compris. Là-bas, seul le développeur d'A2 Tools peut les ouvrir, et ils sont supprimés après 30 jours. Une fois envoyés, Daevalog ne peut ni les voir ni vous aider avec.",
       "sending": "Envoi...",
-      "sent": "Envoyé à a2tools.app. Votre code de rapport est {code}. Daevalog ne peut pas vous aider avec les journaux envoyés là-bas. Pour un problème avec Daevalog, ouvrez un ticket sur github.com/Seralth/Daevalog et joignez debug.log depuis « Ouvrir le dossier des journaux » ; pour des chiffres faux, un journal de paquets aussi. Les journaux de paquets contiennent des noms de personnages, et les tickets sont publics.",
+      "sent": "Envoyé à a2tools.app. Votre code de rapport est {code}. Daevalog ne peut pas vous aider avec les journaux envoyés là-bas. Pour un problème avec Daevalog, utilisez « Signaler un problème ».",
       "failed": "Envoi impossible : {error}",
       "openFolder": "Ouvrir le dossier des journaux",
-      "openFolderTip": "debug.log et les journaux de paquets. Joignez-les à un ticket sur github.com/Seralth/Daevalog."
+      "openFolderTip": "debug.log, les journaux de paquets et les copies préparées. Pour un problème avec Daevalog, utilisez « Signaler un problème »."
+    },
+    "report": {
+      "button": "Signaler un problème",
+      "title": "Signaler un problème",
+      "close": "Fermer",
+      "intro": "Choisissez ce qui ne va pas. Le formulaire s'ouvre sur GitHub dans votre navigateur, avec les infos du rapport ci-dessous déjà remplies. Rien n'est envoyé avant que vous l'envoyiez là-bas.",
+      "kind": {
+        "wrongNumbers": "Chiffres faux",
+        "crash": "Plantage ou ne démarre pas",
+        "other": "Autre chose",
+        "security": "Problème de sécurité"
+      },
+      "hint": {
+        "wrongNumbers": "Joignez un journal de paquets préparé du combat et, si vous l'avez, le relevé de l'Analyseur de combat du jeu (Ctrl+X).",
+        "crash": "Joignez debug.log depuis « Ouvrir le dossier des journaux ». Si « Activer la journalisation de débogage » est désactivé, activez-le et refaites apparaître le problème.",
+        "other": "Tout le reste, y compris les idées de nouvelles fonctions.",
+        "security": "Pour tout ce qui pourrait nuire à d'autres joueurs ou utilisateurs s'il était publié. Seul le développeur voit ce rapport."
+      },
+      "prepare": {
+        "title": "Préparer un journal de paquets",
+        "hint": "Les journaux de paquets contiennent le nom de chaque joueur que vous avez croisé, et les tickets sont publics. « Préparer le journal » enregistre dans le dossier des journaux une copie où chaque nom de personnage est remplacé. Son nom commence par report_. Joignez cette copie. Les messages de chat peuvent y rester.",
+        "log": "Journal de paquets",
+        "button": "Préparer le journal",
+        "working": "Préparation...",
+        "done": "{name} enregistré. Le dossier des journaux est ouvert.",
+        "failed": "Impossible de préparer le journal : {error}",
+        "none": "Pas encore de journal de paquets. Activez « Activer la journalisation des paquets », rejouez le combat, puis préparez un journal."
+      },
+      "recordFolder": "Ouvrir le dossier de l'Analyseur de combat",
+      "recordFolderTip": "Les relevés du jeu : un fichier record_*.dat pour chaque utilisation de l'Analyseur de combat (Ctrl+X).",
+      "info": "Infos du rapport",
+      "infoHint": "Ce texte va dans le ticket. Il ne contient ni nom d'utilisateur, ni noms de personnages, ni chemins de dossiers.",
+      "copy": "Copier",
+      "copied": "Copié",
+      "copyFailed": "Copie impossible",
+      "open": "Ouvrir le formulaire"
     },
     "encounterTimeout": {
       "label": "La rencontre se termine après (secondes)",

@@ -860,7 +860,8 @@
                     <div class="settingsHint sendLogsStatus" data-i18n="settings.sendLogs.hint">Sends your 3 newest packet logs to a2tools.app, the A2 Tools developer's site.</div>
                   </div>
                   <div class="settingsRowEnd">
-                    <button class="settingsAction openLogFolderBtn" type="button" data-i18n="settings.sendLogs.openFolder" data-i18n-title="settings.sendLogs.openFolderTip" title="debug.log and the packet logs. Attach them to an issue at github.com/Seralth/Daevalog.">Open log folder</button>
+                    <button class="settingsAction reportProblemBtn" type="button" data-i18n="settings.report.button">Report a problem</button>
+                    <button class="settingsAction openLogFolderBtn" type="button" data-i18n="settings.sendLogs.openFolder" data-i18n-title="settings.sendLogs.openFolderTip" title="debug.log, the packet logs and prepared copies. For a problem with Daevalog, use Report a problem.">Open log folder</button>
                     <button class="settingsAction sendLogsBtn" type="button" data-i18n="settings.sendLogs.button">Send logs to a2tools.app</button>
                   </div>
                 </div>
@@ -1057,6 +1058,39 @@
           display: none;
         "></div>
     </div>
+    <div class="reportModal" aria-hidden="true">
+      <div class="reportCard" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+        <div class="reportHeader">
+          <div class="reportTitle" id="reportTitle" data-i18n="settings.report.title">Report a problem</div>
+          <button class="closeX reportClose" type="button" aria-label="Close" data-i18n-aria-label="settings.report.close">×</button>
+        </div>
+        <div class="reportText" data-i18n="settings.report.intro">Choose what went wrong. The form opens on GitHub in your browser, with the report info below filled in. Nothing is sent until you submit it there.</div>
+        <div class="reportKinds" role="group">
+          <button class="reportBtn reportKind" type="button" data-kind="wrong-numbers" data-i18n="settings.report.kind.wrongNumbers">Wrong numbers</button>
+          <button class="reportBtn reportKind" type="button" data-kind="crash" data-i18n="settings.report.kind.crash">Crash or won't start</button>
+          <button class="reportBtn reportKind" type="button" data-kind="other" data-i18n="settings.report.kind.other">Something else</button>
+          <button class="reportBtn reportKind" type="button" data-kind="security" data-i18n="settings.report.kind.security">Security problem</button>
+        </div>
+        <div class="reportText reportKindHint" aria-live="polite"></div>
+        <div class="reportPrepare" hidden>
+          <div class="reportSubTitle" data-i18n="settings.report.prepare.title">Prepare a packet log</div>
+          <div class="reportText" data-i18n="settings.report.prepare.hint">Packet logs hold the name of every player you met, and issues are public. Prepare log saves a copy to the log folder with every character name replaced. Its name starts with report_. Attach that copy. Chat messages can stay in it.</div>
+          <div class="reportPrepareRow">
+            <select class="reportLogSelect" aria-label="Packet log" data-i18n-aria-label="settings.report.prepare.log"></select>
+            <button class="reportBtn reportPrepareBtn" type="button" data-i18n="settings.report.prepare.button">Prepare log</button>
+          </div>
+          <div class="reportText reportPrepareStatus" aria-live="polite"></div>
+          <button class="reportBtn reportRecordFolderBtn" type="button" hidden data-i18n="settings.report.recordFolder" data-i18n-title="settings.report.recordFolderTip" title="The game&#39;s own records: one record_*.dat file each time you use Combat Analysis (Ctrl+X).">Open Combat Analysis folder</button>
+        </div>
+        <div class="reportInfoHead">
+          <div class="reportSubTitle" data-i18n="settings.report.info">Report info</div>
+          <button class="reportBtn reportCopyBtn" type="button" data-i18n="settings.report.copy">Copy</button>
+        </div>
+        <pre class="reportInfo"></pre>
+        <div class="reportText" data-i18n="settings.report.infoHint">This text goes into the issue. It holds no user name, character names or folder paths.</div>
+        <button class="reportBtn reportOpenBtn" type="button" disabled data-i18n="settings.report.open">Open the form</button>
+      </div>
+    </div>
     <div class="supportModal" id="supportModal" aria-hidden="true">
       <div
         class="supportModalCard"
@@ -1159,6 +1193,7 @@
     <script src="/src/js/i18n.js"></script>
     <script src="/src/js/core.js?v=2018a"></script>
     <script src="/src/js/settings/panel.js"></script>
+    <script src="/src/js/settings/report.js"></script>
     <script src="/src/js/settings/support.js"></script>
     <script src="/src/js/settings/account.js"></script>
     <script src="/src/js/settings/keybinds.js"></script>
