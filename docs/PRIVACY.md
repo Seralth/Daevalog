@@ -107,9 +107,9 @@ meter does not need them.
 ### The other capture tool
 
 `src-tauri/diagnostics/packet_dump.rs` is a developer tool that is **not compiled
-into the released app**. It captures promiscuously on every network adapter with
-no filter, so it records traffic from other applications on your machine and, on
-a shared network segment, potentially other machines. It writes `rawpackets_*.txt`.
+into the released app**. It captures on every network adapter with no filter, so
+it records traffic from other applications on your machine. It writes
+`rawpackets_*.txt`.
 
 If you built it yourself to help debug something: those files are far more
 sensitive than the ones above. The upload feature described below will refuse

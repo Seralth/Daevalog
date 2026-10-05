@@ -210,7 +210,7 @@ impl PcapLib {
             (self.open_live)(
                 c_name.as_ptr(),
                 65535,  // snaplen
-                1,      // promiscuous
+                0,      // not promiscuous: only this machine's own traffic
                 100,    // timeout ms
                 errbuf.as_mut_ptr() as *mut c_char,
             )

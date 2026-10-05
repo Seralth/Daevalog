@@ -369,7 +369,7 @@ mod packet_log_tests {
         touch(&dir, "packets_20260101_000000.txt");
         touch(&dir, "packets_20260102_000000.txt");
         touch(&dir, "packets_20260103_000000.txt");
-        // Not ours: the promiscuous diagnostic dump, a user's notes, the debug log.
+        // Not ours: the raw diagnostic dump, a user's notes, the debug log.
         touch(&dir, "rawpackets_20260101_000000.txt");
         touch(&dir, "my-important-capture.txt");
         touch(&dir, "debug.log");

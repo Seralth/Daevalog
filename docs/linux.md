@@ -314,10 +314,11 @@ To pick up fixes later: `git pull`, then run the `npx tauri build --no-bundle` l
 Reading the game's network traffic needs a capability Linux only gives on request. Grant it to the meter's file, from the `A2Tools-DPS-Meter` folder:
 
 ```bash
-sudo setcap cap_net_raw,cap_net_admin=eip src-tauri/target/release/a2tools-dps-meter
+sudo setcap cap_net_raw=ep src-tauri/target/release/a2tools-dps-meter
 ```
 
 - Redo this after every rebuild: a new build is a new file and loses the permission.
+- Older versions of this guide also granted `cap_net_admin`. The line above replaces the whole list, so running it again removes that.
 - Do not run the meter itself with `sudo`. It would run as root, keep its settings in root's home folder, and often fail to open its window.
 - `setcap` does not work on some drives (for example NTFS or exFAT shared with Windows). If it fails, build the meter on a Linux-formatted drive.
 
