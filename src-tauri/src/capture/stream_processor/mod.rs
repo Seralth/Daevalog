@@ -428,6 +428,39 @@ mod tests {
         assert_eq!(try_read_varint(&record, &mut at), Some(1020));
     }
 
+    /// A Spiritmaster's spirits send `04 38` records to their owner on each
+    /// landed attack (2026-10-05 15:37). The Wind Spirit's (16990003) restores
+    /// 1.5 % HP: 103 of 6871. The Water Spirit's (16990002) restores 20 MP
+    /// (SkillEffect MpHeal 20), same layout; the game files it under 100011,
+    /// so it showed as "Fire Spirit: Basic Attack" healing. A self-cast MP
+    /// restore (15760007, 30 MP, 15:17:41) went in as a self-heal.
+    #[test]
+    fn mp_restores_are_not_healing() {
+        let (storage, mut p) = processor();
+        let mut hit = ParsedDamagePacket::new();
+        hit.set_timestamp(1_000);
+        hit.set_target_id(16720);
+        hit.set_actor_id(10137);
+        hit.set_skill_code(16040000);
+        hit.set_type(2);
+        hit.set_damage(500);
+        storage.append_damage(hit.clone());
+        hit.set_actor_id(2787);
+        storage.append_damage(hit);
+        storage.register_confirmed_summon_by_id(61001, 10137);
+        storage.register_confirmed_summon_by_id(49482, 10137);
+
+        assert!(feed(&mut p, "994f0400c9dc03333f03010602f7af446501000000ac52670100"));
+        assert!(feed(&mut p, "994f0400ca8203323f0301060293af446501000000ac52140100"));
+        assert!(feed(&mut p, "e3150400e315877af0005302c7dcef5d01000000865d1e0100"));
+
+        let heals = storage.heals_between(0, 2_000);
+        let healed: Vec<_> = heals.iter().flat_map(|(a, s)| s.iter().map(move |(k, v)| (*a, k.0, v.total_heal))).collect();
+        assert_eq!(healed, vec![(61001, 100031, 103)]);
+        let snapshot = storage.get_combat_snapshot();
+        assert!(!snapshot.contains_key(&10137) && !snapshot.contains_key(&2787));
+    }
+
     /// Hit type 1 (Miss) and 6 (Resist) records have no value. They count on
     /// the skill and leave damage, hits and targets as they were.
     #[test]

@@ -19,6 +19,22 @@ static GROUPS: std::sync::LazyLock<HashMap<i32, i32>> = std::sync::LazyLock::new
         .unwrap_or_default()
 });
 
+static RESOURCE_RESTORES: std::sync::LazyLock<std::collections::HashSet<i32>> = std::sync::LazyLock::new(|| {
+    #[derive(serde::Deserialize)]
+    struct Table {
+        skills: Vec<i32>,
+    }
+    serde_json::from_str::<Table>(include_str!("../../../src/data/resource_restore_skills.json"))
+        .map(|t| t.skills.into_iter().collect())
+        .unwrap_or_default()
+});
+
+/// Whether a raw skill id restores only MP (or another resource), never HP.
+/// Its records carry the amount like a heal does.
+pub fn restores_resource(raw: i32) -> bool {
+    RESOURCE_RESTORES.contains(&raw)
+}
+
 /// The id a skill's damage is reported under. A skill the game table groups
 /// takes the game's id; any other is folded into its base skill (the code
 /// rounded down to 10000) when both carry the same name.

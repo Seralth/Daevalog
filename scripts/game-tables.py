@@ -13,6 +13,7 @@ Writes, under src/data:
 - i18n/skills/<lang>.json: the name of every skill the game names.
 - i18n/dungeons/<lang>.json: dungeon names, for the languages already there.
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
+- resource_restore_skills.json: skills that restore MP or another resource, never HP.
 - open_world_maps.json: overworld maps and their world layers.
 
 zh-Hans and zh-Hant are not in the global client and are left alone.
@@ -136,6 +137,25 @@ def main():
                   "Damage Analyzer reports a skill under (only ids that differ)",
         "groups": dict(sorted(groups.items(), key=lambda kv: int(kv[0]))),
     }, separators=(",", ":")) + "\n", encoding="utf-8")
+
+    # Skills that restore only MP (or another resource), never HP. Their
+    # records look like heals (a Water Spirit's attack sends 20 MP to its
+    # Spiritmaster), so the meter must not count them as healing.
+    effects = {}
+    for e in rows(export, "SkillEffect"):
+        effects.setdefault(value(e["SkillEffectGroupId"]), set()).add(e["EffectType"])
+    not_hp = re.compile(r"ESkillEffectType::(Mp|Sp|Dp|Op|Fp|AP)Heal")
+    restores = []
+    for s in skills:
+        groups_of = [value(t["SkillEffectGroupId"]) for t in s["SkillEffectTimeDataList"]]
+        types = set().union(*(effects.get(g, set()) for g in groups_of if g))
+        if types and all(not_hp.match(t) for t in types):
+            restores.append(s["ID"]["Value"])
+    (DATA / "resource_restore_skills.json").write_text(json.dumps({
+        "source": f"{source}: Skill and SkillEffect tables, skills whose every effect restores "
+                  "MP, SP, DP, OP, FP or AP (none restores HP)",
+        "skills": sorted(restores),
+    }) + "\n", encoding="utf-8")
 
     overworld = {m["ID"]["Value"] for m in maps if m["MapType"] in ("EMapType::General", "EMapType::Starter")}
     open_world = overworld | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}

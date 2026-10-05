@@ -550,7 +550,11 @@ impl StreamProcessor {
                 break;
             }
 
-            if actor_value != target_value {
+            if crate::entity::skill_group::restores_resource(exact_skill_code as i32) {
+                // MP (or another resource) restored, not HP: neither damage
+                // nor healing. A Water Spirit's attack sends one of these to
+                // its Spiritmaster (16990002, 20 MP), filed under 100011.
+            } else if actor_value != target_value {
                 let mut pdp = ParsedDamagePacket::new();
                 if let Some(ts) = self.override_timestamp {
                     pdp.set_timestamp(ts);
