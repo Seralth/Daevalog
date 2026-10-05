@@ -1,0 +1,39 @@
+name: Wrong numbers
+description: The meter shows damage, hits or other numbers that are not right.
+title: "Wrong numbers: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a problem in the meter's Settings opens this form with the report info filled in, and prepares the packet log.
+  - type: textarea
+    id: what
+    attributes:
+      label: What was wrong
+      description: Which number, what the meter showed, and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: fight
+    attributes:
+      label: The fight
+      description: The boss or target, the dungeon, and about when it was (date and time).
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Prepared packet log and Combat Analysis record
+      description: |
+        **Prepared packet log.** In the meter: Settings, Report a problem, Wrong numbers, Prepare log. It saves a copy of the packet log with every character name replaced, named `report_packets_….txt`, in the log folder (Open log folder). Attach that copy, never a file whose name starts with `packets_`: those hold other players' names, and issues are public.
+        **Combat Analysis record**, if you used the game's Combat Analysis (Ctrl+X) in the fight: a `record_….dat` file. Open Combat Analysis folder, in the same place, opens its folder. It is `AION2/Saved_Steam/PersistentDownloadDir/DamageAnalyzer/` in the game's local app data, one folder per account: on Linux inside the game's Proton prefix (`steamapps/compatdata/3393110/pfx/drive_c/users/steamuser/AppData/Local/`), on Windows in `%LOCALAPPDATA%`.
+        GitHub takes files up to 25 MB and no `.dat` files: put the record, or a bigger log, in a `.zip` first.
+      placeholder: Drag the files here.
+  - type: textarea
+    id: report-info
+    attributes:
+      label: Report info
+      description: Filled in by Report a problem. Without it, give the Daevalog version (shown in Settings), your system and your desktop.
+      render: text
+    validations:
+      required: true
