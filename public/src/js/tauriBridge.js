@@ -208,11 +208,24 @@
     window._dpsApp?._onOverlayLockChanged?.(!!event?.payload);
   });
 
+  // The capture library (Npcap on Windows, libpcap elsewhere) did not load,
+  // so nothing is captured. Only the overlay says so.
   listen("npcap-missing", () => {
-    const msg = "Npcap is required for packet capture but is not installed.\n\nWould you like to download it now?";
-    if (confirm(msg)) {
-      invoke("open_url", { url: "https://npcap.com/#download" }).catch(() => {});
+    if (window.A2_VIEW !== "main") return;
+    if (/Windows/.test(navigator.userAgent)) {
+      const msg = window.i18n?.t?.("connection.npcapMissing", "") ||
+        "Npcap is required for packet capture but is not installed.\n\nWould you like to download it now?";
+      if (confirm(msg)) {
+        invoke("open_url", { url: "https://npcap.com/#download" }).catch(() => {});
+      }
+      return;
     }
+    const notice = document.querySelector(".captureNotice");
+    if (!notice) return;
+    notice.hidden = false;
+    notice.querySelector(".captureNoticeClose")?.addEventListener("click", () => {
+      notice.hidden = true;
+    }, { once: true });
   });
 
   listen("combat-reset", () => {

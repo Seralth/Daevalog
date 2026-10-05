@@ -432,7 +432,10 @@
   "connection": {
     "auto": "자동",
     "detecting": "AION2 연결을 찾는 중...",
-    "loopback": "로컬 루프백"
+    "loopback": "로컬 루프백",
+    "captureUnavailable": "패킷 캡처를 사용할 수 없습니다. 패키지를 다시 설치하거나 docs/linux.md를 참고하세요.",
+    "npcapMissing": "패킷 캡처에는 Npcap이 필요하지만 설치되어 있지 않습니다.\n\n지금 다운로드할까요?",
+    "dismiss": "닫기"
   },
   "target": {
     "all": "모든 대상",

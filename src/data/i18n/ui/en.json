@@ -432,7 +432,10 @@
   "connection": {
     "auto": "Auto",
     "detecting": "Detecting AION2 connection...",
-    "loopback": "Local Loopback"
+    "loopback": "Local Loopback",
+    "captureUnavailable": "Packet capture is not available. Reinstall the package, or see docs/linux.md.",
+    "npcapMissing": "Npcap is required for packet capture but is not installed.\n\nWould you like to download it now?",
+    "dismiss": "Dismiss"
   },
   "target": {
     "all": "All Targets",

@@ -432,7 +432,10 @@
   "connection": {
     "auto": "Auto",
     "detecting": "AION2-Verbindung wird erkannt...",
-    "loopback": "Lokales Loopback"
+    "loopback": "Lokales Loopback",
+    "captureUnavailable": "Die Paketaufzeichnung ist nicht verfügbar. Installiere das Paket neu oder lies docs/linux.md.",
+    "npcapMissing": "Für die Paketaufzeichnung wird Npcap benötigt, es ist aber nicht installiert.\n\nMöchtest du es jetzt herunterladen?",
+    "dismiss": "Ausblenden"
   },
   "target": {
     "all": "Alle Ziele",

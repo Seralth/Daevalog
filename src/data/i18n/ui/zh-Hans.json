@@ -432,7 +432,10 @@
   "connection": {
     "auto": "自动",
     "detecting": "正在检测 AION2 连接...",
-    "loopback": "本地回环"
+    "loopback": "本地回环",
+    "captureUnavailable": "无法抓包。请重新安装软件包，或参阅 docs/linux.md。",
+    "npcapMissing": "抓包需要 Npcap，但尚未安装。\n\n现在下载吗？",
+    "dismiss": "关闭"
   },
   "target": {
     "all": "所有目标",

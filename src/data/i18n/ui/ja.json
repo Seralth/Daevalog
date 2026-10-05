@@ -432,7 +432,10 @@
   "connection": {
     "auto": "自動",
     "detecting": "AION2の接続を検出中...",
-    "loopback": "ローカルループバック"
+    "loopback": "ローカルループバック",
+    "captureUnavailable": "パケットキャプチャを使用できません。パッケージを再インストールするか、docs/linux.md を参照してください。",
+    "npcapMissing": "パケットキャプチャには Npcap が必要ですが、インストールされていません。\n\n今すぐダウンロードしますか？",
+    "dismiss": "閉じる"
   },
   "target": {
     "all": "全ターゲット",

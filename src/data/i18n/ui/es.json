@@ -432,7 +432,10 @@
   "connection": {
     "auto": "Auto",
     "detecting": "Detectando la conexión de AION2...",
-    "loopback": "Bucle local"
+    "loopback": "Bucle local",
+    "captureUnavailable": "La captura de paquetes no está disponible. Reinstala el paquete o consulta docs/linux.md.",
+    "npcapMissing": "La captura de paquetes necesita Npcap, pero no está instalado.\n\n¿Quieres descargarlo ahora?",
+    "dismiss": "Cerrar"
   },
   "target": {
     "all": "Todos los objetivos",

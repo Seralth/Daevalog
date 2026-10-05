@@ -613,6 +613,33 @@ body.linuxOverlay .meter {
 }
 .list.hasRows { padding: 7px 8px; }
 
+/* Shown when packet capture could not start (Linux and other non-Windows). */
+.captureNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 7px 8px 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--error-fill);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.captureNotice[hidden] { display: none; }
+.captureNotice span { flex: 1 1 auto; min-width: 0; }
+.captureNoticeClose {
+  flex: 0 0 auto;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .list .item {
   position: relative;
   height: var(--hud-row-h);

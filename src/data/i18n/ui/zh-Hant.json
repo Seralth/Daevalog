@@ -432,7 +432,10 @@
   "connection": {
     "auto": "自動",
     "detecting": "正在偵測 AION2 連線...",
-    "loopback": "本地回環"
+    "loopback": "本地回環",
+    "captureUnavailable": "無法擷取封包。請重新安裝套件，或參閱 docs/linux.md。",
+    "npcapMissing": "擷取封包需要 Npcap，但尚未安裝。\n\n現在下載嗎？",
+    "dismiss": "關閉"
   },
   "target": {
     "all": "所有目標",
