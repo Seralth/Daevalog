@@ -31,6 +31,11 @@ pub(crate) fn update_settings(
     key: String,
     value: String,
 ) {
+    // Settings only the backend writes, such as the screenshot folder.
+    if key.starts_with("backend.") {
+        tracing::warn!("The page may not set {key}");
+        return;
+    }
     if key == ENCOUNTER_TIMEOUT_KEY {
         apply_encounter_timeout(&state.data_storage, Some(&value));
     }

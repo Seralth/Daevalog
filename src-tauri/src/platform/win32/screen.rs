@@ -8,7 +8,7 @@ use windows::Win32::Foundation::*;
 use windows::Win32::Graphics::Gdi::*;
 use windows::Win32::System::DataExchange::*;
 
-use crate::platform::screenshot::{css_rect_to_screen, encode_png, ScreenRect};
+use crate::platform::screenshot::{css_rect_to_screen, encode_png, write_new_png, ScreenRect};
 
 fn hwnd_of(window: &tauri::WebviewWindow) -> Option<isize> {
     window.hwnd().ok().map(|h| h.0 as isize)
@@ -35,8 +35,8 @@ fn client_rect(hwnd_raw: isize) -> ScreenRect {
 }
 
 /// Capture a CSS-pixel rect of `caller` (plus all of `meter`, if given), put it
-/// on the clipboard and optionally write it to `png_path`. Blocking. Returns
-/// (clipboard ok, file ok).
+/// on the clipboard and optionally write it to `png_path`, or beside it when
+/// that file exists. Blocking. Returns (clipboard ok, file written).
 #[allow(clippy::too_many_arguments)]
 pub fn capture(
     caller: &tauri::WebviewWindow,
@@ -47,8 +47,8 @@ pub fn capture(
     scale: f64,
     meter: Option<&tauri::WebviewWindow>,
     png_path: Option<&Path>,
-) -> (bool, bool) {
-    let Some(owner) = hwnd_of(caller) else { return (false, false) };
+) -> (bool, Option<PathBuf>) {
+    let Some(owner) = hwnd_of(caller) else { return (false, None) };
     let mut rect = css_rect_to_screen(client_origin(owner), x, y, width, height, scale);
     if let Some(meter) = meter.and_then(hwnd_of) {
         rect = rect.union(client_rect(meter));
@@ -56,9 +56,9 @@ pub fn capture(
     capture_rect(owner, rect, png_path)
 }
 
-fn capture_rect(owner_raw: isize, rect: ScreenRect, png_path: Option<&Path>) -> (bool, bool) {
+fn capture_rect(owner_raw: isize, rect: ScreenRect, png_path: Option<&Path>) -> (bool, Option<PathBuf>) {
     if rect.width <= 0 || rect.height <= 0 {
-        return (false, false);
+        return (false, None);
     }
     unsafe {
         let hdc_screen = GetDC(None);
@@ -72,10 +72,10 @@ fn capture_rect(owner_raw: isize, rect: ScreenRect, png_path: Option<&Path>) -> 
         .is_ok();
         SelectObject(hdc_mem, old);
 
-        let mut file_ok = false;
+        let mut file = None;
         if copied {
             if let Some(path) = png_path {
-                file_ok = write_png(hdc_mem, hbm, rect, path);
+                file = write_png(hdc_mem, hbm, rect, path);
             }
         }
         let _ = DeleteDC(hdc_mem);
@@ -91,11 +91,11 @@ fn capture_rect(owner_raw: isize, rect: ScreenRect, png_path: Option<&Path>) -> 
         if !clipboard_ok {
             let _ = DeleteObject(hbm.into());
         }
-        (clipboard_ok, file_ok)
+        (clipboard_ok, file)
     }
 }
 
-unsafe fn write_png(hdc: HDC, hbm: HBITMAP, rect: ScreenRect, path: &Path) -> bool {
+unsafe fn write_png(hdc: HDC, hbm: HBITMAP, rect: ScreenRect, path: &Path) -> Option<PathBuf> {
     let mut info = BITMAPINFO::default();
     info.bmiHeader.biSize = std::mem::size_of::<BITMAPINFOHEADER>() as u32;
     info.bmiHeader.biWidth = rect.width;
@@ -111,7 +111,7 @@ unsafe fn write_png(hdc: HDC, hbm: HBITMAP, rect: ScreenRect, path: &Path) -> bo
         )
     };
     if rows != rect.height {
-        return false;
+        return None;
     }
     // BGRx -> RGBA, opaque: screen captures carry no meaningful alpha.
     for px in pixels.chunks_exact_mut(4) {
@@ -119,10 +119,7 @@ unsafe fn write_png(hdc: HDC, hbm: HBITMAP, rect: ScreenRect, path: &Path) -> bo
         px[3] = 255;
     }
     let png = encode_png(rect.width as u32, rect.height as u32, &pixels);
-    if let Some(dir) = path.parent() {
-        let _ = std::fs::create_dir_all(dir);
-    }
-    std::fs::write(path, png).is_ok()
+    write_new_png(path, &png)
 }
 
 /// `Pictures\Daevalog DPS Meter`, the default place screenshots are saved.

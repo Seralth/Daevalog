@@ -11,8 +11,8 @@ pub fn capture(
     _scale: f64,
     _meter: Option<&tauri::WebviewWindow>,
     _png_path: Option<&Path>,
-) -> (bool, bool) {
-    (false, false)
+) -> (bool, Option<PathBuf>) {
+    (false, None)
 }
 
 pub fn default_folder() -> Option<PathBuf> {

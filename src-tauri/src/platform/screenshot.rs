@@ -86,6 +86,31 @@ fn crc32(data: &[u8]) -> u32 {
     !crc
 }
 
+/// Write `png` to `wanted`, or beside it as `name (2).png` and so on when
+/// that file exists: never over a file already there. The path written.
+pub fn write_new_png(wanted: &std::path::Path, png: &[u8]) -> Option<std::path::PathBuf> {
+    use std::io::Write;
+
+    let dir = wanted.parent()?;
+    let _ = std::fs::create_dir_all(dir);
+    let stem = wanted.file_stem()?.to_string_lossy().into_owned();
+    for n in 1..=999 {
+        let path = if n == 1 { wanted.to_path_buf() } else { dir.join(format!("{stem} ({n}).png")) };
+        match std::fs::OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(mut file) => {
+                if file.write_all(png).is_ok() {
+                    return Some(path);
+                }
+                let _ = std::fs::remove_file(&path);
+                return None;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(_) => return None,
+        }
+    }
+    None
+}
+
 /// Capture, the default folder and the folder picker are the OS's.
 pub use super::os::screen::{capture, default_folder, pick_folder};
 
@@ -109,6 +134,18 @@ mod tests {
         let meter = ScreenRect { left: 100, top: 100, width: 400, height: 300 };
         let details = ScreenRect { left: 520, top: 80, width: 800, height: 600 };
         assert_eq!(meter.union(details), ScreenRect { left: 100, top: 80, width: 1220, height: 600 });
+    }
+
+    #[test]
+    fn a_screenshot_never_replaces_a_file() {
+        let dir = std::env::temp_dir().join(format!("daevalog-shot-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let wanted = dir.join("shot.png");
+        assert_eq!(write_new_png(&wanted, b"one"), Some(wanted.clone()));
+        assert_eq!(write_new_png(&wanted, b"two"), Some(dir.join("shot (2).png")));
+        assert_eq!(std::fs::read(&wanted).unwrap(), b"one");
+        assert_eq!(std::fs::read(dir.join("shot (2).png")).unwrap(), b"two");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

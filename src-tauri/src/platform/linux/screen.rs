@@ -14,7 +14,7 @@ use gtk::prelude::*;
 use webkit2gtk::{SnapshotOptions, SnapshotRegion, WebViewExt};
 
 use super::dialog::on_gtk_thread;
-use crate::platform::screenshot::encode_png;
+use crate::platform::screenshot::{encode_png, write_new_png};
 
 /// The colour transparent parts of the page are laid on: the meter's own
 /// dark backdrop, so a pasted screenshot reads as it does over the game.
@@ -134,17 +134,11 @@ fn to_clipboard(image: &Image) -> bool {
     .unwrap_or(false)
 }
 
-fn to_file(image: &Image, path: &Path) -> bool {
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    std::fs::write(path, encode_png(image.width, image.height, &image.rgba)).is_ok()
-}
-
 /// Capture a CSS-pixel rect of `caller` (plus all of `meter`, if given, beside
 /// it: Wayland does not say where windows are, so they cannot be placed as on
-/// screen), put it on the clipboard and optionally write it to `png_path`.
-/// Blocking. Returns (clipboard ok, file ok).
+/// screen), put it on the clipboard and optionally write it to `png_path`, or
+/// beside it when that file exists. Blocking. Returns (clipboard ok, file
+/// written).
 #[allow(clippy::too_many_arguments)]
 pub fn capture(
     caller: &tauri::WebviewWindow,
@@ -155,10 +149,10 @@ pub fn capture(
     _scale: f64,
     meter: Option<&tauri::WebviewWindow>,
     png_path: Option<&Path>,
-) -> (bool, bool) {
+) -> (bool, Option<PathBuf>) {
     let Some((page, ratio)) = snapshot(caller) else {
         tracing::warn!("Screenshot: WebKit gave no snapshot");
-        return (false, false);
+        return (false, None);
     };
     let px = |v: f64| (v * ratio).round().max(0.0) as u32;
     let mut image = page.crop(px(x), px(y), px(width), px(height));
@@ -166,7 +160,7 @@ pub fn capture(
         image = Image::beside(&meter_page, &image);
     }
     let clipboard = to_clipboard(&image);
-    let file = png_path.is_some_and(|path| to_file(&image, path));
+    let file = png_path.and_then(|path| write_new_png(path, &encode_png(image.width, image.height, &image.rgba)));
     (clipboard, file)
 }
 

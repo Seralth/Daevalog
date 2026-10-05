@@ -149,7 +149,9 @@ pub fn run() {
                 capture_suspended: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 overlay_lock: Arc::new(OverlayLock::default()),
                 account_seen: Mutex::new(None),
+                screenshot_folder: Mutex::new(None),
             };
+            *state.screenshot_folder.lock() = state.settings.get(screenshots::CHOSEN_FOLDER_KEY).map(Into::into);
             let capture_suspended = state.capture_suspended.clone();
 
             app.manage(state);

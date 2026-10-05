@@ -74,6 +74,9 @@ pub struct AppState {
     /// `Some(None)` signed out or `Some(Some(_))` signed in. Settings shows it
     /// at once instead of "checking" for as long as the server takes.
     pub account_seen: Mutex<Option<Option<crate::account::AccountSummary>>>,
+    /// The screenshot folder the meter's own picker returned. See
+    /// `screenshots::capture_screenshot`.
+    pub screenshot_folder: Mutex<Option<std::path::PathBuf>>,
 }
 
 #[cfg(test)]
