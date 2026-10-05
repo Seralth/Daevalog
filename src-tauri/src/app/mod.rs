@@ -21,6 +21,7 @@ use crate::history::fight_history::FightHistoryManager;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
 mod auto_upload;
+mod capture_control;
 mod commands;
 mod drag_resize;
 mod game_records;
