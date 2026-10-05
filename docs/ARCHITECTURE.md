@@ -4,7 +4,7 @@ Daevalog DPS Meter reads the AION 2 server-to-client game traffic, rebuilds each
 
 Daevalog DPS Meter is a Tauri 2 application. The backend is Rust (`src-tauri/src`). The user interface is plain JavaScript, HTML and CSS (`public/src/js`, `index.html`), shown in the system webview.
 
-Daevalog DPS Meter is a fork of A2Tools DPS Meter v2.0.44 (https://github.com/taengu/A2Tools-DPS-Meter).
+Daevalog is its own meter. It started as a fork of A2Tools DPS Meter v2.0.44 (https://github.com/taengu/A2Tools-DPS-Meter). Uploads, sign-in and sent logs tell a2tools.app the version in `UPLOAD_COMPAT_VERSION` (`src-tauri/src/version.rs`); Settings shows the version from `src-tauri/build.rs`.
 
 ## Layers
 

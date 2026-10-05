@@ -1,17 +1,15 @@
-> This is the Linux guide of Daevalog DPS Meter. Daevalog DPS Meter has no packages yet: build it from source, as [README.md](../README.md#build-from-source) and [Build from source](#build-from-source-other-distributions) describe. The packages under [Install](#install), and the package names under [Update](#update) and [Start and remove](#start-and-remove), are those of A2Tools DPS Meter, the project Daevalog DPS Meter is forked from.
-
 # Daevalog DPS Meter on Linux (Proton)
 
-The meter runs natively on Linux while AION 2 runs under Proton. Install the package for your system below: it sets up everything, packet-capture permission included. Only on a distribution with no package do you need to build it yourself. Linux support is new, so your logs help: see [Sending us your logs](#sending-us-your-logs).
+Daevalog runs natively on Linux while AION 2 runs under Proton. Daevalog builds come from this repository. No ready-made packages are published yet, so you build Daevalog on your own computer: on Arch and related systems as a package, elsewhere from source. If something does not work, your logs help: see [Sending us your logs](#sending-us-your-logs).
 
-Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, Debian 12, Fedora 39 or newer, any current Arch, Bazzite, or SteamOS through distrobox.
+Daevalog needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, Debian 12, Fedora 39 or newer, any current Arch, or Bazzite and SteamOS through distrobox.
 
 ## Contents
 
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?logo=ubuntu&logoColor=white)](#ubuntu-debian-linux-mint-pop_os) [![Debian](https://img.shields.io/badge/Debian-A81D33?logo=debian&logoColor=white)](#ubuntu-debian-linux-mint-pop_os) [![Linux Mint](https://img.shields.io/badge/Linux_Mint-87CF3E?logo=linuxmint&logoColor=white)](#ubuntu-debian-linux-mint-pop_os) [![Pop!_OS](https://img.shields.io/badge/Pop%21__OS-48B9C7?logo=popos&logoColor=white)](#ubuntu-debian-linux-mint-pop_os) [![Fedora](https://img.shields.io/badge/Fedora-51A2DA?logo=fedora&logoColor=white)](#fedora) [![Bazzite](https://img.shields.io/badge/Bazzite-8A3FFC?logo=fedora&logoColor=white)](#bazzite-silverblue-kinoite-aurora-bluefin) [![Steam Deck](https://img.shields.io/badge/Steam_Deck-1A9FFF?logo=steamdeck&logoColor=white)](#steam-deck-steamos) [![openSUSE](https://img.shields.io/badge/openSUSE-73BA25?logo=opensuse&logoColor=white)](#opensuse) [![Arch](https://img.shields.io/badge/Arch-1793D1?logo=archlinux&logoColor=white)](#cachyos-arch-manjaro-endeavouros) [![CachyOS](https://img.shields.io/badge/CachyOS-08A88A?logo=cachyos&logoColor=white)](#cachyos-arch-manjaro-endeavouros) [![Manjaro](https://img.shields.io/badge/Manjaro-35BF5C?logo=manjaro&logoColor=white)](#cachyos-arch-manjaro-endeavouros) [![EndeavourOS](https://img.shields.io/badge/EndeavourOS-7F3FBF?logo=endeavouros&logoColor=white)](#cachyos-arch-manjaro-endeavouros)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?logo=ubuntu&logoColor=white)](#other-distributions) [![Debian](https://img.shields.io/badge/Debian-A81D33?logo=debian&logoColor=white)](#other-distributions) [![Linux Mint](https://img.shields.io/badge/Linux_Mint-87CF3E?logo=linuxmint&logoColor=white)](#other-distributions) [![Pop!_OS](https://img.shields.io/badge/Pop%21__OS-48B9C7?logo=popos&logoColor=white)](#other-distributions) [![Fedora](https://img.shields.io/badge/Fedora-51A2DA?logo=fedora&logoColor=white)](#other-distributions) [![Bazzite](https://img.shields.io/badge/Bazzite-8A3FFC?logo=fedora&logoColor=white)](#steam-deck-bazzite-and-other-read-only-systems) [![Steam Deck](https://img.shields.io/badge/Steam_Deck-1A9FFF?logo=steamdeck&logoColor=white)](#steam-deck-bazzite-and-other-read-only-systems) [![openSUSE](https://img.shields.io/badge/openSUSE-73BA25?logo=opensuse&logoColor=white)](#other-distributions) [![Arch](https://img.shields.io/badge/Arch-1793D1?logo=archlinux&logoColor=white)](#cachyos-arch-manjaro-endeavouros) [![CachyOS](https://img.shields.io/badge/CachyOS-08A88A?logo=cachyos&logoColor=white)](#cachyos-arch-manjaro-endeavouros) [![Manjaro](https://img.shields.io/badge/Manjaro-35BF5C?logo=manjaro&logoColor=white)](#cachyos-arch-manjaro-endeavouros) [![EndeavourOS](https://img.shields.io/badge/EndeavourOS-7F3FBF?logo=endeavouros&logoColor=white)](#cachyos-arch-manjaro-endeavouros)
 
-- **[Install](#install):** [Ubuntu, Debian, Mint, Pop!_OS](#ubuntu-debian-linux-mint-pop_os) · [Fedora](#fedora) · [Bazzite and other image-based Fedoras](#bazzite-silverblue-kinoite-aurora-bluefin) · [Steam Deck (SteamOS)](#steam-deck-steamos) · [openSUSE](#opensuse) · [Arch, CachyOS, Manjaro, EndeavourOS](#cachyos-arch-manjaro-endeavouros)
-- **[Update](#update):** [how each install updates](#how-each-install-updates) · [by hand](#update-by-hand) · [which version do I have?](#which-version-do-i-have)
+- **[Install](#install):** [Arch, CachyOS, Manjaro, EndeavourOS](#cachyos-arch-manjaro-endeavouros) · [Steam Deck, Bazzite and other read-only systems](#steam-deck-bazzite-and-other-read-only-systems) · [Other distributions](#other-distributions) · [Coming from A2Tools DPS Meter](#coming-from-a2tools-dps-meter)
+- **[Update](#update):** [how to update](#how-to-update) · [your version](#your-version)
 - **[Start and remove](#start-and-remove)**
 - **[What works on Linux](#what-works-on-linux)**
 - **[Display backend](#display-backend)**
@@ -23,56 +21,32 @@ Every package needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, D
 
 ## Install
 
-Each package grants the packet-capture permission itself, so you never need `setcap`.
+To read the game's network traffic, Daevalog needs the Linux permission `cap_net_raw` (the right to capture packets). Only the small helper program `daevalog-capture` gets it; the meter itself runs with no extra permission. The Arch package grants it when it installs. A build from source needs one `setcap` command, shown in its step 3.
 
-### Ubuntu, Debian, Linux Mint, Pop!_OS
+### CachyOS, Arch, Manjaro, EndeavourOS
+
+The repository holds an Arch package recipe (`packaging/arch/PKGBUILD`). `makepkg` builds the package `daevalog-dps-meter` from it and installs it. The first build takes 10–15 minutes.
 
 ```bash
-curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest_amd64.deb
+sudo pacman -S --needed git base-devel
 ```
 
 ```bash
-sudo apt install ./a2tools-dps-meter-latest_amd64.deb
+git clone https://github.com/Seralth/Daevalog.git
+cd Daevalog/packaging/arch
+makepkg -si
 ```
 
-### Fedora
+`makepkg -s` installs the build tools the recipe lists (Rust, Node.js) with pacman, and `-i` installs the finished package. Keep the `Daevalog` folder: updates are built from it.
 
-Add the A2Tools repository once, then install from it. Updates then arrive with your normal system updates.
+### Steam Deck, Bazzite and other read-only systems
 
-```bash
-sudo curl -Lo /etc/yum.repos.d/a2tools.repo https://cdn.a2tools.app/linux/a2tools.repo
-```
-
-```bash
-sudo dnf install a2-tools-dps-meter
-```
-
-### Bazzite, Silverblue, Kinoite, Aurora, Bluefin
-
-These image-based Fedoras keep the system read-only and add packages by layering them with `rpm-ostree`, which takes effect after a restart. Add the A2Tools repository, layer the meter, and restart:
-
-```bash
-sudo curl -Lo /etc/yum.repos.d/a2tools.repo https://cdn.a2tools.app/linux/a2tools.repo
-```
-
-```bash
-rpm-ostree install a2-tools-dps-meter
-```
-
-```bash
-systemctl reboot
-```
-
-Updates then come with your system updates: Bazzite installs them on its own, or run `rpm-ostree upgrade` and restart. On a Steam Deck running Bazzite, use **Desktop Mode**: in Game Mode, nothing can draw over the game.
-
-### Steam Deck (SteamOS)
-
-SteamOS replaces its read-only system with every update, so anything installed into it directly is wiped. Instead, the meter goes in a **distrobox**: a container with its own Arch Linux inside, which SteamOS 3.5 and later include. It must be created with `--root`: an ordinary (rootless) container cannot read the game's network traffic.
+SteamOS replaces its read-only system with every update, so anything installed into it directly is wiped. Bazzite and the other image-based Fedoras keep the system read-only too. Instead, Daevalog goes in a **distrobox**: a container with its own Arch Linux inside, which SteamOS 3.5 and later and Bazzite include. It must be created with `--root`: an ordinary (rootless) container cannot read the game's network traffic.
 
 The overlay only works in **Desktop Mode**. In Game Mode, nothing can draw over the game.
 
-1. Switch to Desktop Mode: press the **Steam** button, then **Power**, then **Switch to Desktop**.
-2. Open **Konsole** from the application menu. If you have never set a password for the `deck` user, set one now (sudo needs it):
+1. Switch to Desktop Mode: on a Steam Deck, press the **Steam** button, then **Power**, then **Switch to Desktop**.
+2. Open a terminal (**Konsole** on a Steam Deck). On a Steam Deck where you have never set a password for the `deck` user, set one now (sudo needs it):
 
     ```bash
     passwd
@@ -81,118 +55,80 @@ The overlay only works in **Desktop Mode**. In Game Mode, nothing can draw over 
 3. Create the box:
 
     ```bash
-    distrobox create --root --name a2tools --image archlinux:latest
+    distrobox create --root --name daevalog --image archlinux:latest
     ```
 
     The first time you enter it (the next step), it takes a few minutes to set up and asks you to choose a password for your user inside the box. Any password will do; sudo inside the box asks for it.
 
-4. Download the meter and install it inside the box:
+4. Build and install Daevalog inside the box. The box shares your home folder, so the `Daevalog` folder lands there. The build takes 10–15 minutes.
 
     ```bash
-    curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest-x86_64.pkg.tar.zst
+    distrobox enter --root daevalog -- sudo pacman -Syu --noconfirm --needed git base-devel
     ```
 
     ```bash
-    distrobox enter --root a2tools -- sudo pacman -Syu --noconfirm
+    distrobox enter --root daevalog -- sh -c 'cd ~ && git clone https://github.com/Seralth/Daevalog.git && cd Daevalog/packaging/arch && makepkg -si --noconfirm'
     ```
+
+5. Start AION 2 from Steam, still in Desktop Mode, set to borderless or windowed. Then start the meter from the terminal:
 
     ```bash
-    distrobox enter --root a2tools -- sudo pacman -U --noconfirm ~/a2tools-dps-meter-latest-x86_64.pkg.tar.zst
+    distrobox enter --root daevalog -- daevalog-dps-meter
     ```
 
-5. Start AION 2 from Steam, still in Desktop Mode, set to borderless or windowed. Then start the meter from Konsole:
+System updates leave the box alone, so the meter survives them. This route is new and not yet confirmed on a real Steam Deck or Bazzite: please tell us how it goes.
 
-    ```bash
-    distrobox enter --root a2tools -- a2tools-dps-meter
-    ```
+### Other distributions
 
-SteamOS updates leave the box alone, so the meter survives them. This route is new and not yet confirmed on a real Steam Deck: please tell us how it goes.
+Ubuntu, Debian, Linux Mint, Pop!_OS, Fedora, openSUSE and others: follow [Build from source](#build-from-source-other-distributions).
 
-### openSUSE
+### Coming from A2Tools DPS Meter
 
-```bash
-curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest.x86_64.rpm
-```
-
-```bash
-sudo zypper install --allow-unsigned-rpm ./a2tools-dps-meter-latest.x86_64.rpm
-```
-
-### CachyOS, Arch, Manjaro, EndeavourOS
-
-pacman refuses unsigned packages straight from a URL, hence the download first:
-
-```bash
-curl -LO https://cdn.a2tools.app/linux/a2tools-dps-meter-latest-x86_64.pkg.tar.zst
-```
-
-```bash
-sudo pacman -U a2tools-dps-meter-latest-x86_64.pkg.tar.zst
-```
+- Your settings, saved fights and sign-in come with you: on its first start, Daevalog moves the folder of A2Tools DPS Meter (`~/.local/share/com.a2tools.dps-meter`) to its own, `~/.local/share/com.daevalog.dps-meter`.
+- The Arch package `daevalog-dps-meter` replaces an installed `a2tools-dps-meter` package.
+- On other systems, remove the A2Tools DPS Meter package first, so you do not start the old meter by mistake: `sudo apt remove a2-tools-dps-meter` (Ubuntu, Debian, Mint, Pop!_OS), `sudo dnf remove a2-tools-dps-meter` (Fedora), `rpm-ostree uninstall a2-tools-dps-meter` and a restart (Bazzite and other image-based Fedoras), `sudo zypper remove a2-tools-dps-meter` (openSUSE).
 
 ## Update
 
-### How each install updates
+### How to update
 
-The meter never updates itself and never checks for updates. A package is updated by the package manager that installed it. A build from source updates with `git pull` and a rebuild.
+Daevalog never updates itself and never checks for updates. You update it by building the newest version from the `Daevalog` folder.
 
-| Installed on | Updates |
+| Installed on | Update with |
 | --- | --- |
-| Ubuntu, Debian, Mint, Pop!_OS | [By hand](#update-by-hand) |
-| Fedora | With your system updates (`sudo dnf upgrade`) |
-| Bazzite and other image-based Fedoras | With your system updates |
-| Steam Deck (SteamOS) | [By hand](#update-by-hand) |
-| openSUSE | [By hand](#update-by-hand) |
-| Arch, CachyOS, Manjaro, EndeavourOS | [By hand](#update-by-hand) |
+| Arch, CachyOS, Manjaro, EndeavourOS | `cd Daevalog && git pull && cd packaging/arch && makepkg -si` |
+| Steam Deck, Bazzite (distrobox) | `distrobox enter --root daevalog -- sh -c 'cd ~/Daevalog && git pull && cd packaging/arch && makepkg -si --noconfirm'` |
+| Built from source | `git pull`, then the build lines and the `setcap` line again, as [Build from source](#build-from-source-other-distributions) says |
 
-### Update by hand
+Your settings and fight history stay as they are.
 
-Run the [Install](#install) commands for your system again: the address always serves the newest version, and installing it over the old one keeps your settings and fight history. On a Steam Deck, that is the `curl` line and the last `pacman -U` line of step 4.
+### Your version
 
-### Which version do I have?
+Settings shows the version at the top, for example "Daevalog 1.0 · r250". The number after the "r" is the revision: the higher, the newer.
 
-Ubuntu, Debian, Mint, Pop!_OS:
+The Arch package shows the same, with the commit added:
 
 ```bash
-dpkg -s a2-tools-dps-meter | grep Version
-```
-
-Fedora, Bazzite and other image-based Fedoras, openSUSE:
-
-```bash
-rpm -q a2-tools-dps-meter
-```
-
-Arch, CachyOS, Manjaro, EndeavourOS:
-
-```bash
-pacman -Q a2tools-dps-meter
-```
-
-Steam Deck (SteamOS):
-
-```bash
-distrobox enter --root a2tools -- pacman -Q a2tools-dps-meter
+pacman -Q daevalog-dps-meter
 ```
 
 ## Start and remove
 
-The meter is in your application menu, as A2Tools DPS Meter; on a Steam Deck, start it from Konsole as in [step 5](#steam-deck-steamos). To start it from a terminal with its output saved, which helps if you send us logs:
+The meter is in your application menu, as Daevalog DPS Meter; in a distrobox, start it from a terminal as in [step 5](#steam-deck-bazzite-and-other-read-only-systems). To start it from a terminal with its output saved, which helps if you send us logs:
 
 ```bash
-a2tools-dps-meter 2>&1 | tee ~/meter-console.log
+daevalog-dps-meter 2>&1 | tee ~/meter-console.log
 ```
 
 To remove it:
 
 | Installed on | Command |
 | --- | --- |
-| Ubuntu, Debian, Mint, Pop!_OS | `sudo apt remove a2-tools-dps-meter` |
-| Fedora | `sudo dnf remove a2-tools-dps-meter` |
-| Bazzite and other image-based Fedoras | `rpm-ostree uninstall a2-tools-dps-meter`, then restart |
-| Steam Deck (SteamOS) | `distrobox rm --root a2tools` (removes the whole box) |
-| openSUSE | `sudo zypper remove a2-tools-dps-meter` |
-| Arch, CachyOS, Manjaro, EndeavourOS | `sudo pacman -R a2tools-dps-meter` |
+| Arch, CachyOS, Manjaro, EndeavourOS | `sudo pacman -R daevalog-dps-meter` |
+| Steam Deck, Bazzite (distrobox) | `distrobox rm --root daevalog` (removes the whole box) |
+| Built from source | Delete the `Daevalog` folder |
+
+Your settings and fights stay in `~/.local/share/com.daevalog.dps-meter`. Delete that folder too to remove them.
 
 ## What works on Linux
 
@@ -201,8 +137,8 @@ To remove it:
 | Damage meter, Details, History | Works |
 | Ping | Works |
 | Finding the game | Looks for the running AION2.exe process under Proton |
-| A2 Tools account sign-in | Works: kept in KWallet or GNOME Keyring, which may ask to create or unlock a wallet the first time |
-| Updates | Through the package manager; builds from source update with `git pull` and a rebuild. The meter never updates itself |
+| a2tools.app sign-in | Works: kept in KWallet or GNOME Keyring, which may ask to create or unlock a wallet the first time |
+| Updates | By rebuilding from the `Daevalog` folder (see [Update](#update)). The meter never updates itself |
 | Class icons | Works |
 | Global hotkeys | The lock hotkey, through the desktop's global shortcuts (the GlobalShortcuts portal), on desktops that offer them |
 | Click-through lock | Works on X11, XWayland and native Wayland. A locked meter always shows its lock button |
@@ -283,13 +219,13 @@ sudo dnf install webkit2gtk4.1-devel openssl-devel curl wget file libappindicato
 sudo dnf group install c-development
 ```
 
-Arch, Manjaro, EndeavourOS (if you would rather build than use the package):
+Arch, Manjaro, EndeavourOS (to build without the package):
 
 ```bash
 sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl appmenu-gtk-module libappindicator-gtk3 librsvg libpcap git
 ```
 
-**Steam Deck:** no need to build: follow the [Steam Deck instructions](#steam-deck-steamos).
+**Steam Deck, Bazzite:** follow [Steam Deck, Bazzite and other read-only systems](#steam-deck-bazzite-and-other-read-only-systems) instead.
 
 ### 2. Download and build the meter
 
@@ -406,7 +342,7 @@ That is Hyprland's Lua configuration. If you use `hyprland.conf` instead, set th
 | Sign-in says the token could not be stored securely | The meter keeps your sign-in in the desktop keyring and never in a plain file. The message says what went wrong. **No desktop keyring is running**: install and start GNOME Keyring (`gnome-keyring`) or KWallet, or turn on Secret Service in KeePassXC; on Hyprland, Sway or i3 start the keyring with your session (for example `exec-once = gnome-keyring-daemon --start --components=secrets`). **Stayed locked**: accept the keyring's unlock prompt. **No collection**: accept the prompt to create a keyring (the meter asks for one). Then sign in again. |
 | Build fails mentioning `webkit2gtk-4.1`, `pkg-config` or a missing library | Re-run the install line for your distribution. Distributions older than Ubuntu 22.04 lack `webkit2gtk-4.1` and cannot build it. |
 | `debug.log` says it failed to load libpcap | Install libpcap (`libpcap0.8` on Debian and Ubuntu, `libpcap` elsewhere), then start the meter again. |
-| The meter warns it is not running as admin, or `debug.log` has no `Capture active` lines, or says `Packet capture is off` | The capture helper `daevalog-capture` is missing from the meter's folder, or lacks the capture permission. Package: reinstall it. Build from source: build the helper and run the `setcap` line again (a rebuild loses it). |
+| The meter warns it is not running as admin, or `debug.log` has no `Capture active` lines, or says `Packet capture is off` | The capture helper `daevalog-capture` is missing from the meter's folder, or lacks the capture permission. Arch package: build and install it again. Build from source: build the helper and run the `setcap` line again (a rebuild loses it). |
 | `debug.log` says `No AION2 window found` while the game is running | The meter did not find the game process. Send us the output of `ps aux \| grep -i aion` along with your logs. |
 | `debug.log` says `Not locked yet` with `0 with game markers` while you fight | Capture sees traffic but not the game's. Tell us if you use a VPN or ping reducer. |
 | The window never opens, and the terminal says `Error 71 (Protocol error) dispatching to Wayland display`; or the window is blank or white | WebKit handed its frames to the compositor as GPU buffers, which some setups reject (NVIDIA drivers especially). The meter now has WebKit hand them over in shared memory instead (`WEBKIT_DMABUF_RENDERER_FORCE_SHM=1`). Remove `WEBKIT_DISABLE_DMABUF_RENDERER=1` if you added it to a launcher: on WebKitGTK 2.54 it leaves the window mostly blank. If the window is still wrong, try `GDK_BACKEND=x11 daevalog-dps-meter`, which runs it through XWayland, and tell us. |

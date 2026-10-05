@@ -1,5 +1,10 @@
 # What leaves your machine
 
+Daevalog is its own meter. It started as a fork of A2Tools DPS Meter. Sign-in,
+uploads, sent logs and the supporter list go to a2tools.app and its CDN, a site
+run by the A2Tools developer, not by Daevalog. What this document says the site
+does comes from the A2Tools project; Daevalog cannot check it.
+
 This document is written to be checkable. Everything in the "today" section can
 be verified against the source in this repository, and the evidence for the
 claims about packet captures is a test you can run yourself.
@@ -13,12 +18,14 @@ sends, what it keeps, and what an upload contains.
 
 ## What the meter sends
 
-**The supporter list.** Downloaded from the CDN every few hours and matched on
-your machine (see below). Nothing about your party is sent.
+**The supporter list.** The list of A2Tools supporters, downloaded from the
+a2tools.app CDN every few hours and matched on your machine (see below).
+Nothing about your party is sent.
 
 **Your account, if you connect one.** Signing in under *Settings → A2 Tools
 Account* opens a2tools.app in your browser to approve the meter, which then
-holds a token (encrypted with Windows DPAPI in `credentials.dat`). The meter
+holds a token (in the desktop keyring on Linux; encrypted with Windows DPAPI in
+`credentials.dat` on Windows). The meter
 uses it to ask who you are, and to upload. Without an account it makes none of
 these calls.
 
@@ -32,6 +39,10 @@ and an account connected, each boss fight is uploaded once it has ended (never
 while it is still being fought), with the visibility you chose on a2tools.app.
 Training dummies are never uploaded. Turning it off stops it immediately; it
 does not remove logs already uploaded, which you manage from your account.
+
+**Packet logs, when you send them.** *Settings → Diagnostics → Send logs to
+a2tools.app* sends your 3 newest packet logs to the A2Tools developer, after
+you confirm. See "Packet capture" below for what they contain.
 
 Nothing is transmitted when you fight, log in, or close the app.
 
@@ -96,7 +107,7 @@ over one ordinary five-player dungeon run surfaced, among other things:
 - Session GUIDs, server IP addresses, and TLS certificate fragments
 
 Run that test on your own capture and read the output before you share one with
-anybody, including us.
+anybody.
 
 These files are **never uploaded**, automatically or otherwise: an upload sends a
 slice, not a capture. While the setting is on, the meter keeps the newest 2 GB
@@ -119,9 +130,10 @@ them by format, not merely by policy.
 ## What an upload contains
 
 Pressing Upload sends two things to a2tools.app: the fight's Evidence Slice, and
-the names to show on the log. **It sends no numbers.** The service runs this
-repository's parser over the slice (`log-service/`, the same code compiled to
-WebAssembly) and publishes what it derives. That is what makes a log worth
+the names to show on the log. **It sends no numbers.** The service runs its
+own parser over the slice (A2Tools DPS Meter's parser compiled to WebAssembly,
+which this repository's parser and `log-service/` come from) and publishes what
+it derives. That is what makes a log worth
 trusting with an open-source client: a modified meter cannot upload damage it
 did not do, because nobody asks it what the damage was.
 
@@ -188,17 +200,15 @@ default and per log. A private log is not listed anywhere, but anyone you give
 its link to can open it. Class statistics count every log, public or private,
 as numbers with no names.
 
-**Diagnostic captures are separate, opt-in, and per-incident.** Debugging a parser
-regression sometimes does need the packets an allowlist would strip. That upload
-does not exist yet. When it does it will be its own action, will show you the
-file, its size, its time range, and what it contains before sending, will ask
-every single time, and will never be implied by any other setting.
+**Diagnostic captures are separate and opt-in.** Debugging a parser problem
+sometimes needs the packets an allowlist would strip. *Send logs to a2tools.app*
+is its own action: it asks every time, and no other setting turns it on.
 
 ### Supporter names are resolved on your machine
 
 Supporters' names render gold on everyone's meter. The obvious way to build that
 is for the meter to ask a server "is this player a supporter?", and it would mean
-sending us a list of who you play with, every fight, in exchange for a colour.
+sending that server a list of who you play with, every fight, in exchange for a colour.
 
 So it works the other way round: a small file listing supporters is published to
 the CDN, your meter downloads it every few hours, and the matching happens
@@ -221,7 +231,7 @@ files an upload would send — `<fight>.a2es` and `<fight>.upload.json` — into
 `~/.local/share/com.daevalog.dps-meter/share-preview/`, and opens the folder. It makes
 no network call. It builds from a packet capture covering that fight, so packet
 logging has to have been on at the time; the slice the meter saved on its own,
-in `slices\`, is the same artifact and can be read the same way after
+in `slices/`, is the same artifact and can be read the same way after
 decompressing it.
 
 **A reader.** `a2t-inspect` prints what is inside a slice:
@@ -263,5 +273,5 @@ marketing.
   bounded number of bytes we cannot name.
 - **People in your party already saw your name.** Masking protects you from the
   public, not from the seven people you played with.
-- **A diagnostic capture you send us contains what the section above describes**,
-  including third-party chat and names, and an administrator can read it.
+- **A packet log you send contains what the section above describes**,
+  including third-party chat and names, and whoever receives it can read it.
