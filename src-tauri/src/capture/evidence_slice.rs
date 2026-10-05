@@ -504,8 +504,10 @@ fn looks_like_text(span: &[u8]) -> bool {
     // skill id such as 100051 (`d3 86 01 00`) after a `02` byte decodes as one
     // letter, and blinding it moved a spirit's hits to a skill that does not
     // exist (2026-10-04 capture against the game's own record).
+    // A short run must be letters or digits only: Water Bomb (16001105,
+    // `51 28 f4 00`) after a `02` byte reads "Q(", half a letter.
     let chars = s.chars().count();
-    chars >= 2 && letters * 2 >= chars
+    chars >= 2 && letters * 2 >= chars && (chars > 3 || letters == chars)
 }
 
 /// Every byte of a record in the clear, bundles decompressed.
@@ -1096,6 +1098,16 @@ mod tests {
         let mut packet = frame_packet(&body).unwrap();
         Blinder::new(&[]).blind(&mut packet);
         assert!(packet.windows(4).any(|w| w == [0xd3, 0x86, 0x01, 0x00]));
+    }
+
+    #[test]
+    fn a_skill_id_that_reads_as_a_letter_and_a_bracket_is_left_alone() {
+        // Water Bomb, 16001105: `02 | 51 28 f4 00` reads "Q(".
+        let mut body = vec![0x04, 0x38, 0xfe, 0x9e, 0x02, 0x04, 0x00, 0x9e, 0x9b, 0x01, 0x02, 0x51, 0x28, 0xf4, 0x00];
+        body.resize(40, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        Blinder::new(&[]).blind(&mut packet);
+        assert!(packet.windows(4).any(|w| w == [0x51, 0x28, 0xf4, 0x00]));
     }
 
     #[test]
