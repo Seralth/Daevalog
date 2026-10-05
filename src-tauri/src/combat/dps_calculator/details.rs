@@ -182,9 +182,10 @@ impl DpsCalculator {
     }
 
     /// The healing done during a fight, live or saved: from its first hit to
-    /// its last, so a fight shows the same healing before and after saving.
+    /// its last, by the people in it, so a fight shows the same healing before
+    /// and after saving.
     fn fight_heals(&self, fight: &TargetCombatData) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
-        self.data_storage.heals_between(fight.first_damage_time, fight.last_damage_time)
+        self.data_storage.fight_heals(fight)
     }
 
     fn target_details(&self, target_id: i32, actor_ids: Option<&[i32]>, summary_only: bool) -> TargetDetailsResponse {

@@ -120,3 +120,9 @@ test("a hidden tooltip is not refreshed", async () => {
   await tick();
   assert.equal(asked.length, 0);
 });
+
+test("short numbers are whole: a heal rate reads 368, not 368.036", () => {
+  const { app } = setup();
+  assert.equal(app.formatAbbreviatedNumber(368.036), "368");
+  assert.equal(app.formatAbbreviatedNumber(40480), "40.48k");
+});

@@ -3567,6 +3567,11 @@ body.mainPlayerNamesBold .settingsPanel .themeDropdownMenu .settingsDropdownItem
 .detailsPanel.hide-col-maxdmg .detailsSkills .cell.maxdmg {
   display: none;
 }
+/* The footnote is about damage ratios. */
+.detailsPanel.isHealMode .detailsFootnote {
+  display: none;
+}
+
 /* HEAL: heals have no hit flags and no min or max (HEAL_HIDDEN_COLS in details.js) */
 .detailsPanel.isHealMode .detailsSkills .cell.mhit,
 .detailsPanel.isHealMode .detailsSkills .cell.mdmg,

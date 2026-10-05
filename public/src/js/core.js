@@ -2038,7 +2038,8 @@ class DpsApp {
         return `${trimmed}${unit.suffix}`;
       }
     }
-    return this.dpsFormatter.format(n);
+    // Whole numbers below 1k too: a per-second rate read "368.036".
+    return this.dpsFormatter.format(Math.round(n));
   }
 
   // DPS to the nearest thousand: 1,012,326 reads as "1,012k", 554,874 as "555k".

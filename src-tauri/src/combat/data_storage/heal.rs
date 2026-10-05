@@ -1,8 +1,9 @@
 //! Healing done, per healer and skill.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use super::{DataStorage, HealSkillData, HealTick, Inner};
+use super::{DataStorage, HealSkillData, HealTick, Inner, TargetCombatData};
+use crate::entity::summon_resolver;
 
 /// Heal ticks kept at most, a memory backstop only: ticks go when no open
 /// fight needs them (`prune_heal_ticks`).
@@ -23,10 +24,31 @@ impl DataStorage {
         record_heal(&mut self.inner.write(), HealTick { at, actor: actor_id, skill: skill_code, is_hot, amount });
     }
 
-    /// Healing done from `from_ms` to `to_ms`: one fight's.
+    /// Healing done from `from_ms` to `to_ms`, by anyone.
     pub fn heals_between(&self, from_ms: i64, to_ms: i64) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
         heals_between(&self.inner.read(), from_ms, to_ms)
     }
+
+    /// One fight's healing: see `fight_heals`.
+    pub fn fight_heals(&self, fight: &TargetCombatData) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
+        fight_heals(&self.inner.read(), fight)
+    }
+}
+
+/// The healing done during a fight by the people in it: you, your party, and
+/// whoever hit the fight's target, their summons included. Players nearby who
+/// only healed are someone else's fight (strangers at the next training
+/// dummy filled a solo dummy fight's HEAL, 2026-10-05).
+pub(super) fn fight_heals(inner: &Inner, fight: &TargetCombatData) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
+    let fighters: HashSet<i32> = fight.actors.keys().map(|&a| summon_resolver::resolve(a, &inner.summon_storage)).collect();
+    let mut out = heals_between(inner, fight.first_damage_time, fight.last_damage_time);
+    out.retain(|&actor, _| {
+        let owner = summon_resolver::resolve(actor, &inner.summon_storage);
+        fighters.contains(&owner)
+            || inner.local_player_id.is_some_and(|l| l as i32 == owner)
+            || inner.nickname_storage.get(&owner).is_some_and(|n| inner.party_members.contains_key(n.as_str()))
+    });
+    out
 }
 
 pub(super) fn record_heal(inner: &mut Inner, tick: HealTick) {
@@ -135,5 +157,30 @@ mod tests {
         let inner = s.inner.read();
         assert_eq!(inner.heal_ticks.len(), PRUNE_EVERY);
         assert_eq!(inner.heal_ticks.front().map(|t| t.at), Some(200_000));
+    }
+
+    #[test]
+    fn a_fight_takes_the_healing_of_the_people_in_it_only() {
+        let s = DataStorage::new();
+        s.set_local_player_id(Some(1000));
+        hit(&s, 0); // you, on target 900
+        let mut p = ParsedDamagePacket::new();
+        p.set_actor_id(5000);
+        p.set_target_id(900);
+        p.set_skill_code(11_010_000);
+        p.set_damage(100);
+        p.set_timestamp(500);
+        s.append_damage(p); // a stranger who joined the fight
+        hit(&s, 2_000);
+        s.append_summon(1000, 3000); // your spirit
+        s.append_nickname_authoritative(4000, "Cleric");
+        s.set_party_roster(vec![("Cleric".into(), super::super::PartyMember::default())], true);
+        for actor in [1000, 3000, 4000, 5000, 6000] {
+            s.append_heal(actor, 17_010_000, 100, false, 1_000);
+        }
+        let fight = s.inner.read().target_combat[&900].clone();
+        let mut healers: Vec<i32> = s.fight_heals(&fight).into_keys().collect();
+        healers.sort();
+        assert_eq!(healers, vec![1000, 3000, 4000, 5000], "6000 only healed nearby");
     }
 }
