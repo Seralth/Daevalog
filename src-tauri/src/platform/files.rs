@@ -6,7 +6,7 @@ use std::path::Path;
 
 #[cfg(test)]
 pub use super::os::files::symlink;
-pub use super::os::files::{create_private_dir, private_options};
+pub use super::os::files::{create_private_dir, private_options, GAME_RECORDS_IN_LOCAL_APPDATA};
 
 /// `std::fs::write`, creating a new file private.
 pub fn write_private(path: impl AsRef<Path>, data: impl AsRef<[u8]>) -> std::io::Result<()> {

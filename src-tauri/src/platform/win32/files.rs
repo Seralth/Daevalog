@@ -17,3 +17,6 @@ pub fn private_options() -> OpenOptions {
 pub fn symlink(original: &Path, link: &Path) -> std::io::Result<()> {
     std::os::windows::fs::symlink_dir(original, link)
 }
+
+/// Where the game's record folders are. Windows: the game keeps them under %LOCALAPPDATA%.
+pub const GAME_RECORDS_IN_LOCAL_APPDATA: bool = true;

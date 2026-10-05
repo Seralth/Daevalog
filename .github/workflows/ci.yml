@@ -53,7 +53,7 @@ jobs:
       - name: No OS-specific code outside src/platform
         run: |
           leaks=$(grep -rnE --include='*.rs' \
-            'cfg\((not\()?(windows|unix|target_os|target_family)|windows::|std::os::windows' \
+            'cfg\((not\()?(windows|unix|target_os|target_family)|(^|[^_[:alnum:]])windows::|std::os::(windows|unix)' \
             src-tauri/src | grep -v '^src-tauri/src/platform/' || true)
           if [ -n "$leaks" ]; then
             echo "OS-specific code outside src-tauri/src/platform/:"

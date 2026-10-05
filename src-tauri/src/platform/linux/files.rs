@@ -51,3 +51,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
+
+/// Where the game's record folders are. Linux: under Proton, inside each Steam library's prefix.
+pub const GAME_RECORDS_IN_LOCAL_APPDATA: bool = false;

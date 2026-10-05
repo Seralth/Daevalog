@@ -142,7 +142,6 @@ fn record_check() {
     println!("total: game {}, meter {total}", record.total);
 }
 
-#[cfg(unix)]
 #[test]
 #[ignore]
 fn saved_fights_match_the_game() {
@@ -159,7 +158,7 @@ fn saved_fights_match_the_game() {
     let app_dir = scratch.join("app");
     // The checker looks one folder down, where the game keeps one per account.
     std::fs::create_dir_all(scratch.join("records")).unwrap();
-    std::os::unix::fs::symlink(std::fs::canonicalize(&records_dir).unwrap(), scratch.join("records/account")).unwrap();
+    crate::platform::files::symlink(&std::fs::canonicalize(&records_dir).unwrap(), &scratch.join("records/account")).unwrap();
 
     // Replay as the live meter runs: the auto-save every 30 s, a slice per saved fight.
     let (skills, npcs, dot_ids) = lookups();

@@ -45,12 +45,11 @@ pub fn library_paths(vdf: &str) -> Vec<PathBuf> {
 /// The game's record folders on this computer: one subfolder per account in each.
 pub fn record_roots() -> Vec<PathBuf> {
     let mut roots = Vec::new();
-    #[cfg(windows)]
-    if let Some(local) = dirs::data_local_dir() {
-        roots.push(records_dir(local));
-    }
-    #[cfg(not(windows))]
-    if let Some(home) = dirs::home_dir() {
+    if crate::platform::files::GAME_RECORDS_IN_LOCAL_APPDATA {
+        if let Some(local) = dirs::data_local_dir() {
+            roots.push(records_dir(local));
+        }
+    } else if let Some(home) = dirs::home_dir() {
         let mut libraries = Vec::new();
         for steam in [".local/share/Steam", ".steam/steam", ".steam/root", ".var/app/com.valvesoftware.Steam/.local/share/Steam"] {
             let root = home.join(steam);

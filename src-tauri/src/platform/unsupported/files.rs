@@ -15,3 +15,6 @@ pub fn private_options() -> OpenOptions {
 pub fn symlink(_original: &Path, _link: &Path) -> std::io::Result<()> {
     Err(std::io::ErrorKind::Unsupported.into())
 }
+
+/// Where the game's record folders are. Elsewhere: searched like Linux.
+pub const GAME_RECORDS_IN_LOCAL_APPDATA: bool = false;
