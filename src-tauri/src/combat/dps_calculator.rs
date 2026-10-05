@@ -1109,15 +1109,7 @@ impl DpsCalculator {
             let uid = *canonical.get(&nickname).unwrap_or(&raw_uid);
 
             for (&(raw_skill, is_dot), skill_data) in &actor_data.skills {
-                // Normalize skill code
-                let skill_code = {
-                    let base = raw_skill - (raw_skill % 10000);
-                    let base_name = self.skill_lookup.get_skill_name(base);
-                    if !base_name.is_empty() {
-                        let raw_name = self.skill_lookup.get_skill_name(raw_skill);
-                        if raw_name.is_empty() || raw_name == base_name { base } else { raw_skill }
-                    } else { raw_skill }
-                };
+                let skill_code = crate::entity::skill_group::row_skill(raw_skill, &self.skill_lookup);
 
                 let dot_offset = if is_dot { 1_000_000_000 } else { 0 };
                 let key = (uid, skill_code + dot_offset);
@@ -2057,6 +2049,49 @@ mod tests {
             }
         });
         assert_eq!(checked, [true, true]);
+    }
+
+    /// Per-skill rows of one target at a moment of a capture, to set beside the
+    /// game's Damage Analyzer record of the same fight. A2_CAPTURE, A2_AT
+    /// (hh:mm:ss), A2_TARGET (without it: every target's total).
+    #[test]
+    #[ignore]
+    fn skill_rows_at() {
+        let path = std::env::var("A2_CAPTURE").unwrap();
+        let at: Vec<i64> = std::env::var("A2_AT").unwrap().split(':').map(|x| x.parse().unwrap()).collect();
+        let at = ((at[0] * 60 + at[1]) * 60 + at[2]) * 1000;
+        let target: Option<i32> = std::env::var("A2_TARGET").ok().map(|t| t.parse().unwrap());
+        let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
+        let skills = SkillLookup::new();
+        crate::i18n::lookup::load_language(&skills, &NpcLookup::new(), &data, "en");
+        let mut done = false;
+        replay_capture(&path, |ts, s| {
+            if done || ts < at { return; }
+            done = true;
+            let summons = s.get_summon_data();
+            for (&t, td) in &s.get_combat_snapshot() {
+                if target.is_some_and(|x| x != t) { continue; }
+                let mut rows: HashMap<(i32, i32), (i64, i32)> = HashMap::new();
+                for (&a, ad) in &td.actors {
+                    let owner = summon_resolver::resolve(a, &summons);
+                    for sd in ad.skills.values() {
+                        let row = rows.entry((owner, crate::entity::skill_group::row_skill(sd.skill_code, &skills))).or_default();
+                        row.0 += sd.total_damage as i64;
+                        row.1 += sd.hit_count;
+                    }
+                }
+                let total: i64 = rows.values().map(|r| r.0).sum();
+                eprintln!("target {t}: {total}");
+                if target.is_some() {
+                    let mut rows: Vec<_> = rows.into_iter().collect();
+                    rows.sort_by_key(|(k, v)| (k.0, -v.0));
+                    for ((owner, skill), (dmg, hits)) in rows {
+                        eprintln!("  actor {owner} skill {skill} damage {dmg} hits {hits} {}", skills.get_skill_name(skill));
+                    }
+                }
+            }
+        });
+        assert!(done);
     }
 
     /// Every capture in /caps: when the dungeon id changes, and the saved

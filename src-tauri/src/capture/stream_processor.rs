@@ -2252,22 +2252,7 @@ impl StreamProcessor {
     // ===== HELPERS =====
 
     fn normalize_skill_id(&self, raw: i32) -> i32 {
-        if (30_000_000..=30_999_999).contains(&raw) {
-            return raw;
-        }
-        let base = raw - (raw % 10000);
-        let base_name = self.skill_lookup.get_skill_name(base);
-        if base_name.is_empty() {
-            return raw;
-        }
-        let raw_name = self.skill_lookup.get_skill_name(raw);
-        if raw_name.is_empty() {
-            return base;
-        }
-        if raw_name != base_name {
-            return raw;
-        }
-        base
+        crate::entity::skill_group::row_skill(raw, &self.skill_lookup)
     }
 
     fn is_known_skill_code(&self, skill_code: i32) -> bool {
