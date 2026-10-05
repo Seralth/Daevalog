@@ -90,8 +90,16 @@ impl FightHistoryManager {
         let file_path = self.history_dir.join(format!("{}.json", record.id));
         let json = serde_json::to_string_pretty(record)
             .map_err(|e| format!("Serialization error: {}", e))?;
-        std::fs::write(&file_path, json)
-            .map_err(|e| format!("Write error: {}", e))?;
+        // Written whole or not at all: quitting can end the process during a
+        // save, and a cut-off file would lose the fight saved before it. Each
+        // save has its own temporary file, so two saves of one fight cannot mix.
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let temporary = self.history_dir.join(format!(
+            ".{}.{}.tmp", record.id, NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
+        if let Err(e) = std::fs::write(&temporary, json).and_then(|_| std::fs::rename(&temporary, &file_path)) {
+            let _ = std::fs::remove_file(&temporary);
+            return Err(format!("Write error: {}", e));
+        }
         self.invalidate();
         info!("Fight saved: {}", record.id);
         self.prune(MAX_HISTORY_FIGHTS);
@@ -241,6 +249,29 @@ mod tests {
         assert!(history.delete_fight("../keep").is_err());
         assert!(dir.join("keep.json").exists());
         assert!(history.load_fight("../keep").is_err());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_saved_fight_replaces_the_old_file_whole() {
+        let dir = std::env::temp_dir().join(format!("a2t-history-save-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let history = FightHistoryManager::new(dir.clone());
+        let mut record: FightRecord = serde_json::from_value(serde_json::json!({
+            "id": "auto_1_1000", "bossName": "B", "targetId": 1, "startTimeMs": 1000,
+            "durationMs": 10, "totalDamage": 1, "jobs": [],
+            "details": {"targetId": 1, "maxHp": 0, "totalTargetDamage": 1, "battleTime": 10,
+                        "startTime": 0, "skills": [], "pingHistory": [], "healSkills": []},
+            "actors": []
+        })).unwrap();
+        history.save_fight(&record).unwrap();
+        record.total_damage = 2;
+        history.save_fight(&record).unwrap();
+        assert_eq!(history.load_fight("auto_1_1000").unwrap().total_damage, 2);
+        let names: Vec<String> = std::fs::read_dir(dir.join("history")).unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+        assert_eq!(names, vec!["auto_1_1000.json"], "no temporary file left");
+        assert_eq!(history.list_fights().len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
