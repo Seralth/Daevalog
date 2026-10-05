@@ -809,6 +809,28 @@ mod tests {
         crate::clock::set_override(None);
     }
 
+    #[test]
+    fn one_skill_and_one_heal_past_two_billion_do_not_stop_there() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        for i in 0..3 {
+            let at = 1_000 + i * 3_000;
+            crate::clock::set_override(Some(at));
+            s.append_damage(skill_hit(2259, 800, at, 16_010_000, 1_000_000_000));
+            s.append_heal(2259, 17_800_000, 1_000_000_000, false, at);
+        }
+        let details = calc.get_target_details(800, None);
+        assert_eq!(details.skills.iter().map(|r| r.dmg).sum::<i64>(), 3_000_000_000);
+        assert_eq!(details.heal_skills.iter().map(|r| r.dmg).sum::<i64>(), 3_000_000_000);
+        let saved = snapshot_at(&mut calc, 30_000);
+        let json = serde_json::to_string(&saved[0]).unwrap();
+        let back: FightRecord = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.details.skills.iter().map(|r| r.dmg).sum::<i64>(), 3_000_000_000);
+        crate::clock::set_override(None);
+    }
+
     fn skill_hit(actor: i32, target: i32, at: i64, skill: i32, damage: i32) -> ParsedDamagePacket {
         let mut p = hit(actor, target, at);
         p.set_skill_code(skill);

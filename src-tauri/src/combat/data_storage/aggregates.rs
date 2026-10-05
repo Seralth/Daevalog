@@ -50,9 +50,9 @@ pub struct SkillCombatData {
     pub skill_code: i32,
     pub is_dot: bool,
     pub hit_count: i32,
-    pub total_damage: i32,
-    pub min_damage: i32,
-    pub max_damage: i32,
+    pub total_damage: i64,
+    pub min_damage: i64,
+    pub max_damage: i64,
     pub crit_count: i32,
     pub back_count: i32,
     pub frontal_count: i32,
@@ -68,9 +68,9 @@ pub struct SkillCombatData {
     pub miss_count: i32,
     pub resist_count: i32,
     pub multi_hit_count: i32,
-    pub multi_hit_damage: i32,
+    pub multi_hit_damage: i64,
     pub multi_hit_hits: i32,
-    pub heal_amount: i32,
+    pub heal_amount: i64,
     pub hit_timestamps: Vec<i64>,
     pub spec_flags: [bool; 5],
 }
@@ -114,25 +114,25 @@ impl SkillCombatData {
 
     /// Add `other`'s hits to these: the same skill, recorded under two ids.
     pub(super) fn absorb(&mut self, other: SkillCombatData) {
-        self.hit_count += other.hit_count;
+        self.hit_count = self.hit_count.saturating_add(other.hit_count);
         self.total_damage = self.total_damage.saturating_add(other.total_damage);
         self.min_damage = self.min_damage.min(other.min_damage);
         self.max_damage = self.max_damage.max(other.max_damage);
-        self.crit_count += other.crit_count;
-        self.back_count += other.back_count;
-        self.frontal_count += other.frontal_count;
-        self.shield_block_count += other.shield_block_count;
-        self.parry_count += other.parry_count;
-        self.perfect_count += other.perfect_count;
-        self.double_count += other.double_count;
-        self.iron_wall_count += other.iron_wall_count;
-        self.regeneration_count += other.regeneration_count;
-        self.perfect_block_count += other.perfect_block_count;
-        self.miss_count += other.miss_count;
-        self.resist_count += other.resist_count;
-        self.multi_hit_count += other.multi_hit_count;
+        self.crit_count = self.crit_count.saturating_add(other.crit_count);
+        self.back_count = self.back_count.saturating_add(other.back_count);
+        self.frontal_count = self.frontal_count.saturating_add(other.frontal_count);
+        self.shield_block_count = self.shield_block_count.saturating_add(other.shield_block_count);
+        self.parry_count = self.parry_count.saturating_add(other.parry_count);
+        self.perfect_count = self.perfect_count.saturating_add(other.perfect_count);
+        self.double_count = self.double_count.saturating_add(other.double_count);
+        self.iron_wall_count = self.iron_wall_count.saturating_add(other.iron_wall_count);
+        self.regeneration_count = self.regeneration_count.saturating_add(other.regeneration_count);
+        self.perfect_block_count = self.perfect_block_count.saturating_add(other.perfect_block_count);
+        self.miss_count = self.miss_count.saturating_add(other.miss_count);
+        self.resist_count = self.resist_count.saturating_add(other.resist_count);
+        self.multi_hit_count = self.multi_hit_count.saturating_add(other.multi_hit_count);
         self.multi_hit_damage = self.multi_hit_damage.saturating_add(other.multi_hit_damage);
-        self.multi_hit_hits += other.multi_hit_hits;
+        self.multi_hit_hits = self.multi_hit_hits.saturating_add(other.multi_hit_hits);
         self.heal_amount = self.heal_amount.saturating_add(other.heal_amount);
         self.hit_timestamps.extend(other.hit_timestamps);
         self.hit_timestamps.sort_unstable();
@@ -147,7 +147,7 @@ impl SkillCombatData {
             is_dot,
             hit_count: 0,
             total_damage: 0,
-            min_damage: i32::MAX,
+            min_damage: i64::MAX,
             max_damage: 0,
             crit_count: 0,
             back_count: 0,
@@ -254,11 +254,11 @@ impl SecondStats {
 impl ActorCombatData {
     /// Add everything `other` recorded: one character, under an old entity id.
     pub(super) fn absorb(&mut self, other: ActorCombatData) {
-        self.total_damage += other.total_damage;
-        self.party_heal += other.party_heal;
-        self.regen += other.regen;
-        self.damage_received += other.damage_received;
-        self.hits_received += other.hits_received;
+        self.total_damage = self.total_damage.saturating_add(other.total_damage);
+        self.party_heal = self.party_heal.saturating_add(other.party_heal);
+        self.regen = self.regen.saturating_add(other.regen);
+        self.damage_received = self.damage_received.saturating_add(other.damage_received);
+        self.hits_received = self.hits_received.saturating_add(other.hits_received);
         self.first_damage_time = self.first_damage_time.min(other.first_damage_time);
         self.last_damage_time = self.last_damage_time.max(other.last_damage_time);
         self.job = self.job.or(other.job);
@@ -312,7 +312,7 @@ impl ActorCombatData {
         for skill in self.skills.values().filter(|s| !s.is_dot) {
             out.hits += skill.hit_count as i64;
             out.crits += skill.crit_count as i64;
-            out.max_hit = out.max_hit.max(skill.max_damage as i64);
+            out.max_hit = out.max_hit.max(skill.max_damage);
         }
         out
     }

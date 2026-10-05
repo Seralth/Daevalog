@@ -15,15 +15,15 @@ pub struct ParsedDamagePacket {
     id: i64,
     actor_id: i32,
     target_id: i32,
-    damage: i32,
+    damage: i64,
     skill_code: i32,
     damage_type: i32,
     timestamp: i64,
     specials: Vec<SpecialDamage>,
     dot: bool,
     multi_hit_count: i32,
-    multi_hit_damage: i32,
-    heal_amount: i32,
+    multi_hit_damage: i64,
+    heal_amount: i64,
     spec_flags: [bool; 5],
 }
 
@@ -49,14 +49,14 @@ impl ParsedDamagePacket {
     // Setters
     pub fn set_actor_id(&mut self, id: i32) { self.actor_id = id; }
     pub fn set_target_id(&mut self, id: i32) { self.target_id = id; }
-    pub fn set_damage(&mut self, dmg: i32) { self.damage = dmg; }
+    pub fn set_damage(&mut self, dmg: impl Into<i64>) { self.damage = dmg.into(); }
     pub fn set_skill_code(&mut self, code: i32) { self.skill_code = code; }
     pub fn set_type(&mut self, t: i32) { self.damage_type = t; }
     pub fn set_specials(&mut self, s: Vec<SpecialDamage>) { self.specials = s; }
     pub fn set_dot(&mut self, d: bool) { self.dot = d; }
     pub fn set_multi_hit_count(&mut self, c: i32) { self.multi_hit_count = c; }
-    pub fn set_multi_hit_damage(&mut self, d: i32) { self.multi_hit_damage = d; }
-    pub fn set_heal_amount(&mut self, h: i32) { self.heal_amount = h; }
+    pub fn set_multi_hit_damage(&mut self, d: impl Into<i64>) { self.multi_hit_damage = d.into(); }
+    pub fn set_heal_amount(&mut self, h: impl Into<i64>) { self.heal_amount = h.into(); }
     pub fn set_spec_flags(&mut self, f: [bool; 5]) { self.spec_flags = f; }
     pub fn set_timestamp(&mut self, ts: i64) { self.timestamp = ts; }
 
@@ -64,22 +64,22 @@ impl ParsedDamagePacket {
     pub fn id(&self) -> i64 { self.id }
     pub fn actor_id(&self) -> i32 { self.actor_id }
     pub fn target_id(&self) -> i32 { self.target_id }
-    pub fn damage(&self) -> i32 { self.damage }
+    pub fn damage(&self) -> i64 { self.damage }
     pub fn skill_code(&self) -> i32 { self.skill_code }
     pub fn damage_type(&self) -> i32 { self.damage_type }
     pub fn timestamp(&self) -> i64 { self.timestamp }
     pub fn specials(&self) -> &[SpecialDamage] { &self.specials }
     pub fn is_dot(&self) -> bool { self.dot }
     pub fn multi_hit_count(&self) -> i32 { self.multi_hit_count }
-    pub fn multi_hit_damage(&self) -> i32 { self.multi_hit_damage }
-    pub fn heal_amount(&self) -> i32 { self.heal_amount }
+    pub fn multi_hit_damage(&self) -> i64 { self.multi_hit_damage }
+    pub fn heal_amount(&self) -> i64 { self.heal_amount }
     pub fn spec_flags(&self) -> &[bool; 5] { &self.spec_flags }
 
     pub fn is_crit(&self) -> bool {
         self.specials.contains(&SpecialDamage::Critical)
     }
 
-    pub fn total_damage(&self) -> i32 {
-        self.damage + self.multi_hit_damage
+    pub fn total_damage(&self) -> i64 {
+        self.damage.saturating_add(self.multi_hit_damage)
     }
 }

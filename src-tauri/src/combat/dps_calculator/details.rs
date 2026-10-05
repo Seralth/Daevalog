@@ -98,7 +98,7 @@ impl DpsCalculator {
                         party_heal += ad.party_heal;
                         regen += ad.regen;
                         dmg_recv += ad.damage_received;
-                        hits_recv += ad.hits_received;
+                        hits_recv = hits_recv.saturating_add(ad.hits_received);
                     }
                 }
                 DetailsActorSummary {
@@ -304,7 +304,7 @@ impl DpsCalculator {
                     multi_hit_count: 0,
                     multi_hit_damage: 0,
                     multi_hit_hits: 0,
-                    min_dmg: i32::MAX,
+                    min_dmg: i64::MAX,
                     max_dmg: 0,
                     crit: 0,
                     shield_block: 0,
@@ -325,28 +325,25 @@ impl DpsCalculator {
                     specs: skill_data.spec_flags.to_vec(),
                 });
 
-                entry.time += skill_data.hit_count;
-                // saturating: damage sums are i32 and can exceed i32::MAX across
-                // a long fight / many actors — avoid overflow panic (debug) and
-                // wrap-to-negative (release).
+                entry.time = entry.time.saturating_add(skill_data.hit_count);
                 entry.dmg = entry.dmg.saturating_add(skill_data.total_damage);
-                entry.multi_hit_count += skill_data.multi_hit_count;
+                entry.multi_hit_count = entry.multi_hit_count.saturating_add(skill_data.multi_hit_count);
                 entry.multi_hit_damage = entry.multi_hit_damage.saturating_add(skill_data.multi_hit_damage);
-                entry.multi_hit_hits += skill_data.multi_hit_hits;
+                entry.multi_hit_hits = entry.multi_hit_hits.saturating_add(skill_data.multi_hit_hits);
                 if skill_data.min_damage < entry.min_dmg { entry.min_dmg = skill_data.min_damage; }
                 if skill_data.max_damage > entry.max_dmg { entry.max_dmg = skill_data.max_damage; }
-                entry.crit += skill_data.crit_count;
-                entry.back += skill_data.back_count;
-                entry.frontal += skill_data.frontal_count;
-                entry.shield_block += skill_data.shield_block_count;
-                entry.parry += skill_data.parry_count;
-                entry.perfect += skill_data.perfect_count;
-                entry.double += skill_data.double_count;
-                entry.iron_wall += skill_data.iron_wall_count;
-                entry.regeneration += skill_data.regeneration_count;
-                entry.perfect_block += skill_data.perfect_block_count;
-                entry.miss += skill_data.miss_count;
-                entry.resist += skill_data.resist_count;
+                entry.crit = entry.crit.saturating_add(skill_data.crit_count);
+                entry.back = entry.back.saturating_add(skill_data.back_count);
+                entry.frontal = entry.frontal.saturating_add(skill_data.frontal_count);
+                entry.shield_block = entry.shield_block.saturating_add(skill_data.shield_block_count);
+                entry.parry = entry.parry.saturating_add(skill_data.parry_count);
+                entry.perfect = entry.perfect.saturating_add(skill_data.perfect_count);
+                entry.double = entry.double.saturating_add(skill_data.double_count);
+                entry.iron_wall = entry.iron_wall.saturating_add(skill_data.iron_wall_count);
+                entry.regeneration = entry.regeneration.saturating_add(skill_data.regeneration_count);
+                entry.perfect_block = entry.perfect_block.saturating_add(skill_data.perfect_block_count);
+                entry.miss = entry.miss.saturating_add(skill_data.miss_count);
+                entry.resist = entry.resist.saturating_add(skill_data.resist_count);
                 entry.regen = entry.regen.saturating_add(skill_data.heal_amount);
                 // Add timestamps relative to fight start
                 for &ts in &skill_data.hit_timestamps {
@@ -361,7 +358,7 @@ impl DpsCalculator {
 
         // Fix min_dmg sentinel
         for entry in skill_map.values_mut() {
-            if entry.min_dmg == i32::MAX { entry.min_dmg = 0; }
+            if entry.min_dmg == i64::MAX { entry.min_dmg = 0; }
         }
 
         // Healing done this segment, per healer/skill. Keyed by the canonical actor
@@ -414,8 +411,8 @@ impl DpsCalculator {
                     hit_timestamps: Vec::new(),
                     specs: Vec::new(),
                 });
-                entry.dmg = entry.dmg.saturating_add(hd.total_heal.min(i32::MAX as i64) as i32);
-                entry.time += hd.tick_count;
+                entry.dmg = entry.dmg.saturating_add(hd.total_heal);
+                entry.time = entry.time.saturating_add(hd.tick_count);
             }
         }
 

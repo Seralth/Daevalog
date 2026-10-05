@@ -60,7 +60,7 @@ pub(super) fn heals_between(inner: &Inner, from_ms: i64, to_ms: i64) -> HashMap<
     for t in inner.heal_ticks.iter().filter(|t| (from_ms..=to_ms).contains(&t.at)) {
         let e = out.entry(t.actor).or_default().entry((t.skill, t.is_hot)).or_default();
         e.total_heal += t.amount;
-        e.tick_count += 1;
+        e.tick_count = e.tick_count.saturating_add(1);
     }
     out
 }

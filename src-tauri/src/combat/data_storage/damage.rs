@@ -46,10 +46,10 @@ impl DataStorage {
                 note_encounter(&mut inner, timeout, pdp.timestamp(), actor_id, true);
             }
             if inner.known_player_ids.contains(&resolved_target) {
-                let dmg = pdp.total_damage() as i64;
+                let dmg = pdp.total_damage();
                 if let Some(actor_data) = fight_of(&mut inner, resolved_target, Some(actor_id)) {
                     actor_data.damage_received += dmg;
-                    actor_data.hits_received += 1;
+                    actor_data.hits_received = actor_data.hits_received.saturating_add(1);
                 }
             }
             return;
@@ -72,7 +72,7 @@ impl DataStorage {
             let heal_amount = pdp.total_damage();
             if heal_amount > 0 {
                 if let Some(actor_data) = fight_of(&mut inner, actor_id, None) {
-                    actor_data.party_heal += heal_amount as i64;
+                    actor_data.party_heal += heal_amount;
                 }
                 // Also record per-skill so ally heals show in the HEAL view (the
                 // self-heal path does this via append_heal; mirror it for ally heals).
@@ -81,7 +81,7 @@ impl DataStorage {
                     actor: actor_id,
                     skill: pdp.skill_code(),
                     is_hot: false,
-                    amount: heal_amount as i64,
+                    amount: heal_amount,
                 };
                 record_heal(&mut inner, tick);
             }
@@ -160,8 +160,8 @@ impl DataStorage {
             .entry((skill_code, false))
             .or_insert_with(|| SkillCombatData::new(skill_code, false));
         match kind {
-            NoDamageHit::Miss => skill.miss_count += 1,
-            NoDamageHit::Resist => skill.resist_count += 1,
+            NoDamageHit::Miss => skill.miss_count = skill.miss_count.saturating_add(1),
+            NoDamageHit::Resist => skill.resist_count = skill.resist_count.saturating_add(1),
         }
         drop(inner);
         self.touch();
@@ -211,18 +211,18 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
         target_data.last_damage_time = timestamp;
     }
     let total_dmg = pdp.total_damage();
-    target_data.total_damage += total_dmg as i64;
+    target_data.total_damage += total_dmg;
     target_data.last_packet_id = packet_id;
 
     // Update actor data within target
     let actor_data = target_data.actors.entry(actor_id).or_insert_with(ActorCombatData::new);
-    actor_data.total_damage += total_dmg as i64;
+    actor_data.total_damage += total_dmg;
     let direct = !pdp.is_dot();
     actor_data.add_at(timestamp.div_euclid(1000), &SecondStats {
-        damage: total_dmg as i64,
+        damage: total_dmg,
         hits: direct as i64,
         crits: (direct && pdp.is_crit()) as i64,
-        max_hit: if direct { pdp.damage() as i64 } else { 0 },
+        max_hit: if direct { pdp.damage() } else { 0 },
     });
     if timestamp < actor_data.first_damage_time {
         actor_data.first_damage_time = timestamp;
@@ -239,38 +239,35 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     let skill_data = actor_data.skills.entry(skill_key).or_insert_with(|| {
         SkillCombatData::new(skill_code, pdp.is_dot())
     });
-    skill_data.hit_count += 1;
-    // saturating_add: per-skill totals are i32 and a long boss fight can
-    // exceed i32::MAX — overflow panics in debug and wraps to negative in
-    // release. Cap instead of crashing/wrapping.
+    skill_data.hit_count = skill_data.hit_count.saturating_add(1);
     skill_data.total_damage = skill_data.total_damage.saturating_add(total_dmg);
     let hit_dmg = pdp.damage();
     if hit_dmg < skill_data.min_damage { skill_data.min_damage = hit_dmg; }
     if hit_dmg > skill_data.max_damage { skill_data.max_damage = hit_dmg; }
-    if pdp.is_crit() { skill_data.crit_count += 1; }
-    if pdp.specials().contains(&SpecialDamage::Back) { skill_data.back_count += 1; }
-    if pdp.specials().contains(&SpecialDamage::Frontal) { skill_data.frontal_count += 1; }
+    if pdp.is_crit() { skill_data.crit_count = skill_data.crit_count.saturating_add(1); }
+    if pdp.specials().contains(&SpecialDamage::Back) { skill_data.back_count = skill_data.back_count.saturating_add(1); }
+    if pdp.specials().contains(&SpecialDamage::Frontal) { skill_data.frontal_count = skill_data.frontal_count.saturating_add(1); }
     for special in pdp.specials() {
         match special {
-            SpecialDamage::ShieldBlock => skill_data.shield_block_count += 1,
-            SpecialDamage::Parry => skill_data.parry_count += 1,
-            SpecialDamage::Perfect => skill_data.perfect_count += 1,
-            SpecialDamage::Double => skill_data.double_count += 1,
-            SpecialDamage::IronWall => skill_data.iron_wall_count += 1,
-            SpecialDamage::Regeneration => skill_data.regeneration_count += 1,
-            SpecialDamage::PerfectBlock => skill_data.perfect_block_count += 1,
+            SpecialDamage::ShieldBlock => skill_data.shield_block_count = skill_data.shield_block_count.saturating_add(1),
+            SpecialDamage::Parry => skill_data.parry_count = skill_data.parry_count.saturating_add(1),
+            SpecialDamage::Perfect => skill_data.perfect_count = skill_data.perfect_count.saturating_add(1),
+            SpecialDamage::Double => skill_data.double_count = skill_data.double_count.saturating_add(1),
+            SpecialDamage::IronWall => skill_data.iron_wall_count = skill_data.iron_wall_count.saturating_add(1),
+            SpecialDamage::Regeneration => skill_data.regeneration_count = skill_data.regeneration_count.saturating_add(1),
+            SpecialDamage::PerfectBlock => skill_data.perfect_block_count = skill_data.perfect_block_count.saturating_add(1),
             SpecialDamage::Back | SpecialDamage::Frontal | SpecialDamage::Critical => {}
         }
     }
     if pdp.multi_hit_count() > 0 {
-        skill_data.multi_hit_count += 1;
+        skill_data.multi_hit_count = skill_data.multi_hit_count.saturating_add(1);
         skill_data.multi_hit_damage = skill_data.multi_hit_damage.saturating_add(pdp.multi_hit_damage());
-        skill_data.multi_hit_hits += pdp.multi_hit_count();
+        skill_data.multi_hit_hits = skill_data.multi_hit_hits.saturating_add(pdp.multi_hit_count());
     }
     skill_data.heal_amount = skill_data.heal_amount.saturating_add(pdp.heal_amount());
     // Track regen (life-steal) on the actor aggregate
     if pdp.heal_amount() > 0 {
-        actor_data.regen += pdp.heal_amount() as i64;
+        actor_data.regen += pdp.heal_amount();
     }
     skill_data.hit_timestamps.push(timestamp);
     for (i, &flag) in pdp.spec_flags().iter().enumerate() {

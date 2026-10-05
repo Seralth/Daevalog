@@ -77,15 +77,15 @@ pub struct DetailSkillEntry {
     pub code: i32,
     pub name: String,
     pub time: i32,
-    pub dmg: i32,
+    pub dmg: i64,
     pub multi_hit_count: i32,
-    pub multi_hit_damage: i32,
+    pub multi_hit_damage: i64,
     #[serde(default)]
     pub multi_hit_hits: i32,
     #[serde(default)]
-    pub min_dmg: i32,
+    pub min_dmg: i64,
     #[serde(default)]
-    pub max_dmg: i32,
+    pub max_dmg: i64,
     pub crit: i32,
     #[serde(default)]
     pub shield_block: i32,
@@ -106,7 +106,7 @@ pub struct DetailSkillEntry {
     pub miss: i32,
     #[serde(default)]
     pub resist: i32,
-    pub regen: i32,
+    pub regen: i64,
     #[serde(default)]
     pub job: String,
     #[serde(default)]
