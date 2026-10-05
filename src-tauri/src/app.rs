@@ -1463,6 +1463,32 @@ async fn open_settings_window(app: tauri::AppHandle) -> Result<(), String> {
     build_settings_window(&app)
 }
 
+/// Runs in the Settings window before the page. Besides naming the view, it
+/// answers Quit, Close and Escape the moment they are on screen. They used to
+/// be wired when the page's scripts had run (about 800 KB, lucide first), so
+/// on every open both buttons sat dead for a while: the window is rebuilt each
+/// time it opens (see `close_settings_window`). A listener on `document` is
+/// there before the buttons are, and catches clicks on them as they appear.
+const SETTINGS_WINDOW_SCRIPT: &str = r#"
+window.__A2_VIEW__ = 'settings';
+(function () {
+  const call = (cmd) => window.__TAURI_INTERNALS__.invoke(cmd).catch(() => {});
+  document.addEventListener('click', (event) => {
+    const el = event.target instanceof Element ? event.target : null;
+    if (el?.closest('.quitButton')) {
+      event.stopPropagation();
+      call('quit_app');
+    } else if (el?.closest('.settingsClose')) {
+      event.stopPropagation();
+      call('close_settings_window');
+    }
+  }, true);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') call('close_settings_window');
+  }, true);
+})();
+"#;
+
 fn build_settings_window(app: &tauri::AppHandle) -> Result<(), String> {
     let window = tauri::WebviewWindowBuilder::new(
         app,
@@ -1471,7 +1497,7 @@ fn build_settings_window(app: &tauri::AppHandle) -> Result<(), String> {
     )
     // Injected before any page script. WebviewUrl::App is a path, so a ?query
     // gets percent-encoded — this is the one channel that is reliable.
-    .initialization_script("window.__A2_VIEW__ = 'settings';")
+    .initialization_script(SETTINGS_WINDOW_SCRIPT)
     .title("Daevalog DPS Meter — Settings")
     .decorations(false)
     .transparent(false)
@@ -1500,8 +1526,9 @@ fn build_settings_window(app: &tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn close_settings_window(app: tauri::AppHandle) {
     // Closed, not hidden: a hidden WebView2 window came back blank when shown
-    // again. Rebuilding it costs little now that Quit is wired before the
-    // page loads and the account line starts from the last check.
+    // again. Rebuilding it costs little now that Quit and Close are answered
+    // before the page loads (SETTINGS_WINDOW_SCRIPT) and the account line
+    // starts from the last check.
     if let Some(window) = app.get_webview_window("settings") {
         let _ = window.close();
     }
