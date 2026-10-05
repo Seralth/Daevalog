@@ -3769,18 +3769,16 @@ body.legacyUi .meter .item .content .name.isSupporter,
 .detailsPanel.hide-col-perfect .detailsSkills .cell.perfect,
 .detailsPanel.hide-col-double .detailsSkills .cell.double,
 .detailsPanel.hide-col-back .detailsSkills .cell.back,
-.detailsPanel.hide-col-smite .detailsSkills .cell.smite,
-.detailsPanel.hide-col-powershard .detailsSkills .cell.powershard,
+.detailsPanel.hide-col-block .detailsSkills .cell.block,
+.detailsPanel.hide-col-perfectblock .detailsSkills .cell.perfectblock,
+.detailsPanel.hide-col-ironwall .detailsSkills .cell.ironwall,
+.detailsPanel.hide-col-regeneration .detailsSkills .cell.regeneration,
+.detailsPanel.hide-col-miss .detailsSkills .cell.miss,
+.detailsPanel.hide-col-resist .detailsSkills .cell.resist,
 .detailsPanel.hide-col-regen .detailsSkills .cell.regen,
 .detailsPanel.hide-col-mindmg .detailsSkills .cell.mindmg,
 .detailsPanel.hide-col-avgdmg .detailsSkills .cell.avgdmg,
 .detailsPanel.hide-col-maxdmg .detailsSkills .cell.maxdmg {
-  display: none;
-}
-/* Parry, smite and powershard are parser guesses the game never reports. */
-.detailsPanel .detailsSkills .cell.parry,
-.detailsPanel .detailsSkills .cell.smite,
-.detailsPanel .detailsSkills .cell.powershard {
   display: none;
 }
 .detailsPanel .detailsSkills .skillHeader .cell[data-sort-key] {

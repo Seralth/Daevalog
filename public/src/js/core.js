@@ -1514,8 +1514,6 @@ class DpsApp {
     let totalMultiHitDamage = 0;
     let totalMultiHitHits = 0;
     let totalRegen = 0;
-    let totalSmite = 0;
-    let totalPowershard = 0;
 
     const pushSkill = ({
       codeKey,
@@ -1528,8 +1526,12 @@ class DpsApp {
       frontal = 0,
       perfect = 0,
       double = 0,
-      smite = 0,
-      powershard = 0,
+      shieldBlock = 0,
+      ironWall = 0,
+      regeneration = 0,
+      perfectBlock = 0,
+      miss = 0,
+      resist = 0,
       regen = 0,
       multiHitCount = 0,
       multiHitDamage = 0,
@@ -1544,7 +1546,8 @@ class DpsApp {
       specs = null,
     }) => {
       const dmgInt = Math.trunc(Number(String(dmg ?? "").replace(/,/g, ""))) || 0;
-      if (dmgInt <= 0) {
+      // A skill that only missed or was resisted still gets its row.
+      if (dmgInt <= 0 && !(Number(miss) > 0 || Number(resist) > 0)) {
         return;
       }
 
@@ -1559,8 +1562,6 @@ class DpsApp {
         totalBack += Number(back) || 0;
         totalPerfect += Number(perfect) || 0;
         totalDouble += Number(double) || 0;
-        totalSmite += Number(smite) || 0;
-        totalPowershard += Number(powershard) || 0;
         totalMultiHitCount += Number(multiHitCount) || 0;
         totalMultiHitDamage += Number(multiHitDamage) || 0;
         totalMultiHitHits += Number(multiHitHits) || 0;
@@ -1575,8 +1576,12 @@ class DpsApp {
         frontal: Number(frontal) || 0,
         perfect: Number(perfect) || 0,
         double: Number(double) || 0,
-        smite: Number(smite) || 0,
-        powershard: Number(powershard) || 0,
+        shieldBlock: Number(shieldBlock) || 0,
+        ironWall: Number(ironWall) || 0,
+        regeneration: Number(regeneration) || 0,
+        perfectBlock: Number(perfectBlock) || 0,
+        miss: Number(miss) || 0,
+        resist: Number(resist) || 0,
         regen: Number(regen) || 0,
         multiHitCount: Number(multiHitCount) || 0,
         multiHitDamage: Number(multiHitDamage) || 0,
@@ -1628,8 +1633,13 @@ class DpsApp {
           frontal: value.frontal,
           perfect: value.perfect,
           double: value.double,
-          smite: value.smite,
-          powershard: value.powershard,
+          shieldBlock: value.shieldBlock,
+          ironWall: value.ironWall,
+          // Saved before the rename.
+          regeneration: value.regeneration ?? value.smite,
+          perfectBlock: value.perfectBlock ?? value.powershard,
+          miss: value.miss,
+          resist: value.resist,
           regen: value.regen,
           multiHitCount: value.multiHitCount,
           multiHitDamage: value.multiHitDamage,
@@ -1711,8 +1721,6 @@ class DpsApp {
           totalPerfect: 0,
           totalDouble: 0,
           totalHits: 0,
-          totalSmite: 0,
-          totalPowershard: 0,
           totalRegen: 0,
           multiHitCount: 0,
           multiHitDamage: 0,
@@ -1729,8 +1737,6 @@ class DpsApp {
         entry.totalBack += Number(skill.back) || 0;
         entry.totalPerfect += Number(skill.perfect) || 0;
         entry.totalDouble += Number(skill.double) || 0;
-        entry.totalSmite += Number(skill.smite) || 0;
-        entry.totalPowershard += Number(skill.powershard) || 0;
       }
       if (!entry.job && skill.job) {
         entry.job = skill.job;
@@ -1761,8 +1767,6 @@ class DpsApp {
         totalBack: entry.totalBack,
         totalPerfect: entry.totalPerfect,
         totalDouble: entry.totalDouble,
-        totalSmite: entry.totalSmite,
-        totalPowershard: entry.totalPowershard,
         totalHits: entry.totalHits,
         totalRegen: entry.totalRegen,
         multiHitCount: entry.multiHitCount,
@@ -1776,8 +1780,6 @@ class DpsApp {
         totalBackPct: pct(entry.totalBack, entry.totalTimes),
         totalPerfectPct: pct(entry.totalPerfect, entry.totalTimes),
         totalDoublePct: pct(entry.totalDouble, entry.totalTimes),
-        totalSmitePct: pct(entry.totalSmite, entry.totalTimes),
-        totalPowershardPct: pct(entry.totalPowershard, entry.totalTimes),
         combatTime,
       }))
       .sort((a, b) => b.totalDmg - a.totalDmg);
@@ -1812,7 +1814,7 @@ class DpsApp {
         dmg: amt,
         time: ticks,
         isDot: isHot,
-        crit: 0, parry: 0, back: 0, frontal: 0, perfect: 0, double: 0, smite: 0, powershard: 0,
+        crit: 0, parry: 0, back: 0, frontal: 0, perfect: 0, double: 0,
         regen: 0, multiHitCount: 0, multiHitDamage: 0, multiHitHits: 0,
         minDmg: 0, maxDmg: 0, job: v.job ?? "", specs: null, hitTimestamps: [],
       });
@@ -1835,8 +1837,6 @@ class DpsApp {
       totalBackPct: pct(totalBack, totalTimes),
       totalPerfectPct: pct(totalPerfect, totalTimes),
       totalDoublePct: pct(totalDouble, totalTimes),
-      totalSmitePct: pct(totalSmite, totalTimes),
-      totalPowershardPct: pct(totalPowershard, totalTimes),
       totalHits: totalTimes,
       multiHitCount: totalMultiHitCount,
       multiHitDamage: totalMultiHitDamage,
@@ -3180,8 +3180,8 @@ class DpsApp {
     const storedHiddenColumns = this.safeGetSetting(this.storageKeys.detailsHiddenColumns);
     const storedSeenColumns = this.safeGetSetting(this.storageKeys.detailsSeenColumns);
     const hiddenColumns = new Set();
-    // Columns added in v2.0.4 — default hidden for both new and upgrading users
-    const NEW_COLUMNS_DEFAULT_HIDDEN = ["powershard", "regen"];
+    // Columns added after the first release: hidden until switched on.
+    const NEW_COLUMNS_DEFAULT_HIDDEN = ["regen", "parry", "block", "perfectblock", "ironwall", "regeneration", "miss", "resist"];
     if (typeof storedHiddenColumns === "string" && storedHiddenColumns.trim()) {
       const parsedHidden = this.safeParseJSON(storedHiddenColumns, []);
       if (Array.isArray(parsedHidden)) {
@@ -3206,7 +3206,7 @@ class DpsApp {
     });
     const applyDetailsColumnVisibility = () => {
       if (!this.detailsPanel) return;
-      const columns = ["hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "parry", "perfect", "double", "back", "powershard", "regen", "mindmg", "avgdmg", "maxdmg"];
+      const columns = ["hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "parry", "perfect", "double", "back", "block", "perfectblock", "ironwall", "regeneration", "miss", "resist", "regen", "mindmg", "avgdmg", "maxdmg"];
       columns.forEach((column) => {
         this.detailsPanel.classList.toggle(`hide-col-${column}`, hiddenColumns.has(column));
       });

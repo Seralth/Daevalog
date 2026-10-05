@@ -345,10 +345,6 @@ const createDetailsUI = ({
         return pctText(data.totalBackPct);
       case "details.stats.parryRate":
         return pctText(data.totalParryPct);
-      case "details.stats.smiteRate":
-        return pctText(data.totalSmitePct);
-      case "details.stats.powershardRate":
-        return pctText(data.totalPowershardPct);
       case "details.stats.regen":
         return formatDamageCompact(data.totalRegen);
       case "details.stats.partyHeal":
@@ -612,6 +608,23 @@ const createDetailsUI = ({
     });
   };
 
+  // Hit results from the record's flags byte and hit type, after Front:
+  // [column, skill field, shown as]. Misses and resists are not hits, so
+  // they show as counts.
+  const HIT_RESULTS = [
+    ["block", "shieldBlock", "pct"],
+    ["perfectblock", "perfectBlock", "pct"],
+    ["ironwall", "ironWall", "pct"],
+    ["regeneration", "regeneration", "pct"],
+    ["miss", "miss", "count"],
+    ["resist", "resist", "count"],
+  ];
+  const hitResultText = (skill, field, kind, hits) => {
+    const n = Number(skill?.[field]) || 0;
+    if (kind === "count") return `${n}`;
+    return `${hits > 0 ? Math.round((n / hits) * 100) : 0}%`;
+  };
+
   const createSkillView = () => {
     const rowEl = document.createElement("div");
     rowEl.className = "skillRow";
@@ -684,8 +697,11 @@ const createDetailsUI = ({
     const doubleEl = document.createElement("div");
     doubleEl.className = "cell center double";
 
-    const powershardEl = document.createElement("div");
-    powershardEl.className = "cell center powershard";
+    const hitResultEls = HIT_RESULTS.map(([col]) => {
+      const el = document.createElement("div");
+      el.className = `cell center ${col}`;
+      return el;
+    });
 
     const regenEl = document.createElement("div");
     regenEl.className = "cell center regen";
@@ -711,7 +727,7 @@ const createDetailsUI = ({
     rowEl.appendChild(doubleEl);
     rowEl.appendChild(backEl);
     rowEl.appendChild(frontalEl);
-    rowEl.appendChild(powershardEl);
+    hitResultEls.forEach((el) => rowEl.appendChild(el));
     rowEl.appendChild(regenEl);
     rowEl.appendChild(minDmgEl);
     rowEl.appendChild(avgDmgEl);
@@ -736,7 +752,7 @@ const createDetailsUI = ({
       frontalEl,
       perfectEl,
       doubleEl,
-      powershardEl,
+      hitResultEls,
       regenEl,
       minDmgEl,
       avgDmgEl,
@@ -782,8 +798,17 @@ const createDetailsUI = ({
         return hits > 0 ? (Number(skill?.back) || 0) / hits : 0;
       case "frontal":
         return hits > 0 ? (Number(skill?.frontal) || 0) / hits : 0;
-      case "powershard":
-        return hits > 0 ? (Number(skill?.powershard) || 0) / hits : 0;
+      case "block":
+      case "perfectblock":
+      case "ironwall":
+      case "regeneration": {
+        const field = HIT_RESULTS.find(([col]) => col === key)[1];
+        return hits > 0 ? (Number(skill?.[field]) || 0) / hits : 0;
+      }
+      case "miss":
+        return Number(skill?.miss) || 0;
+      case "resist":
+        return Number(skill?.resist) || 0;
       case "regen":
         return Number(skill?.regen) || 0;
       case "mindmg":
@@ -842,15 +867,19 @@ const createDetailsUI = ({
     // "FRONT" is the widest header in the 0.6fr group and clips at the shared
     // share; it needs the extra room its neighbours don't.
     frontal: "minmax(20px, 0.72fr)",
-    powershard: "minmax(20px, 0.6fr)",
+    block: "minmax(20px, 0.6fr)",
+    perfectblock: "minmax(24px, 0.65fr)",
+    ironwall: "minmax(24px, 0.65fr)",
+    regeneration: "minmax(22px, 0.65fr)",
+    miss: "minmax(22px, 0.65fr)",
+    resist: "minmax(20px, 0.6fr)",
     regen: "minmax(28px, 0.8fr)",
     mindmg: "minmax(28px, 0.8fr)",
     avgdmg: "minmax(28px, 0.8fr)",
     maxdmg: "minmax(28px, 0.8fr)",
   };
-  // No parry or powershard column: the game reports neither, and the parser's
-  // bits for them have never been seen set.
-  const GRID_COL_ORDER = ["name", "hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "perfect", "double", "back", "frontal", "regen", "mindmg", "avgdmg", "maxdmg"];
+  const GRID_COL_ORDER = ["name", "hit", "dmg", "dmgpct", "mhit", "mdmg", "crit", "parry", "perfect", "double", "back", "frontal",
+    ...HIT_RESULTS.map(([col]) => col), "regen", "mindmg", "avgdmg", "maxdmg"];
 
   let lastMeasuredNameWidth = 0;
   const updateGridColumns = () => {
@@ -930,7 +959,7 @@ const createDetailsUI = ({
         actorId, job, code: r.skillId, name: names?.[r.skillId] || `#${r.skillId}`,
         isDot: false, specs: [], dmg: v.damage,
         time: c[0], crit: c[1], perfect: c[2], double: c[3], frontal: c[4], back: c[5], multiHitCount: c[6],
-        multiHitDamage: 0, minDmg: 0, maxDmg: 0, parry: 0, smite: 0, powershard: 0, regen: 0,
+        multiHitDamage: 0, minDmg: 0, maxDmg: 0, parry: 0, regen: 0,
         _game: r.game, _meter: r.meter, _both: both,
       };
     });
@@ -1052,8 +1081,7 @@ const createDetailsUI = ({
         frontal: (Number(existing.frontal) || 0) + (Number(skill.frontal) || 0),
         perfect: (Number(existing.perfect) || 0) + (Number(skill.perfect) || 0),
         double: (Number(existing.double) || 0) + (Number(skill.double) || 0),
-        smite: (Number(existing.smite) || 0) + (Number(skill.smite) || 0),
-        powershard: (Number(existing.powershard) || 0) + (Number(skill.powershard) || 0),
+        ...Object.fromEntries(HIT_RESULTS.map(([, field]) => [field, (Number(existing[field]) || 0) + (Number(skill[field]) || 0)])),
         regen: (Number(existing.regen) || 0) + (Number(skill.regen) || 0),
         multiHitCount: (Number(existing.multiHitCount) || 0) + (Number(skill.multiHitCount) || 0),
         multiHitDamage: (Number(existing.multiHitDamage) || 0) + (Number(skill.multiHitDamage) || 0),
@@ -1196,7 +1224,6 @@ const createDetailsUI = ({
         const dotDouble = dotHits > 0 ? Math.round(((Number(dot.double) || 0) / dotHits) * 100) : 0;
         const dotBack = dotHits > 0 ? Math.round(((Number(dot.back) || 0) / dotHits) * 100) : 0;
         const dotFrontal = dotHits > 0 ? Math.round(((Number(dot.frontal) || 0) / dotHits) * 100) : 0;
-        const dotPowershard = dotHits > 0 ? Math.round(((Number(dot.powershard) || 0) / dotHits) * 100) : 0;
         const dotRegen = Number(dot.regen) || 0;
         const dotRawMin = Number(dot.minDmg) || 0;
         const dotMin = dotRawMin >= 2147483647 ? 0 : dotRawMin;
@@ -1245,7 +1272,7 @@ const createDetailsUI = ({
             { cls: "cell center double", text: `${dotDouble}%` },
             { cls: "cell center back", text: `${dotBack}%` },
             { cls: "cell center frontal", text: `${dotFrontal}%` },
-            { cls: "cell center powershard", text: `${dotPowershard}%` },
+            ...HIT_RESULTS.map(([col, field, kind]) => ({ cls: `cell center ${col}`, text: hitResultText(dot, field, kind, dotHits) })),
             { cls: "cell center regen", text: `${formatDamageCompact(dotRegen)}` },
             { cls: "cell center mindmg", text: `${formatDamageCompact(dotMin)}` },
             { cls: "cell center avgdmg", text: `${formatDamageCompact(dotAvg)}` },
@@ -1275,8 +1302,6 @@ const createDetailsUI = ({
       const double = skill.double || 0;
       const back = skill.back || 0;
       const frontal = skill.frontal || 0;
-      const smite = skill.smite || 0;
-      const powershard = skill.powershard || 0;
       const regen = skill.regen || 0;
       // Hits that had additional hits: the game's AdditionalHitCount.
       const multiHitHits = skill.multiHitCount || 0;
@@ -1300,8 +1325,6 @@ const createDetailsUI = ({
       const frontalRate = pct(frontal, hits);
       const perfectRate = pct(perfect, hits);
       const doubleRate = pct(double, hits);
-      const smiteRate = pct(smite, hits);
-      const powershardRate = pct(powershard, hits);
       const multiHitRate = pct(multiHitHits, hits);
 
       // Show/hide DOT toggle arrow
@@ -1332,7 +1355,9 @@ const createDetailsUI = ({
       view.frontalEl.textContent = `${frontalRate}%`;
       view.perfectEl.textContent = `${perfectRate}%`;
       view.doubleEl.textContent = `${doubleRate}%`;
-      view.powershardEl.textContent = `${powershardRate}%`;
+      HIT_RESULTS.forEach(([, field, kind], i) => {
+        view.hitResultEls[i].textContent = hitResultText(skill, field, kind, hits);
+      });
       view.regenEl.textContent = `${formatDamageCompact(regen)}`;
       view.multiHitEl.textContent = `${multiHitRate}%`;
       view.multiHitDamageEl.textContent = `${formatDamageCompact(multiHitDamage)}`;
@@ -2026,8 +2051,6 @@ const createDetailsUI = ({
           totalPerfect: 0,
           totalDouble: 0,
           totalHits: 0,
-          totalSmite: 0,
-          totalPowershard: 0,
           totalRegen: 0,
           partyHeal: 0,
           damageReceived: 0,
@@ -2044,8 +2067,6 @@ const createDetailsUI = ({
         next.totalPerfect += Number(entry?.totalPerfect) || 0;
         next.totalDouble += Number(entry?.totalDouble) || 0;
         next.totalHits += Number(entry?.totalHits) || 0;
-        next.totalSmite += Number(entry?.totalSmite) || 0;
-        next.totalPowershard += Number(entry?.totalPowershard) || 0;
         next.totalRegen += Number(entry?.totalRegen) || 0;
         next.partyHeal += Number(entry?.partyHeal) || 0;
         next.damageReceived += Number(entry?.damageReceived) || 0;
@@ -2067,8 +2088,6 @@ const createDetailsUI = ({
     let totalBack = 0;
     let totalPerfect = 0;
     let totalDouble = 0;
-    let totalSmite = 0;
-    let totalPowershard = 0;
     let totalMultiHitCount = 0;
     let totalMultiHitDamage = 0;
     let totalRegen = 0;
@@ -2086,8 +2105,6 @@ const createDetailsUI = ({
         totalBack += Number(skill?.back) || 0;
         totalPerfect += Number(skill?.perfect) || 0;
         totalDouble += Number(skill?.double) || 0;
-        totalSmite += Number(skill?.smite) || 0;
-        totalPowershard += Number(skill?.powershard) || 0;
       }
     });
 
@@ -2104,8 +2121,6 @@ const createDetailsUI = ({
       totalBackPct: pct(totalBack, totalTimes),
       totalPerfectPct: pct(totalPerfect, totalTimes),
       totalDoublePct: pct(totalDouble, totalTimes),
-      totalSmitePct: pct(totalSmite, totalTimes),
-      totalPowershardPct: pct(totalPowershard, totalTimes),
       multiHitCount: totalMultiHitCount,
       multiHitDamage: totalMultiHitDamage,
       multiHitPct: pct(totalMultiHitCount, totalTimes),
