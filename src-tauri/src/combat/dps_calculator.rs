@@ -591,12 +591,14 @@ impl DpsCalculator {
                     // put the first trash pull of each run on the meter.
                     (HashSet::new(), String::new(), 0)
                 } else {
-                    // No boss: the mob with the most damage. Once you are
-                    // identified, only one you or your party hit. Any mob
-                    // within range counts otherwise, and in the open world
-                    // that put strangers fighting their own mobs on your
-                    // meter (2026-10-04: one player, then another, each alone
-                    // on a mob you never touched).
+                    // No boss: the mob with the most damage that you or your
+                    // party hit, and nothing until the meter knows who you
+                    // are. Any mob within range used to count then, and in
+                    // the open world that put strangers fighting their own
+                    // mobs on your meter (2026-10-04: one player, then
+                    // another, each alone on a mob you never touched), and
+                    // still did for the seconds after opening the meter or
+                    // entering a zone, before you were identified.
                     let ours = self.resolve_local_ids(summon_data).map(|mut ids| {
                         let party = self.data_storage.get_party_members();
                         ids.extend(nickname_data.iter()
@@ -604,10 +606,10 @@ impl DpsCalculator {
                             .map(|(&id, _)| id));
                         ids
                     });
-                    let best = combat_data.iter()
-                        .filter(|(_, td)| ours.as_ref().is_none_or(|ids| td.actors.keys()
-                            .any(|&a| ids.contains(&summon_resolver::resolve(a, summon_data)))))
-                        .max_by_key(|(_, td)| td.total_damage);
+                    let best = ours.as_ref().and_then(|ids| combat_data.iter()
+                        .filter(|(_, td)| td.actors.keys()
+                            .any(|&a| ids.contains(&summon_resolver::resolve(a, summon_data))))
+                        .max_by_key(|(_, td)| td.total_damage));
                     match best {
                         Some((&id, _)) => {
                             let name = self.resolve_target_name(id);
@@ -1664,6 +1666,17 @@ mod tests {
         let shown = meter(&open_world).get_dps();
         assert_eq!(shown.target_id, 50_000);
         assert_eq!(shown.map.keys().copied().collect::<Vec<_>>(), vec![2259]);
+
+        // Before you are identified (a meter just opened, a new zone), no
+        // mob is anyone's: a stranger's fight is not put up in your place.
+        let unknown = Arc::new(DataStorage::new());
+        unknown.append_damage(hit(2259, 50_000, 1_000));
+        for t in 0..5 {
+            unknown.append_damage(hit(11_345, 60_000, 1_000 + t));
+        }
+        let shown = meter(&unknown).get_dps();
+        assert_eq!(shown.target_id, 0);
+        assert!(shown.map.is_empty());
 
         // In a dungeon, a mob that is not a boss is not shown at all.
         let dungeon = Arc::new(DataStorage::new());
