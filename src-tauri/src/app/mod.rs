@@ -31,6 +31,7 @@ mod replay;
 mod screenshots;
 mod setting_changes;
 mod setup;
+mod sharing;
 mod supporter_roster;
 mod tasks;
 mod tool_windows;

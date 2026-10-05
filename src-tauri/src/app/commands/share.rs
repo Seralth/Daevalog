@@ -2,7 +2,7 @@
 
 use crate::share;
 
-use crate::app::AppState;
+use crate::app::{sharing, AppState};
 
 /// Upload a saved fight to a2tools.app as a log, and return its link.
 #[tauri::command]
@@ -10,8 +10,7 @@ pub(crate) async fn upload_fight(
     state: tauri::State<'_, AppState>,
     fight_id: String,
 ) -> Result<share::UploadResult, String> {
-    let record = state.fight_history.load_fight(&fight_id)?;
-    share::upload(&state.http, &state.app_data_dir, &record).await
+    sharing::upload_fight(&state, fight_id).await
 }
 
 /// Which fights have a slice to upload, and which already have a link.
