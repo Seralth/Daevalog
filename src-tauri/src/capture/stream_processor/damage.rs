@@ -7,6 +7,17 @@ use crate::combat::data_storage::NoDamageHit;
 use crate::entity::damage_packet::ParsedDamagePacket;
 use crate::entity::special_damage::{self, SpecialDamage};
 
+/// Theostone raw item ids, read as skill codes after `* 10 + 1`.
+const THEOSTONE_ITEM_IDS: std::ops::RangeInclusive<i64> = 3_000_000..=3_099_999;
+/// 7-digit skill codes are monster (NPC) skills.
+const MONSTER_SKILL_CODES: std::ops::RangeInclusive<i64> = 1_000_000..=9_999_999;
+/// The skill code of a compact aggregation record; its real skill comes from
+/// `PendingCompactSkillContext`.
+const COMPACT_AGGREGATE_SKILL: i32 = 99_745_942;
+/// Switch `0x36`: layout 6 with both multi-hit bits (`0x30`) set. The
+/// repeated-hit fallbacks apply to this switch only.
+const MULTI_HIT_SWITCH: i32 = 54;
+
 impl StreamProcessor {
     // ===== DOT PACKET =====
 
@@ -133,7 +144,6 @@ impl StreamProcessor {
                 continue;
             }
 
-            let _remaining_size = packet.len() - search_offset;
             let raw_key = to_hex_range(packet, search_offset, std::cmp::min(search_offset + 64, packet.len()));
             if self.seen_embedded_hexes.contains(&raw_key) {
                 search_offset += 1;
@@ -184,8 +194,6 @@ impl StreamProcessor {
         let mask = 0x0F;
 
         while offset < packet.len() {
-            let _checkpoint = offset;
-
             // Chained hit marker
             let mut is_chained = false;
             if offset + 1 < packet.len() && packet[offset] == 0x01 && packet[offset + 1] == 0x00 {
@@ -213,12 +221,12 @@ impl StreamProcessor {
                 Some(v) => v,
                 None => break,
             };
-            let and_result = switch_value & mask;
+            let layout = switch_value & mask;
             // Switch bit 0x04: the record has a value. Without it, the hit
             // type says why: a miss or a resist, read below and counted.
-            let no_value = matches!(and_result, 0 | 2);
+            let no_value = matches!(layout, 0 | 2);
 
-            if !(4..=7).contains(&and_result) && !no_value {
+            if !(4..=7).contains(&layout) && !no_value {
                 break;
             }
 
@@ -242,7 +250,7 @@ impl StreamProcessor {
             offset += 4;
 
             // Theostone raw item IDs
-            if (3_000_000..=3_099_999).contains(&exact_skill_code) {
+            if THEOSTONE_ITEM_IDS.contains(&exact_skill_code) {
                 exact_skill_code = exact_skill_code * 10 + 1;
             }
 
@@ -251,7 +259,7 @@ impl StreamProcessor {
             }
 
             // Skip 7-digit NPC skills
-            if (1_000_000..=9_999_999).contains(&exact_skill_code) {
+            if MONSTER_SKILL_CODES.contains(&exact_skill_code) {
                 break;
             }
 
@@ -260,22 +268,22 @@ impl StreamProcessor {
                 offset += 1;
             }
 
-            let dummy_type = match try_read_varint(packet, &mut offset) {
+            let hit_type = match try_read_varint(packet, &mut offset) {
                 Some(v) => v,
                 None => break,
             };
-            let damage_type = dummy_type as u8;
+            let damage_type = hit_type as u8;
 
             // Hit type 1 (Miss) and 6 (Resist) carry no damage: count them on
             // the skill and stop here, as the parser always did on these.
             if no_value {
                 if !require_trusted && actor_value != target_value {
-                    if let Some(kind) = NoDamageHit::from_hit_type(dummy_type) {
+                    if let Some(kind) = NoDamageHit::from_hit_type(hit_type) {
                         let skill = self.normalize_skill_id(exact_skill_code as i32);
                         let counted = self.data_storage.append_no_damage_hit(target_value, actor_value, skill, kind);
                         tracing::trace!(
                             target: "hit_flags",
-                            "{} actor={actor_value} target={target_value} skill={skill} damage=- type={dummy_type} layout={and_result} counted={counted}",
+                            "{} actor={actor_value} target={target_value} skill={skill} damage=- type={hit_type} layout={layout} counted={counted}",
                             crate::clock::now_ms(),
                         );
                     }
@@ -283,7 +291,7 @@ impl StreamProcessor {
                 break;
             }
 
-            let temp_v: usize = match and_result {
+            let fixed_tail_len: usize = match layout {
                 5 => 12,
                 6 => 10,
                 7 => 14,
@@ -292,14 +300,14 @@ impl StreamProcessor {
 
             // Switch bit 0x02: the game's damage plotter follows the hit type,
             // `<flags byte> <restoration HP varint> <angle byte>`. The HP is
-            // two bytes from 128 up; `temp_v` counts it as one.
+            // two bytes from 128 up; `fixed_tail_len` counts it as one.
             let mut specials = Vec::new();
             // The raw flag bytes, for `A2_REPLAY_FLAGS` in the replay report.
             let mut raw_mods: Option<u8> = None;
             let mut raw_dir: Option<u8> = None;
             let mut raw_hp: Option<i32> = None;
             let mut plotter_extra = 0;
-            if and_result & 0x02 != 0 {
+            if layout & 0x02 != 0 {
                 let Some(plotter) = read_plotter(packet, offset) else { break };
                 // Flags byte, bit for bit the game's plotter fields. Verified
                 // per skill against the game's Damage Analyzer: Perfect 0x04,
@@ -327,7 +335,7 @@ impl StreamProcessor {
                 specials.push(SpecialDamage::Critical);
             }
 
-            offset += temp_v + plotter_extra;
+            offset += fixed_tail_len + plotter_extra;
             if offset >= packet.len() {
                 break;
             }
@@ -364,7 +372,7 @@ impl StreamProcessor {
                 }
             }
 
-            let first_is_damage = should_treat_first_value_as_damage(first_value, second_value, and_result, damage_type as i32);
+            let first_is_damage = should_treat_first_value_as_damage(first_value, second_value, layout, damage_type as i32);
 
             let mut final_damage = if first_is_damage {
                 offset = after_first_offset;
@@ -379,8 +387,8 @@ impl StreamProcessor {
             // additional hits, as a count and that many damage values which the
             // value above already includes. Records that do not end cleanly
             // this way keep the older reading below.
-            let strict_tail = if [4, 6].contains(&and_result) && exact_skill_code != 99_745_942 {
-                parse_hit_tail(packet, offset, and_result, switch_value, final_damage)
+            let strict_tail = if [4, 6].contains(&layout) && exact_skill_code != i64::from(COMPACT_AGGREGATE_SKILL) {
+                parse_hit_tail(packet, offset, layout, switch_value, final_damage)
             } else {
                 None
             };
@@ -470,7 +478,7 @@ impl StreamProcessor {
                 multi_hit_count = hits_read;
             }
 
-            if strict_tail.is_none() && switch_value == 54 && hit_count > multi_hit_count && multi_hit_count == 1 {
+            if strict_tail.is_none() && switch_value == MULTI_HIT_SWITCH && hit_count > multi_hit_count && multi_hit_count == 1 {
                 if let Some(fv) = first_multi_hit_value {
                     if all_multi_hits_match {
                         multi_hit_count = hit_count;
@@ -497,7 +505,7 @@ impl StreamProcessor {
             // Compact skill context handling
             let pending = self.pending_compact_skill_context.clone();
             let aggregated_compact = pending.as_ref().is_some_and(|ctx| {
-                exact_skill_code as i32 == 99_745_942
+                exact_skill_code as i32 == COMPACT_AGGREGATE_SKILL
                     && actor_value == ctx.actor_id
                     && hit_count > 1
                     && multi_hit_damage > 0
@@ -535,7 +543,7 @@ impl StreamProcessor {
                 }
             }
 
-            if require_trusted && !self.is_trusted_recovered_damage_shape(actor_value, target_value, dummy_type as u8, final_damage, resolved_skill_code) {
+            if require_trusted && !self.is_trusted_recovered_damage_shape(actor_value, target_value, hit_type as u8, final_damage, resolved_skill_code) {
                 break;
             }
 
@@ -548,7 +556,7 @@ impl StreamProcessor {
                 pdp.set_actor_id(actor_value);
                 pdp.set_skill_code(resolved_skill_code);
                 pdp.set_spec_flags(spec_flags);
-                pdp.set_type(dummy_type);
+                pdp.set_type(hit_type);
                 pdp.set_specials(specials);
                 pdp.set_multi_hit_count(multi_hit_count);
                 pdp.set_multi_hit_damage(multi_hit_damage);
@@ -556,7 +564,7 @@ impl StreamProcessor {
                 pdp.set_damage(final_damage);
                 tracing::trace!(
                     target: "hit_flags",
-                    "{} actor={actor_value} target={target_value} skill={resolved_skill_code} damage={final_damage} type={dummy_type} layout={and_result} mods={} dir={} multi={multi_hit_count} hp={}",
+                    "{} actor={actor_value} target={target_value} skill={resolved_skill_code} damage={final_damage} type={hit_type} layout={layout} mods={} dir={} multi={multi_hit_count} hp={}",
                     pdp.timestamp(),
                     raw_mods.map_or("-".to_string(), |m| format!("{m:#04x}")),
                     raw_dir.map_or("-".to_string(), |d| format!("{d:#04x}")),
@@ -571,7 +579,7 @@ impl StreamProcessor {
                 // `E6 6F` field is read as first_value and the real heal lands in
                 // second_value, so `final_damage` is the correct heal amount. Recording
                 // it as healing makes the HEAL view capture instant self-heals, not just
-                // HoTs. (The cast-marker variant breaks out earlier on its and_result.)
+                // HoTs. (The cast-marker variant breaks out earlier on its layout.)
                 self.data_storage
                     .append_heal(actor_value, resolved_skill_code, final_damage as i64, false);
             }
@@ -707,11 +715,11 @@ fn decode_spec_flags(raw: i32) -> [bool; 5] {
     result
 }
 
-fn should_treat_first_value_as_damage(first_value: i32, second_value: i32, and_result: i32, damage_type: i32) -> bool {
+fn should_treat_first_value_as_damage(first_value: i32, second_value: i32, layout: i32, damage_type: i32) -> bool {
     if !(1_000..=99_999_999).contains(&first_value) { return false; }
     if !(0..=25).contains(&second_value) { return false; }
     if first_value > 5_000_000 { return false; }
-    and_result == 6 && damage_type == 3
+    layout == 6 && damage_type == 3
 }
 
 /// The tail of a damage record after its value, when it has the shape the
@@ -779,7 +787,7 @@ fn should_use_repeated_hit_damage(switch_value: i32, encoded_damage: i32, multi_
         Some(v) => v,
         None => return false,
     };
-    if switch_value != 54 { return false; }
+    if switch_value != MULTI_HIT_SWITCH { return false; }
     if multi_hit_count <= 0 || !all_match { return false; }
     let main_component = encoded_damage - multi_hit_count * repeated;
     if main_component > repeated { return false; }
