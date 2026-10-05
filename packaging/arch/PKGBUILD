@@ -37,7 +37,11 @@ _root() {
 # commit. The upstream release the fork is based on stays in Cargo.toml.
 pkgver() {
   cd "$(_root)"
-  printf 'r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  # Fail rather than print "r.g" when git cannot read the history (a
+  # worktree's .git file pointing outside the build container).
+  local count hash
+  count=$(git rev-list --count HEAD) && hash=$(git rev-parse --short HEAD) || return 1
+  printf 'r%s.g%s' "$count" "$hash"
 }
 
 build() {
