@@ -2,7 +2,7 @@
 
 use crate::share;
 
-use crate::app::{sharing, AppState};
+use crate::app::{game_records, sharing, AppState};
 
 /// Upload a saved fight to a2tools.app as a log, and return its link.
 #[tauri::command]
@@ -21,29 +21,13 @@ pub(crate) async fn share_status(
     sharing::share_status(&state).await
 }
 
-/// What the checks of the game's own Damage Analyzer records need.
-fn game_record_checker(state: &AppState) -> crate::game_record::files::Checker {
-    crate::game_record::files::Checker {
-        app_data_dir: state.app_data_dir.clone(),
-        data_dir: state.i18n_data_dir.clone(),
-        skills: state.skill_lookup.clone(),
-        npcs: state.npc_lookup.clone(),
-        fights: state.fight_history.list_fights(),
-        roots: crate::game_record::files::record_roots(),
-        zone: None,
-    }
-}
-
 /// Saved fights with a game record, and whether the meter matches it.
 /// Async: a new record replays the fight's slice.
 #[tauri::command]
 pub(crate) async fn game_record_status(
     state: tauri::State<'_, AppState>,
 ) -> Result<std::collections::HashMap<String, crate::game_record::files::FightStatus>, String> {
-    let checker = game_record_checker(&state);
-    tokio::task::spawn_blocking(move || checker.statuses())
-        .await
-        .map_err(|e| e.to_string())
+    game_records::game_record_status(&state).await
 }
 
 /// A saved fight's game records, each beside the meter's numbers.
@@ -52,10 +36,7 @@ pub(crate) async fn game_record_details(
     state: tauri::State<'_, AppState>,
     fight_id: String,
 ) -> Result<Vec<crate::game_record::files::RecordView>, String> {
-    let checker = game_record_checker(&state);
-    tokio::task::spawn_blocking(move || checker.views(&fight_id))
-        .await
-        .map_err(|e| e.to_string())
+    game_records::game_record_details(&state, fight_id).await
 }
 
 /// Write what sharing this fight *would* upload, without uploading anything.
