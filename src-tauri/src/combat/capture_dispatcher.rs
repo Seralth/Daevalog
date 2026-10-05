@@ -156,6 +156,8 @@ impl CaptureDispatcher {
         // Per-flow signature-rate tracker: (count_in_window, last_hit_ms).
         let mut sig_hits: HashMap<(u16, u16), (u32, i64)> = HashMap::new();
         let mut connections = ConnectionFilter::default();
+        // The port the connection filter was last used under.
+        let mut filtered_port: Option<u16> = None;
         let mut last_window_check_ms: i64 = 0;
         let mut is_aion_running = false;
         let mut window_logged: Option<bool> = None;
@@ -226,6 +228,13 @@ impl CaptureDispatcher {
 
             let current_port = self.port_detector.current_port();
             let locked_device = self.port_detector.current_device();
+
+            // A lock that ended or moved starts the connection filter over: a
+            // later connection may reuse a port pair it judged.
+            if filtered_port.is_some() && current_port != filtered_port {
+                connections.clear();
+            }
+            filtered_port = current_port;
 
             // Device filter
             if let Some(ref dev) = locked_device {
@@ -367,18 +376,28 @@ fn looks_like_tls(data: &[u8]) -> bool {
 /// inside the game's stream is ever skipped.
 #[derive(Default)]
 struct ConnectionFilter {
-    seen: std::collections::HashSet<(u16, u16)>,
-    tls: std::collections::HashSet<(u16, u16)>,
+    seen: std::collections::HashSet<Connection>,
+    tls: std::collections::HashSet<Connection>,
 }
+
+/// Both ends of a connection, address and port, the lower end first.
+type Connection = [(Option<std::net::IpAddr>, u16); 2];
 
 impl ConnectionFilter {
     fn admit(&mut self, cap: &CapturedPayload) -> bool {
-        let connection = (cap.src_port.min(cap.dst_port), cap.src_port.max(cap.dst_port));
+        let ip = |ip: &Option<String>| ip.as_deref().and_then(|s| s.parse().ok());
+        let mut connection = [(ip(&cap.src_ip), cap.src_port), (ip(&cap.dst_ip), cap.dst_port)];
+        connection.sort();
         if self.seen.insert(connection) && is_tls_record(&cap.data) {
             tracing::info!("Connection {} -> {} carries TLS: not the game, left out", cap.src_port, cap.dst_port);
             self.tls.insert(connection);
         }
         !self.tls.contains(&connection)
+    }
+
+    fn clear(&mut self) {
+        self.seen.clear();
+        self.tls.clear();
     }
 }
 
@@ -447,6 +466,14 @@ mod tests {
         // A game segment that happens to start like a TLS header later on is
         // not judged again: its connection is already known as the game's.
         assert!(filter.admit(&seg(50349, &[0x17, 0x03, 0x03, 0x00, 0x10])));
+
+        // The same ports from another server are another connection.
+        let other = CapturedPayload { src_ip: Some("193.202.112.99".into()), ..seg(50350, &[0x24, 0x04, 0x38]) };
+        assert!(filter.admit(&other));
+        // Once the lock ends, a new connection on the TLS one's ports is
+        // judged again.
+        filter.clear();
+        assert!(filter.admit(&seg(50350, &[0x24, 0x04, 0x38])));
     }
 
     fn cap(device: &str, data: &[u8]) -> CapturedPayload {
