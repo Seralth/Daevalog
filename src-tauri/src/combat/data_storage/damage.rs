@@ -277,7 +277,7 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
 
 /// Whether `actor_id` is you, your party, or a summon of either. Anyone
 /// counts until the meter knows who you are.
-fn is_ours(inner: &Inner, actor_id: i32) -> bool {
+pub(super) fn is_ours(inner: &Inner, actor_id: i32) -> bool {
     let Some(local) = inner.local_player_id else { return true };
     let owner = summon_resolver::resolve(actor_id, &inner.summon_storage);
     owner == local as i32

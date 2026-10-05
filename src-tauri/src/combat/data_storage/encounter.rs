@@ -3,6 +3,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::Ordering;
 
+use super::damage::is_ours;
 use super::heal::heals_between;
 use super::{
     DataStorage, Encounter, EndedSegment, Inner, SegmentIdentity, TargetCombatData, BOSS_HOLD_MAX_MS,
@@ -127,8 +128,12 @@ pub(super) fn note_encounter(inner: &mut Inner, timeout: i64, ts: i64, enemy: i3
         }
         return;
     }
+    if inner.local_player_id.is_some() && inner.encounter.as_ref().is_some_and(|e| e.blind) {
+        refocus(inner);
+    }
     if encounter_ended(inner, timeout, ts) || inner.encounter.is_none() {
-        inner.encounter = Some(Encounter { start: ts, last_ours: ts, last_any: ts, targets: HashSet::new() });
+        let blind = inner.local_player_id.is_none();
+        inner.encounter = Some(Encounter { start: ts, last_ours: ts, last_any: ts, targets: HashSet::new(), blind });
         inner.encounter_carry.clear();
     }
     if let Some(e) = inner.encounter.as_mut() {
@@ -136,6 +141,34 @@ pub(super) fn note_encounter(inner: &mut Inner, timeout: i64, ts: i64, enemy: i3
         e.last_any = e.last_any.max(ts);
         e.targets.insert(enemy);
     }
+}
+
+/// Once the meter knows you, an encounter opened before keeps only the
+/// enemies you or your party hit, from the first of those hits; with none,
+/// it goes. Until then every player's fight nearby was in it.
+fn refocus(inner: &mut Inner) {
+    let Some(e) = &inner.encounter else { return };
+    let (mut first, mut last, mut targets) = (i64::MAX, i64::MIN, HashSet::new());
+    for &t in &e.targets {
+        let ours = inner.target_combat.get(&t).into_iter().chain(inner.encounter_carry.get(&t))
+            .flat_map(|td| td.actors.iter())
+            .filter(|(a, _)| is_ours(inner, **a));
+        for (_, ad) in ours {
+            first = first.min(ad.first_damage_time);
+            last = last.max(ad.last_damage_time);
+            targets.insert(t);
+        }
+    }
+    if targets.is_empty() {
+        inner.encounter = None;
+        return;
+    }
+    inner.encounter_carry.retain(|t, _| targets.contains(t));
+    let e = inner.encounter.as_mut().expect("checked above");
+    e.start = e.start.max(first);
+    e.last_ours = last;
+    e.targets = targets;
+    e.blind = false;
 }
 
 /// Whether a hit of yours at `ts` comes after the encounter ended.

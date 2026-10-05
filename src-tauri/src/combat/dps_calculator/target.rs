@@ -205,8 +205,10 @@ impl DpsCalculator {
                 }
             }
             TargetSelectionMode::Encounter => {
-                // The enemies of the current encounter, while their data lasts.
+                // The enemies of the current encounter, while their data lasts;
+                // nothing until the meter knows you (see `compute_dps`).
                 let targets: HashSet<i32> = self.data_storage.current_encounter()
+                    .filter(|e| !e.blind)
                     .map(|e| e.targets.into_iter().filter(|t| combat_data.contains_key(t)).collect())
                     .unwrap_or_default();
                 (targets, "Encounter".to_string(), 0)

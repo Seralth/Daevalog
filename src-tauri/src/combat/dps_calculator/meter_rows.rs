@@ -37,9 +37,12 @@ impl DpsCalculator {
         // If no new damage since last cycle, return cached result. A rolling
         // window changes with the clock alone, so it is recomputed every time.
         let window_since = self.window_since();
+        // An encounter opened before the meter knew you is anyone's fights
+        // nearby: shown once your next hit narrows it to yours.
         let encounter = (self.target_selection_mode == TargetSelectionMode::Encounter)
             .then(|| self.data_storage.current_encounter())
-            .flatten();
+            .flatten()
+            .filter(|e| !e.blind);
         // Damage counted from here: the ALL window's start, or the encounter's.
         let since = window_since.or(encounter.as_ref().map(|e| e.start));
         let clock_driven = window_since.is_some() || self.target_selection_mode == TargetSelectionMode::Encounter;

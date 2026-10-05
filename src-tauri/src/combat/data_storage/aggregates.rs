@@ -415,6 +415,8 @@ pub struct Encounter {
     pub last_any: i64,
     /// The enemies fought: hit by you or your party, or hitting you.
     pub targets: HashSet<i32>,
+    /// Opened before the meter knew you, when anyone's hit counted as yours.
+    pub blind: bool,
 }
 
 impl Encounter {

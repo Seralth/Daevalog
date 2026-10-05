@@ -417,6 +417,36 @@ mod tests {
     }
 
     #[test]
+    fn enc_shows_nothing_until_the_meter_knows_you_then_only_your_fights() {
+        use crate::combat::data_storage::PartyMember;
+        let s = Arc::new(DataStorage::new());
+        s.append_nickname_authoritative(3000, "A");
+        s.set_party_roster(vec![("A".into(), PartyMember { slot: 1, ..Default::default() })], true);
+        let mut calc = meter(&s);
+        calc.set_target_selection_mode("encounter");
+        // Strangers fight nearby from 1 s; you and your party member from 5 s.
+        hits(&s, 9000, 900, 1_000, 10_000);
+        hits(&s, 2259, 901, 5_000, 12_000);
+        hits(&s, 3000, 901, 6_000, 7_000);
+        crate::clock::set_override(Some(12_500));
+        // Party members stand on the meter as placeholders, with no damage.
+        let dealt = |d: &DpsData| { let mut r: Vec<i32> = d.map.iter().filter(|(_, r)| r.amount > 0.0).map(|(&k, _)| k).collect(); r.sort(); r };
+        let shown = calc.get_dps();
+        assert!(dealt(&shown).is_empty(), "nobody's fights before the meter knows you");
+        assert_eq!(shown.battle_time, 0);
+
+        s.set_local_player_id(Some(2259));
+        assert!(dealt(&calc.get_dps()).is_empty(), "nor until your next hit sorts them out");
+        hits(&s, 2259, 901, 14_000, 14_000);
+        let shown = calc.get_dps();
+        assert_eq!(dealt(&shown), vec![2259, 3000], "you and your party, no stranger");
+        assert_eq!(shown.map[&2259].amount, 9.0 * 500.0, "your hits from before you were known count");
+        assert_eq!(calc.displayed_targets, vec![901]);
+        assert_eq!(shown.battle_time, 9_000, "from your first hit");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn a_zone_load_or_a_reset_ends_the_encounter() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));
@@ -1424,8 +1454,8 @@ mod tests {
                         }).collect();
                     per_target.sort();
                     let (row, dps) = me.and_then(|m| shown.map.get(&m)).map_or((0.0, 0.0), |r| (r.amount, r.dps));
-                    eprintln!("{tod} {} shown {:?} target {} '{}' you {me:?} row {row:.0} dps {dps:.0} time {} | {}", shown.target_mode,
-                        calc.displayed_targets, shown.target_id, shown.target_name, shown.battle_time, per_target.join("; "));
+                    eprintln!("{tod} {} shown {:?} target {} '{}' rows {} you {me:?} row {row:.0} dps {dps:.0} time {} | {}", shown.target_mode,
+                        calc.displayed_targets, shown.target_id, shown.target_name, shown.map.len(), shown.battle_time, per_target.join("; "));
                 }
             }
             let bytes: Vec<u8> = (0..parts[2].len() / 2).filter_map(|i| u8::from_str_radix(&parts[2][2 * i..2 * i + 2], 16).ok()).collect();
