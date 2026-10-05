@@ -29,6 +29,10 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - **Skill details on hover** in every mode, including the modes that show several targets.
 - **Details, History and the hover tooltip never wait on the meter,** and settings are saved in the background (from mazixs's upstream PR #29). Closing the meter window quits the app, even with Settings open, and saves your fights first.
 - **Every UI string in all 10 languages.**
+- DoT rows sit under their skill in Details in every language: they are matched by skill code, not by name.
+- Damage totals past 2.1 billion no longer wrap around.
+- When packet capture cannot start on Linux, the meter says so in its own window, instead of the Windows prompt to download Npcap.
+- The version in Settings opens the releases of this repository.
 
 ### Linux desktop
 - **Tray icon,** with "Start in the tray" and "Keep out of the taskbar". The tray menu shows, hides, locks and unlocks the meter. Every control also stays in the meter's own window, so the meter works on a desktop without a tray.
@@ -49,6 +53,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - The backend alone decides which player is the local player, from the game's own record of you.
 - Every fight segment is saved before any reset. Only fights that you or your party fought are saved.
 - A fight cleared by a zone change keeps the ids, names and spirit links it had.
+- A saved fight keeps only the healing done during the fight.
 
 ### Privacy
 - The sign-in, upload and webview paths are hardened.
@@ -57,13 +62,15 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - Discord activity is off by default.
 - Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).
 - Packet capture takes TCP only, and only the game server's port once the meter has found it.
-- The fonts come with the meter. A window no longer loads them from unpkg.com.
-- Pretendard now comes with the meter and is the app's main font, as the stylesheet always intended.
+- The fonts come with the meter, with Pretendard as the main font, as the stylesheet always intended. A window no longer loads fonts from unpkg.com.
+- Links open only https addresses and the meter's own folders.
+- A packet replay reads only files in the meter's data folder.
 
 ### Left out
 - Guessing who an unnamed actor is from its class.
 - The one-time popups that offer Discord activity, and sign-in with automatic upload.
 - The update check and the updater.
+- The Discord button in Settings.
 
 Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull requests.
 
