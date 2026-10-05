@@ -266,6 +266,9 @@ fn forget_entity(inner: &mut Inner, id: i32) {
             target.actors.entry(owner).or_insert_with(ActorCombatData::new).absorb(data);
         }
     }
+    for tick in inner.heal_ticks.iter_mut().filter(|t| t.actor == id) {
+        tick.actor = owner;
+    }
     if let Some(heals) = inner.heal_storage.remove(&id) {
         let mine = inner.heal_storage.entry(owner).or_default();
         for (key, h) in heals {

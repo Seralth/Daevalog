@@ -66,8 +66,6 @@ impl DpsCalculator {
         if !candidates.is_empty() {
             tracing::trace!("snapshot_boss_fights: {} candidate targets", candidates.len());
         }
-        let stats = actor_stats(combat_data.values());
-
         for target_id in candidates {
             let Some(target_data) = combat_data.get(&target_id) else { continue };
             let battle_time = target_data.last_damage_time - target_data.first_damage_time;
@@ -78,7 +76,8 @@ impl DpsCalculator {
                 continue;
             }
 
-            let details = self.get_target_details(target_id, None);
+            let details = self.fight_details(target_id);
+            let stats = actor_stats([target_data].into_iter());
             records.push(self.build_record(target_data, details, &stats, &mob_data, None));
             // Saved for good only once the next hit would start a new fight:
             // a pause in a boss fight is not its end, and the record is

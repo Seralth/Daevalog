@@ -3,6 +3,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::Ordering;
 
+use super::heal::heals_between;
 use super::{
     DataStorage, Encounter, EndedSegment, Inner, SegmentIdentity, TargetCombatData, BOSS_HOLD_MAX_MS,
     MAX_ENDED_SEGMENTS, MIN_SAVED_FIGHT_MS,
@@ -38,7 +39,7 @@ pub(super) fn retire_segment(inner: &mut Inner, data: TargetCombatData) {
         inner.ended_segments.remove(0);
     }
     let max_hp = inner.mob_hp_data.get(&tid).copied().unwrap_or(0);
-    let heals = inner.heal_storage.clone();
+    let heals = heals_between(inner, data.first_damage_time, data.last_damage_time);
     let identity = SegmentIdentity {
         summons: inner.summon_storage.clone(),
         nicknames: inner.nickname_storage.clone(),

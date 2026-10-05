@@ -14,6 +14,16 @@ pub struct HealSkillData {
     pub tick_count: i32,
 }
 
+/// One heal tick, when it landed.
+#[derive(Debug, Clone, Copy)]
+pub struct HealTick {
+    pub at: i64,
+    pub actor: i32,
+    pub skill: i32,
+    pub is_hot: bool,
+    pub amount: i64,
+}
+
 /// A hit the game reports with no damage, by its hit type (`EHitType`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NoDamageHit {

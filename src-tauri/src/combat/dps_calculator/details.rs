@@ -154,6 +154,15 @@ impl DpsCalculator {
     }
 
     pub fn get_target_details(&self, target_id: i32, actor_ids: Option<&[i32]>) -> TargetDetailsResponse {
+        self.target_details(target_id, actor_ids, false)
+    }
+
+    /// `get_target_details` for a saved fight: only the healing done during it.
+    pub(super) fn fight_details(&self, target_id: i32) -> TargetDetailsResponse {
+        self.target_details(target_id, None, true)
+    }
+
+    fn target_details(&self, target_id: i32, actor_ids: Option<&[i32]>, own_heals: bool) -> TargetDetailsResponse {
         let combat_data = self.combat_snapshot();
         let target_data = match combat_data.get(&target_id) {
             Some(td) => td,
@@ -169,7 +178,12 @@ impl DpsCalculator {
             },
         };
         let max_hp = self.data_storage.get_mob_hp(target_id).unwrap_or(0);
-        self.details_for(target_data, max_hp, &self.data_storage.get_heal_snapshot(), actor_ids, None)
+        let heals = if own_heals {
+            self.data_storage.heals_between(target_data.first_damage_time, target_data.last_damage_time)
+        } else {
+            self.data_storage.get_heal_snapshot()
+        };
+        self.details_for(target_data, max_hp, &heals, actor_ids, None)
     }
 
     /// The live data; in ENC with what a boss pull cleared of the encounter.

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 
 use parking_lot::RwLock;
@@ -54,7 +54,7 @@ mod names;
 mod roster;
 
 pub use aggregates::{
-    ActorCombatData, Encounter, EndedSegment, HealSkillData, LocalProfile, NoDamageHit, PartyMember, SecondStats,
+    ActorCombatData, Encounter, EndedSegment, HealSkillData, HealTick, LocalProfile, NoDamageHit, PartyMember, SecondStats,
     SegmentIdentity, SkillCombatData, TargetCombatData,
 };
 pub use damage::is_player_skill;
@@ -99,6 +99,8 @@ struct Inner {
     mob_storage: HashMap<i32, i32>,
     /// Healing done per (healer actor) -> (skill_code, is_hot) -> aggregate.
     heal_storage: HashMap<i32, HashMap<(i32, bool), HealSkillData>>,
+    /// The same healing tick by tick, so a saved fight takes only its own.
+    heal_ticks: VecDeque<HealTick>,
     /// Spawn-time / observed-peak MAX HP per entity (denominator for the HP bar).
     mob_hp_data: HashMap<i32, i32>,
     /// Live CURRENT HP per entity, from the in-place `8D <id> 02 01 00 <u32>` feed.
@@ -196,6 +198,7 @@ impl DataStorage {
                 summon_storage: HashMap::new(),
                 mob_storage: HashMap::new(),
                 heal_storage: HashMap::new(),
+                heal_ticks: VecDeque::new(),
                 mob_hp_data: HashMap::new(),
                 mob_current_hp: HashMap::new(),
                 known_player_ids: HashSet::new(),
@@ -343,6 +346,7 @@ impl DataStorage {
         inner.mob_hp_data.clear();
         inner.mob_current_hp.clear();
         inner.heal_storage.clear();
+        inner.heal_ticks.clear();
         inner.current_target = 0;
     }
 
@@ -362,6 +366,7 @@ impl DataStorage {
         inner.mob_hp_data.clear();
         inner.mob_current_hp.clear();
         inner.heal_storage.clear();
+        inner.heal_ticks.clear();
         inner.current_target = 0;
     }
 }

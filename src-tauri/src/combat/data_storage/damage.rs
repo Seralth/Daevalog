@@ -9,10 +9,11 @@ use crate::entity::summon_resolver;
 
 use super::encounter::{carry_encounter, encounter_ended, note_encounter, retire_all, retire_segment};
 use super::entities::{link_summon, owner_link};
+use super::heal::record_heal;
 use super::names::apply_pending_nickname;
 use super::roster::bind_roster_names_by_class;
 use super::{
-    now_ms, ActorCombatData, DataStorage, Inner, NoDamageHit, SecondStats, SkillCombatData, TargetCombatData,
+    now_ms, ActorCombatData, DataStorage, HealTick, Inner, NoDamageHit, SecondStats, SkillCombatData, TargetCombatData,
     IDLE_RESET_MS, ROSTER_BIND_EVERY,
 };
 
@@ -75,14 +76,14 @@ impl DataStorage {
                 }
                 // Also record per-skill so ally heals show in the HEAL view (the
                 // self-heal path does this via append_heal; mirror it for ally heals).
-                let e = inner
-                    .heal_storage
-                    .entry(actor_id)
-                    .or_default()
-                    .entry((pdp.skill_code(), false))
-                    .or_default();
-                e.total_heal += heal_amount as i64;
-                e.tick_count += 1;
+                let tick = HealTick {
+                    at: pdp.timestamp(),
+                    actor: actor_id,
+                    skill: pdp.skill_code(),
+                    is_hot: false,
+                    amount: heal_amount as i64,
+                };
+                record_heal(&mut inner, tick);
             }
             return;
         }

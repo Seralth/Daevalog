@@ -654,6 +654,33 @@ mod tests {
         assert_eq!(active_time(std::iter::empty(), 0), 0);
     }
 
+    #[test]
+    fn a_saved_fight_keeps_only_the_healing_done_during_it() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        let healed = |r: &FightRecord| r.details.heal_skills.iter().map(|h| h.dmg as i64).sum::<i64>();
+        s.append_heal(2259, 17_800_000, 111, false, 500);
+        hits(&s, 2259, 800, 1_000, 8_000);
+        s.append_heal(2259, 17_800_000, 222, false, 4_000);
+        s.append_heal(2259, 17_800_000, 333, false, 9_500);
+        let saved = snapshot_at(&mut calc, 30_000);
+        assert_eq!(ids(&saved), vec!["auto_800_1000"]);
+        assert_eq!(healed(&saved[0]), 222, "saved while live");
+
+        // The next pull ends the first; a zone load clears the second.
+        hits(&s, 2259, 800, 40_000, 48_000);
+        s.append_heal(2259, 17_800_000, 444, false, 45_000);
+        crate::clock::set_override(Some(50_000));
+        assert!(s.note_zone_change());
+        let saved = snapshot_at(&mut calc, 50_000);
+        let by_id = |id: &str| saved.iter().find(|r| r.id == id).map(healed);
+        assert_eq!(by_id("auto_800_40000"), Some(444), "saved after it was cleared");
+        assert!(by_id("auto_800_1000").is_none_or(|h| h == 222));
+        crate::clock::set_override(None);
+    }
+
     fn skill_hit(actor: i32, target: i32, at: i64, skill: i32, damage: i32) -> ParsedDamagePacket {
         let mut p = hit(actor, target, at);
         p.set_skill_code(skill);
