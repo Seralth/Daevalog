@@ -1,8 +1,8 @@
-//! Saved fights: the list, loading, saving, deleting and export.
+//! Saved fights: the list, loading and deleting.
 
 use crate::entity::fight_record::{FightRecord, FightSummary};
 
-use crate::app::{fights, AppState};
+use crate::app::fights;
 
 #[tauri::command]
 /// `async` keeps this off the main thread. Sync commands run there, and even
@@ -15,11 +15,6 @@ pub(crate) async fn get_fight_history(app: tauri::AppHandle) -> Result<Vec<Fight
 }
 
 #[tauri::command]
-pub(crate) async fn save_fight(app: tauri::AppHandle, record: FightRecord) -> Result<(), String> {
-    fights::save_fight(app, record).await
-}
-
-#[tauri::command]
 pub(crate) async fn load_fight(app: tauri::AppHandle, id: String) -> Result<FightRecord, String> {
     fights::load_fight(app, id).await
 }
@@ -27,9 +22,4 @@ pub(crate) async fn load_fight(app: tauri::AppHandle, id: String) -> Result<Figh
 #[tauri::command]
 pub(crate) async fn delete_fight(app: tauri::AppHandle, id: String) -> Result<(), String> {
     fights::delete_fight(app, id).await
-}
-
-#[tauri::command]
-pub(crate) fn export_fight_json(state: tauri::State<'_, AppState>, record: FightRecord) -> Result<String, String> {
-    state.fight_history.export_fight_json(&record)
 }

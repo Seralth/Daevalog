@@ -48,15 +48,6 @@ pub(crate) fn suspend_capture(state: &AppState, suspended: bool) {
     tracing::info!("Capture {}", if suspended { "suspended" } else { "resumed" });
 }
 
-pub(crate) fn test_auto_hide() -> serde_json::Value {
-    let aion_fg = platform::window_detector::is_aion2_foreground();
-    let aion_title = platform::window_detector::find_aion2_window_title();
-    serde_json::json!({
-        "aion2_foreground": aion_fg,
-        "aion2_title": aion_title,
-    })
-}
-
 pub(crate) fn debug_status(state: &AppState) -> serde_json::Value {
     let port = state.port_detector.current_port();
     let device = state.port_detector.current_device();

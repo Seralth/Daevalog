@@ -266,10 +266,8 @@ pub fn run() {
             commands::meter::get_displayed_skill_details,
             commands::meter::get_details_context,
             commands::history::get_fight_history,
-            commands::history::save_fight,
             commands::history::load_fight,
             commands::history::delete_fight,
-            commands::history::export_fight_json,
             commands::share::preview_share,
             commands::share::upload_fight,
             commands::share::share_status,
@@ -282,7 +280,6 @@ pub fn run() {
             commands::account::account_sign_out,
             commands::settings::get_settings,
             commands::settings::update_settings,
-            commands::meter::get_ping,
             commands::capture::get_capture_status,
             commands::meter::set_target_mode,
             commands::meter::set_all_targets_window_ms,
@@ -307,7 +304,6 @@ pub fn run() {
             commands::capture::suspend_capture,
             overlay_lock::overlay_lock_supported,
             overlay_lock::set_overlay_locked,
-            overlay_lock::is_overlay_locked,
             overlay_lock::set_lock_button_rect,
             commands::capture::is_capture_suspended,
             drag_resize::resize_window,
@@ -337,7 +333,6 @@ pub fn run() {
             commands::capture::get_available_devices,
             commands::capture::set_manual_device,
             commands::capture::replay_file,
-            commands::capture::test_auto_hide,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

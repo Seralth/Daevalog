@@ -1,4 +1,4 @@
-//! Listing, saving, loading and deleting saved fights, for the history commands.
+//! Listing, loading and deleting saved fights, for the history commands.
 //!
 //! Each runs in the history queue, off the main thread. The list is polled
 //! and may be refused when the queue is full; the player's own actions wait.
@@ -13,10 +13,6 @@ use super::AppState;
 
 pub(crate) async fn list_fights(app: tauri::AppHandle) -> Result<Vec<FightSummary>, String> {
     HISTORY.run(move || app.state::<AppState>().fight_history.list_fights()).await
-}
-
-pub(crate) async fn save_fight(app: tauri::AppHandle, record: FightRecord) -> Result<(), String> {
-    HISTORY.run_waiting(move || app.state::<AppState>().fight_history.save_fight(&record)).await?
 }
 
 pub(crate) async fn load_fight(app: tauri::AppHandle, id: String) -> Result<FightRecord, String> {

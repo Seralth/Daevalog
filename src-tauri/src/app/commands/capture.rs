@@ -45,11 +45,6 @@ pub(crate) fn get_aion2_window_title() -> Option<String> {
 }
 
 #[tauri::command]
-pub(crate) fn test_auto_hide() -> serde_json::Value {
-    capture_control::test_auto_hide()
-}
-
-#[tauri::command]
 pub(crate) fn debug_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
     capture_control::debug_status(&state)
 }

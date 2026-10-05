@@ -32,11 +32,6 @@ pub(crate) async fn get_details_context(app: tauri::AppHandle) -> Result<Details
 }
 
 #[tauri::command]
-pub(crate) fn get_ping(state: tauri::State<'_, AppState>) -> Option<i32> {
-    state.ping_tracker.current_ping_ms()
-}
-
-#[tauri::command]
 pub(crate) fn set_target_mode(state: tauri::State<'_, AppState>, mode: String) {
     state.dps_calculator.lock().set_target_selection_mode(&mode);
 }

@@ -267,11 +267,6 @@ impl FightHistoryManager {
         summaries.sort_by(|a, b| b.start_time_ms.cmp(&a.start_time_ms));
         summaries
     }
-
-    pub fn export_fight_json(&self, record: &FightRecord) -> Result<String, String> {
-        serde_json::to_string(record)
-            .map_err(|e| format!("Serialization error: {}", e))
-    }
 }
 
 #[cfg(test)]

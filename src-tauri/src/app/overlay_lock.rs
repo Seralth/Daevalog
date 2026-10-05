@@ -134,11 +134,6 @@ pub(super) fn set_overlay_locked(app: tauri::AppHandle, locked: bool) {
     apply_overlay_lock(&app, locked);
 }
 
-#[tauri::command]
-pub(super) fn is_overlay_locked(state: tauri::State<'_, AppState>) -> bool {
-    state.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst)
-}
-
 /// Where the lock button is in the main window's page, so it stays clickable
 /// while the rest of the window lets clicks through. A locked overlay follows
 /// the button when the layout moves it.
