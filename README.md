@@ -64,6 +64,16 @@ Flatpak and AppImage are not supported: neither can give the capture helper the 
 
 Report problems with Daevalog in the [issues of this repository](https://github.com/Seralth/Daevalog/issues). Do not report them to the A2Tools DPS Meter project.
 
+The quickest way is **Report a problem** in Settings, next to Open log folder. You choose one of three forms, and it opens on GitHub with the report info filled in: the Daevalog version, your system and desktop, the display backend, and whether packet capture works. The meter shows that text before anything opens. It sends nothing itself; you submit the form.
+
+- **Wrong numbers.** Attach a prepared packet log of the fight and, if you have it, the record of the game's Combat Analysis (Ctrl+X).
+- **Crash or won't start.** Attach `debug.log` from Open log folder.
+- **Something else.** Any other problem, and ideas for new features.
+
+Packet logs hold the name of every player you met, and issues are public. So for Wrong numbers, use **Prepare log**. It saves a copy in the log folder, named `report_` and the log's name, with every character name replaced. The copy replays to the same damage numbers. Chat messages can stay in it. Attach the copy, never a `packets_` file.
+
+Security problems, anything that could hurt other players or users if posted in public, go to a private form instead: see [SECURITY.md](SECURITY.md). Report a problem has a button for it too.
+
 ## Uploads and a2tools.app
 
 Daevalog can upload fights to a2tools.app, a site run by the A2Tools developer, where others can view them. To upload, you sign in with an a2tools.app account. Uploading is always your own choice: no upload option is turned on for you. Daevalog is not affiliated with a2tools.app.
