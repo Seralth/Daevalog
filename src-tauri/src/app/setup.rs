@@ -151,7 +151,6 @@ pub fn run() {
             let capture_suspended = state.capture_suspended.clone();
 
             app.manage(state);
-            crate::presence::spawn(app.handle().clone());
 
             // Hidden into the tray only when there is a tray to bring it back
             // from: a desktop without one would leave no way to the meter.
@@ -287,7 +286,6 @@ pub fn run() {
             commands::share::game_record_details,
             commands::account::account_status,
             commands::account::account_status_cached,
-            commands::settings::discord_activity_available,
             commands::account::account_begin_link,
             commands::account::account_sign_out,
             commands::settings::get_settings,

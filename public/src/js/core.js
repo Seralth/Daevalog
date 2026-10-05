@@ -64,7 +64,6 @@ class DpsApp {
       saveRawPackets: "dpsMeter.saveRawPackets",
       autoUpload: "dpsMeter.autoUpload",
       waylandLayer: "dpsMeter.waylandLayer",
-      discordActivity: "dpsMeter.discordActivity",
       windowOpacity: "dpsMeter.windowOpacity",
       bossNameSize: "dpsMeter.bossNameSize",
       betaUi: "dpsMeter.betaUi",

@@ -128,7 +128,6 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - The sign-in, upload and webview paths are hardened.
 - The data folder and the files the meter writes there are readable by your user only.
 - An upload is always your own choice. No upload option is turned on for you.
-- Discord activity is off by default.
 - Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).
 - Packet capture runs in a small helper program, `daevalog-capture`. Only the helper holds `cap_net_raw`, and it gives it up once the network devices are open. The meter itself runs with no capability.
 - The capture helper passes on only your own connections; other users' traffic and system services are never read through it.
@@ -141,12 +140,12 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 
 ### Left out
 - Guessing who an unnamed actor is from its class.
-- The one-time popups that offer Discord activity, and sign-in with automatic upload.
+- The one-time popups that offer Discord activity and sign-in with automatic upload.
 - The update check and the updater.
-- The Discord button in Settings.
+- Discord activity and the Discord button in Settings.
 - The supporter roster (gold names for A2Tools donors), which downloaded a list from a2tools.app every few hours.
 
-Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull requests.
+Fixes that suit A2Tools DPS Meter are offered to that project as pull requests.
 
 ## For developers
 

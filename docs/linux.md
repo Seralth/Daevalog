@@ -142,7 +142,6 @@ Your settings and fights stay in `~/.local/share/com.daevalog.dps-meter`. Delete
 | Class icons | Works |
 | Global hotkeys | The lock hotkey, through the desktop's global shortcuts (the GlobalShortcuts portal), on desktops that offer them |
 | Click-through lock | Works on X11, XWayland and native Wayland. A locked meter always shows its lock button |
-| Discord activity | Off by default; Settings turns it on: your class, level and server in your Discord status, through the Discord app on the same computer |
 | Screenshots | Works, to the clipboard and a folder (`~/Pictures/Daevalog DPS Meter` by default). On Linux the meter pictures itself on a plain background, since Wayland lets no app copy the screen |
 | Auto-hide when the game loses focus | Not yet (the meter stays visible) |
 

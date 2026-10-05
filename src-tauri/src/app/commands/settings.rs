@@ -5,13 +5,6 @@ use tauri::Emitter;
 use crate::app::setting_changes::{self, apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use crate::app::AppState;
 
-/// Whether this build can show a Discord activity (it has a Discord
-/// application configured). The Settings toggle is hidden when it cannot.
-#[tauri::command]
-pub(crate) fn discord_activity_available() -> bool {
-    crate::presence::available()
-}
-
 #[tauri::command]
 pub(crate) fn get_settings(state: tauri::State<'_, AppState>) -> std::collections::HashMap<String, String> {
     state.settings.get_all()

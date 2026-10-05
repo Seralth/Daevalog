@@ -376,22 +376,6 @@ Object.assign(DpsApp.prototype, {
       });
     }
 
-    // Off unless turned on: it shows others what you are playing. Offered
-    // only when this build has a Discord application to show it under.
-    const discordCheckbox = document.querySelector(".discordActivityCheckbox");
-    if (discordCheckbox) {
-      discordCheckbox.checked = this.safeGetSetting(this.storageKeys.discordActivity) === "true";
-      discordCheckbox.addEventListener("change", (event) => {
-        this.safeSetSetting(this.storageKeys.discordActivity, String(!!event.target?.checked));
-      });
-      Promise.resolve(window.javaBridge?.discordActivityAvailable?.())
-        .then((ok) => {
-          const group = document.querySelector(".discordActivityGroup");
-          if (group && ok) group.style.display = "";
-        })
-        .catch(() => {});
-    }
-
     // Shown where the session has layer-shell, or while it is on, so it can
     // always be turned off again. Unset, it follows the desktop's default
     // (on for KDE Plasma, Hyprland and Sway on Wayland).

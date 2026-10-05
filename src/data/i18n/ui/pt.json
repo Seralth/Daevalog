@@ -244,10 +244,6 @@
     },
     "debugLogging": "Ativar registro de depuração",
     "quit": "Sair",
-    "discord": {
-      "activity": "Mostrar no Discord o que estou jogando",
-      "activityHint": "Enquanto o AION2 estiver aberto, seu status do Discord mostra o nome do seu personagem, classe, nível e servidor, e o chefe que você está enfrentando. Isso passa pelo aplicativo do Discord neste computador; não é preciso conta."
-    },
     "version": "Versão",
     "theme": {
       "label": "Tema",
@@ -452,18 +448,6 @@
       "hard": "Difícil",
       "level": "Nível {n}"
     }
-  },
-  "presence": {
-    "level": "Nv. {level}",
-    "fighting": "Enfrentando {boss}",
-    "inGame": "Em jogo",
-    "elyos": "Elyos",
-    "asmodian": "Asmodianos",
-    "korea": "Coreia",
-    "taiwan": "Taiwan",
-    "tierExpedition": "Expedição",
-    "tierConquestNormal": "Conquista (normal)",
-    "tierConquestHard": "Conquista (difícil)"
   },
   "tray": {
     "toggle": "Mostrar ou ocultar o medidor",

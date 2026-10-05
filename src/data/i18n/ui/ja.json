@@ -244,10 +244,6 @@
     },
     "debugLogging": "デバッグログを有効にする",
     "quit": "終了",
-    "discord": {
-      "activity": "Discord にプレイ中の内容を表示",
-      "activityHint": "AION2 の起動中、Discord のステータスにキャラクター名、クラス、レベル、サーバー、戦闘中のボスを表示します。このパソコンの Discord アプリ経由で表示され、アカウントは不要です。"
-    },
     "version": "バージョン",
     "theme": {
       "label": "テーマ",
@@ -452,18 +448,6 @@
       "hard": "ハード",
       "level": "レベル{n}"
     }
-  },
-  "presence": {
-    "level": "Lv {level}",
-    "fighting": "{boss} と戦闘中",
-    "inGame": "プレイ中",
-    "elyos": "天族",
-    "asmodian": "魔族",
-    "korea": "韓国",
-    "taiwan": "台湾",
-    "tierExpedition": "遠征",
-    "tierConquestNormal": "征服（ノーマル）",
-    "tierConquestHard": "征服（ハード）"
   },
   "tray": {
     "toggle": "メーターの表示/非表示",
