@@ -175,6 +175,8 @@ jobs:
             install: apt-get update && apt-get install -y ./daevalog-dps-meter_*_amd64.deb
           - image: debian:12
             install: apt-get update && apt-get install -y ./daevalog-dps-meter_*_amd64.deb
+          - image: debian:13
+            install: apt-get update && apt-get install -y ./daevalog-dps-meter_*_amd64.deb
           - image: fedora:41
             install: dnf install -y ./daevalog-dps-meter-*.x86_64.rpm
           - image: opensuse/tumbleweed

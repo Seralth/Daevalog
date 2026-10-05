@@ -20,9 +20,10 @@ pkgdesc="Daevalog DPS Meter: real-time DPS overlay for AION 2 (Linux/Proton)"
 arch=('x86_64')
 url="https://github.com/Seralth/Daevalog"
 license=('GPL-3.0-only')
-depends=('webkit2gtk-4.1' 'gtk3' 'libpcap' 'libcap' 'hicolor-icon-theme' 'libayatana-appindicator')
+# gtk-layer-shell: the overlay above fullscreen games on KDE Plasma, Hyprland
+# and Sway, which those desktops get by default. Loaded at run time.
+depends=('webkit2gtk-4.1' 'gtk3' 'libpcap' 'libcap' 'hicolor-icon-theme' 'libayatana-appindicator' 'gtk-layer-shell')
 makedepends=('rust' 'nodejs' 'npm' 'git' 'pkgconf')
-optdepends=('gtk-layer-shell: overlay as a Wayland layer above fullscreen games (KDE Plasma, Hyprland, Sway)')
 install=daevalog-dps-meter.install
 # The package was a2tools-dps-meter before the fork was renamed.
 conflicts=('a2tools-dps-meter')

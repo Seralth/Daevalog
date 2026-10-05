@@ -32,6 +32,9 @@ Obsoletes:      a2-tools-dps-meter < 3
 # libpcap is loaded at runtime, so rpmbuild cannot find it among the binary's
 # libraries; the rest (WebKitGTK, GTK) it adds by itself.
 Requires:       libpcap.so.1()(64bit)
+# The overlay above fullscreen games on KDE Plasma, Hyprland and Sway, also
+# loaded at run time.
+Requires:       libgtk-layer-shell.so.0()(64bit)
 
 %description
 Real-time DPS overlay for AION 2, running natively on Linux while the game
