@@ -35,6 +35,7 @@ use crate::history::fight_history::FightHistoryManager;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
 mod auto_upload;
+mod commands;
 mod drag_resize;
 mod local_player;
 mod overlay_lock;
@@ -85,32 +86,6 @@ pub struct AppState {
 }
 
 // ===== TAURI COMMANDS =====
-
-#[tauri::command]
-fn get_app_version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
-}
-
-#[tauri::command]
-fn get_dps_snapshot(state: tauri::State<'_, AppState>) -> DpsData {
-    state.dps_calculator.lock().get_dps()
-}
-
-#[tauri::command]
-fn get_skill_details(state: tauri::State<'_, AppState>, target_id: i32, actor_ids: Option<Vec<i32>>) -> TargetDetailsResponse {
-    state.dps_calculator.lock().get_target_details(target_id, actor_ids.as_deref())
-}
-
-/// Skill details behind a meter row, whatever the mode shows.
-#[tauri::command]
-fn get_displayed_skill_details(state: tauri::State<'_, AppState>, actor_ids: Option<Vec<i32>>) -> TargetDetailsResponse {
-    state.dps_calculator.lock().get_displayed_details(actor_ids.as_deref())
-}
-
-#[tauri::command]
-fn get_details_context(state: tauri::State<'_, AppState>) -> DetailsContext {
-    state.dps_calculator.lock().get_details_context()
-}
 
 #[tauri::command]
 /// `async` keeps this off the main thread. Sync commands run there, and even
@@ -375,11 +350,6 @@ fn clear_settings(state: tauri::State<'_, AppState>) {
 }
 
 #[tauri::command]
-fn get_ping(state: tauri::State<'_, AppState>) -> Option<i32> {
-    state.ping_tracker.current_ping_ms()
-}
-
-#[tauri::command]
 fn get_capture_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
     let port = state.port_detector.current_port();
     let device = state.port_detector.current_device();
@@ -396,17 +366,6 @@ fn get_capture_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
         // character) and the UI should adopt it rather than push its own.
         "characterNameFromGame": state.data_storage.local_identity_from_self_record(),
     })
-}
-
-#[tauri::command]
-fn set_target_mode(state: tauri::State<'_, AppState>, mode: String) {
-    state.dps_calculator.lock().set_target_selection_mode(&mode);
-}
-
-/// ALL mode's "last N minutes" window in ms; 0 = off.
-#[tauri::command]
-fn set_all_targets_window_ms(state: tauri::State<'_, AppState>, ms: i64) {
-    state.dps_calculator.lock().set_all_targets_window_ms(ms);
 }
 
 #[tauri::command]
@@ -451,15 +410,6 @@ fn bind_local_nickname(
     view: Option<String>,
 ) {
     bind_local_name(&state.data_storage, actor_id, &nickname, manual.unwrap_or(false), &view.unwrap_or_default());
-}
-
-#[tauri::command]
-fn reset_combat(state: tauri::State<'_, AppState>) {
-    state.dps_calculator.lock().restart_target_selection(true);
-    // Don't reset port detector or ping — keep the network connection alive
-    // Only clear combat data and re-learn nicknames from future packets
-    state.data_storage.reset_nicknames();
-    state.data_storage.hide_party_placeholders();
 }
 
 #[tauri::command]
@@ -1152,11 +1102,11 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            get_app_version,
-            get_dps_snapshot,
-            get_skill_details,
-            get_displayed_skill_details,
-            get_details_context,
+            commands::meter::get_app_version,
+            commands::meter::get_dps_snapshot,
+            commands::meter::get_skill_details,
+            commands::meter::get_displayed_skill_details,
+            commands::meter::get_details_context,
             get_fight_history,
             save_fight,
             load_fight,
@@ -1174,15 +1124,15 @@ pub fn run() {
             account_sign_out,
             get_settings,
             update_settings,
-            get_ping,
+            commands::meter::get_ping,
             get_capture_status,
-            set_target_mode,
-            set_all_targets_window_ms,
+            commands::meter::set_target_mode,
+            commands::meter::set_all_targets_window_ms,
             set_character_name,
             bind_local_actor_id,
             bind_local_nickname,
             clear_settings,
-            reset_combat,
+            commands::meter::reset_combat,
             is_admin,
             set_language,
             set_debug_logging,
