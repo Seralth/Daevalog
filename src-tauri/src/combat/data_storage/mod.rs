@@ -53,7 +53,7 @@ static OPEN_WORLD_MAPS: std::sync::LazyLock<HashSet<i32>> = std::sync::LazyLock:
     struct Table {
         maps: HashSet<i32>,
     }
-    serde_json::from_str::<Table>(include_str!("../../../src/data/open_world_maps.json"))
+    serde_json::from_str::<Table>(include_str!("../../../../src/data/open_world_maps.json"))
         .map(|t| t.maps)
         .unwrap_or_default()
 });
