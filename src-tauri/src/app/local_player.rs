@@ -3,8 +3,10 @@
 use crate::combat::data_storage::DataStorage;
 use crate::combat::dps_calculator::PARTY_ROW_ID_BASE;
 
+use super::AppState;
+
 /// A party member's row before their entity id is known. Never an entity.
-pub(super) fn is_placeholder_id(actor_id: i64) -> bool {
+fn is_placeholder_id(actor_id: i64) -> bool {
     actor_id >= PARTY_ROW_ID_BASE as i64
 }
 
@@ -101,6 +103,26 @@ pub(super) fn bind_local_name(ds: &DataStorage, actor_id: i64, nickname: &str, m
         ds.set_permanent_nickname(actor_id as i32, nickname);
     } else {
         ds.set_local_nickname(actor_id as i32, nickname);
+    }
+}
+
+pub(crate) fn set_character_name(state: &AppState, name: String, manual: Option<bool>) {
+    // The game has said who is playing; a name from the window title or the
+    // last session is at best the same and at worst another character. A name
+    // the player typed (`manual`) is taken anyway: it is their call, and the
+    // game's next self record replaces it if it was wrong.
+    let ds = &state.data_storage;
+    if ds.local_identity_from_self_record() && !manual.unwrap_or(false) {
+        return;
+    }
+    let trimmed = name.trim().to_string();
+    ds.set_local_character_name(Some(name));
+    // If an actor ID was already bound, put the name on it now so the meter
+    // updates. Not permanent: the name follows the local id, not this one.
+    if !trimmed.is_empty() {
+        if let Some(id) = ds.local_player_id().filter(|&id| !is_placeholder_id(id)) {
+            ds.set_local_nickname(id as i32, &trimmed);
+        }
     }
 }
 
