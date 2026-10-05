@@ -72,7 +72,5 @@ pub(crate) async fn account_begin_link(
 /// PC" and "this PC was stolen" the same button.
 #[tauri::command]
 pub(crate) fn account_sign_out(state: tauri::State<'_, AppState>) {
-    crate::account::secret::clear(&state.app_data_dir);
-    *state.account_seen.lock() = Some(None);
-    tracing::info!("Account signed out on this machine");
+    sign_in::account_sign_out(&state);
 }
