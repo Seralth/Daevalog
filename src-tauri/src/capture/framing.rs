@@ -225,6 +225,47 @@ pub fn decompress_bundle(payload: &[u8]) -> Option<Vec<u8>> {
     lz4_flex::decompress(&payload[6..], size).ok()
 }
 
+/// A compressed bundle inside a packet, where the framing never opens it.
+pub struct EmbeddedBundle {
+    /// `packet[start..end]` is the bundle, its length varint included.
+    pub start: usize,
+    pub end: usize,
+    /// Its contents, decompressed.
+    pub data: Vec<u8>,
+}
+
+/// The bundles that sit inside `packet`: `<varint len> FF FF <size u32> <lz4>`,
+/// sized as a frame is, past the packet's first byte. The parser reads
+/// identity from them; the bug-report copy of a packet log blinds them.
+pub fn embedded_bundles(packet: &[u8]) -> Vec<EmbeddedBundle> {
+    let mut out = Vec::new();
+    let mut i = 1;
+    while i + 8 < packet.len() {
+        if packet[i] != 0xFF || packet[i + 1] != 0xFF {
+            i += 1;
+            continue;
+        }
+        let bundle = (1..=3usize).rev().find_map(|n| {
+            let at = i.checked_sub(n)?;
+            let len = read_varint(packet, at);
+            if len.length != n as i32 {
+                return None;
+            }
+            let end = at + frame_size(len.value, len.length)?;
+            let data = decompress_bundle(packet.get(i..end)?)?;
+            Some(EmbeddedBundle { start: at, end, data })
+        });
+        match bundle {
+            Some(bundle) => {
+                i = bundle.end;
+                out.push(bundle);
+            }
+            None => i += 1,
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

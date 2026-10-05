@@ -94,6 +94,17 @@ fn frames_of(buf: &[u8], top: bool, out: &mut Vec<Vec<u8>>, depth: usize) {
     }
 }
 
+/// What to report, from the environment variables above.
+#[derive(Default)]
+pub(crate) struct Options {
+    pub target: Option<i32>,
+    pub from: Option<String>,
+    pub to: Option<String>,
+    pub show_hits: bool,
+    pub reset_at: Option<String>,
+    pub dump_op: Option<[u8; 2]>,
+}
+
 #[test]
 #[ignore]
 fn replay_report() {
@@ -101,11 +112,14 @@ fn replay_report() {
         eprintln!("set A2_REPLAY_FILE");
         return;
     };
-    let target: Option<i32> = env("A2_REPLAY_TARGET").and_then(|v| v.parse().ok());
-    let from = env("A2_REPLAY_FROM");
-    let to = env("A2_REPLAY_TO");
-    let show_hits = env("A2_REPLAY_HITS").is_some();
-    let mut reset_at = env("A2_REPLAY_RESET_AT");
+    let options = Options {
+        target: env("A2_REPLAY_TARGET").and_then(|v| v.parse().ok()),
+        from: env("A2_REPLAY_FROM"),
+        to: env("A2_REPLAY_TO"),
+        show_hits: env("A2_REPLAY_HITS").is_some(),
+        reset_at: env("A2_REPLAY_RESET_AT"),
+        dump_op: env("A2_REPLAY_DUMP").and_then(|h| decode_hex(&h)).and_then(|v| v.try_into().ok()),
+    };
     let _flags = env("A2_REPLAY_FLAGS").map(|_| {
         tracing::subscriber::set_default(
             tracing_subscriber::fmt()
@@ -117,8 +131,13 @@ fn replay_report() {
                 .finish(),
         )
     });
-    let dump_op: Option<[u8; 2]> = env("A2_REPLAY_DUMP").and_then(|h| decode_hex(&h)).and_then(|v| v.try_into().ok());
+    let text = std::fs::read_to_string(&path).expect("capture readable");
+    run(&text, options, &mut |line| println!("{line}"));
+}
 
+/// Replay a capture's text and hand each line of the report to `out`.
+pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
+    let Options { target, from, to, show_hits, mut reset_at, dump_op } = options;
     let data_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
     let skills = Arc::new(SkillLookup::new());
     let npcs = Arc::new(NpcLookup::new());
@@ -134,7 +153,6 @@ fn replay_report() {
     let mut streams: HashMap<String, (StreamAssembler, StreamProcessor)> = HashMap::new();
     let mut walks: HashMap<String, PacketAccumulator> = HashMap::new();
 
-    let text = std::fs::read_to_string(&path).expect("capture readable");
     let (mut lines, mut lines_clean) = (0usize, 0usize);
     let mut window_started = false;
     let mut window: BTreeMap<i32, Counts> = BTreeMap::new();
@@ -159,7 +177,7 @@ fn replay_report() {
             }
         }
         if reset_at.as_ref().is_some_and(|r| tod.as_str() >= r.as_str()) {
-            println!("reset at {tod}");
+            out(format!("reset at {tod}"));
             storage.flush();
             reset_at = None;
         }
@@ -201,7 +219,7 @@ fn replay_report() {
                     }
                 }
                 let hex: String = p.iter().map(|b| format!("{b:02x}")).collect();
-                println!("dump {tod} {hex}");
+                out(format!("dump {tod} {hex}"));
             }
         }
 
@@ -216,11 +234,11 @@ fn replay_report() {
                 let d = diff(prev.get(&id), now.get(&id));
                 for (&(actor, skill, dot), &(h, dmg)) in &d {
                     if show_hits {
-                        println!(
+                        out(format!(
                             "hit {tod} target {id} actor {actor} skill {skill} {}{} x{h} {dmg}",
                             skills.get_skill_name(skill),
                             if dot { " (DoT)" } else { "" }
-                        );
+                        ));
                     }
                     let e = window.entry(id).or_default().entry((actor, skill, dot)).or_default();
                     e.0 += h;
@@ -231,11 +249,11 @@ fn replay_report() {
         }
     }
 
-    println!("payloads {lines}, {lines_clean} left nothing buffered");
-    println!("window {first_tod} .. {last_tod}");
+    out(format!("payloads {lines}, {lines_clean} left nothing buffered"));
+    out(format!("window {first_tod} .. {last_tod}"));
     let summons = storage.get_summon_data();
     let local = storage.local_player_id().map(|v| v as i32);
-    println!("local player {local:?}");
+    out(format!("local player {local:?}"));
     // Identity state, for comparing two builds on the same capture.
     let mut links: Vec<_> = summons.iter().map(|(a, b)| (*a, *b)).collect();
     links.sort();
@@ -244,7 +262,7 @@ fn replay_report() {
     let mut named: Vec<_> = storage.get_nicknames().into_keys().collect();
     named.sort();
     let digest = |v: &str| v.bytes().fold(0u64, |h, b| h.wrapping_mul(1_099_511_628_211) ^ b as u64);
-    println!(
+    out(format!(
         "state: {} summon links ({:016x}), {} players ({:016x}), {} named ({:016x}), {} mobs",
         links.len(),
         digest(&format!("{links:?}")),
@@ -253,14 +271,14 @@ fn replay_report() {
         named.len(),
         digest(&format!("{named:?}")),
         storage.get_mob_data().len()
-    );
+    ));
 
     for (id, c) in &window {
         let total: i64 = c.values().map(|v| v.1).sum();
         if total == 0 {
             continue;
         }
-        println!("\n== target {id}: {total} in the window");
+        out(format!("\n== target {id}: {total} in the window"));
         // Raw actor -> owner.
         let mut actors: BTreeMap<i32, (i32, i64, i64, i64)> = BTreeMap::new();
         let mut by_skill: BTreeMap<(i32, i32, bool), (i64, i64)> = BTreeMap::new();
@@ -275,20 +293,20 @@ fn replay_report() {
         }
         let mut owners: BTreeMap<i32, i64> = BTreeMap::new();
         for (actor, (owner, hits, direct, dot)) in &actors {
-            println!("actor {actor} owner {owner}: direct {direct} dot {dot} ({hits} records)");
+            out(format!("actor {actor} owner {owner}: direct {direct} dot {dot} ({hits} records)"));
             *owners.entry(*owner).or_default() += direct + dot;
         }
         for (owner, d) in &owners {
-            println!("owner {owner}: {d}");
+            out(format!("owner {owner}: {d}"));
         }
         let mut rows: Vec<_> = by_skill.into_iter().collect();
         rows.sort_by_key(|(_, (_, d))| -d);
         for ((owner, skill, dot), (h, d)) in rows {
-            println!(
+            out(format!(
                 "skill owner {owner} {skill} {}{}: {h} hits {d}",
                 skills.get_skill_name(skill),
                 if dot { " (DoT)" } else { "" }
-            );
+            ));
         }
     }
 
@@ -298,11 +316,11 @@ fn replay_report() {
         crate::clock::set_override(Some(last_ts));
         let calc = DpsCalculator::new(storage.clone(), skills.clone(), npcs.clone(), Arc::new(PingTracker::new()));
         let details = calc.get_target_details(t, None);
-        println!("\n== meter segment for target {t}: {} over {} ms", details.total_target_damage, details.battle_time);
+        out(format!("\n== meter segment for target {t}: {} over {} ms", details.total_target_damage, details.battle_time));
         let mut rows = details.skills.clone();
         rows.sort_by_key(|s| -(s.dmg as i64));
         for s in rows {
-            println!(
+            out(format!(
                 "meter actor {} {} {}{}: {} hits {}",
                 s.actor_id,
                 s.code,
@@ -310,7 +328,7 @@ fn replay_report() {
                 if s.is_dot { " (DoT)" } else { "" },
                 s.time,
                 s.dmg
-            );
+            ));
         }
         crate::clock::set_override(None);
     }

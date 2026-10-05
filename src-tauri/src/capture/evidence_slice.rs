@@ -218,7 +218,7 @@ fn lift_compact_context(packet: &[u8]) -> Option<Vec<u8>> {
 }
 
 /// Prefix a body with the game's length varint (see `framing`).
-fn frame_packet(body: &[u8]) -> Option<Vec<u8>> {
+pub(super) fn frame_packet(body: &[u8]) -> Option<Vec<u8>> {
     let mut out = encode_varint(framing::length_value(body.len()));
     out.extend_from_slice(body);
     Some(out)
@@ -226,7 +226,7 @@ fn frame_packet(body: &[u8]) -> Option<Vec<u8>> {
 
 /// Opcodes that report what happened rather than who is there. Kept only in
 /// the fight window, so the prelude cannot carry another fight's numbers.
-const EVENT_OPCODES: &[[u8; 2]] = &[opcodes::DAMAGE, opcodes::DOT, opcodes::HP_MP];
+pub(super) const EVENT_OPCODES: &[[u8; 2]] = &[opcodes::DAMAGE, opcodes::DOT, opcodes::HP_MP];
 
 /// The opcodes the parser reads, and nothing else.
 ///
@@ -369,7 +369,7 @@ const MAX_NAME_BYTES: usize = 40;
 /// by that many bytes of plausible text — and blinds that too. Pass two is what
 /// makes the guarantee "no character names", rather than "none of the names we
 /// happened to recognise".
-struct Blinder {
+pub(super) struct Blinder {
     /// name bytes -> token bytes, longest first.
     known: Vec<(Vec<u8>, Vec<u8>)>,
     /// Tokens produced by pass one, so pass two does not blind them again.
@@ -377,45 +377,154 @@ struct Blinder {
     /// Tokens minted in pass two, for the blind map. These have no roster id —
     /// we never learned who they were, which is the point.
     discovered: HashMap<String, u64>,
+    spelling: Spelling,
+}
+
+/// How a token is spelled.
+enum Spelling {
+    /// Hex digits: what a slice uploads (`token_for`).
+    Hex,
+    /// Letters of the same UTF-8 widths, one for each character of the name,
+    /// so the parser still reads the token as a name (one to twelve
+    /// characters, letters and digits): the bug-report copy of a packet log.
+    /// Hex tokens of all digits, or of more than twelve characters for a long
+    /// Hangul name, were not names to it, and those players went unnamed.
+    Letters {
+        /// name -> token, so a name is spelled the same everywhere.
+        given: HashMap<String, String>,
+        /// Every token given, and every known name, so no two names share one.
+        taken: HashSet<String>,
+    },
+}
+
+/// A token in letters for `name`, character for character the same UTF-8
+/// width: ASCII letters, Cyrillic, CJK ideographs, CJK Extension B.
+fn letters_for(name: &str, seed: u32) -> String {
+    let mut digest = Vec::new();
+    let mut block = 0u32;
+    let mut next = || {
+        if digest.len() < 2 {
+            let mut hasher = Sha256::new();
+            hasher.update(b"a2rl\x00");
+            hasher.update(name.as_bytes());
+            hasher.update(seed.to_le_bytes());
+            hasher.update(block.to_le_bytes());
+            block += 1;
+            digest.extend(hasher.finalize());
+        }
+        u16::from_le_bytes([digest.remove(0), digest.remove(0)]) as u32
+    };
+    const ASCII: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    name.chars()
+        .map(|c| match c.len_utf8() {
+            1 => ASCII[next() as usize % ASCII.len()] as char,
+            2 => char::from_u32(0x0410 + next() % 64).unwrap_or('Я'),
+            3 => char::from_u32(0x4E00 + next() % 20900).unwrap_or('名'),
+            _ => char::from_u32(0x20000 + next() % 42000).unwrap_or('\u{20000}'),
+        })
+        .collect()
 }
 
 impl Blinder {
+    /// For every name in `names`, longest first (see `build`), with tokens
+    /// the parser still reads as names (see `Spelling::Letters`).
+    pub(super) fn for_report(names: &NameMap) -> Self {
+        let ordered = longest_first(names);
+        let taken = ordered.iter().map(|(name, _)| (*name).clone()).collect();
+        Self::with_spelling(&ordered, Spelling::Letters { given: HashMap::new(), taken })
+    }
+
     fn new(ordered: &[(&String, &u64)]) -> Self {
-        let mut known = Vec::with_capacity(ordered.len());
-        let mut known_tokens = HashSet::new();
+        Self::with_spelling(ordered, Spelling::Hex)
+    }
+
+    fn with_spelling(ordered: &[(&String, &u64)], spelling: Spelling) -> Self {
+        let mut blinder = Self {
+            known: Vec::with_capacity(ordered.len()),
+            known_tokens: HashSet::new(),
+            discovered: HashMap::new(),
+            spelling,
+        };
         for (name, dbid) in ordered {
             let raw = name.as_bytes();
             if raw.is_empty() {
                 continue;
             }
-            let token = token_for(name, **dbid, raw.len());
+            let token = blinder.token(name, **dbid, 0);
             debug_assert_eq!(token.len(), raw.len(), "token must not change byte length");
-            known_tokens.insert(token.as_bytes().to_vec());
-            known.push((raw.to_vec(), token.into_bytes()));
+            blinder.known_tokens.insert(token.as_bytes().to_vec());
+            blinder.known.push((raw.to_vec(), token.into_bytes()));
         }
-        Self {
-            known,
-            known_tokens,
-            discovered: HashMap::new(),
+        blinder
+    }
+
+    /// The token for `name`. `salt` above 0 asks for another one (see
+    /// `blind_name_shaped_from`).
+    fn token(&mut self, name: &str, dbid: u64, salt: u32) -> String {
+        let len = name.len();
+        match &mut self.spelling {
+            Spelling::Hex => match salt {
+                0 => token_for(name, dbid, len),
+                _ => token_for(&format!("{name}\0{salt}"), 0, len),
+            },
+            Spelling::Letters { given, taken } => {
+                if salt == 0 {
+                    if let Some(token) = given.get(name) {
+                        return token.clone();
+                    }
+                }
+                let mut seed = salt * 1000;
+                let token = loop {
+                    let token = letters_for(name, seed);
+                    if !taken.contains(&token) || seed % 1000 == 999 {
+                        break token;
+                    }
+                    seed += 1;
+                };
+                taken.insert(token.clone());
+                if salt == 0 {
+                    given.insert(name.to_string(), token.clone());
+                }
+                token
+            }
         }
     }
 
-    fn blind(&mut self, buf: &mut [u8]) -> usize {
+    /// Blind one framed packet.
+    pub(super) fn blind(&mut self, buf: &mut [u8]) -> usize {
         let mut replaced = self.blind_known(buf);
         replaced += self.blind_name_shaped(buf);
         replaced
     }
 
+    /// Blind bytes that are not one framed packet (the stretch between two
+    /// packets, or the end of a bundle that does not frame): both passes, from
+    /// the first byte.
+    pub(super) fn blind_unframed(&mut self, buf: &mut [u8]) -> usize {
+        let mut replaced = self.blind_known(buf);
+        replaced += self.blind_name_shaped_from(buf, 0);
+        replaced
+    }
+
     /// Pass one: every known name, wherever it appears, length-prefixed or not.
+    ///
+    /// In a bug-report copy, a name of one or two bytes only where it is a
+    /// field of its own (`<len> name`): two bytes turn up inside other fields
+    /// by chance. The one-character name "Ņ" (`c5 85`) also sat across a
+    /// player record's mask bytes, and blinding it there hid the name from
+    /// the parser.
     fn blind_known(&self, buf: &mut [u8]) -> usize {
         let mut replaced = 0;
+        let fields_only = matches!(self.spelling, Spelling::Letters { .. });
         for (needle, token) in &self.known {
             if needle.len() > buf.len() {
                 continue;
             }
+            let field_only = fields_only && needle.len() < 3;
             let mut i = 0;
             while i + needle.len() <= buf.len() {
-                if &buf[i..i + needle.len()] == needle.as_slice() {
+                let field = !field_only || (i > 0 && buf[i - 1] as usize == needle.len());
+                if field && &buf[i..i + needle.len()] == needle.as_slice() {
                     buf[i..i + needle.len()].copy_from_slice(token);
                     replaced += 1;
                     i += needle.len();
@@ -436,7 +545,6 @@ impl Blinder {
     /// and its fight into one on an unknown mob, which no slice could file
     /// (Decaying Durvati, 2026-02 capture).
     fn blind_name_shaped(&mut self, buf: &mut [u8]) -> usize {
-        let mut replaced = 0;
         // Every buffer handed to the blinder is one framed packet: skip its
         // length and opcode.
         let header = super::varint::read_varint(buf, 0);
@@ -449,7 +557,13 @@ impl Blinder {
                 return 0;
             }
         }
-        let mut i = if header.length > 0 { header.length as usize + 2 } else { 0 };
+        let start = if header.length > 0 { header.length as usize + 2 } else { 0 };
+        self.blind_name_shaped_from(buf, start)
+    }
+
+    fn blind_name_shaped_from(&mut self, buf: &mut [u8], start: usize) -> usize {
+        let mut replaced = 0;
+        let mut i = start;
         while i < buf.len() {
             let len = buf[i] as usize;
             if !(MIN_NAME_BYTES..=MAX_NAME_BYTES).contains(&len) || i + 1 + len > buf.len() {
@@ -467,10 +581,7 @@ impl Blinder {
             // "13b87050fe08" before a `44` byte spelled the player name "8D".
             let mut salt = 0u32;
             let token = loop {
-                let token = match salt {
-                    0 => token_for(&text, 0, len),
-                    _ => token_for(&format!("{text}\0{salt}"), 0, len),
-                };
+                let token = self.token(&text, 0, salt);
                 buf[i + 1..i + 1 + len].copy_from_slice(token.as_bytes());
                 if salt == 15 || !self.spells_known_name(buf, i + 1, i + 1 + len) {
                     break token;
@@ -714,6 +825,15 @@ fn filter_stream(
     walk.consumed
 }
 
+/// Longest first: a name that contains another ("Misti" inside "Mistifix2")
+/// must be replaced before its substring, or the shorter match corrupts the
+/// longer name and leaves half of it in the clear.
+fn longest_first(names: &NameMap) -> Vec<(&String, &u64)> {
+    let mut ordered: Vec<(&String, &u64)> = names.iter().collect();
+    ordered.sort_by(|a, b| b.0.len().cmp(&a.0.len()).then_with(|| a.0.cmp(b.0)));
+    ordered
+}
+
 /// Build a slice for one fight.
 ///
 /// `names` should carry every character name the meter resolved during the
@@ -728,11 +848,7 @@ pub fn build(
     let from = fight_start_ms - LEAD_IN_MS;
     let to = fight_end_ms + TAIL_MS;
 
-    // Longest first: a name that contains another ("Misti" inside "Mistifix2")
-    // must be replaced before its substring, or the shorter match corrupts the
-    // longer name and leaves half of it in the clear.
-    let mut ordered: Vec<(&String, &u64)> = names.iter().collect();
-    ordered.sort_by(|a, b| b.0.len().cmp(&a.0.len()).then_with(|| a.0.cmp(b.0)));
+    let ordered = longest_first(names);
 
     let mut blind_map: HashMap<String, u64> = HashMap::new();
     for (name, dbid) in ordered.iter().copied() {

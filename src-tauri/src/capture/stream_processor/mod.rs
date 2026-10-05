@@ -167,31 +167,9 @@ impl StreamProcessor {
     /// the player levelling 29 to 30 among them. Only identity is read from
     /// these: what else they hold is left as it was, so no fight changes.
     fn scan_embedded_bundles_for_identity(&self, packet: &[u8]) {
-        let mut i = 1;
-        while i + 8 < packet.len() {
-            if packet[i] != 0xFF || packet[i + 1] != 0xFF {
-                i += 1;
-                continue;
-            }
-            // `<varint len> FF FF <size u32> <lz4>`, sized as `framing` does.
-            let bundle = (1..=3usize).rev().find_map(|n| {
-                let at = i.checked_sub(n)?;
-                let len = read_varint(packet, at);
-                if len.length != n as i32 {
-                    return None;
-                }
-                let end = at + super::framing::frame_size(len.value, len.length)?;
-                let data = super::framing::decompress_bundle(packet.get(i..end)?)?;
-                Some((end, data))
-            });
-            match bundle {
-                Some((end, data)) => {
-                    self.scan_masked_identity(&data);
-                    self.scan_party_roster(&data);
-                    i = end;
-                }
-                None => i += 1,
-            }
+        for bundle in super::framing::embedded_bundles(packet) {
+            self.scan_masked_identity(&bundle.data);
+            self.scan_party_roster(&bundle.data);
         }
     }
 
