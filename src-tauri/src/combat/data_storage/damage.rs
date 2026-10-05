@@ -8,11 +8,12 @@ use crate::entity::special_damage::SpecialDamage;
 use crate::entity::summon_resolver;
 
 use super::encounter::{carry_encounter, encounter_ended, note_encounter, retire_all, retire_segment};
+use super::entities::{link_summon, owner_link};
 use super::names::apply_pending_nickname;
 use super::roster::bind_roster_names_by_class;
 use super::{
-    link_summon, now_ms, owner_link, ActorCombatData, DataStorage, Inner, NoDamageHit, SecondStats, SkillCombatData,
-    TargetCombatData, IDLE_RESET_MS, ROSTER_BIND_EVERY,
+    now_ms, ActorCombatData, DataStorage, Inner, NoDamageHit, SecondStats, SkillCombatData, TargetCombatData,
+    IDLE_RESET_MS, ROSTER_BIND_EVERY,
 };
 
 impl DataStorage {
