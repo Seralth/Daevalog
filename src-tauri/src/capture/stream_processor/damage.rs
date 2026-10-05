@@ -435,7 +435,8 @@ impl StreamProcessor {
 
             // Extract multi-hits
             let mut multi_hit_count = 0;
-            let mut multi_hit_damage = 0;
+            // i64: up to 25 additional hits of up to 99,999,999 each.
+            let mut multi_hit_damage: i64 = 0;
             let mut first_multi_hit_value: Option<i32> = None;
             let mut all_multi_hits_match = true;
 
@@ -473,7 +474,7 @@ impl StreamProcessor {
                         _ => {}
                     }
 
-                    multi_hit_damage += hit_value;
+                    multi_hit_damage += i64::from(hit_value);
                     hits_read += 1;
                 }
                 multi_hit_count = hits_read;
@@ -483,7 +484,7 @@ impl StreamProcessor {
                 if let Some(fv) = first_multi_hit_value {
                     if all_multi_hits_match {
                         multi_hit_count = hit_count;
-                        multi_hit_damage = fv * hit_count;
+                        multi_hit_damage = i64::from(fv) * i64::from(hit_count);
                     }
                 }
             }
@@ -496,11 +497,12 @@ impl StreamProcessor {
                 offset = end;
                 hit_count = field;
                 multi_hit_count = count;
-                multi_hit_damage = damage;
+                multi_hit_damage = i64::from(damage);
             }
 
-            if multi_hit_count > 0 && multi_hit_damage > 0 && final_damage > multi_hit_damage {
-                final_damage -= multi_hit_damage;
+            if multi_hit_count > 0 && multi_hit_damage > 0 && i64::from(final_damage) > multi_hit_damage {
+                // Smaller than final_damage here, so it fits back into i32.
+                final_damage -= multi_hit_damage as i32;
             }
 
             // Compact skill context handling
@@ -510,7 +512,7 @@ impl StreamProcessor {
                     && actor_value == ctx.actor_id
                     && hit_count > 1
                     && multi_hit_damage > 0
-                    && second_value > multi_hit_damage
+                    && i64::from(second_value) > multi_hit_damage
             });
 
             let raw_for_spec = if aggregated_compact {
@@ -526,7 +528,7 @@ impl StreamProcessor {
             };
 
             if aggregated_compact {
-                final_damage = second_value - multi_hit_damage;
+                final_damage = (i64::from(second_value) - multi_hit_damage) as i32;
                 self.pending_compact_skill_context = None;
             }
 

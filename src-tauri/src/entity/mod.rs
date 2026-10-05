@@ -4,7 +4,6 @@ pub mod personal_data;
 pub mod job_class;
 pub mod analyzed_skill;
 pub mod special_damage;
-pub mod target_info;
 pub mod fight_record;
 pub mod summon_resolver;
 pub mod details_context;

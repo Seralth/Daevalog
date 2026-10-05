@@ -30,7 +30,8 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - **Details, History and the hover tooltip never wait on the meter,** and settings are saved in the background (from mazixs's upstream PR #29). Closing the meter window quits the app, even with Settings open, and saves your fights first.
 - **Every UI string in all 10 languages.**
 - DoT rows sit under their skill in Details in every language: they are matched by skill code, not by name.
-- Damage totals past 2.1 billion no longer wrap around.
+- Damage and healing, per skill and in total, no longer stop or wrap around at about 2.1 billion.
+- Targets you stopped fighting more than 30 seconds ago leave the meter's memory, unless the current mode still shows them. ALL without a time window keeps everything since the zone change.
 - When packet capture cannot start on Linux, the meter says so in its own window, instead of the Windows prompt to download Npcap.
 - The version in Settings opens the releases of this repository.
 - **Open log folder** in Settings opens the folder with `debug.log` and the packet logs, to attach to an issue here. "Send logs to a2tools.app" says where the logs go: to the A2 Tools developer, where Daevalog cannot help with them.
@@ -54,7 +55,8 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - The backend alone decides which player is the local player, from the game's own record of you.
 - Every fight segment is saved before any reset. Only fights that you or your party fought are saved.
 - A fight cleared by a zone change keeps the ids, names and spirit links it had.
-- A saved fight keeps only the healing done during the fight.
+- A fight's healing is the healing done during that fight, in live Details and in the saved fight alike.
+- A fight saved when the meter closes is never overwritten by an older auto-save.
 
 ### Privacy
 - The sign-in, upload and webview paths are hardened.
@@ -67,6 +69,8 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - The fonts come with the meter, with Pretendard as the main font, as the stylesheet always intended. A window no longer loads fonts from unpkg.com.
 - Links open only https addresses and the meter's own folders.
 - A packet replay reads only files in the meter's data folder.
+- Screenshots go only to the folder you chose in the meter, or the default folder, and never over an existing file.
+- Signing in tells a2tools.app the system (Linux or Windows), not your computer's name.
 
 ### Left out
 - Guessing who an unnamed actor is from its class.
