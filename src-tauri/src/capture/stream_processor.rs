@@ -248,6 +248,7 @@ impl StreamProcessor {
         self.parse_party_scope_packet(packet);
         self.parse_death_packet(packet);
         self.parse_zone_change_packet(packet);
+        self.parse_map_load_packet(packet);
 
         if !parsed_damage && !parsed_name && !parsed_summon && !parsed_ownership && !parsed_hp {
             self.parse_dot_packet(packet);
@@ -302,6 +303,25 @@ impl StreamProcessor {
             return;
         }
         self.data_storage.note_zone_change();
+    }
+
+    // ===== MAP LOAD (21 36) =====
+
+    /// `<len> 21 36 <u32 count> <u32 map id> ...`: sent on every zone load,
+    /// naming the map from the game's Map table. A teleport inside an instance
+    /// names the instance again; leaving names an open-world map. Seen on all
+    /// 36 loads in a 2026-10-04 capture, each 52 bytes long.
+    fn parse_map_load_packet(&self, packet: &[u8]) {
+        let length_info = read_varint(packet, 0);
+        if length_info.length <= 0 {
+            return;
+        }
+        let offset = length_info.length as usize;
+        if offset + 10 > packet.len() || packet[offset] != 0x21 || packet[offset + 1] != 0x36 {
+            return;
+        }
+        let map_id = parse_u32_le(packet, offset + 6) as i32;
+        self.data_storage.note_map_load(map_id);
     }
 
     // ===== DEATH PACKET (41 36) =====
@@ -2780,6 +2800,32 @@ mod tests {
         assert_eq!(parse("fe9e0204009e9b01c3f8f5000302792b156003000000ac52b7030300"), (439, 1, 0, 0, 0));
         // Layout 6, switch 0x16: no additional hits.
         assert_eq!(parse("b1ea011600f30a40c0f40063028000010b199b5f01000000ac52d007"), (976, 1, 0, 0, 0));
+    }
+
+    /// Map loads from a live capture (2026-10-04): into Fire Temple, a
+    /// teleport inside it, then out to World_L_A.
+    #[test]
+    fn only_a_map_load_into_the_open_world_ends_the_dungeon() {
+        let storage = Arc::new(DataStorage::new());
+        let p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let load = |s: &str| p.parse_map_load_packet(&hex(s));
+        storage.set_current_dungeon(600021);
+        load("34213601000000d52709003b1a350000000000f7e646460d7fb0c60080b045409da54200000000000000000000004f0000");
+        load("34213602000000d5270900d74c390000000000a8f805c610861245008036453ccd24c204000000000000000000004f0000");
+        assert_eq!(storage.current_dungeon_id(), 600021);
+        load("34213601000000f2030000dd7f3c00000000006868d047d0c62c470098da46fa63284300000000000000000000004f0000");
+        assert_eq!(storage.current_dungeon_id(), 0);
+    }
+
+    #[test]
+    fn world_layers_are_open_world_and_seals_are_not() {
+        use crate::combat::data_storage::is_open_world_map;
+        assert!(is_open_world_map(1010), "World_L_A");
+        assert!(is_open_world_map(101021), "a layer of World_L_A");
+        assert!(!is_open_world_map(310051), "Seal_Verteron_051");
+        assert!(!is_open_world_map(600021), "Fire_Temple_Easy");
+        assert!(!is_open_world_map(999_999_999), "unknown map");
     }
 
     #[test]

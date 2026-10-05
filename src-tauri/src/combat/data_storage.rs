@@ -40,6 +40,24 @@ fn now_ms() -> i64 {
     crate::clock::now_ms()
 }
 
+/// Open-world map ids from the game's Map table: the overworld maps and their
+/// world layers (the overworld itself, split off for quest scenes).
+static OPEN_WORLD_MAPS: std::sync::LazyLock<HashSet<i32>> = std::sync::LazyLock::new(|| {
+    #[derive(serde::Deserialize)]
+    struct Table {
+        maps: HashSet<i32>,
+    }
+    serde_json::from_str::<Table>(include_str!("../../../src/data/open_world_maps.json"))
+        .map(|t| t.maps)
+        .unwrap_or_default()
+});
+
+/// True for a map of the open world. Unknown ids (a map added by a later
+/// patch) count as instances, which keeps the dungeon id as before.
+pub fn is_open_world_map(map_id: i32) -> bool {
+    OPEN_WORLD_MAPS.contains(&map_id)
+}
+
 // ───── Aggregate data structures ─────
 
 /// Healing done, aggregated per (healer actor, skill, is_hot). Healing is keyed by
@@ -1016,6 +1034,21 @@ impl DataStorage {
             inner.party_members.insert(name, member);
         }
         bind_roster_names_by_class(&mut inner);
+    }
+
+    /// A zone load named the map it loads (`21 36`). The roster never sends 0
+    /// for the open world, so a load into an open-world map is what ends the
+    /// last instance's dungeon id. A teleport inside an instance names the
+    /// instance's own map, so it keeps the id.
+    pub fn note_map_load(&self, map_id: i32) {
+        if !is_open_world_map(map_id) {
+            return;
+        }
+        let mut inner = self.inner.write();
+        if inner.current_dungeon_id != 0 {
+            tracing::debug!("Map {map_id} is open world: leaving dungeon {}", inner.current_dungeon_id);
+            inner.current_dungeon_id = 0;
+        }
     }
 
     pub fn set_current_dungeon(&self, dungeon_id: i32) {
