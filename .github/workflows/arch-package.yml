@@ -61,6 +61,11 @@ jobs:
           ldd "$GITHUB_WORKSPACE/src-tauri/target/release/daevalog-capture" | sort
           if ldd "$GITHUB_WORKSPACE/src-tauri/target/release/daevalog-capture" | grep -E 'gtk|gdk|webkit'; then exit 1; fi
           ls -la "$GITHUB_WORKSPACE"/packaging/arch/*.pkg.tar.zst
+          # Artifacts allow no ':' in file names, and the epoch puts one there.
+          # pacman reads the version from inside the package, not its name.
+          for f in "$GITHUB_WORKSPACE"/packaging/arch/*.pkg.tar.zst; do
+            mv "$f" "$(dirname "$f")/$(basename "$f" | tr ':' '_')"
+          done
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: arch-package
@@ -147,8 +152,8 @@ jobs:
           rpm -qp --scripts out/*.rpm
           dpkg-deb --contents out/*.deb | grep ' ./usr/bin/daevalog-capture$'
           # The capture permission is on the helper, and the meter has none.
-          rpm -qp --filecaps out/*.rpm | grep -E '^/usr/bin/daevalog-capture .*cap_net_raw'
-          if rpm -qp --filecaps out/*.rpm | grep -E '^/usr/bin/daevalog-dps-meter .*cap_'; then exit 1; fi
+          rpm -qp --filecaps out/*.rpm | grep -E '^/usr/bin/daevalog-capture[[:space:]].*cap_net_raw'
+          if rpm -qp --filecaps out/*.rpm | grep -E '^/usr/bin/daevalog-dps-meter[[:space:]].*cap_'; then exit 1; fi
           rpm -qlp out/*.rpm | grep -E '^/usr/(bin|share/applications)/'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
