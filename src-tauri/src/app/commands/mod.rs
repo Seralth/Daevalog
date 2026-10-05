@@ -5,3 +5,4 @@ pub(super) mod history;
 pub(super) mod share;
 pub(super) mod system;
 pub(super) mod account;
+pub(super) mod settings;

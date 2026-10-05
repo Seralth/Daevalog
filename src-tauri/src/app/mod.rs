@@ -41,6 +41,7 @@ mod local_player;
 mod overlay_lock;
 mod replay;
 mod screenshots;
+mod setting_changes;
 mod supporter_roster;
 mod tool_windows;
 mod tray_actions;
@@ -51,6 +52,7 @@ use drag_resize::WAYLAND_LAYER_KEY;
 use local_player::{bind_local_actor, bind_local_name, is_placeholder_id};
 pub(crate) use overlay_lock::{overlay_lock_available, toggle_overlay_lock};
 use overlay_lock::OverlayLock;
+use setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use supporter_roster::{
     fetch_supporter_roster, load_supporter_override, ROSTER_POLL_OVERRIDE, ROSTER_POLL_PUBLISHED,
 };
@@ -86,58 +88,6 @@ pub struct AppState {
 }
 
 // ===== TAURI COMMANDS =====
-
-/// Whether this build can show a Discord activity (it has a Discord
-/// application configured). The Settings toggle is hidden when it cannot.
-#[tauri::command]
-fn discord_activity_available() -> bool {
-    crate::presence::available()
-}
-
-#[tauri::command]
-fn get_settings(state: tauri::State<'_, AppState>) -> std::collections::HashMap<String, String> {
-    state.settings.get_all()
-}
-
-/// Store a setting and tell every window about it.
-///
-/// Settings are edited in their own window, so without this broadcast the meter
-/// keeps rendering with whatever it read at startup — toggling something like
-/// "Round DPS" would appear to do nothing until the app restarted. Only real
-/// changes are emitted (see `Settings::set`), so the originating window's echo
-/// stops here rather than bouncing between windows.
-#[tauri::command]
-fn update_settings(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, AppState>,
-    key: String,
-    value: String,
-) {
-    if key == ENCOUNTER_TIMEOUT_KEY {
-        apply_encounter_timeout(&state.data_storage, Some(&value));
-    }
-    if state.settings.set(&key, &value) {
-        if key == crate::tray::HIDE_FROM_TASKBAR_KEY {
-            crate::tray::apply_taskbar(&app);
-        }
-        let _ = app.emit("setting-changed", serde_json::json!({ "key": key, "value": value }));
-    }
-}
-
-const ENCOUNTER_TIMEOUT_KEY: &str = "dpsMeter.encounterTimeoutSec";
-
-/// The encounter timeout setting, in whole seconds; anything else keeps the
-/// default.
-fn apply_encounter_timeout(storage: &DataStorage, value: Option<&str>) {
-    let secs = value.and_then(|v| v.trim().parse::<i64>().ok());
-    let ms = secs.map_or(crate::combat::data_storage::DEFAULT_ENCOUNTER_TIMEOUT_MS, |s| s * 1000);
-    storage.set_encounter_timeout_ms(ms);
-}
-
-#[tauri::command]
-fn clear_settings(state: tauri::State<'_, AppState>) {
-    state.settings.clear();
-}
 
 #[tauri::command]
 fn get_capture_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
@@ -205,29 +155,6 @@ fn bind_local_nickname(
 #[tauri::command]
 fn is_admin() -> bool {
     platform::admin::is_admin()
-}
-
-#[tauri::command]
-fn set_language(state: tauri::State<'_, AppState>, language: String) {
-    tracing::info!("Language change requested: {}", language);
-    if let Some(ref data_dir) = state.i18n_data_dir {
-        i18n::lookup::load_language(&state.skill_lookup, &state.npc_lookup, data_dir, &language);
-    } else {
-        tracing::warn!("No i18n data dir available for language reload");
-    }
-    state.settings.set("dpsMeter.language", &language);
-}
-
-#[tauri::command]
-fn set_debug_logging(state: tauri::State<'_, AppState>, enabled: bool) {
-    logging::logger::set_debug_enabled(enabled, &state.app_data_dir);
-    state.settings.set("dpsMeter.debugLoggingEnabled", if enabled { "true" } else { "false" });
-}
-
-#[tauri::command]
-fn set_packet_logging(state: tauri::State<'_, AppState>, enabled: bool) {
-    logging::logger::set_packet_log_enabled(enabled, &state.app_data_dir);
-    state.settings.set("dpsMeter.saveRawPackets", if enabled { "true" } else { "false" });
 }
 
 #[tauri::command]
@@ -846,11 +773,11 @@ pub fn run() {
             commands::share::game_record_details,
             commands::account::account_status,
             commands::account::account_status_cached,
-            discord_activity_available,
+            commands::settings::discord_activity_available,
             commands::account::account_begin_link,
             commands::account::account_sign_out,
-            get_settings,
-            update_settings,
+            commands::settings::get_settings,
+            commands::settings::update_settings,
             commands::meter::get_ping,
             get_capture_status,
             commands::meter::set_target_mode,
@@ -858,12 +785,12 @@ pub fn run() {
             set_character_name,
             bind_local_actor_id,
             bind_local_nickname,
-            clear_settings,
+            commands::settings::clear_settings,
             commands::meter::reset_combat,
             is_admin,
-            set_language,
-            set_debug_logging,
-            set_packet_logging,
+            commands::settings::set_language,
+            commands::settings::set_debug_logging,
+            commands::settings::set_packet_logging,
             commands::share::send_logs_to_dev,
             get_aion2_window_title,
             debug_status,
