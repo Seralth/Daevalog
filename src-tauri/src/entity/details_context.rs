@@ -58,8 +58,8 @@ pub struct DetailsTargetSummary {
     pub max_hp: i32,
     pub battle_time: i64,
     pub last_damage_time: i64,
-    pub total_damage: i32,
-    pub actor_damage: std::collections::HashMap<i32, i32>,
+    pub total_damage: i64,
+    pub actor_damage: std::collections::HashMap<i32, i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -130,7 +130,7 @@ pub struct TargetDetailsResponse {
     pub target_id: i32,
     #[serde(default)]
     pub max_hp: i32,
-    pub total_target_damage: i32,
+    pub total_target_damage: i64,
     pub battle_time: i64,
     #[serde(default)]
     pub start_time: i64,

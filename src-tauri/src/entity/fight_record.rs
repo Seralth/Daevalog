@@ -13,7 +13,7 @@ pub struct FightRecord {
     pub target_id: i32,
     pub start_time_ms: i64,
     pub duration_ms: i64,
-    pub total_damage: i32,
+    pub total_damage: i64,
     /// Job class prefix IDs (e.g. [11, 14, 17]) for language-independent storage.
     pub jobs: Vec<String>,
     /// Job class prefix IDs for i18n resolution (new field).
@@ -52,7 +52,7 @@ pub struct FightSummary {
     pub target_id: i32,
     pub start_time_ms: i64,
     pub duration_ms: i64,
-    pub total_damage: i32,
+    pub total_damage: i64,
     pub jobs: Vec<String>,
     #[serde(default)]
     pub job_ids: Vec<i32>,

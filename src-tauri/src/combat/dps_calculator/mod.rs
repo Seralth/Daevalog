@@ -681,6 +681,27 @@ mod tests {
         crate::clock::set_override(None);
     }
 
+    #[test]
+    fn damage_totals_past_two_billion_do_not_wrap() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        s.append_nickname_authoritative(2259, "Seralth");
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        for (i, skill) in [16_010_000, 16_020_000, 16_030_000].into_iter().enumerate() {
+            let at = 1_000 + i as i64 * 3_000;
+            crate::clock::set_override(Some(at));
+            s.append_damage(skill_hit(2259, 800, at, skill, 1_000_000_000));
+        }
+        let target = calc.get_details_context().targets.into_iter().find(|t| t.target_id == 800).unwrap();
+        assert_eq!(target.total_damage as i64, 3_000_000_000);
+        assert_eq!(target.actor_damage[&2259] as i64, 3_000_000_000);
+        assert_eq!(calc.get_target_details(800, None).total_target_damage as i64, 3_000_000_000);
+        let saved = snapshot_at(&mut calc, 30_000);
+        assert_eq!(saved[0].total_damage as i64, 3_000_000_000);
+        crate::clock::set_override(None);
+    }
+
     fn skill_hit(actor: i32, target: i32, at: i64, skill: i32, damage: i32) -> ParsedDamagePacket {
         let mut p = hit(actor, target, at);
         p.set_skill_code(skill);

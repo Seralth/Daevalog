@@ -204,7 +204,7 @@ impl DpsCalculator {
             target_id,
             start_time_ms: target_data.first_damage_time,
             duration_ms: battle_time,
-            total_damage: target_data.total_damage as i32,
+            total_damage: target_data.total_damage,
             jobs,
             job_ids,
             details,

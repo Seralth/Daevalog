@@ -185,8 +185,8 @@ pub struct DerivedFight {
     /// service replaces them by `actorId` with the names the uploader chose to
     /// show, which are cosmetic; every number here is derived.
     pub record: FightRecord,
-    /// The record's `total_damage` is an i32 and wraps past ~2.1 billion. This
-    /// is the same total, as the parser actually summed it.
+    /// The same total as the record's. Records once held it as an i32, which
+    /// wrapped past ~2.1 billion.
     pub total_damage: i64,
     /// Sorted, so the serialised record is byte-identical on every run.
     pub blind_map: std::collections::BTreeMap<String, u64>,
