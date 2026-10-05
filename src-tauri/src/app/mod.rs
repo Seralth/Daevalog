@@ -47,6 +47,7 @@ mod tray_actions;
 mod updater;
 
 use auto_upload::auto_upload;
+use commands::system::open_url;
 use drag_resize::WAYLAND_LAYER_KEY;
 use local_player::{bind_local_actor, bind_local_name, is_placeholder_id};
 pub(crate) use overlay_lock::{overlay_lock_available, toggle_overlay_lock};
@@ -330,21 +331,6 @@ fn set_manual_device(state: tauri::State<'_, AppState>, device: String) {
 }
 
 #[tauri::command]
-fn quit_app(app: tauri::AppHandle) {
-    save_fights_before_exit(&app);
-    app.exit(0);
-}
-
-#[tauri::command]
-fn read_cached_icon(state: tauri::State<'_, AppState>, key: String) -> Option<String> {
-    if !crate::history::fight_history::is_plain_name(&key) {
-        return None;
-    }
-    let path = state.app_data_dir.join("icon_cache").join(&key);
-    std::fs::read_to_string(&path).ok()
-}
-
-#[tauri::command]
 fn suspend_capture(state: tauri::State<'_, AppState>, suspended: bool) {
     // The header's suspend button. It was wired to empty stubs since the move
     // to Tauri, so it changed its icon and the status line but counting went
@@ -358,45 +344,6 @@ fn is_capture_suspended(state: tauri::State<'_, AppState>) -> bool {
     state.capture_suspended.load(std::sync::atomic::Ordering::SeqCst)
 }
 
-#[tauri::command]
-fn log_from_ui(message: String) {
-    // A problem only the webview can see (an icon the CDN would not serve, say),
-    // or a UI debug line, for debug.log. The UI rate-limits them; this keeps
-    // each one short.
-    let message: String = message.chars().take(300).collect();
-    tracing::warn!("UI: {message}");
-}
-
-#[tauri::command]
-fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, data: String) {
-    if !crate::history::fight_history::is_plain_name(&key) {
-        return;
-    }
-    let cache_dir = state.app_data_dir.join("icon_cache");
-    let _ = std::fs::create_dir_all(&cache_dir);
-    let path = cache_dir.join(&key);
-    let _ = std::fs::write(&path, &data);
-}
-
-
-#[tauri::command]
-async fn fetch_url(state: tauri::State<'_, AppState>, url: String) -> Result<String, String> {
-    state
-        .http
-        .get(&url)
-        .timeout(Duration::from_secs(15))
-        .send()
-        .await
-        .map_err(|e| e.to_string())?
-        .text()
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn open_url(url: String) {
-    platform::shell::open_url(&url);
-}
 
 
 
@@ -999,11 +946,11 @@ pub fn run() {
             commands::share::send_logs_to_dev,
             get_aion2_window_title,
             debug_status,
-            quit_app,
-            open_url,
-            read_cached_icon,
-            write_cached_icon,
-            log_from_ui,
+            commands::system::quit_app,
+            commands::system::open_url,
+            commands::system::read_cached_icon,
+            commands::system::write_cached_icon,
+            commands::system::log_from_ui,
             suspend_capture,
             overlay_lock::overlay_lock_supported,
             overlay_lock::set_overlay_locked,
@@ -1038,7 +985,7 @@ pub fn run() {
             set_manual_device,
             replay::replay_file,
             test_auto_hide,
-            fetch_url,
+            commands::system::fetch_url,
             updater::show_update_window,
         ])
         .build(tauri::generate_context!())
