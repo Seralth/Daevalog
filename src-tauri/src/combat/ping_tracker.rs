@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use parking_lot::Mutex;
 
 use crate::capture::captured_payload::CapturedPayload;
-use crate::capture::stream_processor::read_varint;
+use crate::capture::varint::read_varint;
 
 /// .NET epoch offset: milliseconds between 0001-01-01 and 1970-01-01.
 const DOTNET_EPOCH_OFFSET_MS: i64 = 62135596800000;

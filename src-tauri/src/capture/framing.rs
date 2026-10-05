@@ -21,7 +21,7 @@
 //! packet of 126 bytes or more one byte short (a capture of 2026-10-04 lost
 //! 3% of its packets to the desync that followed).
 
-use super::stream_processor::read_varint;
+use super::varint::read_varint;
 
 /// The largest packet the parser will believe. Past this it treats the length as
 /// garbage and resynchronises a byte at a time.

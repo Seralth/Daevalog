@@ -154,7 +154,7 @@ fn embedded_spawn_end(packet: &[u8], i: usize) -> Option<usize> {
     if packet[i + 1] != 0x36 || !matches!(packet[i], 0x40 | 0x41 | 0x44 | 0x45) || packet[i - 1] == 0x00 {
         return None;
     }
-    let id = super::stream_processor::read_varint(packet, i + 2);
+    let id = super::varint::read_varint(packet, i + 2);
     if id.length <= 0 || !(100..=9_999_999).contains(&id.value) {
         return None;
     }
@@ -163,7 +163,7 @@ fn embedded_spawn_end(packet: &[u8], i: usize) -> Option<usize> {
     // spawn to four bytes. No spawn record is shorter than its fixed fields.
     let framed = (1..=3usize).rev().find_map(|n| {
         let at = i.checked_sub(n)?;
-        let len = super::stream_processor::read_varint(packet, at);
+        let len = super::varint::read_varint(packet, at);
         if len.length != n as i32 {
             return None;
         }
@@ -185,7 +185,7 @@ fn embedded_spawn_end(packet: &[u8], i: usize) -> Option<usize> {
 /// host. The walk mirrors the extractor's; whether the bytes are a known skill
 /// is left to the replay, exactly as the live parser decides it.
 fn lift_compact_context(packet: &[u8]) -> Option<Vec<u8>> {
-    let li = super::stream_processor::read_varint(packet, 0);
+    let li = super::varint::read_varint(packet, 0);
     if li.length <= 0 || li.length as usize >= packet.len() {
         return None;
     }
@@ -201,7 +201,7 @@ fn lift_compact_context(packet: &[u8]) -> Option<Vec<u8>> {
     if opcode + 2 >= body.len() {
         return None;
     }
-    let actor = super::stream_processor::read_varint(body, opcode + 1);
+    let actor = super::varint::read_varint(body, opcode + 1);
     if actor.length <= 0 || actor.value < 100 {
         return None;
     }
@@ -440,7 +440,7 @@ impl Blinder {
         let mut replaced = 0;
         // Every buffer handed to the blinder is one framed packet: skip its
         // length and opcode.
-        let header = super::stream_processor::read_varint(buf, 0);
+        let header = super::varint::read_varint(buf, 0);
         // Damage, damage over time and HP updates are ids and numbers only.
         // Scanning them for names blinded skill ids that read as text:
         // `02 | 50 77 f6 00` (Water Spirit: Ice Chain) is "Pw".
@@ -486,7 +486,7 @@ fn embedded_header(buf: &[u8], i: usize) -> bool {
     if buf[i + 2] != 0x36 || !matches!(buf[i + 1], 0x23 | 0x33 | 0x40 | 0x41 | 0x42 | 0x44 | 0x45) {
         return false;
     }
-    let id = super::stream_processor::read_varint(buf, i + 3);
+    let id = super::varint::read_varint(buf, i + 3);
     id.length > 0 && (0..=9_999_999).contains(&id.value)
 }
 
@@ -553,7 +553,7 @@ pub fn expand(record: &[u8]) -> Vec<u8> {
 
 /// Is this packet one the parser reads (and, in the prelude, a state packet)?
 fn is_allowed(packet: &[u8], keep: Keep) -> bool {
-    let li = super::stream_processor::read_varint(packet, 0);
+    let li = super::varint::read_varint(packet, 0);
     if li.length <= 0 {
         return false;
     }
@@ -862,7 +862,7 @@ fn downgrade_to_v1(record: &[u8]) -> Vec<u8> {
                 o += 1;
                 continue;
             }
-            let len = super::stream_processor::read_varint(buf, o);
+            let len = super::varint::read_varint(buf, o);
             if len.length <= 0 {
                 break;
             }
@@ -956,7 +956,7 @@ fn upgrade_v1_record(record: &[u8]) -> Vec<u8> {
                 o += 1;
                 continue;
             }
-            let len = super::stream_processor::read_varint(buf, o);
+            let len = super::varint::read_varint(buf, o);
             if len.length <= 0 || len.value <= 3 {
                 break;
             }

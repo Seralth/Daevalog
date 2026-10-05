@@ -5,6 +5,7 @@ pub mod framing;
 pub mod packet_accumulator;
 pub mod stream_assembler;
 pub mod stream_processor;
+pub mod varint;
 
 #[cfg(test)]
 mod replay_report;
