@@ -1,4 +1,1375 @@
 {
+  "10": {
+    "name": "Odyle Shard Cradle"
+  },
+  "100001": {
+    "name": "Poeta"
+  },
+  "100002": {
+    "name": "Poeta"
+  },
+  "101041": {
+    "name": "Drana Plantation"
+  },
+  "101042": {
+    "name": "Pilgrim's Rest"
+  },
+  "103": {
+    "name": "Munihelle Forest"
+  },
+  "104": {
+    "name": "Anturn Cliff"
+  },
+  "105": {
+    "name": "Azrakar Brigade Storage"
+  },
+  "106": {
+    "name": "Supply Depot Interior Base"
+  },
+  "108": {
+    "name": "Northern Tolbas Forest"
+  },
+  "109": {
+    "name": "Dawn Legion Temporary Outpost"
+  },
+  "110": {
+    "name": "Wind Breeze Merchants HQ"
+  },
+  "110001": {
+    "name": "Ishalgen"
+  },
+  "110005": {
+    "name": "Azrakar Brigade Prison Compound"
+  },
+  "110006": {
+    "name": "Nighttime Aldelle Village"
+  },
+  "110007": {
+    "name": "Tunapre Lake"
+  },
+  "110008": {
+    "name": "In Front of Azrakar Brigade Prison Compound"
+  },
+  "111": {
+    "name": "Forest of Exiles"
+  },
+  "111011": {
+    "name": "Reuben's Hideout"
+  },
+  "111017": {
+    "name": "Merchant's Yard"
+  },
+  "111025": {
+    "name": "Drakana Pool"
+  },
+  "111026": {
+    "name": "Canyon Dispatch Area"
+  },
+  "111029": {
+    "name": "Hidden Cave"
+  },
+  "111031": {
+    "name": "Northern Altar"
+  },
+  "111032": {
+    "name": "Eastern Altar"
+  },
+  "111033": {
+    "name": "Earth Altar"
+  },
+  "111034": {
+    "name": "Blades Camp"
+  },
+  "111035": {
+    "name": "Shuttered Workstation"
+  },
+  "111036": {
+    "name": "Blades Supply Storage"
+  },
+  "111037": {
+    "name": "Prisoners Grotto"
+  },
+  "111038": {
+    "name": "Muqaka's Quarters"
+  },
+  "111039": {
+    "name": "Lagta Fafnite Storage"
+  },
+  "111040": {
+    "name": "Black Claw Village"
+  },
+  "112": {
+    "name": "Aullaeu Village"
+  },
+  "113": {
+    "name": "Canyon Campsite"
+  },
+  "12": {
+    "name": "Stormslumber Snowfield"
+  },
+  "14": {
+    "name": "Sandstorm Temple"
+  },
+  "141000": {
+    "name": "Searcher Sudka's Recon Site"
+  },
+  "141001": {
+    "name": "Brutal Zrash's Recon Site"
+  },
+  "141002": {
+    "name": "Cruel Rodar's Recon Site"
+  },
+  "141003": {
+    "name": "Disciplinant Corag's Recon Site"
+  },
+  "141004": {
+    "name": "Officer Darc's Recon Site"
+  },
+  "141005": {
+    "name": "Watcher Brons' Recon Site"
+  },
+  "141006": {
+    "name": "Annihilator Kardon's Recon Site"
+  },
+  "141007": {
+    "name": "Mad Lucant's Recon Site"
+  },
+  "141008": {
+    "name": "Predator Zrak's Recon Site"
+  },
+  "141009": {
+    "name": "Ravager Krovan's Recon Site"
+  },
+  "141010": {
+    "name": "Bonechilling Rokand's Recon Site"
+  },
+  "141011": {
+    "name": "Immortal Garmon's Recon Site"
+  },
+  "141012": {
+    "name": "Destoryer Krovan's Recon Site"
+  },
+  "141013": {
+    "name": "Torturer Tregon's Recon Site"
+  },
+  "141014": {
+    "name": "Slayer Kroms' Recon Site"
+  },
+  "141015": {
+    "name": "Captor Kalahanta's Recon Site"
+  },
+  "141016": {
+    "name": "Terminator Antakhara's Recon Site"
+  },
+  "141017": {
+    "name": "Crusher Vajradant's Recon Site"
+  },
+  "141018": {
+    "name": "Patalajya the Scourged Recon Site"
+  },
+  "141019": {
+    "name": "Archivist Varnaksha's Recon Site"
+  },
+  "141020": {
+    "name": "Arbiter Meganodh's Recon Site"
+  },
+  "141021": {
+    "name": "Sunderer Ugravahu's Recon Site"
+  },
+  "142000": {
+    "name": "Graverobber Den"
+  },
+  "142001": {
+    "name": "Sanctum Outskirts Watch"
+  },
+  "142002": {
+    "name": "Rubek Thieves' Occupied Territory"
+  },
+  "142003": {
+    "name": "Corrupted Forester Ruins"
+  },
+  "142004": {
+    "name": "Blades Temporary Outpost"
+  },
+  "142005": {
+    "name": "Logger's Rest Ruins"
+  },
+  "142006": {
+    "name": "Forest Marauder Campsite"
+  },
+  "142010": {
+    "name": "Graverobber Den Treasure Storage"
+  },
+  "142011": {
+    "name": "Sanctum Outskirts Watch Treasure Storage"
+  },
+  "142012": {
+    "name": "Rubek Thieves' Occupied Territory Treasure Storage"
+  },
+  "142014": {
+    "name": "Legion Base Ruins"
+  },
+  "142015": {
+    "name": "Flauke Legion Outpost"
+  },
+  "142016": {
+    "name": "Detlef Thieves Camp"
+  },
+  "142017": {
+    "name": "Latrima Outpost"
+  },
+  "142018": {
+    "name": "Granach's Hideout"
+  },
+  "142019": {
+    "name": "Barahta Extermination Unit Outpost"
+  },
+  "142020": {
+    "name": "Amurahta Surveillance Base"
+  },
+  "142021": {
+    "name": "Andsha Forward Base"
+  },
+  "143000": {
+    "name": "Ice Canyon Campsite"
+  },
+  "143001": {
+    "name": "Ashen Campsite"
+  },
+  "143004": {
+    "name": "Cursed Snowfield Hideout"
+  },
+  "143005": {
+    "name": "Fallen Temple Ruins"
+  },
+  "143008": {
+    "name": "Dharvata Surveillance Base"
+  },
+  "143011": {
+    "name": "Dinakra Sky Outpost"
+  },
+  "151001": {
+    "name": "Worshiper Dekish's Recon Site"
+  },
+  "151002": {
+    "name": "Scout Sahar's Recon Site"
+  },
+  "151003": {
+    "name": "Destroyer Tarka's Recon Site"
+  },
+  "151004": {
+    "name": "Watcher Sandha's Recon Site"
+  },
+  "151005": {
+    "name": "Praetorian Irima's Recon Site"
+  },
+  "151006": {
+    "name": "Cold-Hearted Kandak's Recon Site"
+  },
+  "151007": {
+    "name": "Hunter Danahan's Recon Site"
+  },
+  "151008": {
+    "name": "Heartless Mozant's Recon Site"
+  },
+  "151009": {
+    "name": "Enraged Karsha's Recon Site"
+  },
+  "151010": {
+    "name": "Watcher Krache's Recon Site"
+  },
+  "151011": {
+    "name": "Executioner Nemok's Recon Site"
+  },
+  "151012": {
+    "name": "Officer Barha's Recon Site"
+  },
+  "151013": {
+    "name": "Cunning Dmark's Recon Site"
+  },
+  "151014": {
+    "name": "Scout Bagsh's Recon Site"
+  },
+  "151015": {
+    "name": "Tracker Dazran's Recon Site"
+  },
+  "151016": {
+    "name": "Fanatic Dvahn's Recon Site"
+  },
+  "151017": {
+    "name": "Ascetic Narat's Recon Site"
+  },
+  "151018": {
+    "name": "Truthseeker Taneetch's Recon Site"
+  },
+  "151019": {
+    "name": "Executioner Varkash's Recon Site"
+  },
+  "151020": {
+    "name": "Gruesome Moratya's Recon Site"
+  },
+  "151021": {
+    "name": "Unyielding Batagon's Recon Site"
+  },
+  "151022": {
+    "name": "Swift Xanag's Recon Site"
+  },
+  "152000": {
+    "name": "Deserter Encampment"
+  },
+  "152001": {
+    "name": "Romlon's Hideout"
+  },
+  "152002": {
+    "name": "Forest Shade Execution Site"
+  },
+  "152003": {
+    "name": "Renegade Hideout"
+  },
+  "152005": {
+    "name": "Plateau Hill Base"
+  },
+  "152006": {
+    "name": "Deserter Encampment Treasure Storage"
+  },
+  "152007": {
+    "name": "Romlon's Hideout Treasure Storage"
+  },
+  "152008": {
+    "name": "Forest Shade Execution Site Treasure Storage"
+  },
+  "152009": {
+    "name": "Renegade Hideout Treasure Storage"
+  },
+  "152010": {
+    "name": "Plateau Hill Base Treasure Storage"
+  },
+  "152011": {
+    "name": "Suspicious Ruins"
+  },
+  "153001": {
+    "name": "Ugaros Thieves Campsite"
+  },
+  "153003": {
+    "name": "Poacher's Base"
+  },
+  "153004": {
+    "name": "Gargos Thieves Campsite"
+  },
+  "153005": {
+    "name": "Canyon Thieves Den"
+  },
+  "153006": {
+    "name": "Ugaros Thieves Campsite Treasure Storage"
+  },
+  "153007": {
+    "name": "Miros Post Treasure Storage"
+  },
+  "153008": {
+    "name": "Poacher's Base Treasure Storage"
+  },
+  "153009": {
+    "name": "Gargos Thieves Campsite Treasure Storage"
+  },
+  "153010": {
+    "name": "Canyon Thieves Den Treasure Storage"
+  },
+  "153011": {
+    "name": "Hernon Thieves Den"
+  },
+  "153012": {
+    "name": "Golden Branch Stronghold Ruins"
+  },
+  "153013": {
+    "name": "Rogue Sky Fortress"
+  },
+  "154001": {
+    "name": "Cohta Outpost"
+  },
+  "154002": {
+    "name": "Mantasch Patrol Base"
+  },
+  "154003": {
+    "name": "Sehna Outpost"
+  },
+  "154004": {
+    "name": "Sabga Balaur Campsite"
+  },
+  "154005": {
+    "name": "Maktashan Outpost"
+  },
+  "154006": {
+    "name": "Cohta Outpost Treasure Storage"
+  },
+  "154007": {
+    "name": "Mantasch Patrol Treasure Storage"
+  },
+  "154008": {
+    "name": "Sehna Outpost Treasure Storage"
+  },
+  "154009": {
+    "name": "Sabga Balaur Campsite Treasure Storage"
+  },
+  "154010": {
+    "name": "Maktashan Outpost Treasure Storage"
+  },
+  "154011": {
+    "name": "Digunaka Forward Base"
+  },
+  "154012": {
+    "name": "Hidden Vein Outpost"
+  },
+  "160000": {
+    "name": "Silent Graveyard"
+  },
+  "160001": {
+    "name": "Fafnite Amphitheater"
+  },
+  "160002": {
+    "name": "Silent Graveyard"
+  },
+  "160003": {
+    "name": "Silent Graveyard"
+  },
+  "160004": {
+    "name": "Fafnite Amphitheater"
+  },
+  "160005": {
+    "name": "Fafnite Amphitheater"
+  },
+  "200001": {
+    "name": "Dream Crossroad"
+  },
+  "200002": {
+    "name": "Dream of Torment"
+  },
+  "200003": {
+    "name": "Nightmare"
+  },
+  "200004": {
+    "name": "Narun's Dream"
+  },
+  "200005": {
+    "name": "Subspace of Ascension"
+  },
+  "200006": {
+    "name": "Dream of Shattered Fragments"
+  },
+  "21": {
+    "name": "Chaotic Lower Reshanta"
+  },
+  "210001": {
+    "name": "Coastal Cave"
+  },
+  "210002": {
+    "name": "Etheria Rift"
+  },
+  "210003": {
+    "name": "Dream Remnants"
+  },
+  "210004": {
+    "name": "Illusion Sanctum"
+  },
+  "210006": {
+    "name": "Root Cellar"
+  },
+  "210007": {
+    "name": "Aullaeu Altar"
+  },
+  "210008": {
+    "name": "Illusion Hideout"
+  },
+  "210009": {
+    "name": "Zumion Relic Storage"
+  },
+  "210010": {
+    "name": "Nahid Disposal Plant"
+  },
+  "210011": {
+    "name": "Ardus Shrine"
+  },
+  "210012": {
+    "name": "Illicit Trade Spot"
+  },
+  "210013": {
+    "name": "Forgotten Battlefield"
+  },
+  "210014": {
+    "name": "Zikel's Collapsed Barracks"
+  },
+  "210015": {
+    "name": "Zikel's Distorted Dream"
+  },
+  "210016": {
+    "name": "Clione Lake Cave"
+  },
+  "210017": {
+    "name": "Fountain of Life"
+  },
+  "210018": {
+    "name": "Light Crash Site"
+  },
+  "210019": {
+    "name": "Lepharist Research Center"
+  },
+  "210027": {
+    "name": "Chloris's Abyss"
+  },
+  "220001": {
+    "name": "Crypt"
+  },
+  "220002": {
+    "name": "Zikel's Sanctum"
+  },
+  "220003": {
+    "name": "Dream Remnants"
+  },
+  "220006": {
+    "name": "Collapsed Oracle"
+  },
+  "220007": {
+    "name": "Root of the Sacred Tree"
+  },
+  "220008": {
+    "name": "Dranactus Underkeep"
+  },
+  "220009": {
+    "name": "Destruction Archon Underground Fortress"
+  },
+  "220010": {
+    "name": "Blades Hideout"
+  },
+  "220011": {
+    "name": "Impetusium"
+  },
+  "220012": {
+    "name": "Etheria Rift"
+  },
+  "220013": {
+    "name": "Forgotten Battlefield"
+  },
+  "220014": {
+    "name": "Kaisinel's Collapsed Sanctum"
+  },
+  "220015": {
+    "name": "Kaisinel's Distorted Dream"
+  },
+  "220016": {
+    "name": "Shaded Cave"
+  },
+  "220017": {
+    "name": "Mysterious Grotto"
+  },
+  "220018": {
+    "name": "Tunapre Lake Cave"
+  },
+  "220019": {
+    "name": "Blades Secret Storage"
+  },
+  "220020": {
+    "name": "Executioner's Tower"
+  },
+  "220021": {
+    "name": "Floating Temple of Arkanis"
+  },
+  "220022": {
+    "name": "Fire Temple"
+  },
+  "220026": {
+    "name": "Slumbering Frozen Lake Cave"
+  },
+  "220027": {
+    "name": "Sigebert's Abyss"
+  },
+  "23": {
+    "name": "Chaotic Middle Reshanta"
+  },
+  "24": {
+    "name": "Chaotic Upper Reshanta"
+  },
+  "310001": {
+    "name": "Poacher's Den"
+  },
+  "310002": {
+    "name": "Spirit Flower Cave"
+  },
+  "310003": {
+    "name": "Cursed Hideout"
+  },
+  "310004": {
+    "name": "Mysterious Mushroom Cave"
+  },
+  "310005": {
+    "name": "Cave of the Defeated"
+  },
+  "310006": {
+    "name": "Filth Pit"
+  },
+  "310007": {
+    "name": "Illusionary Ruins"
+  },
+  "310008": {
+    "name": "Dehinon's Hideout"
+  },
+  "310009": {
+    "name": "Guardian's Armory"
+  },
+  "310010": {
+    "name": "Cave of the Desperate"
+  },
+  "310011": {
+    "name": "Hidden Valley"
+  },
+  "310012": {
+    "name": "Distorted Cave"
+  },
+  "310013": {
+    "name": "Corrupted Spiritmaster's Residence"
+  },
+  "310014": {
+    "name": "Karat's Nest"
+  },
+  "310015": {
+    "name": "Kius' Residence"
+  },
+  "310016": {
+    "name": "Lupyllini Habitat"
+  },
+  "310017": {
+    "name": "Looted Repository"
+  },
+  "310018": {
+    "name": "Abandoned Odylium Cave"
+  },
+  "310019": {
+    "name": "Solitary Rock Tomb"
+  },
+  "310020": {
+    "name": "Kidnapper's Hold"
+  },
+  "310021": {
+    "name": "Marsh Library"
+  },
+  "310022": {
+    "name": "Krall Barracks"
+  },
+  "310023": {
+    "name": "Canyon Library"
+  },
+  "310024": {
+    "name": "Chilly Hideout"
+  },
+  "310025": {
+    "name": "Cave Storage"
+  },
+  "310026": {
+    "name": "Grave of the Wrathful Dead"
+  },
+  "310027": {
+    "name": "Akilo Thieves Den"
+  },
+  "310028": {
+    "name": "Deadly Poison Den"
+  },
+  "310029": {
+    "name": "Herb Cave"
+  },
+  "310030": {
+    "name": "Looted Pilgrim's Rest"
+  },
+  "310031": {
+    "name": "Targoth's Cave"
+  },
+  "310032": {
+    "name": "Broken Hall of Knowledge"
+  },
+  "310033": {
+    "name": "Deep Underground Cave"
+  },
+  "310034": {
+    "name": "Fortress Jail"
+  },
+  "310035": {
+    "name": "Scribe's Room"
+  },
+  "310036": {
+    "name": "Red Dragon Altar"
+  },
+  "310037": {
+    "name": "Wild Biruta Habitat"
+  },
+  "310038": {
+    "name": "Fissure Cave"
+  },
+  "310039": {
+    "name": "Renegade Base"
+  },
+  "310040": {
+    "name": "Klaw Den"
+  },
+  "310041": {
+    "name": "Rift Cave"
+  },
+  "310042": {
+    "name": "Deep and Dark Pit"
+  },
+  "310043": {
+    "name": "Wild Kuru Habitat"
+  },
+  "310044": {
+    "name": "Fortress Grave"
+  },
+  "310045": {
+    "name": "Anguish Hideout"
+  },
+  "310046": {
+    "name": "Aullaeu Oratory"
+  },
+  "310047": {
+    "name": "Prison of Exiles"
+  },
+  "310048": {
+    "name": "Kraka's Altar"
+  },
+  "310049": {
+    "name": "Dratona Outpost"
+  },
+  "310050": {
+    "name": "Balaur Scouts Campsite"
+  },
+  "310051": {
+    "name": "Altar of Hope"
+  },
+  "310052": {
+    "name": "Experimental Prison Compound"
+  },
+  "310053": {
+    "name": "Balaur Scouts Outpost"
+  },
+  "310054": {
+    "name": "Hidden Ruins Altar"
+  },
+  "310055": {
+    "name": "Laborers Training Ground"
+  },
+  "310056": {
+    "name": "Konutin's Cave"
+  },
+  "310057": {
+    "name": "Plantation Storage"
+  },
+  "310058": {
+    "name": "Bibliophile's Grave"
+  },
+  "310059": {
+    "name": "Forest Library"
+  },
+  "310060": {
+    "name": "Collapsed Fortress Basement"
+  },
+  "310061": {
+    "name": "Hidden Lepharist Research Center"
+  },
+  "310062": {
+    "name": "Abandoned Life Hideout"
+  },
+  "310063": {
+    "name": "Life Awakening Site"
+  },
+  "310064": {
+    "name": "Sunken Ancient Legacy"
+  },
+  "310065": {
+    "name": "Ishtar Logistics Base"
+  },
+  "310066": {
+    "name": "Drok the Outlaw's Den"
+  },
+  "310067": {
+    "name": "Filthy Cave"
+  },
+  "310068": {
+    "name": "Defunct Creion Laboratory"
+  },
+  "310069": {
+    "name": "Fallen Haven"
+  },
+  "310070": {
+    "name": "Life Daeva Library"
+  },
+  "310071": {
+    "name": "Lepharist Special Operations Research Center"
+  },
+  "310072": {
+    "name": "Ratcatchers Base"
+  },
+  "310073": {
+    "name": "Gravarax Research Center"
+  },
+  "310074": {
+    "name": "Manduri Habitat"
+  },
+  "310075": {
+    "name": "Mutated Drana Plantation"
+  },
+  "310076": {
+    "name": "Sunken Temple"
+  },
+  "310077": {
+    "name": "Barrier Tower Fortress Vault"
+  },
+  "310078": {
+    "name": "Forgotten Spring"
+  },
+  "310079": {
+    "name": "Fugitive Hideout"
+  },
+  "310080": {
+    "name": "Iagosh's Secret Storage"
+  },
+  "320001": {
+    "name": "Abandoned Memorial Room"
+  },
+  "320002": {
+    "name": "Trickster's Den"
+  },
+  "320003": {
+    "name": "Abandoned One's Grave"
+  },
+  "320004": {
+    "name": "Dratona Cave"
+  },
+  "320005": {
+    "name": "Predator's Lair"
+  },
+  "320006": {
+    "name": "Dusk Pit"
+  },
+  "320007": {
+    "name": "Lost Ruins"
+  },
+  "320008": {
+    "name": "Poisonous Plant Habitat"
+  },
+  "320009": {
+    "name": "Valka's Nest"
+  },
+  "320010": {
+    "name": "Old Graveyard"
+  },
+  "320011": {
+    "name": "Treasure Hunter's Residence"
+  },
+  "320012": {
+    "name": "Abandoned Archon Jail"
+  },
+  "320013": {
+    "name": "Fafnite Storage Room"
+  },
+  "320014": {
+    "name": "Insectoid Tunnel"
+  },
+  "320015": {
+    "name": "Bloodsoaked Confessional"
+  },
+  "320016": {
+    "name": "Prison of Oblivion"
+  },
+  "320017": {
+    "name": "Watcher's Temporary Outpost"
+  },
+  "320018": {
+    "name": "Blue Dragon's Trap"
+  },
+  "320019": {
+    "name": "Hidden Vein Cave"
+  },
+  "320020": {
+    "name": "Fortuneteller's Grave"
+  },
+  "320021": {
+    "name": "Howling Den"
+  },
+  "320022": {
+    "name": "Ossuary of the Noble"
+  },
+  "320023": {
+    "name": "Smuggler's Cave"
+  },
+  "320024": {
+    "name": "Homish's Prison Compound"
+  },
+  "320025": {
+    "name": "Kumbahum's Cave"
+  },
+  "320026": {
+    "name": "Victims' Cave"
+  },
+  "320027": {
+    "name": "Drana Depository"
+  },
+  "320028": {
+    "name": "High Priest's Ruins"
+  },
+  "320029": {
+    "name": "Closed Hideout"
+  },
+  "320030": {
+    "name": "All-Curing Cave"
+  },
+  "320031": {
+    "name": "Fungie Habitat"
+  },
+  "320032": {
+    "name": "Library of Wisdom"
+  },
+  "320033": {
+    "name": "Destroyed Scriptorium"
+  },
+  "320034": {
+    "name": "Dark Root Cave"
+  },
+  "320035": {
+    "name": "Unstable Cave"
+  },
+  "320036": {
+    "name": "Lamnah Base"
+  },
+  "320037": {
+    "name": "Twisted Pit"
+  },
+  "320038": {
+    "name": "Rift Fissure"
+  },
+  "320039": {
+    "name": "Scale Altar"
+  },
+  "320040": {
+    "name": "Library of Foresight"
+  },
+  "320041": {
+    "name": "Skurv Laborer Den"
+  },
+  "320042": {
+    "name": "Dratona Assembly Area"
+  },
+  "320043": {
+    "name": "Place of Rest"
+  },
+  "320044": {
+    "name": "Final Haven"
+  },
+  "320045": {
+    "name": "Worshiper's Underground Cave"
+  },
+  "320046": {
+    "name": "Fanatics' Den"
+  },
+  "320047": {
+    "name": "Spider Cave"
+  },
+  "320048": {
+    "name": "Empty Cave"
+  },
+  "320049": {
+    "name": "Lonely Rock Chasm"
+  },
+  "320050": {
+    "name": "Rock Cave"
+  },
+  "320051": {
+    "name": "Den of Exiles"
+  },
+  "320052": {
+    "name": "Pirate's Treasure Storage"
+  },
+  "320053": {
+    "name": "Shulak Cave"
+  },
+  "320054": {
+    "name": "Destruction Archons Armory"
+  },
+  "320055": {
+    "name": "Ascetic's Cave"
+  },
+  "320056": {
+    "name": "Lagta Fafnite Storage"
+  },
+  "320057": {
+    "name": "Warriors' Rest"
+  },
+  "320058": {
+    "name": "Tayga Breeding Ground"
+  },
+  "320059": {
+    "name": "Library of Patience"
+  },
+  "320060": {
+    "name": "Odylium Marauder Den"
+  },
+  "320061": {
+    "name": "Forgotten Fire Altar"
+  },
+  "320062": {
+    "name": "Abandoned Kromede Base"
+  },
+  "320063": {
+    "name": "Verdandi's Oratory"
+  },
+  "320064": {
+    "name": "Blades Secret Repository"
+  },
+  "320065": {
+    "name": "Frozen Land of Fate"
+  },
+  "320066": {
+    "name": "Land of Raging Flame"
+  },
+  "320067": {
+    "name": "Pure Spring"
+  },
+  "320068": {
+    "name": "Predator's Nest"
+  },
+  "320069": {
+    "name": "Cave of the Stranded"
+  },
+  "320070": {
+    "name": "Cave of the Exiled Ones"
+  },
+  "320071": {
+    "name": "Blades Base"
+  },
+  "320072": {
+    "name": "Patamor Marauder Base"
+  },
+  "320073": {
+    "name": "Kurpak Special Operations Unit Base"
+  },
+  "320074": {
+    "name": "Camouflaged Fate Archon Base"
+  },
+  "320075": {
+    "name": "Fire Cave"
+  },
+  "320076": {
+    "name": "Fate Temple"
+  },
+  "320077": {
+    "name": "Indnath Secret Base"
+  },
+  "320078": {
+    "name": "Guardian Statues' Cave"
+  },
+  "320079": {
+    "name": "Iralcig Naga Cave"
+  },
+  "320080": {
+    "name": "Patamor Underwater Cave"
+  },
+  "39": {
+    "name": "Dawn Legion Base"
+  },
+  "400001": {
+    "name": "Ruins of the Ancient City of Roah"
+  },
+  "400002": {
+    "name": "Ruins of the Ancient City of Roah"
+  },
+  "46": {
+    "name": "Barracks Storage"
+  },
+  "47": {
+    "name": "Sanctum Dumpsite"
+  },
+  "48": {
+    "name": "Watchtower Camp"
+  },
+  "49": {
+    "name": "Prison Cell"
+  },
+  "50": {
+    "name": "Pantheon"
+  },
+  "500001": {
+    "name": "Beritra Air Raid"
+  },
+  "500002": {
+    "name": "Accursed Sword"
+  },
+  "500003": {
+    "name": "Odyle Flight Frenzy"
+  },
+  "500004": {
+    "name": "Goldrin's Treasure Trove"
+  },
+  "500005": {
+    "name": "Incursion of the Spirits"
+  },
+  "500006": {
+    "name": "Incursion of the Spirits"
+  },
+  "500007": {
+    "name": "Defend Shugo Merchants"
+  },
+  "500008": {
+    "name": "Goldrin's Treasure"
+  },
+  "500009": {
+    "name": "Odyle Flight Frenzy"
+  },
+  "500010": {
+    "name": "Wraith Evasion"
+  },
+  "500011": {
+    "name": "Jump Jump"
+  },
+  "500012": {
+    "name": "Hidden Lugi"
+  },
+  "500013": {
+    "name": "Mysterious Track"
+  },
+  "500015": {
+    "name": "Not This Tile?"
+  },
+  "500016": {
+    "name": "Up! Up! Up!"
+  },
+  "500017": {
+    "name": "Beritra Air Raid"
+  },
+  "500018": {
+    "name": "Beritra Air Raid"
+  },
+  "500019": {
+    "name": "Accursed Sword"
+  },
+  "500020": {
+    "name": "Accursed Sword"
+  },
+  "500021": {
+    "name": "Incursion of the Spirits"
+  },
+  "500022": {
+    "name": "Mysterious Track"
+  },
+  "500023": {
+    "name": "Up! Up! Up!"
+  },
+  "500024": {
+    "name": "Jump Jump"
+  },
+  "500025": {
+    "name": "Wraith Evasion"
+  },
+  "500026": {
+    "name": "Defend Shugo Merchants"
+  },
+  "500027": {
+    "name": "Goldrin's Treasure"
+  },
+  "500028": {
+    "name": "Hidden Lugi"
+  },
+  "500029": {
+    "name": "Not This Tile?"
+  },
+  "500030": {
+    "name": "Nyerk Shooter"
+  },
+  "500031": {
+    "name": "Accursed Sword"
+  },
+  "500032": {
+    "name": "Beritra Air Raid"
+  },
+  "500033": {
+    "name": "Incursion of the Spirits"
+  },
+  "500034": {
+    "name": "Shugo's Dilemma"
+  },
+  "500035": {
+    "name": "Up! Up! Up!"
+  },
+  "500036": {
+    "name": "Not This Tile?"
+  },
+  "500038": {
+    "name": "Hidden Lugi"
+  },
+  "500039": {
+    "name": "Mysterious Track"
+  },
+  "500040": {
+    "name": "Wraith Evasion"
+  },
+  "500041": {
+    "name": "Goldrin's Treasure"
+  },
+  "500042": {
+    "name": "Odyle Flight Frenzy"
+  },
+  "500043": {
+    "name": "Defend Shugo Merchants"
+  },
+  "502001": {
+    "name": "Accursed Sword"
+  },
+  "503001": {
+    "name": "Abyss Corridor"
+  },
+  "503002": {
+    "name": "Abyss Corridor"
+  },
+  "503003": {
+    "name": "Abyss Corridor"
+  },
+  "503004": {
+    "name": "Abyss Corridor"
+  },
+  "503005": {
+    "name": "Abyss Corridor"
+  },
+  "503006": {
+    "name": "Abyss Corridor"
+  },
+  "504001": {
+    "name": "Abyss Corridor"
+  },
+  "504002": {
+    "name": "Abyss Corridor"
+  },
+  "504003": {
+    "name": "Abyss Corridor"
+  },
+  "504004": {
+    "name": "Abyss Corridor"
+  },
+  "504005": {
+    "name": "Abyss Corridor"
+  },
+  "504006": {
+    "name": "Abyss Corridor"
+  },
+  "51": {
+    "name": "Dawn Legion Command Post"
+  },
+  "510001": {
+    "name": "Odyle Flight Frenzy"
+  },
+  "510002": {
+    "name": "Beritra Air Raid"
+  },
+  "510003": {
+    "name": "Jump Jump"
+  },
+  "510004": {
+    "name": "Hidden Lugi"
+  },
+  "510005": {
+    "name": "Wraith Evasion"
+  },
+  "510006": {
+    "name": "Mysterious Track"
+  },
+  "510007": {
+    "name": "Goldrin's Treasure"
+  },
+  "510008": {
+    "name": "Beritra Air Raid"
+  },
+  "510009": {
+    "name": "Beritra Air Raid"
+  },
+  "510010": {
+    "name": "Up! Up! Up!"
+  },
+  "510011": {
+    "name": "Sticker Shooter"
+  },
+  "510012": {
+    "name": "Not This Tile?"
+  },
+  "510013": {
+    "name": "Accursed Sword"
+  },
+  "510014": {
+    "name": "Accursed Sword"
+  },
+  "510015": {
+    "name": "Incursion of the Spirits"
+  },
+  "510016": {
+    "name": "Odyle Flight Frenzy"
+  },
+  "510017": {
+    "name": "Wraith Evasion"
+  },
+  "510018": {
+    "name": "Up! Up! Up!"
+  },
+  "510019": {
+    "name": "Mysterious Track"
+  },
+  "510020": {
+    "name": "Jump Jump"
+  },
+  "510021": {
+    "name": "Defend Shugo Merchants"
+  },
+  "510022": {
+    "name": "Goldrin's Treasure"
+  },
+  "510023": {
+    "name": "Hidden Lugi"
+  },
+  "510024": {
+    "name": "Not This Tile?"
+  },
+  "510025": {
+    "name": "Nyerk Shooter"
+  },
+  "510026": {
+    "name": "Accursed Sword"
+  },
+  "510027": {
+    "name": "Beritra Air Raid"
+  },
+  "510028": {
+    "name": "Incursion of the Spirits"
+  },
+  "510029": {
+    "name": "Shugo's Dilemma"
+  },
+  "510030": {
+    "name": "Up! Up! Up!"
+  },
+  "510031": {
+    "name": "Not This Tile?"
+  },
+  "510033": {
+    "name": "Hidden Lugi"
+  },
+  "510034": {
+    "name": "Mysterious Track"
+  },
+  "510035": {
+    "name": "Wraith Evasion"
+  },
+  "510036": {
+    "name": "Goldrin's Treasure"
+  },
+  "510037": {
+    "name": "Odyle Flight Frenzy"
+  },
+  "510038": {
+    "name": "Defend Shugo Merchants"
+  },
+  "52": {
+    "name": "Illusion Oratory"
+  },
   "600001": {
     "name": "Krao Cave"
   },
@@ -119,6 +1490,9 @@
   "600074": {
     "name": "Vakron Sky Island"
   },
+  "600082": {
+    "name": "Abyssal Forge: Ludra"
+  },
   "600091": {
     "name": "Ferocious Horn Den",
     "difficulty": "exploration"
@@ -144,15 +1518,15 @@
     "difficulty": "hard"
   },
   "600131": {
-    "name": "the Hall of Illusion",
+    "name": "Hall of Illusion",
     "difficulty": "exploration"
   },
   "600132": {
-    "name": "the Hall of Illusion",
+    "name": "Hall of Illusion",
     "difficulty": "normal"
   },
   "600133": {
-    "name": "the Hall of Illusion",
+    "name": "Hall of Illusion",
     "difficulty": "hard"
   },
   "600141": {
@@ -190,5 +1564,635 @@
   "600163": {
     "name": "Consumed Deus Research Base",
     "difficulty": "hard"
+  },
+  "610010": {
+    "name": "Submerged Life Temple"
+  },
+  "610011": {
+    "name": "Submerged Life Temple"
+  },
+  "610012": {
+    "name": "Submerged Life Temple"
+  },
+  "610013": {
+    "name": "Submerged Life Temple"
+  },
+  "610020": {
+    "name": "Mirror of Scarlet Desire"
+  },
+  "610021": {
+    "name": "Mirror of Scarlet Desire"
+  },
+  "610022": {
+    "name": "Mirror of Scarlet Desire"
+  },
+  "610023": {
+    "name": "Mirror of Scarlet Desire"
+  },
+  "610044": {
+    "name": "Dying Dramata's Nest"
+  },
+  "610052": {
+    "name": "Deus Research Base"
+  },
+  "610062": {
+    "name": "Shattered Arkanis"
+  },
+  "610070": {
+    "name": "Abyssal Horn Den"
+  },
+  "610071": {
+    "name": "Abyssal Horn Den"
+  },
+  "610072": {
+    "name": "Abyssal Horn Den"
+  },
+  "610073": {
+    "name": "Abyssal Horn Den"
+  },
+  "620011": {
+    "name": "Corroded Decontamination Facility"
+  },
+  "620021": {
+    "name": "Chalice of Muspel"
+  },
+  "620022": {
+    "name": "Chalice of Muspel"
+  },
+  "690001": {
+    "name": "Subjugation Closed"
+  },
+  "690002": {
+    "name": "Subjugation Closed"
+  },
+  "690003": {
+    "name": "Subjugation Closed"
+  },
+  "690011": {
+    "name": "Beritra Brigade Fortress"
+  },
+  "690012": {
+    "name": "Beritra Brigade Fortress"
+  },
+  "690013": {
+    "name": "Beritra Brigade Fortress"
+  },
+  "690031": {
+    "name": "Orcus's Grave"
+  },
+  "690032": {
+    "name": "Orcus's Grave"
+  },
+  "690033": {
+    "name": "Orcus's Grave"
+  },
+  "690034": {
+    "name": "Orcus's Grave"
+  },
+  "690035": {
+    "name": "Orcus's Grave"
+  },
+  "690036": {
+    "name": "Orcus's Grave"
+  },
+  "690041": {
+    "name": "Fafnite Forge"
+  },
+  "690042": {
+    "name": "Fafnite Forge"
+  },
+  "690043": {
+    "name": "Fafnite Forge"
+  },
+  "690044": {
+    "name": "Fafnite Forge"
+  },
+  "690045": {
+    "name": "Fafnite Forge"
+  },
+  "690046": {
+    "name": "Fafnite Forge"
+  },
+  "7": {
+    "name": "Fire Temple Arena"
+  },
+  "76": {
+    "name": "Incursion of the Spirits"
+  },
+  "77": {
+    "name": "Incursion of the Spirits"
+  },
+  "78": {
+    "name": "Altgard Shugo Fesetival Protection"
+  },
+  "8": {
+    "name": "Impetusium Arena"
+  },
+  "800002": {
+    "name": "Where Fossa Escaped"
+  },
+  "800003": {
+    "name": "Recommended Odyle Gathering Site"
+  },
+  "800004": {
+    "name": "Creion's Experiment Site"
+  },
+  "800007": {
+    "name": "Fossa Sighting Location"
+  },
+  "800008": {
+    "name": "Destroyed Abyss Gate"
+  },
+  "800009": {
+    "name": "Astin's Secret Hideout"
+  },
+  "800010": {
+    "name": "Illusion-Seeped Cave"
+  },
+  "800011": {
+    "name": "South of Verteron Fortress Ruins"
+  },
+  "800012": {
+    "name": "Abandoned Old Merchant HQ Site"
+  },
+  "800013": {
+    "name": "Drakan Laboratory"
+  },
+  "800014": {
+    "name": "Sacrifice's Rest"
+  },
+  "800015": {
+    "name": "Aullaeu Funeral Island"
+  },
+  "800016": {
+    "name": "Moonwatcher Sky Island"
+  },
+  "800017": {
+    "name": "Notos Legion Clinic"
+  },
+  "800018": {
+    "name": "Old Empty House"
+  },
+  "800019": {
+    "name": "Deovar's House"
+  },
+  "800020": {
+    "name": "Abandoned Hideout"
+  },
+  "800021": {
+    "name": "Contaminated Slime Purification Experiment Site"
+  },
+  "800022": {
+    "name": "Cedric's Tombstone"
+  },
+  "800023": {
+    "name": "Forgotten Site"
+  },
+  "800024": {
+    "name": "Hall of Compassion"
+  },
+  "81": {
+    "name": "Blessing Room"
+  },
+  "82": {
+    "name": "Purifying Altar"
+  },
+  "820001": {
+    "name": "Destroyed Campsite"
+  },
+  "820002": {
+    "name": "Hilsrother Marauders Station"
+  },
+  "820003": {
+    "name": "Hilsrother Marauders Storage"
+  },
+  "820004": {
+    "name": "Contaminated Spring"
+  },
+  "820010": {
+    "name": "Mysterious Watchtower Camp"
+  },
+  "820020": {
+    "name": "Crash Site Debris"
+  },
+  "820021": {
+    "name": "Abandoned Observatory"
+  },
+  "820022": {
+    "name": "Parched Rock Cave"
+  },
+  "820030": {
+    "name": "Foul Fissure"
+  },
+  "820031": {
+    "name": "Lepharist Hideout"
+  },
+  "820032": {
+    "name": "Unidentified Workshop"
+  },
+  "820040": {
+    "name": "Chloris's Dwelling"
+  },
+  "820050": {
+    "name": "Chloris's Secret Base"
+  },
+  "820051": {
+    "name": "Lepharist Research Center Annex"
+  },
+  "820052": {
+    "name": "Culvert"
+  },
+  "83": {
+    "name": "Nornir Altar"
+  },
+  "840001": {
+    "name": "Suspicious Cave"
+  },
+  "840002": {
+    "name": "Etheria Rift"
+  },
+  "840003": {
+    "name": "Bandit Den"
+  },
+  "840004": {
+    "name": "Abandoned Drakan Prison"
+  },
+  "840005": {
+    "name": "Quai Merchants Temporary Storage"
+  },
+  "840007": {
+    "name": "Dodo's Stolen Goods Stash"
+  },
+  "840008": {
+    "name": "Den of the Dead"
+  },
+  "840009": {
+    "name": "Old Hideout"
+  },
+  "840010": {
+    "name": "Scarlotus Experiment Site"
+  },
+  "840011": {
+    "name": "First Stage"
+  },
+  "840012": {
+    "name": "Second Stage"
+  },
+  "840013": {
+    "name": "Tarzel Depository"
+  },
+  "840014": {
+    "name": "Hidden Storage"
+  },
+  "840015": {
+    "name": "Spirit Temple"
+  },
+  "840016": {
+    "name": "Relic Storage"
+  },
+  "840017": {
+    "name": "Ancient Ruins"
+  },
+  "840018": {
+    "name": "Blood Haven"
+  },
+  "840019": {
+    "name": "Fallen Relic Storage"
+  },
+  "840020": {
+    "name": "Renegade Daeva Hideout"
+  },
+  "840021": {
+    "name": "Lagta Underground Cage"
+  },
+  "840022": {
+    "name": "Mysterious Ruins"
+  },
+  "840023": {
+    "name": "Zumion Trial Hall"
+  },
+  "840024": {
+    "name": "Destruction Archons Library"
+  },
+  "840025": {
+    "name": "Penitent Altar"
+  },
+  "840026": {
+    "name": "Surana Refinery"
+  },
+  "840027": {
+    "name": "Hidden Chapel"
+  },
+  "840028": {
+    "name": "Slumbering Frozen Lake Cave"
+  },
+  "840029": {
+    "name": "Tsenka Merchants Secret Library"
+  },
+  "840030": {
+    "name": "False Fate Conclave"
+  },
+  "840031": {
+    "name": "Hilsrother Loot Depository"
+  },
+  "840032": {
+    "name": "(Unused)"
+  },
+  "840033": {
+    "name": "Sand Dunes Hideout"
+  },
+  "840034": {
+    "name": "Traitor's Temporary Office"
+  },
+  "840035": {
+    "name": "Contaminated Basement"
+  },
+  "840036": {
+    "name": "Tsenka Upper Supply Storage"
+  },
+  "840037": {
+    "name": "Faded Pulse Library"
+  },
+  "840038": {
+    "name": "Coastal Cave Hidden Location"
+  },
+  "840039": {
+    "name": "Abandoned Storage"
+  },
+  "840040": {
+    "name": "Hidden Snowfield Cave"
+  },
+  "840041": {
+    "name": "Abandoned Cave"
+  },
+  "840042": {
+    "name": "Lepharist Experiment Site"
+  },
+  "840043": {
+    "name": "Secluded Storage"
+  },
+  "840044": {
+    "name": "Secluded Storage"
+  },
+  "840045": {
+    "name": "Lepharist Laboratory"
+  },
+  "840046": {
+    "name": "Former Chloris's Band Base"
+  },
+  "840047": {
+    "name": "Milora's Hideout"
+  },
+  "840048": {
+    "name": "Mysterious Place"
+  },
+  "840049": {
+    "name": "Lava Canyon Cave"
+  },
+  "850000": {
+    "name": "Old Mercenaries Stronghold"
+  },
+  "850001": {
+    "name": "Below the Dredgion Crash Site Cliff"
+  },
+  "850002": {
+    "name": "Drakana Condensation Zone"
+  },
+  "850003": {
+    "name": "Odyle Jelly Storage"
+  },
+  "850004": {
+    "name": "Old Stone Chamber"
+  },
+  "850005": {
+    "name": "Sanctum Outpost"
+  },
+  "850006": {
+    "name": "Crash Site Cave"
+  },
+  "850007": {
+    "name": "Grisilla's Hideout"
+  },
+  "850008": {
+    "name": "Hermit's Cave"
+  },
+  "850009": {
+    "name": "Highland Cave"
+  },
+  "850010": {
+    "name": "Black Claw Storage"
+  },
+  "850011": {
+    "name": "Old House"
+  },
+  "850012": {
+    "name": "Temporary Clinic"
+  },
+  "850013": {
+    "name": "Wedding Hall"
+  },
+  "850014": {
+    "name": "Small House"
+  },
+  "86": {
+    "name": "Old Purifying Altar"
+  },
+  "87": {
+    "name": "Notos Legion Office"
+  },
+  "870001": {
+    "name": "Patamor Plains Outskirts"
+  },
+  "870002": {
+    "name": "Patamor Plains Heartland"
+  },
+  "870003": {
+    "name": "Hunter's Hideout"
+  },
+  "870004": {
+    "name": "Island Hidden by Barrierstone"
+  },
+  "870005": {
+    "name": "Patamor Village Storage"
+  },
+  "870006": {
+    "name": "Verdandi's Altar"
+  },
+  "870010": {
+    "name": "Fragment Expedition Area"
+  },
+  "870011": {
+    "name": "Kalsek's Nest"
+  },
+  "870012": {
+    "name": "Gallows"
+  },
+  "870013": {
+    "name": "Abandoned Rime Shelter"
+  },
+  "870014": {
+    "name": "Snowshade Hideout"
+  },
+  "870020": {
+    "name": "Hidden Coastal Cave"
+  },
+  "870021": {
+    "name": "Burned Village"
+  },
+  "870030": {
+    "name": "Destroy the second Fafnium cave"
+  },
+  "870031": {
+    "name": "Destroy the first Fafnium cave"
+  },
+  "870032": {
+    "name": "Cave of Past Fragments"
+  },
+  "870040": {
+    "name": "Kromede's Island"
+  },
+  "900001": {
+    "name": "Daeva Bio-Research Base"
+  },
+  "900002": {
+    "name": "Odylium Repository"
+  },
+  "900003": {
+    "name": "Crobakhi's Secret Depository"
+  },
+  "901": {
+    "name": "Altgard Legion Airship"
+  },
+  "902": {
+    "name": "Verteron Legion Airship"
+  },
+  "904": {
+    "name": "Eltnen Legion Airship"
+  },
+  "905": {
+    "name": "Morheim Legion Airship"
+  },
+  "910011": {
+    "name": "Nightmare Altar (Easy)"
+  },
+  "910012": {
+    "name": "Nightmare Altar (Normal)"
+  },
+  "910013": {
+    "name": "Nightmare Altar (Hard)"
+  },
+  "910014": {
+    "name": "Nightmare Altar (Challenge)"
+  },
+  "910015": {
+    "name": "Nightmare Altar (Insane)"
+  },
+  "910016": {
+    "name": "Nightmare Altar (Hell)"
+  },
+  "910021": {
+    "name": "Tyrant's Hideout (Easy)"
+  },
+  "910022": {
+    "name": "Tyrant's Hideout (Normal)"
+  },
+  "910023": {
+    "name": "Tyrant's Hideout (Hard)"
+  },
+  "910024": {
+    "name": "Tyrant's Hideout (Challenge)"
+  },
+  "910025": {
+    "name": "Tyrant's Hideout (Insane)"
+  },
+  "910026": {
+    "name": "Tyrant's Hideout (Hell)"
+  },
+  "910031": {
+    "name": "Sanctum of Loathing (Easy)"
+  },
+  "910032": {
+    "name": "Sanctum of Loathing (Normal)"
+  },
+  "910033": {
+    "name": "Sanctum of Loathing (Hard)"
+  },
+  "910034": {
+    "name": "Sanctum of Loathing (Challenge)"
+  },
+  "910035": {
+    "name": "Sanctum of Loathing (Insane)"
+  },
+  "910036": {
+    "name": "Sanctum of Loathing (Hell)"
+  },
+  "910041": {
+    "name": "Depository of Fates (Easy)"
+  },
+  "910042": {
+    "name": "Depository of Fates (Normal)"
+  },
+  "910043": {
+    "name": "Depository of Fates (Hard)"
+  },
+  "910044": {
+    "name": "Depository of Fates (Challenge)"
+  },
+  "910045": {
+    "name": "Depository of Fates (Insane)"
+  },
+  "910046": {
+    "name": "Depository of Fates (Hell)"
+  },
+  "910051": {
+    "name": "Forgotten Repository (Easy)"
+  },
+  "910052": {
+    "name": "Forgotten Repository (Normal)"
+  },
+  "910053": {
+    "name": "Forgotten Repository (Hard)"
+  },
+  "910054": {
+    "name": "Forgotten Repository (Challenge)"
+  },
+  "910055": {
+    "name": "Forgotten Repository (Insane)"
+  },
+  "910056": {
+    "name": "Forgotten Repository (Hell)"
+  },
+  "910057": {
+    "name": "Forgotten Repository (Doom)"
+  },
+  "910061": {
+    "name": "Chamber of the Dead (Easy)"
+  },
+  "910062": {
+    "name": "Chamber of the Dead (Normal)"
+  },
+  "910063": {
+    "name": "Chamber of the Dead (Hard)"
+  },
+  "910064": {
+    "name": "Chamber of the Dead (Challenge)"
+  },
+  "910065": {
+    "name": "Chamber of the Dead (Insane)"
+  },
+  "910066": {
+    "name": "Chamber of the Dead (Hell)"
+  },
+  "910067": {
+    "name": "Chamber of the Dead (Doom)"
+  },
+  "94": {
+    "name": "Near Coastal Cliffs"
+  },
+  "96": {
+    "name": "Daminu Forest"
+  },
+  "98": {
+    "name": "Base in Front of the Supply Depot"
   }
 }
