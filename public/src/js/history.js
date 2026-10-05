@@ -748,5 +748,14 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
   closeBtn?.addEventListener("click", close);
 
-  return { open, close, isOpen };
+  // Redrawn in a new language, with the filters as they were.
+  const relabel = () => {
+    if (!isOpen()) return;
+    syncTrainToggle();
+    syncViewToggle();
+    populateDropdowns(allFights);
+    renderList(allFights);
+  };
+
+  return { open, close, isOpen, relabel };
 };

@@ -198,12 +198,16 @@ const createI18n = ({
     });
   };
 
+  const LANGUAGE_EVENT = "language-changed";
+
   const setLanguage = async (lang, { persist = true } = {}) => {
     const next = normalizeLanguage(lang || defaultLanguage);
     currentLanguage = next;
 
     if (persist) {
       safeSetStorage(storageKey, next);
+      // Each window holds its own strings: the others follow this change.
+      window.__TAURI__?.event?.emit?.(LANGUAGE_EVENT, next);
     }
 
     const localized = async (kind) => {
@@ -227,6 +231,12 @@ const createI18n = ({
   const init = async () => {
     const stored = safeGetStorage(storageKey);
     await setLanguage(stored || defaultLanguage, { persist: false });
+    // A language picked in another window (Settings): History, Details and
+    // the meter showed the old one until they were reopened.
+    window.__TAURI__?.event?.listen?.(LANGUAGE_EVENT, (event) => {
+      const lang = normalizeLanguage(event?.payload);
+      if (lang !== currentLanguage) void setLanguage(lang, { persist: false });
+    });
   };
 
   const onChange = (listener) => {

@@ -75,3 +75,31 @@ test("every key the page uses is in en.json", () => {
   }
   assert.deepEqual([...missing].sort(), [], "keys used by the page but missing from en.json");
 });
+
+test("a language picked in one window reaches the other windows", async () => {
+  const handlers = [];
+  const bus = { listen: (name, fn) => { handlers.push([name, fn]); }, emit: (name, payload) => handlers.filter(([n]) => n === name).forEach(([, fn]) => fn({ payload })) };
+  const fetch = async (url) => {
+    try {
+      const file = readFileSync(new URL(`../dist${new URL(url).pathname}`, import.meta.url));
+      return { ok: true, arrayBuffer: async () => Uint8Array.from(file).buffer };
+    } catch {
+      return { ok: false, status: 404 };
+    }
+  };
+  const open = () => {
+    const window = { __TAURI__: { event: bus } };
+    const document = { baseURI: "http://localhost/", documentElement: { setAttribute() {} }, querySelectorAll: () => [] };
+    vm.runInNewContext(source, { window, document, fetch, URL, TextDecoder, Uint8Array });
+    return window.i18n;
+  };
+  const settings = open();
+  const history = open();
+  await settings.init();
+  await history.init();
+  const changed = new Promise((resolve) => history.onChange(resolve));
+  await settings.setLanguage("ko");
+  assert.equal(await changed, "ko");
+  const ko = JSON.parse(readFileSync(new URL("../src/data/i18n/ui/ko.json", import.meta.url)));
+  assert.equal(history.t("target.all"), ko.target.all);
+});

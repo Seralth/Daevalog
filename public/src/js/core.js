@@ -468,6 +468,7 @@ class DpsApp {
       this.initializeSettingsDropdowns();
       this.detailsUI?.updateLabels?.();
       this.detailsUI?.refresh?.();
+      this.historyUI?.relabel?.();
       this.updateDisplayToggleLabel();
       if (this.battleTime?.setAnalysisTextProvider) {
         this.battleTime.setAnalysisTextProvider(getBattleTimeStatusText);
