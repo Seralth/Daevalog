@@ -684,6 +684,49 @@ mod tests {
     }
 
     #[test]
+    fn train_follows_the_dummy_you_hit_not_your_spirits_spill_over() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(100));
+        s.append_nickname_authoritative(100, "Owner");
+        for id in [36734, 36735, 36736] {
+            spawn(&s, id, DUMMY);
+        }
+        // Your spirit, linked to you.
+        s.note_summon_spawn(500);
+        s.append_damage(skill_hit(500, 100, 500, 16_990_002, 20));
+        for at in (1_000..=20_000).step_by(1_000) {
+            crate::clock::set_override(Some(at));
+            s.append_damage(skill_hit(100, 36734, at, 16_010_000, 1_000));
+            s.append_damage(skill_hit(500, 36734, at, 16_110_004, 200));
+            // Its area hits reach the next dummy now and then.
+            if at % 5_000 == 0 {
+                s.append_damage(skill_hit(500, 36735, at, 16_110_004, 50));
+            }
+            s.append_damage(skill_hit(9000, 36736, at, 11_010_000, 700));
+        }
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("trainTargets");
+        let shown = calc.get_dps();
+        assert_eq!(calc.displayed_targets, vec![36734], "your dummy, not the spill-over or a stranger's");
+        assert_eq!(shown.map[&100].amount, 20.0 * 1_200.0, "your spirit's hits on it count");
+        let listed: Vec<i32> = calc.details_source().reader().get_details_context().targets.iter().map(|t| t.target_id).collect();
+        assert_eq!(listed, vec![36734], "Details lists the meter's dummies only");
+
+        // Summons alone at work: their dummy.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(100));
+        spawn(&s, 36735, DUMMY);
+        s.note_summon_spawn(500);
+        s.append_damage(skill_hit(500, 100, 500, 16_990_002, 20));
+        hits(&s, 500, 36735, 1_000, 5_000);
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("trainTargets");
+        calc.get_dps();
+        assert_eq!(calc.displayed_targets, vec![36735]);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn boss_mode_follows_your_boss_and_lets_a_dead_one_go() {
         let s = Arc::new(DataStorage::new());
         for id in [801, 802] {
@@ -1325,5 +1368,76 @@ mod tests {
         assert_eq!(source.reader().get_target_details(800, None).total_target_damage, 12 * 500,
             "the encounter's carry: the trash before the pull still counts");
         crate::clock::set_override(None);
+    }
+
+    /// The meter over a capture, as the live app drives it (stream assembler
+    /// per connection, as `replay_report`): BOSS first, then A2_MODE from
+    /// A2_SWITCH (hh:mm:ss). Every A2_EVERY seconds (default 5): the targets
+    /// on screen, your row, and per target the damage you dealt yourself and
+    /// through summons. A2_ME: your id, when the capture starts after the
+    /// meter learned it.
+    #[test]
+    #[ignore]
+    fn meter_targets_over_time() {
+        use crate::capture::stream_assembler::StreamAssembler;
+        use crate::capture::stream_processor::StreamProcessor;
+        let path = std::env::var("A2_CAPTURE").unwrap();
+        let mode = std::env::var("A2_MODE").unwrap_or("trainTargets".into());
+        let switch = std::env::var("A2_SWITCH").unwrap();
+        let every: i64 = std::env::var("A2_EVERY").ok().map_or(5, |v| v.parse().unwrap());
+        let known_me: Option<i64> = std::env::var("A2_ME").ok().map(|v| v.parse().unwrap());
+        let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
+        let skills = Arc::new(SkillLookup::new());
+        let npcs = Arc::new(NpcLookup::new());
+        crate::i18n::lookup::load_language(&skills, &npcs, &data, "en");
+        let dots: HashSet<i32> = serde_json::from_str::<Vec<i32>>(&std::fs::read_to_string(data.join("dot_skill_ids.json")).unwrap())
+            .unwrap().into_iter().collect();
+        let s = Arc::new(DataStorage::new());
+        let mut calc = DpsCalculator::new(s.clone(), skills.clone(), npcs.clone(), Arc::new(PingTracker::new()));
+        let mut streams: HashMap<String, (StreamAssembler, StreamProcessor)> = HashMap::new();
+        let (mut last_sec, mut switched) = (0, false);
+        for line in std::fs::read_to_string(&path).unwrap().lines() {
+            let parts: Vec<&str> = line.splitn(3, '|').collect();
+            if line.starts_with('#') || parts.len() != 3 { continue; }
+            let Ok(when) = chrono::DateTime::parse_from_rfc3339(parts[0]) else { continue };
+            let (ts, tod) = (when.timestamp_millis(), &parts[0][11..19]);
+            crate::clock::set_override(Some(ts));
+            if s.local_player_id().is_none() && known_me.is_some() { s.set_local_player_id(known_me); }
+            if ts / 1000 != last_sec {
+                last_sec = ts / 1000;
+                if !switched && tod >= switch.as_str() {
+                    switched = true;
+                    calc.set_target_selection_mode(&mode);
+                }
+                let shown = calc.get_dps();
+                if last_sec % every == 0 {
+                    let me = s.local_player_id().map(|v| v as i32);
+                    let summons = s.get_summon_data();
+                    let mob = s.get_mob_data();
+                    let mine = |a: i32| me.is_some_and(|m| summon_resolver::resolve(a, &summons) == m);
+                    let mut per_target: Vec<String> = s.get_combat_snapshot_light().iter()
+                        .filter(|(_, td)| td.actors.keys().any(|&a| mine(a)))
+                        .map(|(t, td)| {
+                            let own: i64 = td.actors.iter().filter(|(a, _)| Some(**a) == me).map(|(_, d)| d.total_damage).sum();
+                            let pet: i64 = td.actors.iter().filter(|(a, _)| Some(**a) != me && mine(**a)).map(|(_, d)| d.total_damage).sum();
+                            format!("{t}({}) own {own} summons {pet}", mob.get(t).copied().unwrap_or(0))
+                        }).collect();
+                    per_target.sort();
+                    let (row, dps) = me.and_then(|m| shown.map.get(&m)).map_or((0.0, 0.0), |r| (r.amount, r.dps));
+                    eprintln!("{tod} {} shown {:?} target {} '{}' you {me:?} row {row:.0} dps {dps:.0} time {} | {}", shown.target_mode,
+                        calc.displayed_targets, shown.target_id, shown.target_name, shown.battle_time, per_target.join("; "));
+                }
+            }
+            let bytes: Vec<u8> = (0..parts[2].len() / 2).filter_map(|i| u8::from_str_radix(&parts[2][2 * i..2 * i + 2], 16).ok()).collect();
+            let (assembler, processor) = streams.entry(parts[1].to_string()).or_insert_with(|| {
+                let mut p = StreamProcessor::new(s.clone(), skills.clone(), npcs.clone());
+                p.set_dot_skill_ids(dots.clone());
+                (StreamAssembler::new(), p)
+            });
+            processor.set_override_timestamp(Some(ts));
+            assembler.process_chunk(&bytes, processor);
+        }
+        crate::clock::set_override(None);
+        assert!(switched);
     }
 }

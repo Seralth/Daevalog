@@ -23,7 +23,13 @@ impl DpsCalculator {
         let mut actor_meta: HashMap<i32, (String, String)> = HashMap::new();
         let mut targets = Vec::new();
 
+        // TRAIN: the dummies on the meter. Details' "All" merged every dummy
+        // in the area, other players' too.
+        let train = self.target_selection_mode == TargetSelectionMode::TrainTargets;
         for (&target_id, target_data) in &combat_data {
+            if train && !self.displayed_targets.contains(&target_id) {
+                continue;
+            }
             let mut actor_damage: HashMap<i32, i64> = HashMap::new();
             let canonical = build_nickname_canonical_map_from_aggregates(
                 &target_data.actors.iter().map(|(&id, ad)| (id, ad.total_damage)).collect(),

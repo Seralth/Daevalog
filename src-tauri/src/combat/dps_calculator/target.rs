@@ -220,15 +220,26 @@ impl DpsCalculator {
                 (all, "All Targets".to_string(), 0)
             }
             TargetSelectionMode::TrainTargets => {
-                // The dummies you hit; nothing until the meter knows you.
+                // The dummies you hit yourself, your summons' hits on them
+                // included; nothing until the meter knows you. A dummy only
+                // your summons touched is spill-over (a spirit's area hit on
+                // the next dummy), unless summons are all that is hitting.
+                let Some(me) = self.data_storage.local_player_id().map(|id| id as i32) else {
+                    return (HashSet::new(), "Train".to_string(), 0);
+                };
                 let mine = self.resolve_local_ids(summon_data).unwrap_or_default();
-                let trains: HashSet<i32> = combat_data.iter()
-                    .filter(|(tid, td)| {
-                        mob_data.get(*tid).is_some_and(|&code| self.npc_lookup.is_training_dummy(code))
-                            && td.actors.keys().any(|&a| mine.contains(&summon_resolver::resolve(a, summon_data)))
-                    })
+                let dummies = || combat_data.iter()
+                    .filter(|(tid, _)| mob_data.get(*tid).is_some_and(|&code| self.npc_lookup.is_training_dummy(code)));
+                let mut trains: HashSet<i32> = dummies()
+                    .filter(|(_, td)| td.actors.contains_key(&me))
                     .map(|(&tid, _)| tid)
                     .collect();
+                if trains.is_empty() {
+                    trains = dummies()
+                        .filter(|(_, td)| td.actors.keys().any(|&a| mine.contains(&summon_resolver::resolve(a, summon_data))))
+                        .map(|(&tid, _)| tid)
+                        .collect();
+                }
                 (trains, "Train".to_string(), 0)
             }
             TargetSelectionMode::LastHitByMe => {
