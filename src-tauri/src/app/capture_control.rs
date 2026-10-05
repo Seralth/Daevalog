@@ -19,3 +19,8 @@ pub(crate) fn get_capture_status(state: &AppState) -> serde_json::Value {
         "characterNameFromGame": state.data_storage.local_identity_from_self_record(),
     })
 }
+
+pub(crate) fn reset_auto_detection(state: &AppState) {
+    state.port_detector.reset();
+    state.ping_tracker.reset();
+}

@@ -16,8 +16,7 @@ pub(crate) fn is_admin() -> bool {
 
 #[tauri::command]
 pub(crate) fn reset_auto_detection(state: tauri::State<'_, AppState>) {
-    state.port_detector.reset();
-    state.ping_tracker.reset();
+    capture_control::reset_auto_detection(&state);
 }
 
 #[tauri::command]
