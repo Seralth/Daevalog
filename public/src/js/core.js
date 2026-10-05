@@ -5033,15 +5033,16 @@ class DpsApp {
         if (!supported) return;
         document.querySelectorAll(".lockSetting").forEach((el) => { el.style.display = ""; });
         const show = this.safeGetSetting(this.storageKeys.showLockBtn) === "true";
+        this._showLockSetting = show;
         if (this.showLockBtnCheckbox) {
           this.showLockBtnCheckbox.checked = show;
           this.showLockBtnCheckbox.addEventListener("change", (event) => {
             const isChecked = !!event.target?.checked;
             this.safeSetSetting(this.storageKeys.showLockBtn, String(isChecked));
             if (!isOverlay) return;
-            this._applyLockBtnVisibility(isChecked);
-            // Hiding the button must not leave a locked overlay behind.
-            if (!isChecked) this._setOverlayLocked(false);
+            this._showLockSetting = isChecked;
+            // A locked overlay keeps its button whatever the setting says.
+            this._applyLockBtnVisibility(isChecked || this._overlayLocked);
           });
         }
         if (!isOverlay) return;
@@ -5053,7 +5054,7 @@ class DpsApp {
           new ResizeObserver(() => this._sendLockBtnRect()).observe(this.lockBtn.parentElement);
         }
         // Stay locked across restarts, as the player left it.
-        if (show && this.safeGetSetting(this.storageKeys.overlayLocked) === "true") {
+        if (this.safeGetSetting(this.storageKeys.overlayLocked) === "true") {
           requestAnimationFrame(() => this._setOverlayLocked(true));
         }
       })
@@ -5085,6 +5086,11 @@ class DpsApp {
     this._overlayLocked = !!locked;
     this.safeSetSetting(this.storageKeys.overlayLocked, String(this._overlayLocked));
     document.body.classList.toggle("overlayLocked", this._overlayLocked);
+    // Locked, the button is always shown: on Linux a tray or a hotkey may not
+    // exist, and the button is then the only way back.
+    if (window.A2_VIEW === "main") {
+      this._applyLockBtnVisibility(!!this._showLockSetting || this._overlayLocked);
+    }
     if (!this.lockBtn) return;
     this.lockBtn.classList.toggle("isLocked", this._overlayLocked);
     const icon = document.createElement("i");
