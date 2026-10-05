@@ -1,0 +1,98 @@
+//! Uploads, the share preview, the game's own records and the logs sent to the developer.
+
+use crate::share;
+
+use crate::app::AppState;
+
+/// Upload a saved fight to a2tools.app as a log, and return its link.
+#[tauri::command]
+pub(crate) async fn upload_fight(
+    state: tauri::State<'_, AppState>,
+    fight_id: String,
+) -> Result<share::UploadResult, String> {
+    let record = state.fight_history.load_fight(&fight_id)?;
+    share::upload(&state.http, &state.app_data_dir, &record).await
+}
+
+/// Which fights have a slice to upload, and which already have a link.
+#[tauri::command]
+pub(crate) async fn share_status(
+    state: tauri::State<'_, AppState>,
+) -> Result<std::collections::HashMap<String, share::ShareStatus>, String> {
+    let dir = state.app_data_dir.clone();
+    tokio::task::spawn_blocking(move || share::share_status(&dir))
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// What the checks of the game's own Damage Analyzer records need.
+fn game_record_checker(state: &AppState) -> crate::game_record::files::Checker {
+    crate::game_record::files::Checker {
+        app_data_dir: state.app_data_dir.clone(),
+        data_dir: state.i18n_data_dir.clone(),
+        skills: state.skill_lookup.clone(),
+        npcs: state.npc_lookup.clone(),
+        fights: state.fight_history.list_fights(),
+        roots: crate::game_record::files::record_roots(),
+        zone: None,
+    }
+}
+
+/// Saved fights with a game record, and whether the meter matches it.
+/// Async: a new record replays the fight's slice.
+#[tauri::command]
+pub(crate) async fn game_record_status(
+    state: tauri::State<'_, AppState>,
+) -> Result<std::collections::HashMap<String, crate::game_record::files::FightStatus>, String> {
+    let checker = game_record_checker(&state);
+    tokio::task::spawn_blocking(move || checker.statuses())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// A saved fight's game records, each beside the meter's numbers.
+#[tauri::command]
+pub(crate) async fn game_record_details(
+    state: tauri::State<'_, AppState>,
+    fight_id: String,
+) -> Result<Vec<crate::game_record::files::RecordView>, String> {
+    let checker = game_record_checker(&state);
+    tokio::task::spawn_blocking(move || checker.views(&fight_id))
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Write what sharing this fight *would* upload, without uploading anything.
+///
+/// The point is auditability: it produces the exact `.a2es` and `.upload.json`
+/// an upload would send, so a user can open them — `a2t-inspect` reads the
+/// former — instead of taking `docs/PRIVACY.md` on faith. There is no network
+/// call anywhere in this path.
+///
+/// Async because it re-parses a packet capture and replays it to resolve the
+/// names the blinder has to remove; on a long capture that is seconds of CPU,
+/// and a sync command would hold the main thread (see `get_fight_history`).
+#[tauri::command]
+pub(crate) async fn preview_share(
+    state: tauri::State<'_, AppState>,
+    fight_id: String,
+) -> Result<share::PreviewResult, String> {
+    let record = state.fight_history.load_fight(&fight_id)?;
+    let app_data_dir = state.app_data_dir.clone();
+    tokio::task::spawn_blocking(move || {
+        let captures = share::find_captures(&app_data_dir);
+        let out_dir = app_data_dir.join("share-preview");
+        share::preview(&record, &captures, &out_dir)
+    })
+    .await
+    .map_err(|e| format!("preview task failed: {e}"))?
+}
+
+/// Send the newest packet captures to the developer (Settings, beside packet
+/// logging). Returns the report code the player passes on.
+#[tauri::command]
+pub(crate) async fn send_logs_to_dev(
+    state: tauri::State<'_, AppState>,
+) -> Result<share::dev_logs::SendResult, String> {
+    share::dev_logs::send(&state.http, &state.app_data_dir).await
+}
