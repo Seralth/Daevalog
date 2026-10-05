@@ -51,18 +51,5 @@ pub(crate) fn test_auto_hide() -> serde_json::Value {
 
 #[tauri::command]
 pub(crate) fn debug_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
-    let port = state.port_detector.current_port();
-    let device = state.port_detector.current_device();
-    let ping = state.ping_tracker.current_ping_ms();
-    let dmg_gen = state.data_storage.damage_generation();
-    let window = platform::window_detector::find_aion2_window_title();
-    let admin = platform::admin::is_admin();
-    serde_json::json!({
-        "port": port,
-        "device": device,
-        "ping": ping,
-        "damageGeneration": dmg_gen,
-        "aion2Window": window,
-        "isAdmin": admin,
-    })
+    capture_control::debug_status(&state)
 }
