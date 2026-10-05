@@ -440,6 +440,15 @@ impl Blinder {
         // Every buffer handed to the blinder is one framed packet: skip its
         // length and opcode.
         let header = super::stream_processor::read_varint(buf, 0);
+        // Damage, damage over time and HP updates are ids and numbers only.
+        // Scanning them for names blinded skill ids that read as text:
+        // `02 | 50 77 f6 00` (Water Spirit: Ice Chain) is "Pw".
+        if header.length > 0 {
+            let o = header.length as usize;
+            if buf.len() >= o + 2 && EVENT_OPCODES.contains(&[buf[o], buf[o + 1]]) {
+                return 0;
+            }
+        }
         let mut i = if header.length > 0 { header.length as usize + 2 } else { 0 };
         while i < buf.len() {
             let len = buf[i] as usize;
@@ -500,8 +509,14 @@ fn looks_like_text(span: &[u8]) -> bool {
         }
     }
     // At least half the characters being letters or digits rules out runs of
-    // punctuation that happen to decode.
-    letters * 2 >= s.chars().count().max(1)
+    // punctuation that happen to decode. One character is never a name: a
+    // skill id such as 100051 (`d3 86 01 00`) after a `02` byte decodes as one
+    // letter, and blinding it moved a spirit's hits to a skill that does not
+    // exist (2026-10-04 capture against the game's own record).
+    // A short run must be letters or digits only: Water Bomb (16001105,
+    // `51 28 f4 00`) after a `02` byte reads "Q(", half a letter.
+    let chars = s.chars().count();
+    chars >= 2 && letters * 2 >= chars && (chars > 3 || letters == chars)
 }
 
 /// Every byte of a record in the clear, bundles decompressed.
@@ -1025,6 +1040,38 @@ mod tests {
         let mut packet = frame_packet(&body).unwrap();
         Blinder::new(&[]).blind(&mut packet);
         assert!(!packet.windows(2).any(|w| w == b"M7"));
+    }
+
+    #[test]
+    fn a_skill_id_that_decodes_as_one_letter_is_left_alone() {
+        // A spirit's damage record (2026-10-04): `.. 02 | d3 86 01 00` is a
+        // byte 02 then skill 100051, and d3 86 is valid UTF-8 for one letter.
+        let mut body = vec![0x04, 0x38, 0xfe, 0x9e, 0x02, 0x04, 0x00, 0x9e, 0x9b, 0x01, 0x02, 0xd3, 0x86, 0x01, 0x00];
+        body.resize(40, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        Blinder::new(&[]).blind(&mut packet);
+        assert!(packet.windows(4).any(|w| w == [0xd3, 0x86, 0x01, 0x00]));
+    }
+
+    #[test]
+    fn damage_records_are_not_scanned_for_names() {
+        // Water Spirit: Ice Chain, 2026-10-04: actor 48405 ends in 02, and the
+        // skill id 16152400 starts `50 77`, "Pw".
+        let mut body = vec![0x04, 0x38, 0xfe, 0x9e, 0x02, 0x04, 0x00, 0x95, 0xfa, 0x02, 0x50, 0x77, 0xf6, 0x00];
+        body.resize(40, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        Blinder::new(&[]).blind(&mut packet);
+        assert!(packet.windows(4).any(|w| w == [0x50, 0x77, 0xf6, 0x00]));
+    }
+
+    #[test]
+    fn a_skill_id_that_reads_as_a_letter_and_a_bracket_is_left_alone() {
+        // Water Bomb, 16001105: `02 | 51 28 f4 00` reads "Q(".
+        let mut body = vec![0x04, 0x38, 0xfe, 0x9e, 0x02, 0x04, 0x00, 0x9e, 0x9b, 0x01, 0x02, 0x51, 0x28, 0xf4, 0x00];
+        body.resize(40, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        Blinder::new(&[]).blind(&mut packet);
+        assert!(packet.windows(4).any(|w| w == [0x51, 0x28, 0xf4, 0x00]));
     }
 
     #[test]

@@ -15,6 +15,7 @@
 //!
 //! Needs the reference capture:
 //!   A2_REPLAY_CAPTURE=.../packets_20260815_183732.txt cargo test --test evidence_slice_replay
+//! Another capture also needs its end: A2_REPLAY_UNTIL=2099 reads all of it.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -54,6 +55,8 @@ struct Line {
 
 fn read_capture(path: &str) -> Vec<Line> {
     let text = std::fs::read_to_string(path).expect("capture file");
+    // A2_REPLAY_UNTIL overrides the end for other captures.
+    let until = std::env::var("A2_REPLAY_UNTIL").unwrap_or_else(|_| UNTIL.to_string());
     let mut out = Vec::new();
     for line in text.lines() {
         let line = line.trim();
@@ -66,7 +69,7 @@ fn read_capture(path: &str) -> Vec<Line> {
         }
         let raw_ts = parts[0].trim();
         // Lexicographic, which works because the stamps are ISO-8601.
-        if raw_ts >= UNTIL {
+        if raw_ts >= until.as_str() {
             break;
         }
         let Ok(ts) = chrono::DateTime::parse_from_rfc3339(raw_ts) else {
