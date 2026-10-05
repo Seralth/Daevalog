@@ -53,8 +53,8 @@ pad is zero, a plausible world id, a length that fits, decodable UTF-8). That
 pinned the owner on **81 of 81** summons with no false positives, including a
 Spiritmaster's 54 pets whose owner had not been named at the time they spawned.
 
-**Code:** `stream_processor.rs` → `parse_summon_spawn_at`, `find_spawn_parent_key`,
-`parse_spawn_owner_block`.
+**Code:** `capture/stream_processor/spawn.rs` → `parse_summon_spawn_at`,
+`find_spawn_parent_key`, `parse_spawn_owner_block`.
 
 **Known gap:** the anchor is the owner's *legion* record. A summoner with **no
 legion** would zero that block and fail validation. Every summoner in the
@@ -123,7 +123,7 @@ Ground truth: a summon's scalar matched a value its owner also showed in
 the owner is separately observed in).
 
 The scalar alone is **not** sufficient — it is a stat, so two players can share
-one. The rule that ships requires all of:
+one. A rule built on it needs all of:
 
 - same class (skill-code prefix), and
 - scalar sets intersect, and
@@ -131,30 +131,14 @@ one. The rule that ships requires all of:
   a summon spams one or two abilities, and
 - exactly one candidate survives.
 
-Measured: **43 correct, 0 wrong**, 38 undetermined on the Aug-15 pairs, and
-**zero** false merges of a real player into another. On Aug-18 it attributes all
-four Divine Auras to the (unnamed) Cleric.
+Measured with that rule: **43 correct, 0 wrong**, 38 undetermined on the Aug-15
+pairs, and **zero** false merges of a real player into another. On Aug-18 it
+attributes all four Divine Auras to the (unnamed) Cleric.
 
-**Code:** `stream_processor.rs` records it via `DataStorage::note_power_scalar`;
-`dps_calculator.rs` applies the rule in the orphan-merge step of `get_dps`.
-
----
-
-## Why the fallback is needed at all
-
-Two gates used to make attribution impossible in exactly the case it exists for:
-
-1. Divine Aura's skill code (`17153450`) sits in the **player** band (11M–19M), so
-   `append_damage` files the aura entity in `known_player_ids`. The orphan merge
-   then skipped it as "a player".
-2. The merge separately required the owner to be **named** — but an owner you
-   have never had on screen has no name, and the whole point is to collapse onto
-   an *id*.
-
-Both are addressed. The original named-owner path is kept intact (its "exactly
-one candidate" test is only meaningful because of the name requirement — dropping
-it makes the rule stop firing and orphans reappear; there is a regression test
-for this), with the scalar path added beside it.
+**Code:** none. The meter does not merge by power scalar or by class: both are
+shared between players, and such guesses put mobs, party members and the player
+into other rows. A summon with no owner link keeps its own row until a link
+arrives (`combat/dps_calculator/meter_rows.rs`).
 
 ---
 
@@ -164,11 +148,9 @@ for this), with the scalar path added beside it.
 
 ```
 A2_REPLAY_CAPTURE=…/packets_20260815_183732.txt \
-A2_REPLAY_AURA_CAPTURE=…/packets_20260818_112931.txt \
 cargo test --test capture_replay -- --nocapture
 ```
 
 - `resolves_party_identities_and_summon_owners` — all 5 party members identified,
   ≥40 pets on the Spiritmaster, ≥15 spell entities on the Sorcerer.
 - `meter_rows_are_all_named_with_combat_power` — exactly 5 rows, none unnamed.
-- `divine_auras_collapse_onto_an_unnamed_cleric` — no aura keeps its own row.
