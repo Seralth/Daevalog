@@ -30,6 +30,7 @@ mod screenshots;
 mod setting_changes;
 mod setup;
 mod supporter_roster;
+mod tasks;
 mod tool_windows;
 mod tray_actions;
 mod updater;
