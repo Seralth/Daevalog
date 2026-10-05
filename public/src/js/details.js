@@ -12,6 +12,30 @@ const combinedHealFields = (detailsList = []) => {
   };
 };
 
+// Each DoT row goes under the direct row of its skill, matched by skill code
+// (a DoT row's code is the skill's code plus "-dot"), never by its name,
+// which each language words differently. A DoT with no direct row stays.
+const foldDotRows = (rows) => {
+  const dots = rows.filter((row) => row.isDot);
+  const attached = new Set();
+  const out = [];
+  for (const hit of rows) {
+    if (hit.isDot) continue;
+    const dot = dots.find((d) => !attached.has(d) && String(d.code ?? "").replace(/-dot$/, "") === String(hit.code ?? ""));
+    if (dot) attached.add(dot);
+    hit._dotChild = dot || null;
+    hit._combinedDmg = (Number(hit.dmg) || 0) + (dot ? Number(dot.dmg) || 0 : 0);
+    out.push(hit);
+  }
+  for (const dot of dots) {
+    if (attached.has(dot)) continue;
+    dot._dotChild = null;
+    dot._combinedDmg = Number(dot.dmg) || 0;
+    out.push(dot);
+  }
+  return out;
+};
+
 const createDetailsUI = ({
   detailsPanel,
   detailsClose,
@@ -1018,45 +1042,7 @@ const createDetailsUI = ({
         specs: (existing.specs || [false,false,false,false,false]).map((v, i) => v || !!(skill.specs && skill.specs[i])),
       });
     });
-    // Pair DOTs with parent skills
-    // DOT names follow pattern: "BaseName - DOT" (or i18n equivalent)
-    const DOT_SUFFIX = / - DOT$/;
-    const hitSkills = new Map();  // name → skill
-    const dotSkills = [];         // { baseName, skill }
-    for (const skill of groupedSkills.values()) {
-      const name = String(skill.name ?? "");
-      if (skill.isDot) {
-        const baseName = name.replace(DOT_SUFFIX, "");
-        dotSkills.push({ baseName, skill });
-      } else {
-        hitSkills.set(name, skill);
-      }
-    }
-
-    // Build display list: attach DOTs to parents, or keep standalone
-    const displaySkills = [];
-    const attachedDotKeys = new Set();
-    for (const [name, hit] of hitSkills) {
-      // Find DOT whose baseName matches this parent's name
-      const dotEntry = dotSkills.find((d) => d.baseName === name);
-      if (dotEntry) {
-        hit._dotChild = dotEntry.skill;
-        hit._combinedDmg = (Number(hit.dmg) || 0) + (Number(dotEntry.skill.dmg) || 0);
-        attachedDotKeys.add(dotEntry.baseName);
-      } else {
-        hit._dotChild = null;
-        hit._combinedDmg = Number(hit.dmg) || 0;
-      }
-      displaySkills.push(hit);
-    }
-    // Add orphan DOTs (no parent hit skill)
-    for (const { baseName, skill: dot } of dotSkills) {
-      if (!attachedDotKeys.has(baseName)) {
-        dot._dotChild = null;
-        dot._combinedDmg = Number(dot.dmg) || 0;
-        displaySkills.push(dot);
-      }
-    }
+    const displaySkills = foldDotRows([...groupedSkills.values()]);
 
     displaySkills.sort(compareSkillSort);
     const topDisplay = compact ? displaySkills.slice(0, COMPACT_MAX_SKILLS) : displaySkills;
