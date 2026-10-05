@@ -56,8 +56,7 @@ pub(crate) fn set_language(state: tauri::State<'_, AppState>, language: String) 
 
 #[tauri::command]
 pub(crate) fn set_debug_logging(state: tauri::State<'_, AppState>, enabled: bool) {
-    logging::logger::set_debug_enabled(enabled, &state.app_data_dir);
-    state.settings.set("dpsMeter.debugLoggingEnabled", if enabled { "true" } else { "false" });
+    setting_changes::set_debug_logging(&state, enabled);
 }
 
 #[tauri::command]

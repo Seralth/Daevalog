@@ -1,7 +1,7 @@
 //! What a changed setting does besides being stored.
 
 use crate::combat::data_storage::DataStorage;
-use crate::i18n;
+use crate::{i18n, logging};
 
 use super::AppState;
 
@@ -23,4 +23,9 @@ pub(crate) fn set_language(state: &AppState, language: String) {
         tracing::warn!("No i18n data dir available for language reload");
     }
     state.settings.set("dpsMeter.language", &language);
+}
+
+pub(crate) fn set_debug_logging(state: &AppState, enabled: bool) {
+    logging::logger::set_debug_enabled(enabled, &state.app_data_dir);
+    state.settings.set("dpsMeter.debugLoggingEnabled", if enabled { "true" } else { "false" });
 }
