@@ -1,7 +1,6 @@
 //! Saved fights: the list, loading, saving, deleting and export.
 
 use crate::entity::fight_record::{FightRecord, FightSummary};
-use crate::share;
 
 use crate::app::{fights, AppState};
 
@@ -27,11 +26,7 @@ pub(crate) fn load_fight(state: tauri::State<'_, AppState>, id: String) -> Resul
 
 #[tauri::command]
 pub(crate) fn delete_fight(state: tauri::State<'_, AppState>, id: String) -> Result<(), String> {
-    if !crate::history::fight_history::is_plain_name(&id) {
-        return Err(format!("Invalid fight id: {id:?}"));
-    }
-    share::forget_slice(&state.app_data_dir, &id);
-    state.fight_history.delete_fight(&id)
+    fights::delete_fight(&state, id)
 }
 
 #[tauri::command]

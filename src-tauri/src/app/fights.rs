@@ -1,6 +1,7 @@
 //! Loading and deleting saved fights, for the history commands.
 
 use crate::entity::fight_record::FightRecord;
+use crate::share;
 
 use super::AppState;
 
@@ -20,4 +21,12 @@ pub(crate) fn load_fight(state: &AppState, id: String) -> Result<FightRecord, St
     // `crate::supporters::KeyKind`.
     crate::supporters::apply_to_record(&mut record, &state.data_storage.supporters());
     Ok(record)
+}
+
+pub(crate) fn delete_fight(state: &AppState, id: String) -> Result<(), String> {
+    if !crate::history::fight_history::is_plain_name(&id) {
+        return Err(format!("Invalid fight id: {id:?}"));
+    }
+    share::forget_slice(&state.app_data_dir, &id);
+    state.fight_history.delete_fight(&id)
 }
