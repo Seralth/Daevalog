@@ -6891,6 +6891,29 @@ html.settingsWindow .meter {
   display: flex;
   gap: 6px;
 }
+.reportClose {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.6));
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+}
+.reportClose:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
 .reportLogSelect {
   flex: 1;
   min-width: 0;
