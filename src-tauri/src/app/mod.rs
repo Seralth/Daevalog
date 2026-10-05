@@ -23,6 +23,7 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 mod auto_upload;
 mod commands;
 mod drag_resize;
+mod fights;
 mod local_player;
 mod meter;
 mod overlay_lock;
