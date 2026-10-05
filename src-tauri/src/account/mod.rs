@@ -321,11 +321,16 @@ pub async fn whoami(client: &reqwest::Client, app_data_dir: &Path) -> AccountSta
 }
 
 /// A name for this install, so the approval page says what is being approved.
+/// The name a2tools.app shows for this sign-in: the system only, never the
+/// machine's own name.
 pub fn device_label() -> String {
-    let host = std::env::var("COMPUTERNAME")
-        .or_else(|_| std::env::var("HOSTNAME"))
-        .unwrap_or_else(|_| "PC".into());
-    format!("Daevalog DPS Meter on {host}")
+    let system = match std::env::consts::OS {
+        "linux" => "Linux",
+        "windows" => "Windows",
+        "macos" => "macOS",
+        other => other,
+    };
+    format!("Daevalog DPS Meter on {system}")
 }
 
 #[cfg(test)]
