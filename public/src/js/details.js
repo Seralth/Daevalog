@@ -36,6 +36,20 @@ const foldDotRows = (rows) => {
   return out;
 };
 
+// Wraps an async job for a timer: a tick that comes while the previous run is
+// still going is skipped, so slow backend calls never pile up.
+const skipWhileRunning = (job) => {
+  let running = null;
+  return () => {
+    if (running) return running;
+    running = Promise.resolve()
+      .then(job)
+      .catch(() => {})
+      .finally(() => { running = null; });
+    return running;
+  };
+};
+
 const createDetailsUI = ({
   detailsPanel,
   detailsClose,
@@ -2282,7 +2296,7 @@ const createDetailsUI = ({
     // Auto-refresh live details every 2 seconds (not for history views)
     if (autoRefreshTimer) clearInterval(autoRefreshTimer);
     if (!historyRecord) {
-      autoRefreshTimer = setInterval(() => { refresh(); }, 2000);
+      autoRefreshTimer = setInterval(refreshTick, 2000);
     }
   };
   const close = ({ keepPinned = false } = {}) => {
@@ -2420,6 +2434,8 @@ const createDetailsUI = ({
     updateHeaderText();
     await refreshDetailsView(seq);
   };
+
+  const refreshTick = skipWhileRunning(refresh);
 
   const isPinned = () => pinnedRowId !== null;
 
