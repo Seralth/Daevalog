@@ -2407,7 +2407,16 @@ fn should_treat_first_value_as_damage(first_value: i32, second_value: i32, and_r
 /// The tail of a damage record after its value, when it has the shape the
 /// game's own record confirms: `(end offset, layout-4 field, additional hits,
 /// their damage)`. `None` when the bytes do not end cleanly at the next record.
-fn parse_hit_tail(packet: &[u8], mut offset: usize, layout: i32, switch_value: i32, value: i32) -> Option<(usize, i32, i32, i32)> {
+///
+/// A spirit's layout-4 record has no layout-4 field: the additional hits follow
+/// the value directly (2026-10-04, the game's AdditionalHitCount per spirit
+/// skill matches only when read this way). A player's record has the field.
+fn parse_hit_tail(packet: &[u8], offset: usize, layout: i32, switch_value: i32, value: i32) -> Option<(usize, i32, i32, i32)> {
+    parse_hit_tail_as(packet, offset, layout, switch_value, value)
+        .or_else(|| (layout == 4).then(|| parse_hit_tail_as(packet, offset, 6, switch_value, value)).flatten())
+}
+
+fn parse_hit_tail_as(packet: &[u8], mut offset: usize, layout: i32, switch_value: i32, value: i32) -> Option<(usize, i32, i32, i32)> {
     let mut field = 0;
     if layout == 4 {
         field = try_read_varint(packet, &mut offset)?;
@@ -2783,13 +2792,19 @@ mod tests {
             packet[0] = packet.len() as u8;
             assert!(p.parsing_damage(&packet, false, false), "{record}");
             let combat = storage.get_combat_snapshot();
-            let skill = combat[&30001].actors[&1395].skills.values().next().unwrap().clone();
+            let target = combat.values().next().unwrap();
+            let skill = target.actors.values().next().unwrap().skills.values().next().unwrap().clone();
             (skill.total_damage, skill.hit_count, skill.multi_hit_count, skill.multi_hit_hits, skill.multi_hit_damage)
         };
         // Layout 6, switch 0x36: 1700 with two additional hits of 24.
         assert_eq!(parse("b1ea013600f30a40c0f4007a038000010b199b5f01000000ac52a40d021818"), (1700, 1, 1, 2, 48));
         // Layout 4, switch 0x34: the layout-4 field, then one additional hit of 89.
         assert_eq!(parse("b1ea013400f30ae0b7f800cd028bd3276101000000ac52d330010159"), (6227, 1, 1, 1, 89));
+        // A spirit's layout-4 records (Summon: Wind Spirit, a Wind Spirit basic
+        // attack): no layout-4 field, the additional hits right after the value.
+        assert_eq!(parse("fe9e0224009e9b01c3f8f5000302792b156002000000ac52e10301060200"), (481, 1, 1, 1, 6));
+        assert_eq!(parse("fe9e0224009e9b01c18601001702a7a2980001000000ac52e401030303030100"), (228, 1, 1, 3, 9));
+        assert_eq!(parse("fe9e0204009e9b01c3f8f5000302792b156003000000ac52b7030300"), (439, 1, 0, 0, 0));
         // Layout 6, switch 0x16: no additional hits.
         assert_eq!(parse("b1ea011600f30a40c0f40063028000010b199b5f01000000ac52d007"), (976, 1, 0, 0, 0));
     }
