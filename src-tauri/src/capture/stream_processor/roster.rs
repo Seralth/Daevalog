@@ -1,0 +1,226 @@
+//! The party roster (02 97): who is in your party, their levels, gear and combat power.
+
+use super::StreamProcessor;
+use crate::capture::varint::{parse_u32_le, read_varint};
+
+impl StreamProcessor {
+    // ===== PARTY ROSTER (02 97) =====
+
+    /// Read the party roster the server broadcasts on any party change.
+    ///
+    /// ```text
+    /// 02 97
+    /// party_key    u32
+    /// party_name   str            (u8 len + utf8)
+    /// party_size   u8             party max size
+    /// dungeon_id   u32
+    /// unnamed      u8, u8
+    /// leader_dbid  u64
+    /// unnamed      u8, u8, u8
+    /// member_count varint
+    /// member × member_count:
+    ///   presence_mask u8
+    ///   slot          u8          1-based party slot
+    ///   dbid          u64         account-level id; high u16 is the world id
+    ///   nickname      str
+    ///   unnamed       u32
+    ///   level         u32
+    ///   gear_score    u32         equip item level
+    ///   server        u16, u16
+    ///   unnamed       u8
+    ///   combat_power  u64
+    ///   unnamed       u16, u8
+    /// ```
+    ///
+    /// This is the only packet that states who is in your party outright, so it
+    /// is the authoritative roster — and it is where combat power comes from.
+    /// It joins to in-world entities by NAME: `dbid` is an account id, unrelated
+    /// to the session-scoped entity ids everything else uses.
+    ///
+    /// Empty slots are encoded with a zero mask and an empty name; parsing stops
+    /// there because their short form would desync the walk.
+    pub(super) fn scan_party_roster(&self, data: &[u8]) {
+        if data.len() < 32 {
+            return;
+        }
+        let mut i = 0;
+        while i + 24 < data.len() {
+            if data[i] != 0x02 || data[i + 1] != 0x97 {
+                i += 1;
+                continue;
+            }
+            match parse_party_roster_at(data, i + 2) {
+                Some((members, complete, dungeon_id)) => {
+                    tracing::debug!(
+                        "Party roster: {} members (complete={}, dungeon={})",
+                        members.len(),
+                        complete,
+                        dungeon_id
+                    );
+                    self.data_storage.set_current_dungeon(dungeon_id);
+                    self.data_storage.set_party_roster(members, complete);
+                    i += 2;
+                }
+                None => i += 1,
+            }
+        }
+    }
+}
+
+/// Decode the body of a `02 97` party roster packet. `at` is the first byte
+/// after the opcode. Returns the members that parsed cleanly, or `None` if the
+/// header does not look like a roster (the opcode is scanned for in raw byte
+/// streams, so the header checks double as the false-positive filter).
+/// See `StreamProcessor::scan_party_roster` for the layout.
+#[allow(clippy::type_complexity)]
+fn parse_party_roster_at(
+    data: &[u8],
+    at: usize,
+) -> Option<(Vec<(String, crate::combat::data_storage::PartyMember)>, bool, i32)> {
+    use crate::combat::data_storage::PartyMember;
+
+    let mut o = at.checked_add(4)?; // party_key u32
+    let name_len = *data.get(o)? as usize;
+    o += 1;
+    if !(1..=40).contains(&name_len) {
+        return None;
+    }
+    std::str::from_utf8(data.get(o..o + name_len)?).ok()?;
+    o += name_len;
+
+    let party_size = *data.get(o)? as usize;
+    o += 1;
+    if !(1..=12).contains(&party_size) {
+        return None;
+    }
+    // The instance the party is queued for / inside. Identifies both the dungeon
+    // and its difficulty tier: Ferocious Horn Den is 600091/600092/600093 for
+    // Exploration / Conquest [Normal] / Conquest [Hard].
+    let dungeon_id = parse_u32_le(data.get(o..o + 4)?, 0) as i32;
+    o += 4 + 2 + 8 + 3; // dungeon_id, 2 pad, leader_dbid, 3 pad
+    let count_info = read_varint(data, o);
+    if count_info.length <= 0 || !(1..=12).contains(&count_info.value) {
+        return None;
+    }
+    o += count_info.length as usize;
+
+    let mut members = Vec::new();
+    let mut complete = false;
+    for index in 0..count_info.value {
+        if o + 20 > data.len() {
+            break;
+        }
+        let slot = data[o + 1];
+        o += 2; // presence_mask, slot
+        let dbid = u64::from_le_bytes(data.get(o..o + 8)?.try_into().ok()?);
+        o += 8;
+        let server_id = (dbid >> 48) as u16;
+        let nick_len = *data.get(o)? as usize;
+        o += 1;
+        // An empty name is a vacant slot. Those records are short and the ones
+        // after them are all vacant too, so the roster ends here.
+        if nick_len == 0 {
+            complete = true;
+            break;
+        }
+        if nick_len > 40 || o + nick_len > data.len() {
+            break;
+        }
+        let nickname = match std::str::from_utf8(&data[o..o + nick_len]) {
+            Ok(s) => s.to_string(),
+            Err(_) => break,
+        };
+        o += nick_len;
+        if o + 12 > data.len() {
+            break;
+        }
+        let job = crate::entity::job_class::JobClass::from_roster_class(parse_u32_le(data, o));
+        o += 4;
+        let level = parse_u32_le(data, o) as i32;
+        o += 4;
+        if !(1..=200).contains(&level) {
+            break;
+        }
+        let gear_score = parse_u32_le(data, o) as i32;
+        o += 4;
+        if !(0..=1_000_000).contains(&gear_score) {
+            break;
+        }
+
+        // The stretch between the gear score and combat power is not fixed
+        // width — the same roster can carry an extra byte for one member and not
+        // another, and a party-state change widens every record's tail. Anchor
+        // on the member's world id instead: it is repeated here as a u16 and we
+        // already know its value from the top half of `dbid`. Combat power then
+        // sits a fixed distance past it.
+        let Some(anchor) = find_u16(data, o, o + 10, server_id) else {
+            break;
+        };
+        o = anchor + 2 + 2 + 1; // world id, a second u16, one tag byte
+        let combat_power = u64::from_le_bytes(data.get(o..o + 8)?.try_into().ok()?);
+        o += 8;
+        if combat_power > 100_000_000 {
+            break;
+        }
+
+        members.push((
+            nickname,
+            PartyMember {
+                slot,
+                level,
+                gear_score,
+                combat_power: combat_power as i64,
+                server_id,
+                dbid,
+                job,
+            },
+        ));
+
+        if index + 1 == count_info.value {
+            complete = true;
+            break;
+        }
+        // The record tail is likewise variable, so re-acquire the next member by
+        // its header: the following slot number, a world id in the top of its
+        // dbid, and a decodable name right behind it.
+        match find_next_member(data, o, slot.wrapping_add(1)) {
+            Some(next) => o = next,
+            None => break,
+        }
+    }
+    if members.is_empty() {
+        return None;
+    }
+    Some((members, complete, dungeon_id))
+}
+
+/// Find a little-endian `u16` equal to `wanted` in `data[from..to]`.
+fn find_u16(data: &[u8], from: usize, to: usize, wanted: u16) -> Option<usize> {
+    let end = to.min(data.len().saturating_sub(2));
+    (from..=end).find(|&i| u16::from_le_bytes([data[i], data[i + 1]]) == wanted)
+}
+
+/// Re-acquire the start of the next party member record by its header shape:
+/// `<mask u8> <slot u8> <dbid u64> <name_len u8> <utf8 name>`, where the slot is
+/// known and the top `u16` of the dbid is a plausible world id.
+fn find_next_member(data: &[u8], from: usize, expected_slot: u8) -> Option<usize> {
+    let end = (from + 32).min(data.len().saturating_sub(12));
+    for i in from..=end {
+        if data[i + 1] != expected_slot {
+            continue;
+        }
+        let server_id = u16::from_le_bytes([data[i + 8], data[i + 9]]);
+        if server_id == 0 || server_id > 9_999 {
+            continue;
+        }
+        let name_len = data[i + 10] as usize;
+        if name_len == 0 || name_len > 40 || i + 11 + name_len > data.len() {
+            continue;
+        }
+        if std::str::from_utf8(&data[i + 11..i + 11 + name_len]).is_err() {
+            continue;
+        }
+        return Some(i);
+    }
+    None
+}
