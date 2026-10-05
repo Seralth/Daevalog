@@ -2222,6 +2222,7 @@ const createDetailsUI = ({
     }
 
     openedRowId = rowId;
+    window.gameRecordUI?.hide?.();
     if (pin) {
       pinnedRowId = rowId;
       onPinnedRowChange?.(pinnedRowId);
@@ -2318,6 +2319,7 @@ const createDetailsUI = ({
       statSlots[i].statEl.style.display = "";
     }
     detailsPanel.classList.remove("open");
+    window.gameRecordUI?.hide?.();
     historyRecord = null;
     window._historyDetailsOverride = null;
     fightStartMs = 0;
@@ -2407,6 +2409,7 @@ const createDetailsUI = ({
     });
     if (seq !== openSeq) return;
     if (processedDetails) render(processedDetails, fakeRow);
+    window.gameRecordUI?.show?.(record);
   };
 
   const refresh = async () => {

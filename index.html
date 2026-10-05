@@ -10,6 +10,10 @@
       href="/src/styles.css"
       rel="stylesheet"
       type="text/css" />
+    <link
+      href="/src/gameRecord.css"
+      rel="stylesheet"
+      type="text/css" />
     <!--
       CJK webfonts, loaded without blocking first paint. Every window pulls the
       whole head before it renders, so as plain stylesheets these four put
@@ -295,6 +299,38 @@
             <div class="detailsStatsRow">
               <div class="detailsPartyList"></div>
               <div class="detailsStats"></div>
+            </div>
+
+            <div class="gameRecordSection" hidden>
+              <div class="gameRecordBar">
+                <span class="gameRecordTitle" data-i18n="gameRecord.title">Game record</span>
+                <div class="gameRecordSwitch" role="group" aria-label="Numbers shown" data-i18n-aria-label="gameRecord.switch">
+                  <button class="gameRecordViewBtn" type="button" data-view="meter" data-i18n="gameRecord.meter">Meter</button>
+                  <button class="gameRecordViewBtn" type="button" data-view="game" data-i18n="gameRecord.game">Game record</button>
+                  <button class="gameRecordViewBtn" type="button" data-view="both" data-i18n="gameRecord.both">Both</button>
+                </div>
+                <select class="gameRecordPick" aria-label="Game record" data-i18n-aria-label="gameRecord.title" hidden></select>
+              </div>
+              <div class="gameRecordSummary gameRecordBody">
+                <div class="gameRecordTotal">
+                  <span data-i18n="gameRecord.damageMeter">Damage, meter</span>
+                  <strong class="gameRecordMeterTotal"></strong>
+                </div>
+                <div class="gameRecordTotal">
+                  <span data-i18n="gameRecord.damageGame">Damage, game</span>
+                  <strong class="gameRecordGameTotal"></strong>
+                </div>
+                <div class="gameRecordVerdict"></div>
+                <label class="gameRecordOnlyDiffer">
+                  <input type="checkbox" /> <span data-i18n="gameRecord.onlyDiffer">Only rows that differ</span>
+                </label>
+              </div>
+              <div class="gameRecordCoverage gameRecordBody"></div>
+              <div class="gameRecordTable gameRecordBody"></div>
+              <div class="gameRecordFoot gameRecordBody">
+                <span data-i18n="gameRecord.note">A difference means the meter read the fight differently from the game. The game's number is the right one.</span>
+                <button class="gameRecordCopy" type="button" data-i18n="gameRecord.copy">Copy for a bug report</button>
+              </div>
             </div>
 
             <div class="detailsSection dpsChartSection">
@@ -913,6 +949,9 @@
               <div class="historyClassDropdownMenu"></div>
             </div>
             <select class="historyFilterDate historyFilterSelect" aria-label="Filter by date"></select>
+            <label class="historyGameRecordFilter" title="Game records come from the game's own Damage Analyzer (Ctrl+X)." data-i18n-title="gameRecord.filterTip">
+              <input type="checkbox" /> <span data-i18n="gameRecord.filter">Only fights with a game record</span>
+            </label>
           </div>
           <div class="historyBody">
             <div class="historyEmpty" data-i18n="history.empty" style="display:none">No boss fights recorded yet.</div>
@@ -1101,6 +1140,7 @@
     <script src="/src/js/skillIcons.js"></script>
     <script src="/src/js/details.js?v=2021a"></script>
     <script src="/src/js/history.js?v=2018a"></script>
+    <script src="/src/js/gameRecord.js"></script>
 
     <!-- 추가 -->
     <script src="/src/js/checkRelease.js?v=202b6"></script>

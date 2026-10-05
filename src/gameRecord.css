@@ -1,0 +1,248 @@
+/* The game's own Damage Analyzer numbers beside the meter's: the History
+   column and filter, and the Details section for a saved fight. */
+
+:root {
+  --game-record-match: #8be3b0;
+  --game-record-differ: #ffc27a;
+}
+
+/* ── History ── */
+.historyPanel .historyGameRecordFilter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.historyPanel .historyGameRecordFilter input {
+  margin: 0;
+  accent-color: #5fcaff;
+}
+
+.historyRowGameRecord {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  white-space: nowrap;
+}
+/* A column of its own once any fight has a record, so the rows line up. */
+.historyPanel.hasGameRecords .historyRowGameRecord {
+  display: inline-flex;
+  width: 132px;
+  margin-left: auto;
+}
+.historyPanel.hasGameRecords .historyRowActions {
+  margin-left: 0;
+}
+.historyRowGameRecord.isMatch {
+  color: var(--game-record-match);
+}
+.historyRowGameRecord.isDiffer {
+  color: var(--game-record-differ);
+}
+.historyRowGameRecord.isGameOnly {
+  color: var(--hud-sub, rgba(255, 255, 255, 0.45));
+}
+
+/* ── Details ── */
+.detailsPanel.showGameRecord .skillsSection {
+  display: none;
+}
+
+.detailsPanel .gameRecordSection {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--hud-hairline, rgba(255, 255, 255, 0.07));
+}
+.detailsPanel .gameRecordSection[hidden],
+.detailsPanel .gameRecordSection [hidden] {
+  display: none;
+}
+
+.detailsPanel .gameRecordBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+}
+.detailsPanel .gameRecordTitle {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.45));
+}
+.detailsPanel .gameRecordSwitch {
+  display: flex;
+  border: 1px solid var(--pane-field-border, rgba(255, 255, 255, 0.1));
+  border-radius: 3px;
+  overflow: hidden;
+}
+.detailsPanel .gameRecordViewBtn {
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  background: var(--pane-field-bg, rgba(255, 255, 255, 0.05));
+  color: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.detailsPanel .gameRecordViewBtn + .gameRecordViewBtn {
+  border-left: 1px solid var(--pane-field-border, rgba(255, 255, 255, 0.1));
+}
+.detailsPanel .gameRecordViewBtn:hover:not(:disabled) {
+  color: #fff;
+  background: var(--pane-field-bg-hover, rgba(255, 255, 255, 0.11));
+}
+.detailsPanel .gameRecordViewBtn.isActive {
+  color: #fff;
+  background: rgba(47, 111, 184, 0.75);
+}
+.detailsPanel .gameRecordViewBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.detailsPanel .gameRecordPick {
+  height: 24px;
+  border: 1px solid var(--pane-field-border, rgba(255, 255, 255, 0.1));
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+
+.detailsPanel .gameRecordSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  padding: 4px 12px 8px;
+}
+.detailsPanel .gameRecordTotal {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.detailsPanel .gameRecordTotal span {
+  font-size: 11px;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.45));
+}
+.detailsPanel .gameRecordTotal strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+.detailsPanel .gameRecordVerdict {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.detailsPanel .gameRecordVerdict.isMatch {
+  color: var(--game-record-match);
+}
+.detailsPanel .gameRecordVerdict.isDiffer {
+  color: var(--game-record-differ);
+}
+.detailsPanel .gameRecordOnlyDiffer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+}
+.detailsPanel .gameRecordOnlyDiffer input {
+  margin: 0;
+  accent-color: #5fcaff;
+}
+
+.detailsPanel .gameRecordCoverage {
+  padding: 0 12px 8px;
+  font-size: 12px;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.55));
+}
+
+.detailsPanel .gameRecordRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 3fr) minmax(120px, 1.6fr) repeat(8, minmax(44px, 1fr));
+  column-gap: 8px;
+  align-items: center;
+  padding: 4px 12px;
+  border-top: 1px solid var(--hud-hairline, rgba(255, 255, 255, 0.05));
+  font-size: 12.5px;
+}
+.detailsPanel .gameRecordRow > span:not(.gameRecordName) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.detailsPanel .gameRecordHead {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.45));
+}
+.detailsPanel .gameRecordName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.detailsPanel .gameRecordRow.isDiffer .gameRecordName {
+  color: var(--game-record-differ);
+}
+.detailsPanel .gameRecordShare {
+  color: rgba(255, 255, 255, 0.6);
+}
+.detailsPanel .gameRecordNum.isDiffer {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 2px 5px;
+}
+.detailsPanel .gameRecordTag {
+  padding: 0 5px;
+  border: 1px solid rgba(255, 194, 122, 0.5);
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--game-record-differ);
+  white-space: nowrap;
+}
+.detailsPanel .gameRecordMore {
+  padding: 6px 12px;
+  border-top: 1px solid var(--hud-hairline, rgba(255, 255, 255, 0.05));
+  font-size: 12px;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.55));
+}
+
+.detailsPanel .gameRecordFoot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--hud-hairline, rgba(255, 255, 255, 0.07));
+  font-size: 12px;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.55));
+}
+.detailsPanel .gameRecordCopy {
+  flex: 0 0 auto;
+  margin-left: auto;
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--pane-field-border, rgba(255, 255, 255, 0.18));
+  border-radius: 3px;
+  background: var(--pane-field-bg, transparent);
+  color: rgba(255, 255, 255, 0.85);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.detailsPanel .gameRecordCopy:hover {
+  color: #fff;
+  background: var(--pane-field-bg-hover, rgba(255, 255, 255, 0.11));
+}

@@ -660,6 +660,17 @@
       return invoke("share_status").catch(() => ({}));
     },
 
+    // { fightId: { records, compared, differingRows } } for fights with a game
+    // Damage Analyzer record.
+    gameRecordStatus() {
+      return invoke("game_record_status").catch(() => ({}));
+    },
+
+    // A saved fight's game records, each beside the meter's numbers.
+    gameRecordDetails(id) {
+      return invoke("game_record_details", { fightId: id }).catch(() => []);
+    },
+
     deleteFight(id) {
       invoke("delete_fight", { id }).catch(() => {});
       return true;
