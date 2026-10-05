@@ -54,10 +54,27 @@ pub struct FightHistoryManager {
     newest_written: Mutex<std::collections::HashMap<String, u64>>,
 }
 
+/// Temporary files a save left behind when the meter was killed during it
+/// (`.<id>.<n>.tmp`). Only at startup, before any save of this run.
+fn remove_stale_temporaries(dir: &std::path::Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with('.') && name.ends_with(".tmp") {
+            match std::fs::remove_file(entry.path()) {
+                Ok(()) => info!("Removed a leftover temporary file {name}"),
+                Err(e) => tracing::warn!("Could not remove {name}: {e}"),
+            }
+        }
+    }
+}
+
 impl FightHistoryManager {
     pub fn new(app_data_dir: PathBuf) -> Self {
         let history_dir = app_data_dir.join("history");
         let _ = crate::platform::files::create_private_dir(&history_dir);
+        remove_stale_temporaries(&history_dir);
         Self {
             history_dir,
             cache: Mutex::new(None),
@@ -288,6 +305,20 @@ mod tests {
         assert!(history.delete_fight("../keep").is_err());
         assert!(dir.join("keep.json").exists());
         assert!(history.load_fight("../keep").is_err());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn temporary_files_left_by_a_killed_save_go_at_startup() {
+        let dir = std::env::temp_dir().join(format!("a2t-history-tmp-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("history")).unwrap();
+        std::fs::write(dir.join("history/.auto_1_1000.3.tmp"), b"{").unwrap();
+        std::fs::write(dir.join("history/auto_1_1000.json"), b"{}").unwrap();
+        FightHistoryManager::new(dir.clone());
+        let names: Vec<String> = std::fs::read_dir(dir.join("history")).unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+        assert_eq!(names, vec!["auto_1_1000.json"]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 
