@@ -18,7 +18,7 @@
     },
     "header": "詳細",
     "title": "{name} の詳細",
-    "tooltip": "継続ダメージは、クリティカル・強打・完璧・バックアタック・パリィの合計率には含まれません。",
+    "tooltip": "継続ダメージは、クリティカル・強打・完璧・後方ダメージ・武器ガードの合計率には含まれません。",
     "settings": {
       "ariaLabel": "詳細設定を開く"
     },
@@ -58,20 +58,20 @@
       "dmgPctTooltip": "ダメージ %",
       "crit": "クリ",
       "critTooltip": "クリティカル %",
-      "parry": "パリ",
-      "parryTooltip": "パリィ %",
+      "parry": "武器",
+      "parryTooltip": "武器ガード %",
       "perfect": "完璧",
       "perfectTooltip": "完璧 %",
       "double": "強打",
       "doubleTooltip": "強打 %",
-      "back": "背後",
-      "backTooltip": "バックアタック %",
-      "frontal": "正面",
-      "frontalTooltip": "正面 %",
+      "back": "後方",
+      "backTooltip": "後方ダメージ %",
+      "frontal": "前方",
+      "frontalTooltip": "前方ダメージ %",
       "shieldBlock": "盾",
-      "shieldBlockTooltip": "盾ブロック %",
+      "shieldBlockTooltip": "シールド ガード %",
       "perfectBlock": "完防",
-      "perfectBlockTooltip": "完璧ブロック %",
+      "perfectBlockTooltip": "完璧ガード %",
       "ironWall": "鉄壁",
       "ironWallTooltip": "鉄壁 %",
       "regeneration": "再生",
@@ -100,8 +100,8 @@
       "critRate": "クリティカル率",
       "perfectRate": "完璧率",
       "doubleRate": "強打率",
-      "backRate": "バックアタック率",
-      "parryRate": "パリィ率",
+      "backRate": "後方ダメージ率",
+      "parryRate": "武器ガード率",
       "combatTime": "戦闘時間",
       "selfHealing": "自己回復",
       "multiHitDamage": "多段ヒットのダメージ",
@@ -155,8 +155,8 @@
     "game": "ゲームの記録",
     "both": "両方",
     "filter": "ゲームの記録がある戦闘のみ",
-    "filterTip": "ゲームの記録は、ゲーム内のダメージ分析（Ctrl+X）から取得します。",
-    "columnTip": "ゲームの記録: ゲーム内のダメージ分析（Ctrl+X）",
+    "filterTip": "ゲームの記録は、ゲーム内の戦闘力測定機（Ctrl+X）から取得します。",
+    "columnTip": "ゲームの記録: ゲーム内の戦闘力測定機（Ctrl+X）",
     "matches": "ゲームと一致",
     "differOne": "1 行が異なります",
     "differ": "{n} 行が異なります",
@@ -186,9 +186,9 @@
       "crit": "クリ",
       "perfect": "完璧",
       "double": "強打",
-      "front": "正面",
-      "back": "背後",
-      "addhit": "追加ヒット"
+      "front": "前方",
+      "back": "後方",
+      "addhit": "多段ヒット"
     }
   },
   "settings": {
@@ -350,7 +350,7 @@
       "failed": "サインインに失敗しました: {error}",
       "supporter": "サポーター",
       "autoUpload": "ボス戦を自動でアップロード",
-      "autoUploadHint": "ボス戦が終わると、a2tools.app で選んだ公開設定でアカウントにアップロードされます。ほかのプレイヤーの名前は隠されます。訓練用かかしとの戦闘はアップロードされません。"
+      "autoUploadHint": "ボス戦が終わると、a2tools.app で選んだ公開設定でアカウントにアップロードされます。ほかのプレイヤーの名前は隠されます。訓練用カカシとの戦闘はアップロードされません。"
     },
     "sendLogs": {
       "hint": "不具合報告のため、最新のパケットログ3件を開発者に送ります。",
@@ -447,7 +447,7 @@
   "target": {
     "all": "全ターゲット",
     "identifying": "あなたを識別中...",
-    "train": "訓練用かかし",
+    "train": "訓練用カカシ",
     "boss": "ボスターゲット",
     "encounter": "エンカウント"
   },
