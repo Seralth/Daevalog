@@ -31,11 +31,7 @@ pub(crate) fn set_manual_device(state: tauri::State<'_, AppState>, device: Strin
 
 #[tauri::command]
 pub(crate) fn suspend_capture(state: tauri::State<'_, AppState>, suspended: bool) {
-    // The header's suspend button. It was wired to empty stubs since the move
-    // to Tauri, so it changed its icon and the status line but counting went
-    // on (a player found it in 2.0.37, issue #6).
-    state.capture_suspended.store(suspended, std::sync::atomic::Ordering::SeqCst);
-    tracing::info!("Capture {}", if suspended { "suspended" } else { "resumed" });
+    capture_control::suspend_capture(&state, suspended);
 }
 
 #[tauri::command]

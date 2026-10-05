@@ -37,3 +37,11 @@ pub(crate) fn set_manual_device(state: &AppState, device: String) {
     let dev = if device.trim().is_empty() { None } else { Some(device) };
     state.port_detector.set_preferred_device(dev);
 }
+
+pub(crate) fn suspend_capture(state: &AppState, suspended: bool) {
+    // The header's suspend button. It was wired to empty stubs since the move
+    // to Tauri, so it changed its icon and the status line but counting went
+    // on (a player found it in 2.0.37, issue #6).
+    state.capture_suspended.store(suspended, std::sync::atomic::Ordering::SeqCst);
+    tracing::info!("Capture {}", if suspended { "suspended" } else { "resumed" });
+}
