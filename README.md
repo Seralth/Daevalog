@@ -13,6 +13,7 @@ Daevalog DPS Meter reads the game's network traffic. Daevalog DPS Meter does not
 - **No compatibility promise.** Compatibility with A2Tools DPS Meter is kept where practical: settings, saved fights, the upload format and the a2tools.app log service. No compatibility is promised. A future version may drop compatibility without warning or notice.
 - **No releases yet.** No packages are published. Build from source, as described below.
 - **No automatic updates.** Daevalog DPS Meter never updates itself. The update check of A2Tools DPS Meter is switched off.
+- **Revision numbers.** Builds are numbered by revision, for example `r200.g8e3c962`: the commit count, then the commit. The version in the app and in uploads is the A2Tools DPS Meter release the fork is based on.
 
 ## Reporting problems
 

@@ -1,6 +1,5 @@
 # Package of the meter for Arch and derivatives (CachyOS, Manjaro,
-# EndeavourOS). The meter updates itself from the package each release
-# publishes (see src-tauri/src/platform/linux/updater.rs).
+# EndeavourOS).
 #
 # Builds from the repository this file sits in, not from a downloaded
 # tarball: CI builds it with `makepkg` in an Arch container (see
@@ -12,6 +11,9 @@
 # otherwise have to do by hand (see daevalog-dps-meter.install).
 
 pkgname=daevalog-dps-meter
+# The fork's revisions replaced the upstream version numbers; the epoch keeps
+# them newer than the 2.0.x packages for pacman.
+epoch=1
 pkgver=0
 pkgrel=1
 pkgdesc="Daevalog DPS Meter: real-time DPS overlay for AION 2 (Linux/Proton)"
@@ -31,19 +33,11 @@ _root() {
   cd "$startdir/../.." && pwd
 }
 
-# A release (the commit tagged v<version>) is plain <version>, which is what
-# the update manifest points at and what the meter's updater installs. Any
-# other commit is <version>.r<commits>.g<hash>, which pacman ranks after that
-# release, so a test build is never "downgraded" by the updater.
+# r<commits>.g<hash>: the commit count orders builds, the hash names the
+# commit. The upstream release the fork is based on stays in Cargo.toml.
 pkgver() {
   cd "$(_root)"
-  local version
-  version=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2)
-  if git tag --points-at HEAD | grep -qx "v$version"; then
-    printf '%s' "$version"
-  else
-    printf '%s.r%s.g%s' "$version" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
-  fi
+  printf 'r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 build() {
