@@ -31,6 +31,9 @@ const MAX_PACKET_BYTES: usize = 65535;
 const MAX_FRAGMENT_WAIT_BYTES: usize = 16384;
 /// Refuse to allocate for a bundle claiming to decompress to more than this.
 const MAX_DECOMPRESSED_BYTES: usize = 1_000_000;
+/// Bundles nest. Four is far past anything observed and stops a crafted file
+/// from recursing us to death. The outermost bundle is depth 1.
+pub const MAX_BUNDLE_DEPTH: usize = 4;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FrameKind {

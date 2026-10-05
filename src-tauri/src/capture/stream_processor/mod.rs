@@ -112,7 +112,7 @@ impl StreamProcessor {
         for frame in &framing.frames {
             match frame.kind {
                 super::framing::FrameKind::Bundle => {
-                    self.unwrap_bundle(frame.payload(buffer));
+                    self.unwrap_bundle(frame.payload(buffer), 1);
                 }
                 super::framing::FrameKind::Packet => {
                     self.parse_perfect_packet(frame.bytes(buffer));
@@ -195,10 +195,12 @@ impl StreamProcessor {
         }
     }
 
-    fn unwrap_bundle(&mut self, payload: &[u8]) {
+    /// `depth` is 1 for a bundle in the stream, one more for each bundle it
+    /// sits in. Past `MAX_BUNDLE_DEPTH` it is skipped, as the slice builder does.
+    fn unwrap_bundle(&mut self, payload: &[u8], depth: usize) {
         // payload starts at FF FF
         // Format: FF FF (2) + decompressed_size (4 LE) + LZ4 compressed data
-        if payload.len() < 7 {
+        if payload.len() < 7 || depth > super::framing::MAX_BUNDLE_DEPTH {
             return;
         }
 
@@ -215,7 +217,7 @@ impl StreamProcessor {
         for frame in &super::framing::walk_inner(&decompressed).frames {
             match frame.kind {
                 super::framing::FrameKind::Bundle => {
-                    self.unwrap_bundle(frame.payload(&decompressed));
+                    self.unwrap_bundle(frame.payload(&decompressed), depth + 1);
                 }
                 super::framing::FrameKind::Packet => {
                     let inner_packet = frame.bytes(&decompressed);
@@ -322,6 +324,43 @@ mod tests {
         let skill = combat.values().next().unwrap().actors.values().next().unwrap().skills.values().next().unwrap().clone();
         // The value does not include them, so they add on: 26 hits in all.
         assert_eq!(skill.total_damage, 26 * 99_999_999);
+    }
+
+    /// A damage record four bundles deep is read; five deep, it is not, the
+    /// same depth the slice builder stops at.
+    #[test]
+    fn bundles_nest_four_deep_at_most() {
+        let frame = |body: &[u8]| {
+            let mut v = crate::capture::framing::length_value(body.len());
+            let mut out = Vec::new();
+            loop {
+                let b = (v & 0x7F) as u8;
+                v >>= 7;
+                if v == 0 {
+                    out.push(b);
+                    break;
+                }
+                out.push(b | 0x80);
+            }
+            out.extend_from_slice(body);
+            out
+        };
+        let bundle = |inner: &[u8]| {
+            let mut body = vec![0xFF, 0xFF];
+            body.extend_from_slice(&(inner.len() as u32).to_le_bytes());
+            body.extend_from_slice(&lz4_flex::compress(inner));
+            frame(&body)
+        };
+        let record = [&[0x04, 0x38][..], &hex("b1ea011600f30a40c0f40063028000010b199b5f01000000ac52d007")].concat();
+        for (depth, read) in [(1, true), (4, true), (5, false), (40, false)] {
+            let mut stream = frame(&record);
+            for _ in 0..depth {
+                stream = bundle(&stream);
+            }
+            let (storage, mut p) = processor();
+            p.consume_stream(&stream);
+            assert_eq!(!storage.get_combat_snapshot().is_empty(), read, "depth {depth}");
+        }
     }
 
     fn hex(s: &str) -> Vec<u8> {
