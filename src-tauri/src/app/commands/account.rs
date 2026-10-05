@@ -3,7 +3,7 @@
 use tauri::Emitter;
 
 use super::system::open_url;
-use crate::app::AppState;
+use crate::app::{sign_in, AppState};
 
 /// Who, if anyone, this meter is signed in as.
 ///
@@ -14,13 +14,7 @@ use crate::app::AppState;
 pub(crate) async fn account_status(
     state: tauri::State<'_, AppState>,
 ) -> Result<Option<crate::account::AccountSummary>, String> {
-    let who = match crate::account::whoami(&state.http, &state.app_data_dir).await {
-        crate::account::AccountState::SignedIn(summary) => Some(summary),
-        crate::account::AccountState::SignedOut => None,
-        crate::account::AccountState::Unavailable(why) => return Err(why),
-    };
-    *state.account_seen.lock() = Some(who.clone());
-    Ok(who)
+    sign_in::account_status(&state).await
 }
 
 /// What the last `account_status` found, without asking the server again.
