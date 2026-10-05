@@ -385,5 +385,13 @@
     "hint": "Usa o app do Discord deste PC; não precisa de conta. Você pode mudar isso a qualquer momento nas Configurações.",
     "done": "Concluir",
     "close": "Fechar"
+  },
+  "accountPromo": {
+    "title": "Guarde suas lutas contra chefes no a2tools.app",
+    "text": "Crie uma conta gratuita ou entre, e cada luta contra chefe fica salva online: um link para compartilhar cada uma, seus registros em qualquer dispositivo e seu lugar no ranking.",
+    "hint": "Os nomes de outros jogadores ficam ocultos e bonecos de treino nunca são enviados. Você pode mudar isso a qualquer momento nas Configurações.",
+    "signIn": "Entrar",
+    "later": "Agora não",
+    "close": "Fechar"
   }
 }

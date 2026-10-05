@@ -4282,6 +4282,50 @@ body.legacyUi .meter .item .content .name.isSupporter,
   font-size: 18px;
   line-height: 1;
 }
+/* The account offer borrows the Discord card, in the site's own blue. */
+.accountPromo .accountPromoActions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.accountPromo .accountPromoSignIn {
+  background: #2f7cf6;
+}
+.accountPromo .accountPromoSignIn:hover {
+  background: #1f66d6;
+}
+.accountPromo .accountPromoSignIn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.accountPromo .discordPromoToggle input {
+  accent-color: #2f7cf6;
+}
+.accountPromo .accountPromoLater {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+}
+.accountPromo .accountPromoLater:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.accountPromo .accountPromoCode {
+  font-family: Consolas, "SF Mono", ui-monospace, monospace;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #cfe6ff;
+  margin-top: 4px;
+  user-select: text;
+}
+.accountPromo .accountPromoState:empty {
+  display: none;
+}
 
 .supportModal {
   display: none;

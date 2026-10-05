@@ -195,6 +195,7 @@
 
   listen("account-changed", (event) => {
     window._dpsApp?.refreshAccountPanel?.(event?.payload);
+    window._dpsApp?.onAccountPromoResult?.(event?.payload);
   });
 
   // Settings was asked to open while already open; check the account again

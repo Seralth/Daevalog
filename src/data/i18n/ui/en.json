@@ -397,5 +397,13 @@
     "hint": "Uses the Discord app on this PC; no account needed. You can change this any time in Settings.",
     "done": "Done",
     "close": "Close"
+  },
+  "accountPromo": {
+    "title": "Keep your boss fights on a2tools.app",
+    "text": "Create a free account or sign in, and every boss fight is saved online: a link to share each one, your logs on any device, and your place on the leaderboard.",
+    "hint": "Other players' names stay masked, and training dummies are never uploaded. You can change this any time in Settings.",
+    "signIn": "Sign in",
+    "later": "Not now",
+    "close": "Close"
   }
 }

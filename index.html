@@ -1010,6 +1010,37 @@
         <button class="discordPromoDone" type="button" data-i18n="discordPromo.done">Done</button>
       </div>
     </div>
+    <div class="discordPromo accountPromo" id="accountPromo" aria-hidden="true">
+      <div
+        class="discordPromoCard"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="accountPromoTitle">
+        <button
+          class="discordPromoClose accountPromoClose"
+          type="button"
+          data-i18n-aria-label="accountPromo.close"
+          aria-label="Close">
+          ×
+        </button>
+        <div class="discordPromoTitle" id="accountPromoTitle" data-i18n="accountPromo.title">Keep your boss fights on a2tools.app</div>
+        <div class="discordPromoText" data-i18n="accountPromo.text">Create a free account or sign in, and every boss fight is saved online: a link to share each one, your logs on any device, and your place on the leaderboard.</div>
+        <label class="discordPromoToggle">
+          <input type="checkbox" class="accountPromoCheckbox" checked />
+          <span data-i18n="settings.account.autoUpload">Upload boss fights automatically</span>
+        </label>
+        <div class="discordPromoHint" data-i18n="accountPromo.hint">Other players' names stay masked, and training dummies are never uploaded. You can change this any time in Settings.</div>
+        <div class="accountPromoCodeBox" style="display:none">
+          <div class="discordPromoHint" data-i18n="settings.account.codePrompt">Approve this code in your browser:</div>
+          <div class="accountPromoCode"></div>
+        </div>
+        <div class="discordPromoHint accountPromoState"></div>
+        <div class="accountPromoActions">
+          <button class="accountPromoLater" type="button" data-i18n="accountPromo.later">Not now</button>
+          <button class="discordPromoDone accountPromoSignIn" type="button" data-i18n="accountPromo.signIn">Sign in</button>
+        </div>
+      </div>
+    </div>
     <div class="supportModal" id="supportModal" aria-hidden="true">
       <div
         class="supportModalCard"

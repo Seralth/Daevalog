@@ -11,6 +11,8 @@ const REMOTE_APPLIED_SETTING_CONTROLS = {
   "dpsMeter.showSupporterColors": ".showSupporterColorsCheckbox",
   "dpsMeter.showSuspendBtn": ".showSuspendBtnCheckbox",
   "dpsMeter.showLockBtn": ".showLockBtnCheckbox",
+  // Set from the main window by the account offer.
+  "dpsMeter.autoUpload": ".autoUploadCheckbox",
 };
 
 class DpsApp {
@@ -66,6 +68,7 @@ class DpsApp {
       autoUpload: "dpsMeter.autoUpload",
       discordActivity: "dpsMeter.discordActivity",
       discordPromoShown: "dpsMeter.discordPromoShown",
+      accountPromoShown: "dpsMeter.accountPromoShown",
       windowOpacity: "dpsMeter.windowOpacity",
       bossNameSize: "dpsMeter.bossNameSize",
       betaUi: "dpsMeter.betaUi",
@@ -2403,14 +2406,17 @@ class DpsApp {
       discordCheckbox.addEventListener("change", (event) => {
         this.safeSetSetting(this.storageKeys.discordActivity, String(!!event.target?.checked));
       });
-      Promise.resolve(window.javaBridge?.discordActivityAvailable?.())
-        .then((ok) => {
-          const group = document.querySelector(".discordActivityGroup");
-          if (group && ok) group.style.display = "";
-          if (ok && window.A2_VIEW === "main") this.maybeShowDiscordPromo();
-        })
-        .catch(() => {});
     }
+    Promise.resolve(window.javaBridge?.discordActivityAvailable?.())
+      .catch(() => false)
+      .then((ok) => {
+        const group = document.querySelector(".discordActivityGroup");
+        if (group && ok) group.style.display = "";
+        if (window.A2_VIEW !== "main") return;
+        // At most one offer per launch: the account one waits for a launch
+        // where the Discord one does not open.
+        if (!(ok && this.maybeShowDiscordPromo())) this.maybeShowAccountPromo();
+      });
 
     if (this.autoUploadCheckbox) {
       // Off unless turned on: an upload publishes a fight.
@@ -5124,13 +5130,13 @@ class DpsApp {
   // A one-time popup offering Discord activity, with the toggle already on.
   // Done keeps what the toggle says; closing it any other way (×, Escape, a
   // click outside) leaves it off. Not shown to anyone who has already chosen
-  // either way in Settings, and never again once answered.
+  // either way in Settings, and never again once answered. True if it opens.
   maybeShowDiscordPromo() {
     const promo = document.querySelector("#discordPromo");
-    if (!promo) return;
-    if (this.safeGetSetting(this.storageKeys.discordPromoShown) === "true") return;
+    if (!promo) return false;
+    if (this.safeGetSetting(this.storageKeys.discordPromoShown) === "true") return false;
     const current = this.safeGetSetting(this.storageKeys.discordActivity);
-    if (current === "true" || current === "false") return;
+    if (current === "true" || current === "false") return false;
 
     const checkbox = promo.querySelector(".discordPromoCheckbox");
     let answered = false;
@@ -5161,6 +5167,111 @@ class DpsApp {
     setTimeout(() => {
       if (answered) return;
       if (checkbox) checkbox.checked = true;
+      promo.classList.add("isOpen");
+      promo.setAttribute("aria-hidden", "false");
+      document.addEventListener("keydown", onKey, true);
+    }, 2500);
+    return true;
+  }
+
+  // A one-time popup offering an a2tools.app account, with automatic upload
+  // already ticked. Sign in starts the same browser approval as Settings and
+  // keeps the code on the card; the tick is applied only once the account is
+  // connected, so a sign-in abandoned halfway leaves uploads off. Not now, ×,
+  // Escape or a click outside close it for good. Not shown to anyone signed in
+  // or who has already set uploads either way.
+  async maybeShowAccountPromo() {
+    const promo = document.querySelector("#accountPromo");
+    if (!promo) return;
+    if (this.safeGetSetting(this.storageKeys.accountPromoShown) === "true") return;
+    const current = this.safeGetSetting(this.storageKeys.autoUpload);
+    if (current === "true" || current === "false") return;
+    try {
+      const seen = await window.javaBridge?.accountStatusCached?.();
+      if (seen?.who) return;
+      if (await window.javaBridge?.accountStatus?.()) return;
+    } catch {
+      return; // a token is stored but could not be checked: signed in
+    }
+
+    const checkbox = promo.querySelector(".accountPromoCheckbox");
+    const signInBtn = promo.querySelector(".accountPromoSignIn");
+    const codeBox = promo.querySelector(".accountPromoCodeBox");
+    const codeEl = promo.querySelector(".accountPromoCode");
+    const stateEl = promo.querySelector(".accountPromoState");
+    let open = false;
+    const onKey = (event) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        close();
+      }
+    };
+    const close = () => {
+      if (!open) return;
+      open = false;
+      this.safeSetSetting(this.storageKeys.accountPromoShown, "true");
+      promo.classList.remove("isOpen");
+      promo.setAttribute("aria-hidden", "true");
+      document.removeEventListener("keydown", onKey, true);
+    };
+
+    // What Sign in chose, applied when the browser approval arrives (on
+    // "account-changed", even after the card was closed).
+    let pendingUpload = null;
+    this.onAccountPromoResult = (result) => {
+      if (pendingUpload === null) return;
+      if (result?.connected) {
+        this.safeSetSetting(this.storageKeys.autoUpload, String(pendingUpload));
+        if (this.autoUploadCheckbox) this.autoUploadCheckbox.checked = pendingUpload;
+        pendingUpload = null;
+        close();
+      } else if (result?.error) {
+        const msg = String(result.error);
+        if (stateEl) {
+          stateEl.textContent = window.i18n?.format?.(
+            "settings.account.failed", { error: msg }, `Sign-in failed: ${msg}`);
+        }
+        if (codeBox) codeBox.style.display = "none";
+        if (signInBtn) signInBtn.disabled = false;
+        pendingUpload = null;
+      }
+    };
+
+    signInBtn?.addEventListener("click", async () => {
+      signInBtn.disabled = true;
+      if (stateEl) stateEl.textContent = "";
+      try {
+        const prompt = await window.javaBridge?.accountBeginLink?.();
+        if (!prompt?.userCode) {
+          signInBtn.disabled = false;
+          return;
+        }
+        pendingUpload = !!checkbox?.checked;
+        this.safeSetSetting(this.storageKeys.accountPromoShown, "true");
+        if (codeEl) codeEl.textContent = prompt.userCode;
+        if (codeBox) codeBox.style.display = "block";
+        if (stateEl) {
+          stateEl.textContent = window.i18n?.t?.("settings.account.working", "Waiting for approval…");
+        }
+      } catch (err) {
+        const msg = typeof err === "string" ? err : err?.message || String(err);
+        if (stateEl) {
+          stateEl.textContent = window.i18n?.format?.(
+            "settings.account.failed", { error: msg }, `Sign-in failed: ${msg}`);
+        }
+        signInBtn.disabled = false;
+      }
+    });
+    promo.querySelector(".accountPromoLater")?.addEventListener("click", close);
+    promo.querySelector(".accountPromoClose")?.addEventListener("click", close);
+    promo.addEventListener("click", (event) => {
+      if (event.target === promo) close();
+    });
+
+    // A moment after start, so it does not land on top of the first paint.
+    setTimeout(() => {
+      if (checkbox) checkbox.checked = true;
+      open = true;
       promo.classList.add("isOpen");
       promo.setAttribute("aria-hidden", "false");
       document.addEventListener("keydown", onKey, true);

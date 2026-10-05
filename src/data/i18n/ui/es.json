@@ -385,5 +385,13 @@
     "hint": "Usa la app de Discord de este PC; no hace falta cuenta. Puedes cambiarlo cuando quieras en Ajustes.",
     "done": "Listo",
     "close": "Cerrar"
+  },
+  "accountPromo": {
+    "title": "Guarda tus combates contra jefes en a2tools.app",
+    "text": "Crea una cuenta gratuita o inicia sesión, y cada combate contra un jefe se guarda en línea: un enlace para compartir cada uno, tus registros en cualquier dispositivo y tu lugar en la clasificación.",
+    "hint": "Los nombres de otros jugadores se ocultan y los muñecos de entrenamiento nunca se suben. Puedes cambiarlo cuando quieras en Ajustes.",
+    "signIn": "Iniciar sesión",
+    "later": "Ahora no",
+    "close": "Cerrar"
   }
 }
