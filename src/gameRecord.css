@@ -1,0 +1,219 @@
+/* The game's own Damage Analyzer numbers beside the meter's: the History
+   column and filter, and the Details section for a saved fight. */
+
+:root {
+  --game-record-match: #8be3b0;
+  --game-record-differ: #ffc27a;
+}
+
+/* ── History ── */
+.historyPanel .historyGameRecordFilter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.historyPanel .historyGameRecordFilter input {
+  margin: 0;
+  accent-color: #5fcaff;
+}
+
+.historyRowGameRecord {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  white-space: nowrap;
+}
+/* A column of its own once any fight has a record, so the rows line up. */
+.historyPanel.hasGameRecords .historyRowGameRecord {
+  display: inline-flex;
+  width: 132px;
+  margin-left: auto;
+}
+.historyPanel.hasGameRecords .historyRowActions {
+  margin-left: 0;
+}
+.historyRowGameRecord.isMatch {
+  color: var(--game-record-match);
+}
+.historyRowGameRecord.isDiffer {
+  color: var(--game-record-differ);
+}
+.historyRowGameRecord.isGameOnly {
+  color: var(--hud-sub, rgba(255, 255, 255, 0.45));
+}
+
+/* ── Details ── */
+/* The record's own bar sits between the stats and the sections; its numbers
+   go into the standard skill table. */
+.detailsPanel .gameRecordSection {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  border-bottom: 1px solid var(--hud-hairline, rgba(255, 255, 255, 0.07));
+}
+.detailsPanel .gameRecordSection[hidden],
+.detailsPanel .gameRecordSection [hidden],
+.detailsPanel .gameRecordFoot.isHiddenForRecord {
+  display: none;
+}
+
+.detailsPanel .gameRecordBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 6px 12px;
+}
+.detailsPanel .gameRecordTitle {
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.45));
+}
+.detailsPanel .gameRecordSwitch {
+  display: flex;
+  gap: 3px;
+}
+.detailsPanel .gameRecordViewBtn {
+  height: 23px;
+  padding: 0 8px;
+  border: 1px solid var(--pane-field-border, rgba(255, 255, 255, 0.1));
+  border-radius: 3px;
+  background: var(--pane-field-bg, rgba(255, 255, 255, 0.05));
+  color: var(--hud-sub, rgba(255, 255, 255, 0.45));
+  font-family: var(--hud-tech);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.detailsPanel .gameRecordViewBtn:hover:not(:disabled) {
+  color: #fff;
+  background: var(--pane-field-bg-hover, rgba(255, 255, 255, 0.11));
+}
+.detailsPanel .gameRecordViewBtn.isActive {
+  color: #fff;
+  background: color-mix(in srgb, var(--isUser-fill, #5fcaff) 30%, transparent);
+  border-color: color-mix(in srgb, var(--isUser-fill, #5fcaff) 62%, transparent);
+}
+.detailsPanel .gameRecordViewBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.detailsPanel .gameRecordPick {
+  height: 23px;
+  border: 1px solid var(--pane-field-border, rgba(255, 255, 255, 0.1));
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+
+.detailsPanel .gameRecordSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 22px;
+  padding: 0 12px 4px;
+}
+.detailsPanel .gameRecordTotal {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.detailsPanel .gameRecordTotal span {
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.45));
+}
+.detailsPanel .gameRecordTotal strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+.detailsPanel .gameRecordVerdict {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.detailsPanel .gameRecordVerdict.isMatch {
+  color: var(--game-record-match);
+}
+.detailsPanel .gameRecordVerdict.isDiffer {
+  color: var(--game-record-differ);
+}
+.detailsPanel .gameRecordOnlyDiffer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+}
+.detailsPanel .gameRecordOnlyDiffer input {
+  margin: 0;
+  accent-color: #5fcaff;
+}
+
+.detailsPanel .gameRecordCoverage {
+  padding: 0 12px 4px;
+  font-size: 12px;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.55));
+}
+
+.detailsPanel .gameRecordFoot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 12px 6px;
+  font-size: 12px;
+  color: var(--hud-sub, rgba(255, 255, 255, 0.55));
+}
+.detailsPanel .gameRecordCopy {
+  flex: 0 0 auto;
+  margin-left: auto;
+  height: 23px;
+  padding: 0 10px;
+  border: 1px solid var(--pane-field-border, rgba(255, 255, 255, 0.18));
+  border-radius: 3px;
+  background: var(--pane-field-bg, transparent);
+  color: rgba(255, 255, 255, 0.85);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.detailsPanel .gameRecordCopy:hover {
+  color: #fff;
+  background: var(--pane-field-bg-hover, rgba(255, 255, 255, 0.11));
+}
+
+/* A standard skill cell whose number the game has differently: the meter's
+   value, and the game's under it. */
+.detailsPanel .detailsSkills .skills .skillRow .cell.isGameDiffer {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  line-height: 1.15;
+}
+.detailsPanel .skillRow .gameTag {
+  display: block;
+  margin-top: 1px;
+  padding: 0 3px;
+  border: 1px solid rgba(255, 194, 122, 0.5);
+  border-radius: 4px;
+  font-size: 0.72em;
+  font-weight: 400;
+  color: var(--game-record-differ);
+  white-space: nowrap;
+}

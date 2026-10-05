@@ -17,6 +17,7 @@ pub mod capture;
 pub mod clock;
 pub mod combat;
 pub mod entity;
+pub mod game_record;
 pub mod i18n;
 pub mod rederive;
 pub mod supporters;

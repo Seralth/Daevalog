@@ -34,6 +34,9 @@ const createDetailsUI = ({
   // when a fight is opened (see open/openHistoryFight).
   let detailsMode = "dmg";
   let historyRecord = null;
+  // The game's own Damage Analyzer record, drawn in the standard skill table
+  // (gameRecord.js picks what to show). null: the meter's own numbers.
+  let gameView = null;
   let fightStartMs = 0;
   let fightBossName = "";
   // The instance the fight was in (0 in the open world), for its difficulty.
@@ -888,7 +891,7 @@ const createDetailsUI = ({
         }
         updateSkillHeaderSortState();
         if (lastDetails) {
-          renderSkills(lastDetails, { compact: activeCompactMode });
+          renderSkills(skillsSource(), { compact: activeCompactMode });
           renderTimeline(lastDetails);
         }
       });
@@ -898,6 +901,118 @@ const createDetailsUI = ({
 
   bindSkillHeaderSorting();
   updateGridColumns();
+
+  // ── Game record in the standard table ──
+  const NO_GAME_VALUE = "\u2014";
+  // Stats the game's record has no number for.
+  const GAME_NO_STAT = new Set([
+    "details.stats.contribution",
+    "details.stats.combatTime",
+    "details.stats.multiHitDamage",
+    "details.stats.regen",
+  ]);
+  const GAME_EMPTY_CELLS = ["multiHitDamageEl", "minDmgEl", "avgDmgEl", "maxDmgEl"];
+  const GAME_TAGGED_CELLS = ["hitEl", "dmgEl", "dmgPctEl", "multiHitEl", "critEl", "perfectEl", "doubleEl", "backEl", "frontalEl"];
+
+  // The record's rows as details: the game's numbers ("game"), or the meter's
+  // over the record's window with the game's beside them ("both").
+  const gameDetails = () => {
+    const { mode, rows, names, actorId, job, onlyDiffer } = gameView;
+    const both = mode === "both";
+    const side = (r) => (both ? r.meter : r.game);
+    const shown = rows.filter((r) => (both
+      ? !onlyDiffer || !r.same
+      : r.game.damage > 0 || r.game.counts.some(Boolean)));
+    const skills = shown.map((r) => {
+      const v = side(r);
+      const c = v.counts;
+      return {
+        actorId, job, code: r.skillId, name: names?.[r.skillId] || `#${r.skillId}`,
+        isDot: false, specs: [], dmg: v.damage,
+        time: c[0], crit: c[1], perfect: c[2], double: c[3], frontal: c[4], back: c[5], multiHitCount: c[6],
+        multiHitDamage: 0, minDmg: 0, maxDmg: 0, parry: 0, smite: 0, powershard: 0, regen: 0,
+        _game: r.game, _meter: r.meter, _both: both,
+      };
+    });
+    const t = { dmg: 0, counts: [0, 0, 0, 0, 0, 0, 0] };
+    rows.forEach((r) => {
+      const v = side(r);
+      t.dmg += v.damage;
+      v.counts.forEach((n, i) => { t.counts[i] += n; });
+    });
+    const pct = (n, d) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
+    return {
+      skills,
+      healSkills: [],
+      totalDmg: t.dmg,
+      totalHits: t.counts[0],
+      totalCritPct: pct(t.counts[1], t.counts[0]),
+      totalPerfectPct: pct(t.counts[2], t.counts[0]),
+      totalDoublePct: pct(t.counts[3], t.counts[0]),
+      multiHitPct: pct(t.counts[6], t.counts[0]),
+    };
+  };
+
+  const renderGameStats = (d) => {
+    statSlots.forEach((slot, i) => {
+      const def = STATUS[i];
+      if (!def) { slot.statEl.style.display = "none"; return; }
+      slot.statEl.style.display = "";
+      slot.labelEl.textContent = labelText(def.key, def.fallback);
+      slot.valueEl.removeAttribute("style");
+      slot.valueEl.textContent = GAME_NO_STAT.has(def.key) ? NO_GAME_VALUE : def.getValue(d);
+    });
+  };
+
+  // "—" where the game has no number; in Both, a "game N" tag in each cell
+  // whose number the game has differently.
+  const decorateGameCells = (view, skill) => {
+    view.rowEl.classList.remove("isGameDiffer");
+    GAME_TAGGED_CELLS.forEach((k) => view[k].classList.remove("isGameDiffer"));
+    if (!skill._game) return;
+    GAME_EMPTY_CELLS.forEach((k) => { view[k].textContent = NO_GAME_VALUE; });
+    if (!skill._both) return;
+    const g = skill._game;
+    const m = skill._meter;
+    const rate = (n, hits) => (hits > 0 ? Math.round((n / hits) * 100) : 0);
+    const tag = (el, differs, value) => {
+      if (!differs) return;
+      const t = document.createElement("span");
+      t.className = "gameTag";
+      t.textContent = window.i18n?.format?.("gameRecord.gameTag", { n: value }, `game ${value}`) ?? `game ${value}`;
+      el.appendChild(t);
+      el.classList.add("isGameDiffer");
+      view.rowEl.classList.add("isGameDiffer");
+    };
+    const gameTotal = Number(gameView?.gameTotal) || 0;
+    tag(view.hitEl, m.counts[0] !== g.counts[0], `${g.counts[0]}`);
+    tag(view.dmgEl, m.damage !== g.damage, formatDamageCompact(g.damage));
+    tag(view.dmgPctEl, m.damage !== g.damage, `${(gameTotal > 0 ? (g.damage / gameTotal) * 100 : 0).toFixed(1)}%`);
+    [["critEl", 1], ["perfectEl", 2], ["doubleEl", 3], ["frontalEl", 4], ["backEl", 5], ["multiHitEl", 6]].forEach(([k, i]) => {
+      const gr = rate(g.counts[i], g.counts[0]);
+      tag(view[k], g.counts[i] !== m.counts[i] || gr !== rate(m.counts[i], m.counts[0]), `${gr}%`);
+    });
+  };
+
+  const showsGameRecord = () => !!gameView && detailsMode === "dmg";
+  const skillsSource = () => (showsGameRecord() ? gameDetails() : lastDetails);
+
+  const applyGameView = () => {
+    if (!lastDetails) return;
+    if (showsGameRecord()) {
+      const d = gameDetails();
+      renderGameStats(d);
+      renderSkills(d, { compact: activeCompactMode });
+    } else {
+      renderStats(lastDetails, { compact: activeCompactMode });
+      renderSkills(lastDetails, { compact: activeCompactMode });
+    }
+  };
+
+  const setGameView = (view) => {
+    gameView = view;
+    applyGameView();
+  };
 
   const renderSkills = (details, { compact = false } = {}) => {
     const skills =
@@ -1226,6 +1341,7 @@ const createDetailsUI = ({
       view.maxDmgEl.textContent = `${formatDamageCompact(maxDmg)}`;
 
       view.rowFillEl.style.transform = `scaleX(${barFillRatio})`;
+      decorateGameCells(view, skill);
     }
 
   };
@@ -2177,6 +2293,7 @@ const createDetailsUI = ({
     renderTimeline(details);
     lastRow = row;
     lastDetails = details;
+    if (showsGameRecord()) applyGameView();
 
     // Unfiltered details are now fetched in parallel by refreshDetailsView,
     // so lastUnfilteredDetails is already set before render() is called.
@@ -2222,6 +2339,8 @@ const createDetailsUI = ({
     }
 
     openedRowId = rowId;
+    gameView = null;
+    window.gameRecordUI?.hide?.();
     if (pin) {
       pinnedRowId = rowId;
       onPinnedRowChange?.(pinnedRowId);
@@ -2318,6 +2437,8 @@ const createDetailsUI = ({
       statSlots[i].statEl.style.display = "";
     }
     detailsPanel.classList.remove("open");
+    gameView = null;
+    window.gameRecordUI?.hide?.();
     historyRecord = null;
     window._historyDetailsOverride = null;
     fightStartMs = 0;
@@ -2407,6 +2528,7 @@ const createDetailsUI = ({
     });
     if (seq !== openSeq) return;
     if (processedDetails) render(processedDetails, fakeRow);
+    window.gameRecordUI?.show?.(record, { setGameView });
   };
 
   const refresh = async () => {
@@ -2442,6 +2564,7 @@ const createDetailsUI = ({
     renderStats(lastDetails, { compact: activeCompactMode });
     renderSkills(lastDetails, { compact: activeCompactMode });
     renderTimeline(lastDetails);
+    if (showsGameRecord()) applyGameView();
   };
   const setDetailsMode = (mode) => {
     const next = mode === "heal" ? "heal" : "dmg";

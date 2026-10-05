@@ -605,23 +605,53 @@ pub fn save_slice(
     if !covers(&packets, start, start + record.duration_ms) {
         return Err("no packets in memory for this fight".into());
     }
-    let mut slice = evidence_slice::build(&packets, start, start + record.duration_ms, &names_from(storage))
+    let slice = evidence_slice::build(&packets, start, start + record.duration_ms, &names_from(storage))
         .map_err(|e| e.to_string())?;
+    write_slice(app_data_dir, &record.id, slice, uploader_in(record, storage))
+}
+
+/// Keep a fight's slice on disk, with the player's actor id in it.
+pub fn write_slice(
+    app_data_dir: &Path,
+    id: &str,
+    mut slice: evidence_slice::EvidenceSlice,
+    uploader_actor_id: Option<i32>,
+) -> Result<usize, String> {
     without_roster_ids(&mut slice);
     let compressed = gzip(&evidence_slice::encode(&slice))?;
 
     let dir = slices_dir(app_data_dir);
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    std::fs::write(slice_path(app_data_dir, &record.id), &compressed).map_err(|e| e.to_string())?;
-    let mut meta = read_meta(app_data_dir, &record.id);
-    meta.uploader_actor_id = uploader_in(record, storage);
-    write_meta(app_data_dir, &record.id, &meta);
+    std::fs::write(slice_path(app_data_dir, id), &compressed).map_err(|e| e.to_string())?;
+    let mut meta = read_meta(app_data_dir, id);
+    meta.uploader_actor_id = uploader_actor_id;
+    write_meta(app_data_dir, id, &meta);
     Ok(compressed.len())
+}
+
+/// A fight's kept slice, unzipped, and the player's actor id in it.
+pub fn read_slice(app_data_dir: &Path, id: &str) -> Option<(Vec<u8>, Option<i32>)> {
+    use std::io::Read;
+    let compressed = std::fs::read(slice_path(app_data_dir, id)).ok()?;
+    let mut out = Vec::new();
+    flate2::read::GzDecoder::new(&compressed[..]).read_to_end(&mut out).ok()?;
+    Some((out, read_meta(app_data_dir, id).uploader_actor_id))
+}
+
+/// The player's actor id in a fight's kept slice.
+pub fn slice_uploader(app_data_dir: &Path, id: &str) -> Option<i32> {
+    read_meta(app_data_dir, id).uploader_actor_id
+}
+
+/// The size and time of a fight's kept slice, which change while it is written.
+pub fn slice_stamp(app_data_dir: &Path, id: &str) -> Option<(u64, std::time::SystemTime)> {
+    let meta = std::fs::metadata(slice_path(app_data_dir, id)).ok()?;
+    Some((meta.len(), meta.modified().ok()?))
 }
 
 /// Your actor id in the fight. The record names you in full, so look for your
 /// name there: after a zone load your current id is a stranger's in the fight.
-fn uploader_in(record: &FightRecord, storage: &DataStorage) -> Option<i32> {
+pub fn uploader_in(record: &FightRecord, storage: &DataStorage) -> Option<i32> {
     storage
         .local_character_name()
         .and_then(|name| record.actors.iter().find(|a| a.nickname == name))

@@ -4000,6 +4000,11 @@ body.legacyUi .meter .item .content .name.isSupporter,
 .detailsPanel .detailsSection.isExpanded {
   flex: 1 1 auto;
 }
+/* A collapsed section keeps its header's height: shrunk, the headers of
+   two sections were drawn over each other. */
+.detailsPanel .detailsSection:not(.isExpanded) {
+  flex-shrink: 0;
+}
 .detailsPanel .detailsSection .detailsSectionHeader {
   display: flex;
   align-items: center;

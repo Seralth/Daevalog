@@ -15,6 +15,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
   const filterPlayerLabel = filterPlayerEl?.querySelector(".historyClassDropdownLabel");
   const filterPlayerMenu = filterPlayerEl?.querySelector(".historyClassDropdownMenu");
   const filterDateEl = panel.querySelector(".historyFilterDate");
+  const gameRecordFilterEl = panel.querySelector(".historyGameRecordFilter input");
 
   // Map from the Korean class name stored in fight records → stable enum key used for i18n
   const JOB_KEY_MAP = {
@@ -38,6 +39,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
   let filterBoss = "";
   let filterPlayer = "";
   let filterDate = "";
+  let onlyGameRecords = false;
   let classDropdownOpen = false;
 
   // View mode: "dungeon" (each dungeon and difficulty a collapsible section,
@@ -219,6 +221,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
         if (!jobs.includes(filterPlayer)) return false;
       }
       if (filterDate && formatDate(f.startTimeMs).slice(0, 10) !== filterDate) return false;
+      if (onlyGameRecords && !gameRecords[f.id]) return false;
       return true;
     });
   };
@@ -247,6 +250,39 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
   // Which fights have packets behind them, and which already have a link.
   // Loaded when the panel opens; a fight missing from it simply has no slice.
   let shareStatus = {};
+
+  // Fights with a game Damage Analyzer record: { records, compared, differingRows }.
+  let gameRecords = {};
+
+  const CHECK_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>`;
+  const DIFFER_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5"/><path d="M8 11h.01"/></svg>`;
+
+  // The History column: does the meter match the game's own record?
+  const buildGameRecordCell = (fight) => {
+    const el = document.createElement("span");
+    el.className = "historyRowGameRecord";
+    const s = gameRecords[fight.id];
+    if (!s) return el;
+    let text;
+    if (!s.compared) {
+      el.classList.add("isGameOnly");
+      text = t("gameRecord.notCompared", "Game numbers only");
+    } else if (!s.differingRows) {
+      el.classList.add("isMatch");
+      el.innerHTML = CHECK_ICON;
+      text = t("gameRecord.matches", "Matches the game");
+    } else {
+      el.classList.add("isDiffer");
+      el.innerHTML = DIFFER_ICON;
+      text = s.differingRows === 1
+        ? t("gameRecord.differOne", "1 row differs")
+        : (window.i18n?.format?.("gameRecord.differ", { n: s.differingRows }, "{n} rows differ")
+          ?? `${s.differingRows} rows differ`);
+    }
+    el.appendChild(document.createTextNode(text));
+    el.title = t("gameRecord.columnTip", "Game record: the game's own Damage Analyzer (Ctrl+X)");
+    return el;
+  };
 
   const UPLOAD_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 13v8"/><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="m8 17 4-4 4 4"/></svg>`;
   const LINK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>`;
@@ -490,6 +526,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
     row.appendChild(infoEl);
     row.appendChild(iconsEl);
+    row.appendChild(buildGameRecordCell(fight));
     row.appendChild(actionsEl);
 
     row.addEventListener("click", async () => {
@@ -651,6 +688,13 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
       shareStatus = status;
       if (Object.values(status).some((s) => s?.url)) renderList(allFights);
     }).catch(() => {});
+    // Checking a new game record replays the fight's packets, so it arrives later too.
+    Promise.resolve(window.javaBridge?.gameRecordStatus?.()).then((status) => {
+      if (!status || typeof status !== "object") return;
+      gameRecords = status;
+      panel.classList.toggle("hasGameRecords", Object.keys(status).length > 0);
+      if (Object.keys(status).length || onlyGameRecords) renderList(allFights);
+    }).catch(() => {});
   };
 
   // A fight uploaded in the background (Settings -> upload automatically) gets
@@ -690,6 +734,10 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     filterDate = filterDateEl.value;
     renderList(allFights);
   });
+  gameRecordFilterEl?.addEventListener("change", () => {
+    onlyGameRecords = gameRecordFilterEl.checked;
+    renderList(allFights);
+  });
 
   trainToggleBtn?.addEventListener("click", () => {
     showTraining = !showTraining;
@@ -727,6 +775,8 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     if (filterPlayerLabel) filterPlayerLabel.textContent = t("history.filterPlayer", "All classes");
     setClassDropdownOpen(false);
     if (filterDateEl) filterDateEl.selectedIndex = 0;
+    onlyGameRecords = false;
+    if (gameRecordFilterEl) gameRecordFilterEl.checked = false;
   };
 
   const isOpen = () => panel.classList.contains("open");

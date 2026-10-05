@@ -1,5 +1,7 @@
 //! Sets a game Damage Analyzer record beside a replay of the same fight, skill
 //! by skill: the game's numbers are the truth the meter is checked against.
+//! The decoding and the comparison are `crate::game_record`'s; this replays a
+//! whole capture instead of a saved fight's slice.
 //!
 //! ```text
 //! A2_RECORD=record_<ticks>.dat     the game's record (required); Aion 2 saves
@@ -10,214 +12,239 @@
 //! cargo test --lib record_check -- --ignored --nocapture
 //! ```
 //!
-//! The record is JSON XORed with a 4-byte key. Its times are local time,
-//! although they end in "Z", so they line up with the capture's local times.
+//! `saved_fights_match_the_game` runs the app's own path end to end: it
+//! replays the capture as the live meter does, saves fights and their slices
+//! to a scratch folder, and checks every record in `A2_RECORDS` against them.
+//!
+//! ```text
+//! A2_RECORDS=/tmp/a2-records       a folder of record_*.dat files
+//! A2_REPLAY_FILE=packets_x.txt     a capture that covers them
+//! cargo test --lib saved_fights_match_the_game -- --ignored --nocapture
+//! ```
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
 use super::stream_assembler::StreamAssembler;
 use super::stream_processor::StreamProcessor;
-use crate::combat::data_storage::{DataStorage, TargetCombatData};
-use crate::entity::{skill_group, summon_resolver};
+use crate::combat::data_storage::DataStorage;
+use crate::game_record::{self, Row, SkillRow, WindowTap, COUNTS};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
-const KEY: [u8; 4] = [0x25, 0xa8, 0x7e, 0x91];
-
-/// The counts the game keeps per skill, in the order they are printed.
-const COUNTS: [&str; 7] = ["hits", "crit", "perfect", "double", "front", "back", "addhit"];
-const GAME_FIELDS: [&str; 7] = [
-    "TotalCount", "CriticalCount", "PerfectCount", "HardHitCount",
-    "FrontAttackCount", "BackAttackCount", "AdditionalHitCount",
-];
-
-#[derive(Default, Clone, Copy, PartialEq)]
-struct Row {
-    damage: i64,
-    counts: [i64; 7],
+fn env(n: &str) -> Option<String> {
+    std::env::var(n).ok().filter(|v| !v.is_empty())
 }
 
-struct Record {
-    start: String,
-    end: String,
-    target: String,
-    total: i64,
-    skills: BTreeMap<i32, Row>,
+fn data_dir() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data")
 }
 
-fn number(v: &serde_json::Value) -> i64 {
-    v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse().ok())).unwrap_or(0)
-}
-
-fn row_of(stat: &serde_json::Value, damage: &serde_json::Value) -> Row {
-    let mut row = Row { damage: number(damage), ..Row::default() };
-    for (i, f) in GAME_FIELDS.iter().enumerate() {
-        row.counts[i] = number(&stat[*f]);
-    }
-    row
-}
-
-fn read_record(path: &str) -> Record {
-    let bytes = std::fs::read(path).expect("record readable");
-    let plain: Vec<u8> = bytes.iter().enumerate().map(|(i, b)| b ^ KEY[i % 4]).collect();
-    let json: serde_json::Value = serde_json::from_slice(&plain).expect("record is JSON");
-    // "2026-10-04T04:45:57.967Z" -> "04:45:57.967"
-    let tod = |v: &serde_json::Value| v.as_str().unwrap_or("").get(11..23).unwrap_or("").to_string();
-    let base = &json["BaseStatData"];
-    let mut skills = BTreeMap::new();
-    for s in json["SortedSkillStatList"].as_array().into_iter().flatten() {
-        skills.insert(number(&s["SkillId"]) as i32, row_of(&s["HitStat"], &s["DamageVal"]));
-    }
-    Record {
-        start: tod(&base["AnalyzerStartTime"]),
-        end: tod(&base["AnalyzerEndTime"]),
-        target: base["TargetName"].as_str().unwrap_or("").to_string(),
-        total: number(&json["AttackStatData"]["TotalDamageVal"]),
-        skills,
-    }
-}
-
-fn add_time(tod: &str, ms: i64) -> String {
-    let t = chrono::NaiveTime::parse_from_str(tod, "%H:%M:%S%.3f").expect("record time");
-    (t + chrono::Duration::milliseconds(ms)).format("%H:%M:%S%.3f").to_string()
-}
-
-/// The meter's rows for one target between two snapshots, per (owner, row skill).
-fn rows_between(
-    before: Option<&TargetCombatData>,
-    after: &TargetCombatData,
-    summons: &HashMap<i32, i32>,
-    skills: &SkillLookup,
-) -> HashMap<(i32, i32), Row> {
-    let mut out: HashMap<(i32, i32), Row> = HashMap::new();
-    let mut add = |t: &TargetCombatData, sign: i64| {
-        for (&actor, a) in &t.actors {
-            let owner = summon_resolver::resolve(actor, summons);
-            for s in a.skills.values() {
-                let r = out.entry((owner, skill_group::row_skill(s.skill_code, skills))).or_default();
-                r.damage += sign * s.total_damage as i64;
-                // Ticks over time add damage only: the game, like the details
-                // panel's skill row, counts casts as hits.
-                if s.is_dot {
-                    continue;
-                }
-                let c = [s.hit_count, s.crit_count, s.perfect_count, s.double_count,
-                         s.frontal_count, s.back_count, s.multi_hit_count];
-                for (i, v) in c.iter().enumerate() {
-                    r.counts[i] += sign * *v as i64;
-                }
-            }
-        }
-    };
-    add(after, 1);
-    // A new segment (another first-damage time) starts from nothing.
-    if let Some(b) = before.filter(|b| b.first_damage_time == after.first_damage_time) {
-        add(b, -1);
-    }
-    out
-}
-
-#[test]
-#[ignore]
-fn record_check() {
-    let env = |n: &str| std::env::var(n).ok().filter(|v| !v.is_empty());
-    let (Some(record_path), Some(capture)) = (env("A2_RECORD"), env("A2_REPLAY_FILE")) else {
-        eprintln!("set A2_RECORD and A2_REPLAY_FILE");
-        return;
-    };
-    let slack: i64 = env("A2_SLACK_MS").and_then(|v| v.parse().ok()).unwrap_or(500);
-    let record = read_record(&record_path);
-    let from = add_time(&record.start, -slack);
-    let until = add_time(&record.end, slack);
-    println!("record: {} {} .. {}, {} damage, {} skills", record.target, record.start, record.end,
-             record.total, record.skills.len());
-
-    let data_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
+fn lookups() -> (Arc<SkillLookup>, Arc<NpcLookup>, HashSet<i32>) {
     let skills = Arc::new(SkillLookup::new());
     let npcs = Arc::new(NpcLookup::new());
-    crate::i18n::lookup::load_language(&skills, &npcs, &data_dir, "en");
-    let dot_ids: HashSet<i32> = std::fs::read_to_string(data_dir.join("dot_skill_ids.json"))
+    crate::i18n::lookup::load_language(&skills, &npcs, &data_dir(), "en");
+    let dot_ids: HashSet<i32> = std::fs::read_to_string(data_dir().join("dot_skill_ids.json"))
         .ok()
         .and_then(|t| serde_json::from_str::<Vec<i32>>(&t).ok())
         .unwrap_or_default()
         .into_iter()
         .collect();
+    (skills, npcs, dot_ids)
+}
 
+/// One capture line: time (ms since the epoch, and the zone it was written
+/// in), stream, bytes.
+fn capture_line(line: &str) -> Option<(i64, chrono::FixedOffset, &str, Vec<u8>)> {
+    if line.is_empty() || line.starts_with('#') {
+        return None;
+    }
+    let mut parts = line.splitn(3, '|');
+    let (ts, key, hex) = (parts.next()?, parts.next()?, parts.next()?);
+    let when = chrono::DateTime::parse_from_rfc3339(ts).ok()?;
+    let bytes = (0..hex.len() / 2).map(|i| u8::from_str_radix(&hex[2 * i..2 * i + 2], 16).ok()).collect::<Option<Vec<u8>>>()?;
+    Some((when.timestamp_millis(), *when.offset(), key, bytes))
+}
+
+fn print_rows(rows: &[SkillRow], skills: &SkillLookup) {
+    println!("\n{:>9} {:<34} {:>16}  {}", "skill", "name", "damage game/meter",
+             COUNTS.map(|c| format!("{c:>11}")).join(""));
+    for r in rows {
+        let (g, m) = (r.game, r.meter);
+        let cell = |a: i64, b: i64| if a == b { format!("{a:>11}") } else { format!("{:>11}", format!("{a}/{b}*")) };
+        let counts: String = (0..7).map(|i| cell(g.counts[i], m.counts[i])).collect();
+        println!("{:>9} {:<34.34} {:>16}  {counts}", r.skill_id, skills.get_skill_name(r.skill_id),
+                 if g.damage == m.damage { g.damage.to_string() } else { format!("{}/{}*", g.damage, m.damage) });
+    }
+    let damage_same = rows.iter().filter(|r| r.game.damage == r.meter.damage).count();
+    let same = rows.iter().filter(|r| r.same).count();
+    println!("\nrows: {}; damage equal on {damage_same}; every count equal on {same}. * = game/meter differ", rows.len());
+}
+
+#[test]
+#[ignore]
+fn record_check() {
+    let (Some(record_path), Some(capture)) = (env("A2_RECORD"), env("A2_REPLAY_FILE")) else {
+        eprintln!("set A2_RECORD and A2_REPLAY_FILE");
+        return;
+    };
+    let slack: i64 = env("A2_SLACK_MS").and_then(|v| v.parse().ok()).unwrap_or(game_record::SLACK_MS);
+    let record = game_record::decode(&std::fs::read(&record_path).expect("record readable")).expect("a record");
+    println!("record: {} {} .. {}, {} damage, {} skills", record.target, record.start, record.end,
+             record.total, record.skills.len());
+
+    let (skills, npcs, dot_ids) = lookups();
     let storage = Arc::new(DataStorage::new());
     let mut streams: HashMap<String, (StreamAssembler, StreamProcessor)> = HashMap::new();
-    let mut before: Option<HashMap<i32, TargetCombatData>> = None;
+    let mut tap: Option<WindowTap> = None;
     for line in std::fs::read_to_string(&capture).expect("capture readable").lines() {
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let mut parts = line.splitn(3, '|');
-        let (Some(ts), Some(key), Some(hex)) = (parts.next(), parts.next(), parts.next()) else { continue };
-        let tod = ts.get(11..23).unwrap_or("");
-        if tod > until.as_str() {
+        let Some((when, zone, key, bytes)) = capture_line(line) else { continue };
+        // The record's times are local, so read them in the capture's zone.
+        let tap = tap.get_or_insert_with(|| {
+            let (from, until) = record.window_in(&zone).expect("record window");
+            WindowTap::new(from - slack, until + slack)
+        });
+        if !tap.step(&storage, when) {
             break;
         }
-        if before.is_none() && tod >= from.as_str() {
-            before = Some(storage.get_combat_snapshot());
-        }
-        let Ok(when) = chrono::DateTime::parse_from_rfc3339(ts) else { continue };
-        let Some(bytes) = (0..hex.len() / 2).map(|i| u8::from_str_radix(&hex[2 * i..2 * i + 2], 16).ok()).collect::<Option<Vec<u8>>>() else { continue };
         let (assembler, processor) = streams.entry(key.to_string()).or_insert_with(|| {
             let mut p = StreamProcessor::new(storage.clone(), skills.clone(), npcs.clone());
             p.set_dot_skill_ids(dot_ids.clone());
             (StreamAssembler::new(), p)
         });
-        processor.set_override_timestamp(Some(when.timestamp_millis()));
+        processor.set_override_timestamp(Some(when));
         assembler.process_chunk(&bytes, processor);
     }
-    let before = before.expect("the capture reaches the record's start");
-    let after = storage.get_combat_snapshot();
+    let (before, after) = tap.expect("the capture has packets").finish(&storage);
     let summons = storage.get_summon_data();
 
     // The fight: the target named as in the record whose damage from one
     // owner in the window comes closest to the record's total.
-    let mut best: Option<(i64, i32, i32, HashMap<(i32, i32), Row>)> = None;
+    let mut best: Option<(i64, i32, i32, BTreeMap<i32, Row>)> = None;
     for (&target, t) in &after {
-        let rows = rows_between(before.get(&target), t, &summons, &skills);
-        let mut by_owner: HashMap<i32, i64> = HashMap::new();
-        for (&(owner, _), r) in &rows {
-            *by_owner.entry(owner).or_default() += r.damage;
-        }
+        let rows = game_record::rows_between(before.get(&target), t, &summons, &skills);
         let named = npcs.get_npc_name(storage.get_mob_data().get(&target).copied().unwrap_or(0)) == record.target;
-        for (owner, d) in by_owner {
-            let gap = (d - record.total).abs() + if named { 0 } else { record.total };
-            if best.as_ref().is_none_or(|b| gap < b.0) {
-                best = Some((gap, target, owner, rows.clone()));
-            }
+        let Some(owner) = game_record::closest_owner(&rows, record.total) else { continue };
+        let mine = game_record::rows_of(&rows, owner);
+        let d: i64 = mine.values().map(|r| r.damage).sum();
+        let gap = (d - record.total).abs() + if named { 0 } else { record.total };
+        if best.as_ref().is_none_or(|b| gap < b.0) {
+            best = Some((gap, target, owner, mine));
         }
     }
-    let Some((_, target, owner, rows)) = best else {
+    let Some((_, target, owner, meter)) = best else {
         println!("no damage in the window");
         return;
     };
-    let meter: BTreeMap<i32, Row> = rows.into_iter().filter(|((o, _), _)| *o == owner).map(|((_, s), r)| (s, r)).collect();
     let total: i64 = meter.values().map(|r| r.damage).sum();
     println!("meter: target {target}, actor {owner} (local player {:?}), {total} damage, {} skills",
              storage.local_player_id(), meter.len());
-
-    println!("\n{:>9} {:<34} {:>16}  {}", "skill", "name", "damage game/meter",
-             COUNTS.map(|c| format!("{c:>11}")).join(""));
-    let ids: std::collections::BTreeSet<i32> = record.skills.keys().chain(meter.keys()).copied().collect();
-    let (mut same, mut damage_same) = (0, 0);
-    for id in ids {
-        let g = record.skills.get(&id).copied().unwrap_or_default();
-        let m = meter.get(&id).copied().unwrap_or_default();
-        if g == m {
-            same += 1;
-        }
-        if g.damage == m.damage {
-            damage_same += 1;
-        }
-        let cell = |a: i64, b: i64| if a == b { format!("{a:>11}") } else { format!("{:>11}", format!("{a}/{b}*")) };
-        let counts: String = (0..7).map(|i| cell(g.counts[i], m.counts[i])).collect();
-        println!("{id:>9} {:<34.34} {:>16}  {counts}", skills.get_skill_name(id),
-                 if g.damage == m.damage { g.damage.to_string() } else { format!("{}/{}*", g.damage, m.damage) });
-    }
-    println!("\nrows: {} game, {} meter; damage equal on {damage_same}; every count equal on {same}. * = game/meter differ",
-             record.skills.len(), meter.len());
+    print_rows(&game_record::compare(&record.skills, &meter), &skills);
     println!("total: game {}, meter {total}", record.total);
+}
+
+#[test]
+#[ignore]
+fn saved_fights_match_the_game() {
+    use crate::capture::evidence_slice::{self, CapturedPacket};
+    use crate::combat::dps_calculator::DpsCalculator;
+    use crate::combat::ping_tracker::PingTracker;
+    use crate::game_record::files::Checker;
+    use crate::history::fight_history::FightHistoryManager;
+
+    let records_dir = env("A2_RECORDS").unwrap_or_else(|| "/tmp/a2-records".into());
+    let capture = env("A2_REPLAY_FILE").unwrap_or_else(|| "/tmp/a2-caps/packets_20261004_042115.txt".into());
+    let scratch = std::env::temp_dir().join(format!("a2t-saved-fights-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&scratch);
+    let app_dir = scratch.join("app");
+    // The checker looks one folder down, where the game keeps one per account.
+    std::fs::create_dir_all(scratch.join("records")).unwrap();
+    std::os::unix::fs::symlink(std::fs::canonicalize(&records_dir).unwrap(), scratch.join("records/account")).unwrap();
+
+    // Replay as the live meter runs: the auto-save every 30 s, a slice per saved fight.
+    let (skills, npcs, dot_ids) = lookups();
+    let storage = Arc::new(DataStorage::new());
+    let mut calc = DpsCalculator::new(storage.clone(), skills.clone(), npcs.clone(), Arc::new(PingTracker::new()));
+    let mut streams: HashMap<String, (StreamAssembler, StreamProcessor)> = HashMap::new();
+    let mut packets: Vec<CapturedPacket> = Vec::new();
+    let mut saved = BTreeMap::new();
+    let mut zone = None;
+    let mut next_save = 0;
+    for line in std::fs::read_to_string(&capture).expect("capture readable").lines() {
+        let Some((when, z, key, bytes)) = capture_line(line) else { continue };
+        zone.get_or_insert(z);
+        let (assembler, processor) = streams.entry(key.to_string()).or_insert_with(|| {
+            let mut p = StreamProcessor::new(storage.clone(), skills.clone(), npcs.clone());
+            p.set_dot_skill_ids(dot_ids.clone());
+            (StreamAssembler::new(), p)
+        });
+        processor.set_override_timestamp(Some(when));
+        assembler.process_chunk(&bytes, processor);
+        packets.push(CapturedPacket { captured_at_ms: when, stream: key.to_string(), bytes });
+        if when >= next_save {
+            for r in calc.snapshot_boss_fights() {
+                saved.insert(r.id.clone(), r);
+            }
+            next_save = when + 30_000;
+        }
+    }
+    let last = packets.last().map(|p| p.captured_at_ms).unwrap_or(0);
+    crate::clock::set_override(Some(last + 60_000));
+    for r in calc.snapshot_boss_fights_force() {
+        saved.insert(r.id.clone(), r);
+    }
+    crate::clock::set_override(None);
+
+    // Only the fights near a record: a slice per fight is slow to cut.
+    let zone = zone.expect("the capture has packets");
+    let windows: Vec<(i64, i64)> = std::fs::read_dir(&records_dir)
+        .unwrap()
+        .filter_map(|e| std::fs::read(e.ok()?.path()).ok())
+        .filter_map(|b| game_record::decode(&b)?.window_in(&zone))
+        .collect();
+    let history = FightHistoryManager::new(app_dir.clone());
+    let names = crate::share::names_from(&storage);
+    for r in saved.values() {
+        let span = (r.start_time_ms, r.start_time_ms + r.duration_ms);
+        if !windows.iter().any(|w| crate::game_record::files::overlaps((w.0 - 60_000, w.1 + 60_000), span)) {
+            continue;
+        }
+        history.save_fight(r).unwrap();
+        let from = span.0 - evidence_slice::LEAD_IN_MS - evidence_slice::PRELUDE_MS;
+        let window: Vec<CapturedPacket> = packets
+            .iter()
+            .filter(|p| p.captured_at_ms >= from && p.captured_at_ms <= span.1 + evidence_slice::TAIL_MS)
+            .cloned()
+            .collect();
+        let slice = evidence_slice::build(&window, span.0, span.1, &names).expect("slice");
+        crate::share::write_slice(&app_dir, &r.id, slice, crate::share::uploader_in(r, &storage)).unwrap();
+        println!("saved {} {} {:.1} s, {} damage", r.id, r.boss_name, r.duration_ms as f64 / 1000.0, r.total_damage);
+    }
+
+    let checker = Checker {
+        app_data_dir: app_dir.clone(),
+        data_dir: Some(data_dir()),
+        skills: skills.clone(),
+        npcs: npcs.clone(),
+        fights: history.list_fights(),
+        roots: vec![scratch.join("records")],
+        zone: Some(zone),
+    };
+    let checks = checker.checks();
+    let statuses = checker.statuses();
+    let _ = std::fs::remove_dir_all(&scratch);
+    assert!(!checks.is_empty(), "no record belongs to a saved fight");
+    for c in &checks {
+        println!("\n{}: {} fights {:?}, compared {}, damage game {} meter {}, {} of {} rows differ",
+                 c.file, c.target, c.fights, c.compared, c.game_total, c.meter_total, c.differing(), c.rows.len());
+        print_rows(&c.rows, &skills);
+    }
+    println!("\nHistory: {statuses:?}");
+    // Rows can differ where the capture replay above matches: the slice's
+    // blinder rewrites short byte runs that equal a name, and some sit inside
+    // the skill ids of spirit hits (2026-10-04: d3 86 01 00, skill 100051,
+    // came back as 32 63 01 00). Damage is unchanged, so the totals must agree.
+    for c in &checks {
+        assert!(c.compared, "{} was not compared", c.file);
+        assert_eq!(c.meter_total, c.game_total, "{}: damage differs", c.file);
+    }
 }
