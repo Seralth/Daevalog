@@ -4,9 +4,29 @@
 
 Daevalog DPS Meter is a damage meter for AION 2. It sits on top of the game as a small window and shows, while you fight, how much damage you and your party deal. It keeps your boss fights so you can look at them again later, skill by skill.
 
-Daevalog is its own meter. It started as a fork of [A2Tools DPS Meter](https://github.com/taengu/A2Tools-DPS-Meter) by taengu.
+Daevalog is its own meter. It started as a fork of [A2Tools DPS Meter](https://github.com/taengu/A2Tools-DPS-Meter) by taengu, which is itself a Rust port of the original [AION2-DPS-Meter](https://github.com/TK-open-public/Aion2-Dps-Meter) by TK-open-public.
 
 Daevalog reads the game's network traffic. It does not read the game's memory and does not change game files.
+
+## Your data
+
+Daevalog is built around one rule: your data stays yours, and anything shared is shared only because you chose to share it.
+
+- No telemetry. Daevalog collects no usage statistics, sends no crash reports and never checks for updates.
+- Your fights, settings and logs stay in your data folder, readable by your user only.
+- Data leaves your computer only when you send it: when you upload a fight to a2tools.app (by hand, or automatically if you turn that on yourself), or when you use Send logs to a2tools.app. Nothing is turned on for you.
+- The capture helper passes on only your own connections, and the meter keeps only the game's traffic.
+- The one connection Daevalog makes on its own loads skill icons from the game's own image server, the same images the game shows. They are kept on your computer after the first time.
+
+[docs/PRIVACY.md](docs/PRIVACY.md) lists every file the meter writes and everything an upload contains.
+
+## Use at your own risk
+
+Daevalog is third-party software. It is not made, supported or approved by NCSOFT. Using third-party programs alongside an online game may break the game's terms of service, and NCSOFT may act against accounts that use them, up to a ban. Daevalog only reads network traffic on your own computer and never changes the game or its files, but no one can promise how NCSOFT will treat it. You use it at your own risk.
+
+Daevalog is provided as is, without warranty of any kind, as the GNU General Public License describes.
+
+Daevalog is not affiliated with, endorsed by or connected to NCSOFT, AION 2, or A2Tools and its developer. AION 2 and NCSOFT are trademarks of NCSOFT Corporation. All game names, data and images belong to their owners.
 
 ## Install
 
@@ -140,11 +160,13 @@ The full and current list of A2Tools donation options, including WeChat and wall
 
 Daevalog DPS Meter is licensed under the GNU General Public License, version 3. See [LICENSE](LICENSE).
 
-- A2Tools DPS Meter: Copyright (c) 2026 taengu. Daevalog started as a fork of A2Tools DPS Meter v2.0.44.
-- Parts are derived from AION2-DPS-Meter, Copyright (c) 2026 TK-open-public, under the MIT License. The full MIT text is in [LICENSE](LICENSE).
+Daevalog is a fork of a fork:
+
+- [AION2-DPS-Meter](https://github.com/TK-open-public/Aion2-Dps-Meter), Copyright (c) 2026 TK-open-public, under the MIT License, is the original meter. The way Daevalog reads the game's packets descends from it. The full MIT text is in [LICENSE](LICENSE).
+- [A2Tools DPS Meter](https://github.com/taengu/A2Tools-DPS-Meter), Copyright (c) 2026 taengu, ported it to Rust and Tauri and built on it. Daevalog started as a fork of A2Tools DPS Meter v2.0.44.
 - Modifications: Seralth, since 2026-10-02.
 
-AION 2 is a trademark of NCSOFT. Daevalog DPS Meter is not affiliated with or endorsed by NCSOFT.
+AION 2 is a trademark of NCSOFT. Daevalog DPS Meter is not affiliated with or endorsed by NCSOFT or A2Tools (see [Use at your own risk](#use-at-your-own-risk)).
 
 The README of A2Tools DPS Meter, with Windows instructions and the community links of the A2Tools project, is in the [A2Tools DPS Meter repository](https://github.com/taengu/A2Tools-DPS-Meter).
 
