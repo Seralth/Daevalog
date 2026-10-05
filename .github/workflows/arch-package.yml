@@ -9,8 +9,9 @@ name: Linux packages
 #   built by Tauri on Ubuntu 22.04 so they run on that and anything newer,
 #   then installed on clean Ubuntu, Debian and Fedora to prove they work.
 #
-# Every package's install script grants packet-capture permission, so the
-# meter never runs as root. Nothing here publishes anything: the files go to
+# Every package grants packet-capture permission to the capture helper
+# (daevalog-capture) and to nothing else, so the meter runs with no capability
+# and never as root. Nothing here publishes anything: the files go to
 # the CDN by hand.
 #
 # For a release, run it on the release tag (`gh workflow run arch-package.yml
@@ -52,7 +53,10 @@ jobs:
           su builder -c "cd '$GITHUB_WORKSPACE/packaging/arch' && makepkg --noconfirm"
       - name: What it links against
         run: |
-          ldd "$GITHUB_WORKSPACE/src-tauri/target/release/a2tools-dps-meter" | sort
+          ldd "$GITHUB_WORKSPACE/src-tauri/target/release/daevalog-dps-meter" | sort
+          # The helper holds the capture permission: libc only, no GTK or WebKit.
+          ldd "$GITHUB_WORKSPACE/src-tauri/target/release/daevalog-capture" | sort
+          if ldd "$GITHUB_WORKSPACE/src-tauri/target/release/daevalog-capture" | grep -E 'gtk|gdk|webkit'; then exit 1; fi
           ls -la "$GITHUB_WORKSPACE"/packaging/arch/*.pkg.tar.zst
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -99,9 +103,9 @@ jobs:
           (cd rpmpayload && rpm2cpio ../src-tauri/target/release/bundle/rpm/*.rpm | cpio -idm --quiet)
           (
             cd rpmpayload
-            find "./usr/lib/A2Tools DPS Meter" -type d | sed 's|^\.||; s|.*|%dir "&"|'
+            find "./usr/lib/Daevalog DPS Meter" -type d | sed 's|^\.||; s|.*|%dir "&"|'
             find . \( -type f -o -type l \) | sed 's|^\.||' | while IFS= read -r f; do
-              if [ "$f" = /usr/bin/a2tools-dps-meter ]; then
+              if [ "$f" = /usr/bin/daevalog-capture ]; then
                 printf '%%caps(cap_net_raw=ep) "%s"\n' "$f"
               else
                 printf '"%s"\n' "$f"
@@ -129,7 +133,10 @@ jobs:
           dpkg-deb --contents out/*.deb | grep -v '/$'
           rpm -qp --requires out/*.rpm
           rpm -qp --scripts out/*.rpm
-          rpm -qp --filecaps out/*.rpm | grep cap_net_raw
+          dpkg-deb --contents out/*.deb | grep ' ./usr/bin/daevalog-capture$'
+          # The capture permission is on the helper, and the meter has none.
+          rpm -qp --filecaps out/*.rpm | grep -E '^/usr/bin/daevalog-capture .*cap_net_raw'
+          if rpm -qp --filecaps out/*.rpm | grep -E '^/usr/bin/daevalog-dps-meter .*cap_'; then exit 1; fi
           rpm -qlp out/*.rpm | grep -E '^/usr/(bin|share/applications)/'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -164,9 +171,11 @@ jobs:
       - name: Check
         run: |
           set -e
-          test -x /usr/bin/a2tools-dps-meter
-          getcap /usr/bin/a2tools-dps-meter | tee /dev/stderr | grep -q cap_net_raw
-          if ldd /usr/bin/a2tools-dps-meter | grep 'not found'; then exit 1; fi
+          test -x /usr/bin/daevalog-dps-meter
+          test -x /usr/bin/daevalog-capture
+          getcap /usr/bin/daevalog-capture | tee /dev/stderr | grep -q cap_net_raw
+          test -z "$(getcap /usr/bin/daevalog-dps-meter)"
+          if ldd /usr/bin/daevalog-dps-meter /usr/bin/daevalog-capture | grep 'not found'; then exit 1; fi
           # Under one of the names platform/linux/pcap.rs loads it by.
           ldconfig -p | grep -qE 'libpcap\.so\.(1|0\.8) ' || { echo "libpcap missing"; exit 1; }
           ls /usr/share/applications/ | grep -i a2tools
@@ -197,7 +206,8 @@ jobs:
           printf '[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file://%s/repo/rpm/\ngpgcheck=0\n' "$PWD" \
             > /etc/yum.repos.d/a2tools.repo
           dnf install -y a2-tools-dps-meter
-          getcap /usr/bin/a2tools-dps-meter | grep cap_net_raw
+          getcap /usr/bin/daevalog-capture | grep cap_net_raw
+          test -z "$(getcap /usr/bin/daevalog-dps-meter)"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: rpm-repo
@@ -236,8 +246,9 @@ jobs:
               echo "rpm-ostree could not install here; trying dnf"
               dnf install -y a2-tools-dps-meter
             fi
-            getcap /usr/bin/a2tools-dps-meter | tee /dev/stderr | grep -q cap_net_raw
-            if ldd /usr/bin/a2tools-dps-meter | grep "not found"; then exit 1; fi
+            getcap /usr/bin/daevalog-capture | tee /dev/stderr | grep -q cap_net_raw
+            test -z "$(getcap /usr/bin/daevalog-dps-meter)"
+            if ldd /usr/bin/daevalog-dps-meter /usr/bin/daevalog-capture | grep "not found"; then exit 1; fi
             ldconfig -p | grep -qE "libpcap\.so\.(1|0\.8) "
           '
 
@@ -276,14 +287,14 @@ jobs:
           distrobox enter --root a2tools -- sudo pacman -Syu --noconfirm
           distrobox enter --root a2tools -- sudo pacman -U --noconfirm "$PWD"/pkg/*.pkg.tar.zst
       - name: Capture permission
-        run: distrobox enter --root a2tools -- getcap /usr/bin/a2tools-dps-meter | grep cap_net_raw
+        run: distrobox enter --root a2tools -- getcap /usr/bin/daevalog-capture | grep cap_net_raw
       # The meter finds the game by its process on the host.
       - name: Sees host processes
         run: |
           sleep 600 &
           distrobox enter --root a2tools -- sh -c "test -d /proc/$!"
       # A program with the same file capability captures the host's traffic
-      # as the normal user, which is what the meter does with libpcap.
+      # as the normal user, which is what the capture helper does with libpcap.
       - name: Captures host traffic
         run: |
           distrobox enter --root a2tools -- sudo pacman -S --noconfirm tcpdump

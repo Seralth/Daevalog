@@ -1,4 +1,7 @@
 {
+  "build": {
+    "beforeBundleCommand": "cargo build --release -p daevalog-capture --manifest-path src-tauri/Cargo.toml"
+  },
   "app": {
     "windows": [
       {

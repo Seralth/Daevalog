@@ -1,7 +1,7 @@
 # The .rpm. Tauri builds the program and lays out its files (its own .rpm,
 # unpacked into %{payload} by the workflow); this spec repackages them so the
-# binary carries its packet-capture permission in the package itself (%caps)
-# rather than from a setcap in a %post script.
+# capture helper carries its packet-capture permission in the package itself
+# (%caps) rather than from a setcap in a %post script. The meter gets none.
 #
 # Why: rpm-ostree (Bazzite, Silverblue, Kinoite and the other image-based
 # Fedoras) runs package scripts with most capabilities dropped, so a setcap

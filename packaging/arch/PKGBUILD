@@ -7,8 +7,9 @@
 #
 # It installs the program to /usr/bin, the game data where Tauri looks for
 # resources (/usr/lib/<product name>/data), and grants packet-capture
-# permission in the install script, which is the one thing a Linux user would
-# otherwise have to do by hand (see daevalog-dps-meter.install).
+# permission to the capture helper in the install script, which is the one
+# thing a Linux user would otherwise have to do by hand (see
+# daevalog-dps-meter.install).
 
 pkgname=daevalog-dps-meter
 # The fork's revisions replaced the upstream version numbers; the epoch keeps
@@ -54,12 +55,16 @@ build() {
   cp src/data/skill_icons.json src/data/dot_skill_ids.json public/src/data/
   npm ci
   npx tauri build --no-bundle
+  # The capture helper, which holds the capture permission (capture-helper/).
+  cargo build --release -p daevalog-capture --manifest-path src-tauri/Cargo.toml
 }
 
 package() {
   local root
   root="$(_root)"
   install -Dm755 "$root/src-tauri/target/release/daevalog-dps-meter" "$pkgdir/usr/bin/daevalog-dps-meter"
+  # Next to the meter: the meter starts it from its own folder.
+  install -Dm755 "$root/src-tauri/target/release/daevalog-capture" "$pkgdir/usr/bin/daevalog-capture"
 
   # Tauri resolves resources to /usr/lib/<name>; ship both spellings of the
   # name so either resolution finds the data.

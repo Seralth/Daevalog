@@ -30,6 +30,11 @@ jobs:
         # capture and not something to commit — it is a recording of five real
         # people playing. They run locally; everything else runs here.
         run: cargo test --all-targets
+      # The capture crate: libpcap, which Windows captures with too, and the
+      # Linux helper's pipe.
+      - name: Test capture crate
+        working-directory: src-tauri
+        run: cargo test -p daevalog-capture
       - name: Build binaries
         working-directory: src-tauri
         run: cargo build --bins
@@ -77,6 +82,10 @@ jobs:
       - name: Test
         working-directory: src-tauri
         run: cargo test --all-targets --no-default-features --features desktop
+      # The capture helper and its pipe.
+      - name: Test capture helper
+        working-directory: src-tauri
+        run: cargo test -p daevalog-capture --all-targets
       # The account token lives in the desktop keyring on Linux, and the step
       # above has none, so its tests skip there. Here they run against a real
       # GNOME Keyring in a private D-Bus session.

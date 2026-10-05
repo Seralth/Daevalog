@@ -76,7 +76,15 @@
           "libpcap0.8t64 | libpcap0.8",
           "libcap2-bin"
         ],
+        "files": {
+          "/usr/bin/daevalog-capture": "target/release/daevalog-capture"
+        },
         "postInstallScript": "../packaging/linux/postinst.sh"
+      },
+      "rpm": {
+        "files": {
+          "/usr/bin/daevalog-capture": "target/release/daevalog-capture"
+        }
       }
     }
   }

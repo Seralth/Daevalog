@@ -1,13 +1,17 @@
-# Packet capture needs CAP_NET_RAW, and nothing else. Grant it to the installed
-# binary so the meter never has to run as root. A new binary (every upgrade)
-# needs it again. setcap sets the whole list, so nothing older stays.
+# Packet capture needs CAP_NET_RAW, and nothing else. Only the capture helper
+# gets it; the meter itself (GTK, WebKit) runs with none. A new binary (every
+# upgrade) needs it again. setcap sets the whole list, so nothing older stays.
 
 _grant_capture() {
-  if setcap cap_net_raw=ep /usr/bin/daevalog-dps-meter; then
+  if setcap cap_net_raw=ep /usr/bin/daevalog-capture; then
     echo "==> Daevalog DPS Meter may now capture packets."
   else
     echo "==> Could not grant packet-capture permission. Run:"
-    echo "    sudo setcap cap_net_raw=ep /usr/bin/daevalog-dps-meter"
+    echo "    sudo setcap cap_net_raw=ep /usr/bin/daevalog-capture"
+  fi
+  # Older packages gave it to the meter.
+  if [ -n "$(getcap /usr/bin/daevalog-dps-meter 2>/dev/null)" ]; then
+    setcap -r /usr/bin/daevalog-dps-meter
   fi
 }
 
