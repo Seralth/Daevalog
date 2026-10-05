@@ -25,7 +25,6 @@ const createDetailsUI = ({
   let selectedTargetId = null;
   let selectedAttackerIds = null;
   let selectedAttackerLabel = "";
-  let sortMode = "recent";
   let detectedJobByActorId = new Map();
   let skillSortKey = "dmg";
   let skillSortDir = "desc";
@@ -66,17 +65,6 @@ const createDetailsUI = ({
     const n = Number(v);
     return Number.isFinite(n) ? `${n.toFixed(1)}%` : "-";
   };
-  const formatCompactNumber = (v) => {
-    const n = Number(v);
-    if (!Number.isFinite(n)) return "-";
-    if (n >= 1_000_000) {
-      return `${(n / 1_000_000).toFixed(2)}m`;
-    }
-    if (n >= 1_000) {
-      return `${(n / 1_000).toFixed(1)}k`;
-    }
-    return `${Math.round(n)}`;
-  };
   const formatDamageCompact = (v) => {
     const n = Number(v);
     if (!Number.isFinite(n)) return "-";
@@ -88,13 +76,6 @@ const createDetailsUI = ({
       return `${(n / 1_000).toFixed(2)}k`;
     }
     return `${Math.round(n)}`;
-  };
-  const formatMinutesSince = (timestampMs) => {
-    const ts = Number(timestampMs);
-    if (!Number.isFinite(ts) || ts <= 0) return "-";
-    const minutes = (Date.now() - ts) / 60000;
-    if (!Number.isFinite(minutes) || minutes < 0) return "-";
-    return `${minutes.toFixed(1)}m`;
   };
   const formatBattleTime = (ms) => {
     const totalMs = Number(ms);
@@ -223,28 +204,6 @@ const createDetailsUI = ({
       ? (i18n?.getNpcName?.(targetId, targetName) ?? targetName)
       : targetName;
     return localizedName || `Mob #${target.targetId}`;
-  };
-
-  const getTargetDamageForSelection = (target) => {
-    if (!target) return 0;
-    if (!Array.isArray(selectedAttackerIds) || selectedAttackerIds.length === 0) {
-      return Number(target.totalDamage) || 0;
-    }
-    return selectedAttackerIds.reduce(
-      (sum, actorId) => sum + getActorDamage(target.actorDamage, actorId),
-      0
-    );
-  };
-
-  const formatTargetSuffix = (target) => {
-    if (!target) return "";
-    if (sortMode === "recent") {
-      return "";
-    }
-    if (sortMode === "time") {
-      return formatBattleTime(target.battleTime);
-    }
-    return formatCompactNumber(getTargetDamageForSelection(target));
   };
 
   const jobColorMap = {
@@ -1931,13 +1890,6 @@ const createDetailsUI = ({
     return nextContext;
   };
 
-  const getTargetActorIds = (target) => {
-    if (!target || typeof target.actorDamage !== "object") return [];
-    return Object.keys(target.actorDamage)
-      .map((id) => Number(id))
-      .filter((id) => Number.isFinite(id) && id > 0);
-  };
-
   const targetMatchesSelectedAttackers = (target) => {
     if (!target) return false;
     if (!Array.isArray(selectedAttackerIds) || selectedAttackerIds.length === 0) return true;
@@ -1985,53 +1937,7 @@ const createDetailsUI = ({
     return String(row.name ?? "-");
   };
 
-  const applyCjkClass = (element, text) => {
-    if (!element) return;
-    element.classList.toggle("isCjk", cjkRegex.test(String(text || "")));
-  };
-
-  const getTargetSortValue = (target) => {
-    if (!target) return 0;
-    if (sortMode === "recent") {
-      return Number(target.lastDamageTime) || 0;
-    }
-    if (sortMode === "time") {
-      return Number(target.battleTime) || 0;
-    }
-    return getTargetDamageForSelection(target);
-  };
-
   const syncSortButtons = () => { /* no-op: sort buttons removed */ };
-
-  const applyTargetSelection = async (targetId) => {
-    if (targetId === "all") {
-      selectedTargetId = null;
-    } else {
-      selectedTargetId = Number(targetId) || null;
-    }
-    if (selectedAttackerIds && selectedAttackerIds.length === 1) {
-      selectedAttackerLabel = resolveActorLabel(selectedAttackerIds[0]);
-    }
-    updateHeaderText();
-    await refreshDetailsView();
-  };
-
-  const applyAttackerSelection = async (actorId) => {
-    if (actorId === "all") {
-      selectedAttackerIds = null;
-      selectedAttackerLabel = labelText("details.all", "All");
-    } else {
-      const numericId = Number(actorId);
-      selectedAttackerIds = Number.isFinite(numericId) ? [numericId] : null;
-      selectedAttackerLabel = selectedAttackerIds ? resolveActorLabel(numericId) : "All";
-    }
-    const selectedTarget = getTargetById(selectedTargetId);
-    if (selectedTargetId !== null && !targetMatchesSelectedAttackers(selectedTarget)) {
-      selectedTargetId = null;
-    }
-    updateHeaderText();
-    await refreshDetailsView();
-  };
 
   const combinePerActorStats = (detailsList = []) => {
     const totals = new Map();
