@@ -15,7 +15,7 @@ The data moves through six layers, in this order. Each layer uses only the layer
 | 1. Capture | Read packets from the network card with libpcap. Find the game connection and lock onto its port. | `capture/pcap_capturer.rs`, `combat/capture_dispatcher.rs`, `capture/combat_port_detector.rs` |
 | 2. Stream | Join TCP payloads into one byte stream per connection. | `capture/stream_assembler.rs`, `capture/packet_accumulator.rs` |
 | 3. Framing | Cut the byte stream into game packets. Open compressed bundles. | `capture/framing.rs` |
-| 4. Parsing | Read each game packet: damage, damage over time (DoT), heals, spawns, names, party roster, zone change. | `capture/stream_processor.rs`, `entity/damage_packet.rs` |
+| 4. Parsing | Read each game packet: damage, damage over time (DoT), heals, spawns, names, party roster, zone change, map load (which map a load enters, to tell an instance from the open world). | `capture/stream_processor.rs`, `entity/damage_packet.rs` |
 | 5. Storage | Keep the fight data: damage per target and per actor, names, summon owners, the local player. | `combat/data_storage.rs`, `entity/summon_resolver.rs` |
 | 6. Calculation | Choose the targets for the meter mode, add up damage per player, compute fight time, save fights. | `combat/dps_calculator.rs`, `history/fight_history.rs` |
 
