@@ -2163,6 +2163,10 @@ fn decode_replay_hex(hex: &str) -> Option<Vec<u8>> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Started as the Linux hotkey helper: that is all this process does.
+    if platform::hotkeys::run_helper_if_asked() {
+        return;
+    }
     // Before anything starts a thread: it may set environment variables.
     let process_note = platform::process::prepare();
     logging::logger::init_logging();

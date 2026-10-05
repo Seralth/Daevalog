@@ -59,6 +59,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
+name = "ashpd"
+version = "0.13.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb8421aaa9644a5faf26735f258b669b15f063313ef8f8e2bdb28912a1a6f111"
+dependencies = [
+ "enumflags2",
+ "futures-util",
+ "getrandom 0.4.2",
+ "serde",
+ "zbus",
+]
+
+[[package]]
 name = "async-broadcast"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -729,12 +742,14 @@ dependencies = [
 name = "daevalog-dps-meter"
 version = "2.0.44"
 dependencies = [
+ "ashpd",
  "chrono",
  "dirs",
  "discord-rich-presence",
  "flate2",
  "futures-util",
  "gtk",
+ "libc",
  "libloading 0.8.9",
  "lz4_flex",
  "parking_lot",

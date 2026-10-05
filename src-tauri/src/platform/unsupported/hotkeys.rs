@@ -21,3 +21,8 @@ impl HotkeyManager {
     }
     pub fn stop(&self) {}
 }
+
+/// No hotkey helper process on this platform.
+pub fn run_helper_if_asked() -> bool {
+    false
+}

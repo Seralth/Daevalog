@@ -42,6 +42,8 @@ desktop = [
     "dep:gtk",
     "dep:webkit2gtk",
     "dep:x11-dl",
+    "dep:ashpd",
+    "dep:libc",
 ]
 
 # Both binaries are declared rather than left to auto-discovery, so adding the
@@ -136,6 +138,11 @@ webkit2gtk = { version = "2", features = ["v2_40"], optional = true }
 # The pointer's position under XWayland, for the click-through lock. Loads
 # libX11 at run time; already in the tree through tao.
 x11-dl = { version = "2.21", optional = true }
+# The lock hotkey, through the desktop's GlobalShortcuts portal. async-io like
+# secret-service, so it shares the same zbus.
+ashpd = { version = "0.13", default-features = false, features = ["async-io", "global_shortcuts"], optional = true }
+# Starting that hotkey's helper without the capture capability.
+libc = { version = "0.2", optional = true }
 
 [dev-dependencies]
 flate2 = "1"
