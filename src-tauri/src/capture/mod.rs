@@ -8,7 +8,7 @@ pub mod stream_processor;
 
 #[cfg(test)]
 mod replay_report;
-#[cfg(test)]
+#[cfg(all(test, feature = "desktop"))]
 mod record_check;
 
 // Live capture. pcap needs libloading, the port detector reads the wall clock,

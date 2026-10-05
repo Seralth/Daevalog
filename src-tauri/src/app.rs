@@ -339,6 +339,43 @@ async fn share_status(
         .map_err(|e| e.to_string())
 }
 
+/// What the checks of the game's own Damage Analyzer records need.
+fn game_record_checker(state: &AppState) -> crate::game_record::files::Checker {
+    crate::game_record::files::Checker {
+        app_data_dir: state.app_data_dir.clone(),
+        data_dir: state.i18n_data_dir.clone(),
+        skills: state.skill_lookup.clone(),
+        npcs: state.npc_lookup.clone(),
+        fights: state.fight_history.list_fights(),
+        roots: crate::game_record::files::record_roots(),
+        zone: None,
+    }
+}
+
+/// Saved fights with a game record, and whether the meter matches it.
+/// Async: a new record replays the fight's slice.
+#[tauri::command]
+async fn game_record_status(
+    state: tauri::State<'_, AppState>,
+) -> Result<std::collections::HashMap<String, crate::game_record::files::FightStatus>, String> {
+    let checker = game_record_checker(&state);
+    tokio::task::spawn_blocking(move || checker.statuses())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// A saved fight's game records, each beside the meter's numbers.
+#[tauri::command]
+async fn game_record_details(
+    state: tauri::State<'_, AppState>,
+    fight_id: String,
+) -> Result<Vec<crate::game_record::files::RecordView>, String> {
+    let checker = game_record_checker(&state);
+    tokio::task::spawn_blocking(move || checker.views(&fight_id))
+        .await
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn export_fight_json(state: tauri::State<'_, AppState>, record: FightRecord) -> Result<String, String> {
     state.fight_history.export_fight_json(&record)
@@ -2751,6 +2788,8 @@ pub fn run() {
             preview_share,
             upload_fight,
             share_status,
+            game_record_status,
+            game_record_details,
             account_status,
             account_status_cached,
             discord_activity_available,
