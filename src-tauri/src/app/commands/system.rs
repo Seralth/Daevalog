@@ -1,9 +1,7 @@
 //! Quitting, links, the page's log lines and the icon cache.
 
-use crate::platform;
-
 use crate::app::tray_actions::save_fights_before_exit;
-use crate::app::{page_support, AppState};
+use crate::app::{links, page_support, AppState};
 
 #[tauri::command]
 pub(crate) fn quit_app(app: tauri::AppHandle) {
@@ -27,6 +25,6 @@ pub(crate) fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, 
 }
 
 #[tauri::command]
-pub(crate) fn open_url(url: String) {
-    platform::shell::open_url(&url);
+pub(crate) fn open_url(app: tauri::AppHandle, state: tauri::State<'_, AppState>, url: String) {
+    links::open(&app, &state.app_data_dir, &url);
 }

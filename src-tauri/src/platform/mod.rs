@@ -36,7 +36,7 @@ pub mod hotkeys;
 pub mod procfs;
 pub mod screenshot;
 
-pub use os::{admin, clock, pcap, process, secret, shell, window, window_detector};
+pub use os::{admin, clock, pcap, process, secret, window, window_detector};
 
 /// Why `secret::unprotect` could not give a stored secret back.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

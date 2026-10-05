@@ -18,6 +18,3 @@ pub mod screen;
 pub mod secret;
 pub mod window;
 pub mod window_detector;
-
-#[path = "../unsupported/shell.rs"]
-pub mod shell;

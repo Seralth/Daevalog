@@ -8,7 +8,6 @@
 
   const { invoke } = window.__TAURI__.core;
   const { listen } = window.__TAURI__.event;
-  const { open: shellOpen } = window.__TAURI__.opener;
 
   // The backend enables compositor resizing only on GNOME.
   const isLinux = /Linux/.test(navigator.userAgent);
@@ -212,7 +211,7 @@
   listen("npcap-missing", () => {
     const msg = "Npcap is required for packet capture but is not installed.\n\nWould you like to download it now?";
     if (confirm(msg)) {
-      shellOpen("https://npcap.com/#download");
+      invoke("open_url", { url: "https://npcap.com/#download" }).catch(() => {});
     }
   });
 

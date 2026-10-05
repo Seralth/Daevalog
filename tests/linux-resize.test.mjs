@@ -34,7 +34,7 @@ function setup({ userAgent = "Linux", supported = false, view = "main", detect }
         return command === "compositor_resize_supported" && detect
           ? detect : Promise.resolve(command === "compositor_resize_supported" ? supported : null);
       } },
-      event: { listen() {} }, opener: { open() {} },
+      event: { listen() {} },
       window: { getCurrentWindow: () => ({ startResizeDragging: (direction) => calls.push({ command: "startResizeDragging", direction }) }) },
     },
   };

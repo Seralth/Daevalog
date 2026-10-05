@@ -2,8 +2,7 @@
 
 use tauri::Emitter;
 
-use super::system::open_url;
-use crate::app::{sign_in, AppState};
+use crate::app::{links, sign_in, AppState};
 
 /// Who, if anyone, this meter is signed in as.
 ///
@@ -43,7 +42,7 @@ pub(crate) async fn account_begin_link(
     // Open the browser straight onto the filled-in code. If it fails the player
     // still has the code and the URL in front of them.
     if crate::account::is_site_url(&grant.verification_uri_complete) {
-        open_url(grant.verification_uri_complete.clone());
+        links::open(&app, &state.app_data_dir, &grant.verification_uri_complete);
     } else {
         tracing::warn!("Not opening the sign-in page: the server sent a link outside a2tools.app");
     }
