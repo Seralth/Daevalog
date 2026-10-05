@@ -142,6 +142,7 @@ fn record_check() {
     println!("total: game {}, meter {total}", record.total);
 }
 
+#[cfg(unix)]
 #[test]
 #[ignore]
 fn saved_fights_match_the_game() {

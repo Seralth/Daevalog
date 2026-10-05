@@ -118,14 +118,14 @@ jobs:
             --define "pkgversion $version" \
             --define "payload $PWD/rpmpayload" \
             --define "filelist $PWD/rpm-files.txt"
-      # Tauri names the .deb after the product ("A2Tools DPS Meter_2.0.36_amd64.deb");
+      # Tauri names the .deb after the product ("Daevalog DPS Meter_2.0.44_amd64.deb");
       # the CDN and the updater use the package name instead.
       - name: Name the packages
         run: |
           version=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2)
           mkdir -p out
-          cp src-tauri/target/release/bundle/deb/*.deb "out/a2tools-dps-meter_${version}_amd64.deb"
-          cp rpmbuild/RPMS/x86_64/*.rpm "out/a2tools-dps-meter-${version}-1.x86_64.rpm"
+          cp src-tauri/target/release/bundle/deb/*.deb "out/daevalog-dps-meter_${version}_amd64.deb"
+          cp rpmbuild/RPMS/x86_64/*.rpm "out/daevalog-dps-meter-${version}-1.x86_64.rpm"
           ls -la out
       - name: What is in them
         run: |
@@ -155,11 +155,11 @@ jobs:
       matrix:
         include:
           - image: ubuntu:24.04
-            install: apt-get update && apt-get install -y ./a2tools-dps-meter_*_amd64.deb
+            install: apt-get update && apt-get install -y ./daevalog-dps-meter_*_amd64.deb
           - image: debian:12
-            install: apt-get update && apt-get install -y ./a2tools-dps-meter_*_amd64.deb
+            install: apt-get update && apt-get install -y ./daevalog-dps-meter_*_amd64.deb
           - image: fedora:41
-            install: dnf install -y ./a2tools-dps-meter-*.x86_64.rpm
+            install: dnf install -y ./daevalog-dps-meter-*.x86_64.rpm
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -178,7 +178,7 @@ jobs:
           if ldd /usr/bin/daevalog-dps-meter /usr/bin/daevalog-capture | grep 'not found'; then exit 1; fi
           # Under one of the names platform/linux/pcap.rs loads it by.
           ldconfig -p | grep -qE 'libpcap\.so\.(1|0\.8) ' || { echo "libpcap missing"; exit 1; }
-          ls /usr/share/applications/ | grep -i a2tools
+          ls /usr/share/applications/ | grep -i daevalog
 
   # The RPM repository on the CDN (linux/rpm/), which Fedora and the
   # image-based Fedoras install and update the meter from.
@@ -196,15 +196,15 @@ jobs:
         run: |
           dnf install -y createrepo_c
           mkdir -p repo/rpm
-          cp a2tools-dps-meter-*.x86_64.rpm repo/rpm/
+          cp daevalog-dps-meter-*.x86_64.rpm repo/rpm/
           createrepo_c repo/rpm
           ls -laR repo
       # Installed from the repository, the way a player does, rather than
       # from the file.
       - name: Install from it
         run: |
-          printf '[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file://%s/repo/rpm/\ngpgcheck=0\n' "$PWD" \
-            > /etc/yum.repos.d/a2tools.repo
+          printf '[daevalog]\nname=Daevalog DPS Meter (test)\nbaseurl=file://%s/repo/rpm/\ngpgcheck=0\n' "$PWD" \
+            > /etc/yum.repos.d/daevalog.repo
           dnf install -y a2-tools-dps-meter
           getcap /usr/bin/daevalog-capture | grep cap_net_raw
           test -z "$(getcap /usr/bin/daevalog-dps-meter)"
@@ -239,7 +239,7 @@ jobs:
           # ("max depth exceeded").
           sudo podman run --rm -v "$PWD/repo:/repo:ro" ghcr.io/ublue-os/bazzite:stable bash -euc '
             cat /etc/os-release | grep -E "^(NAME|VERSION)="
-            printf "[a2tools]\nname=A2Tools DPS Meter (test)\nbaseurl=file:///repo/rpm/\ngpgcheck=0\n" > /etc/yum.repos.d/a2tools.repo
+            printf "[daevalog]\nname=Daevalog DPS Meter (test)\nbaseurl=file:///repo/rpm/\ngpgcheck=0\n" > /etc/yum.repos.d/daevalog.repo
             if rpm-ostree install a2-tools-dps-meter; then
               echo "installed with rpm-ostree"
             else
@@ -283,21 +283,21 @@ jobs:
           distrobox version
           # A rootful box asks for a password for the user inside it on first
           # entry; a player types one, CI cannot.
-          distrobox create --root --yes --name a2tools --image docker.io/library/archlinux:latest \n            --absolutely-disable-root-password-i-am-really-positively-sure
-          distrobox enter --root a2tools -- sudo pacman -Syu --noconfirm
-          distrobox enter --root a2tools -- sudo pacman -U --noconfirm "$PWD"/pkg/*.pkg.tar.zst
+          distrobox create --root --yes --name daevalog --image docker.io/library/archlinux:latest \n            --absolutely-disable-root-password-i-am-really-positively-sure
+          distrobox enter --root daevalog -- sudo pacman -Syu --noconfirm
+          distrobox enter --root daevalog -- sudo pacman -U --noconfirm "$PWD"/pkg/*.pkg.tar.zst
       - name: Capture permission
-        run: distrobox enter --root a2tools -- getcap /usr/bin/daevalog-capture | grep cap_net_raw
+        run: distrobox enter --root daevalog -- getcap /usr/bin/daevalog-capture | grep cap_net_raw
       # The meter finds the game by its process on the host.
       - name: Sees host processes
         run: |
           sleep 600 &
-          distrobox enter --root a2tools -- sh -c "test -d /proc/$!"
+          distrobox enter --root daevalog -- sh -c "test -d /proc/$!"
       # A program with the same file capability captures the host's traffic
       # as the normal user, which is what the capture helper does with libpcap.
       - name: Captures host traffic
         run: |
-          distrobox enter --root a2tools -- sudo pacman -S --noconfirm tcpdump
-          distrobox enter --root a2tools -- sudo setcap cap_net_raw=ep /usr/bin/tcpdump
+          distrobox enter --root daevalog -- sudo pacman -S --noconfirm tcpdump
+          distrobox enter --root daevalog -- sudo setcap cap_net_raw=ep /usr/bin/tcpdump
           ( sleep 3; for i in 1 2 3 4 5; do curl -s -o /dev/null https://cdn.a2tools.app/latest-v2.json; sleep 1; done ) &
-          distrobox enter --root a2tools -- timeout 20 tcpdump -i any -c 5 -n 'tcp port 443'
+          distrobox enter --root daevalog -- timeout 20 tcpdump -i any -c 5 -n 'tcp port 443'

@@ -16,13 +16,15 @@
 %global __os_install_post %{nil}
 %global _build_id_links none
 
-Name:           a2-tools-dps-meter
+Name:           daevalog-dps-meter
 Version:        %{pkgversion}
 Release:        1
-Summary:        A2Tools DPS Meter - AION 2 real-time DPS overlay
+Summary:        Daevalog DPS Meter - AION 2 real-time DPS overlay
 License:        GPL-3.0-only
-URL:            https://github.com/taengu/A2Tools-DPS-Meter
+URL:            https://github.com/Seralth/Daevalog
 ExclusiveArch:  x86_64
+# Replaces the A2Tools package of the same program.
+Obsoletes:      a2-tools-dps-meter
 
 # libpcap is loaded at runtime, so rpmbuild cannot find it among the binary's
 # libraries; the rest (WebKitGTK, GTK) it adds by itself.
