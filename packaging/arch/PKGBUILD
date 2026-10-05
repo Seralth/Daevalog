@@ -12,8 +12,7 @@
 # daevalog-dps-meter.install).
 
 pkgname=daevalog-dps-meter
-# The fork's revisions replaced the upstream version numbers; the epoch keeps
-# them newer than the 2.0.x packages for pacman.
+# The epoch keeps these packages newer than the 2.0.x ones for pacman.
 epoch=1
 pkgver=0
 pkgrel=1
@@ -35,15 +34,16 @@ _root() {
   cd "$startdir/../.." && pwd
 }
 
-# r<commits>.g<hash>: the commit count orders builds, the hash names the
-# commit. The upstream release the fork is based on stays in Cargo.toml.
+# <release>.r<commits>.g<hash>, e.g. 1.0.r250.g8e3c962: the release line
+# from Cargo.toml, the commit count that orders builds, the commit's hash.
 pkgver() {
   cd "$(_root)"
   # Fail rather than print "r.g" when git cannot read the history (a
   # worktree's .git file pointing outside the build container).
-  local count hash
+  local release count hash
+  release=$(grep -m1 '^version' src-tauri/Cargo.toml | cut -d'"' -f2) || return 1
   count=$(git rev-list --count HEAD) && hash=$(git rev-parse --short HEAD) || return 1
-  printf 'r%s.g%s' "$count" "$hash"
+  printf '%s.r%s.g%s' "${release%.*}" "$count" "$hash"
 }
 
 build() {

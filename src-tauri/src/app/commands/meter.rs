@@ -7,7 +7,7 @@ use crate::app::{meter, AppState};
 
 #[tauri::command]
 pub(crate) fn get_app_version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
+    crate::version::DISPLAY
 }
 
 #[tauri::command]

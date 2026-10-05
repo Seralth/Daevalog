@@ -14,10 +14,8 @@ name: Linux packages
 # and never as root. Nothing here publishes anything: the files go to
 # the CDN by hand.
 #
-# For a release, run it on the release tag (`gh workflow run arch-package.yml
-# -f ref=v2.0.36`): the packages are then plain 2.0.36, and go to the CDN with
-# the MSI before the manifest names them (archUrl, debUrl, rpmUrl), which is
-# what Linux meters update from.
+# Versions: the Arch package is <release>.r<commits>.g<hash> (PKGBUILD
+# pkgver); the .deb and .rpm carry the version in src-tauri/Cargo.toml.
 on:
   workflow_dispatch:
     inputs:
@@ -68,9 +66,11 @@ jobs:
     name: .deb and .rpm
     runs-on: ubuntu-22.04
     steps:
+      # Full history: build.rs counts the commits for the version in Settings.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ inputs.ref }}
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@89b12181fb390509a0842a86cc55eeb8eb928c1d # stable
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:

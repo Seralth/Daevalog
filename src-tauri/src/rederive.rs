@@ -163,7 +163,7 @@ pub fn derive(slice: &[u8]) -> Result<DerivedEncounter, DeriveError> {
     targets.sort_by(|a, b| b.total_damage.cmp(&a.total_damage).then(a.target_id.cmp(&b.target_id)));
 
     Ok(DerivedEncounter {
-        parser_version: crate::entity::fight_record::APP_VERSION.to_string(),
+        parser_version: crate::version::UPLOAD_COMPAT_VERSION.to_string(),
         dungeon_id: storage.current_dungeon_id(),
         total_damage,
         duration_ms,
@@ -298,7 +298,7 @@ pub fn derive_fight(
     canonicalise(&mut record);
 
     Ok(DerivedFight {
-        parser_version: crate::entity::fight_record::APP_VERSION.to_string(),
+        parser_version: crate::version::UPLOAD_COMPAT_VERSION.to_string(),
         total_damage: totals.get(&record.target_id).copied().unwrap_or(0),
         record,
         blind_map: blind_map.into_iter().collect(),

@@ -1,6 +1,6 @@
 [package]
 name = "daevalog-dps-meter"
-version = "2.0.44"
+version = "1.0.0"
 description = "Daevalog DPS Meter - AION 2 real-time DPS overlay"
 authors = ["taengu"]
 edition = "2024"

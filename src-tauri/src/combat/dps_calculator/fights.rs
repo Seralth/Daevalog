@@ -210,7 +210,7 @@ impl DpsCalculator {
             details,
             actors,
             is_train: self.npc_lookup.is_training_dummy(mob_code),
-            app_version: crate::entity::fight_record::APP_VERSION.to_string(),
+            app_version: crate::version::UPLOAD_COMPAT_VERSION.to_string(),
             mob_code,
             dungeon_id: fight_dungeon(&self.npc_lookup, mob_code, dungeon_id),
             server_id: self.data_storage.fight_server_id(),

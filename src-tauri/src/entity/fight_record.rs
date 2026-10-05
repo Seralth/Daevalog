@@ -2,8 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use super::details_context::{DetailsActorSummary, TargetDetailsResponse};
 
-pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FightRecord {

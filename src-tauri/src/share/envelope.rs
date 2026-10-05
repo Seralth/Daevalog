@@ -139,9 +139,8 @@ pub fn build_envelope(record: &FightRecord, slice: &[u8]) -> UploadEnvelope {
     let digest = Sha256::digest(slice);
     UploadEnvelope {
         app_version: record.app_version.clone(),
-        // Until the parser is built with its own git sha, the app version is the
-        // best available statement of which code derived these numbers.
-        parser_version: crate::entity::fight_record::APP_VERSION.to_string(),
+        // The A2Tools release a2tools.app treats the parser as (see version.rs).
+        parser_version: crate::version::UPLOAD_COMPAT_VERSION.to_string(),
         client_start_ms: record.start_time_ms,
         duration_ms: record.duration_ms,
         mob_code: record.mob_code,

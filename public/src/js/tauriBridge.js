@@ -140,7 +140,7 @@
     captureSuspended = !!v;
   }).catch(() => {});
 
-  // Fetch app version from backend (sourced from Cargo.toml via env!("CARGO_PKG_VERSION"))
+  // The version label from the backend (src-tauri/src/version.rs).
   invoke("get_app_version").then((v) => {
     if (typeof v === "string") cachedAppVersion = v;
   }).catch(() => {});

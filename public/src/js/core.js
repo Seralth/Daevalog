@@ -2470,9 +2470,9 @@ class DpsApp {
 
   updateSettingsVersion() {
     if (!this.settingsVersionValue) return;
-    const rawVersion = String(window.dpsData?.getVersion?.() || "").trim();
-    const normalized = rawVersion.replace(/^v/i, "");
-    this.settingsVersionValue.textContent = normalized ? `v${normalized}` : "-";
+    // The backend's label, "1.0 · r250" (or "1.0" when the build did not know its revision).
+    const normalized = String(window.dpsData?.getVersion?.() || "").trim();
+    this.settingsVersionValue.textContent = normalized ? `Daevalog ${normalized}` : "-";
     // The backend version fetch is async; retry briefly if it wasn't ready yet.
     if (!normalized && !this._versionRetryScheduled) {
       this._versionRetryScheduled = true;

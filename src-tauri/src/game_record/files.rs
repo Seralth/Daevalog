@@ -391,7 +391,7 @@ fn clock(ms: i64, zone: Option<FixedOffset>, format: &str) -> String {
 /// with both values. In English, for whoever fixes the parser.
 pub fn report(fight: &FightSummary, check: &RecordCheck, names: &BTreeMap<i32, String>, zone: Option<FixedOffset>) -> String {
     let mut out = String::new();
-    out.push_str(&format!("Daevalog DPS Meter {}\n", crate::entity::fight_record::APP_VERSION));
+    out.push_str(&format!("Daevalog DPS Meter {}\n", crate::version::DISPLAY));
     out.push_str(&format!(
         "Fight: {} (mob {}), {}, {:.1} s, id {}\n",
         fight.boss_name,

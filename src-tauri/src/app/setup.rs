@@ -349,7 +349,7 @@ pub fn run() {
 /// forever.
 fn http_client() -> reqwest::Client {
     reqwest::Client::builder()
-        .user_agent(concat!("A2Tools-DPS-Meter/", env!("CARGO_PKG_VERSION")))
+        .user_agent(crate::version::user_agent())
         // Every request is to a2tools.app or its CDN.
         .https_only(true)
         .connect_timeout(Duration::from_secs(10))

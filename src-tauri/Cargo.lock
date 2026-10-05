@@ -759,7 +759,7 @@ dependencies = [
 
 [[package]]
 name = "daevalog-dps-meter"
-version = "2.0.44"
+version = "1.0.0"
 dependencies = [
  "ashpd",
  "chrono",
