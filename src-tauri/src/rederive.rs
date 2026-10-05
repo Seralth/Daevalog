@@ -237,7 +237,7 @@ pub fn derive_fight(
     let replay = |upto: usize| {
         let storage = Arc::new(DataStorage::new());
         let mut processor = StreamProcessor::new(storage.clone(), skills.clone(), npcs.clone());
-        // The live meter loads these too (app.rs); without them a DoT tick is
+        // The live meter loads these too (app/setup.rs); without them a DoT tick is
         // filed as a direct hit and the skill table splits differently.
         if let Some(ids) = &dot_ids {
             processor.set_dot_skill_ids(ids.clone());

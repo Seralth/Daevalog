@@ -28,7 +28,7 @@ const startApp = async ({ forced = false } = {}) => {
     forced,
   });
   // Quit, Close and Escape in the Settings window are answered by a script
-  // the window runs before this page (SETTINGS_WINDOW_SCRIPT in app.rs), so
+  // the window runs before this page (SETTINGS_WINDOW_SCRIPT in app/tool_windows.rs), so
   // they work before any of this has loaded.
   try {
     await window.i18n?.init?.();

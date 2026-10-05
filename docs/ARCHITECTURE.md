@@ -19,13 +19,13 @@ The data moves through six layers, in this order. Each layer uses only the layer
 | 5. Storage | Keep the fight data: damage per target and per actor, names, summon owners, the local player. | `combat/data_storage.rs`, `entity/summon_resolver.rs` |
 | 6. Calculation | Choose the targets for the meter mode, add up damage per player, compute fight time, save fights. | `combat/dps_calculator.rs`, `history/fight_history.rs` |
 
-The user interface asks layer 6 for a snapshot every 500 ms (`app.rs`, event `dps-update`) and draws the snapshot (`public/src/js/core.js`, `public/src/js/meter.js`).
+The user interface asks layer 6 for a snapshot every 500 ms (`app/tasks.rs`, event `dps-update`) and draws the snapshot (`public/src/js/core.js`, `public/src/js/meter.js`).
 
 ## Other parts
 
 | Part | Job | Main files |
 |---|---|---|
-| Application shell | Tauri commands, windows, settings, the save loop, startup and exit. | `app.rs`, `config/settings.rs` |
+| Application shell | Tauri commands, windows, settings, the save loop, startup and exit. | `app/` (commands in `app/commands/`, startup in `app/setup.rs`), `config/settings.rs` |
 | Bridge | The JavaScript side of the Tauri commands. | `public/src/js/tauriBridge.js` |
 | Fight history | Save each fight as JSON in `history/`. | `history/fight_history.rs`, `entity/fight_record.rs` |
 | Sharing | Build the name-blinded packet slice of a fight and upload the slice to a2tools.app. | `capture/evidence_slice.rs`, `share/mod.rs`, `share/ring.rs` |

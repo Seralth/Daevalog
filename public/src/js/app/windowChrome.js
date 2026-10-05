@@ -187,7 +187,7 @@ Object.assign(DpsApp.prototype, {
   // ===== Click-through lock =====
   // Locked, the overlay lets clicks through to the game and cannot be
   // dragged; only its lock button stays clickable (the backend watches the
-  // pointer, see OverlayLock in app.rs), and a hotkey toggles it too. Offered
+  // pointer, see OverlayLock in app/overlay_lock.rs), and a hotkey toggles it too. Offered
   // only where the backend can do that: Windows, not Wayland.
 
   initOverlayLock() {

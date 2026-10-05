@@ -510,7 +510,7 @@
     setLockHotkey(mods, vk) {
       this.setSetting("dpsMeter.lockHotkey", this._buildHotkeyLabel(mods, vk));
     },
-    // The click-through lock (OverlayLock in app.rs). A promise: whether the
+    // The click-through lock (OverlayLock in app/overlay_lock.rs). A promise: whether the
     // backend can keep the lock button clickable here.
     overlayLockSupported() {
       return invoke("overlay_lock_supported").catch(() => false);
