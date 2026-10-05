@@ -13,7 +13,7 @@ use super::rows::{build_nickname_canonical_map_from_aggregates, resolve_nickname
 use super::{DpsCalculator, TargetSelectionMode};
 
 impl DpsCalculator {
-    pub fn get_dps(&mut self) -> DpsData {
+    pub(super) fn compute_dps(&mut self) -> DpsData {
         // A zone change flushed combat data; drop our cached snapshot and saved-target
         // state so the meter resets this cycle instead of returning the stale snapshot.
         if self.data_storage.take_combat_reset_requested() {

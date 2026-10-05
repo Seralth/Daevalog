@@ -59,6 +59,7 @@ impl DpsCalculator {
             self.displayed_targets.clear();
         }
         self.target_selection_mode = mode;
+        self.publish_view();
     }
 
     /// ALL mode's "last N minutes" window; 0 turns it off (everything since
@@ -86,6 +87,7 @@ impl DpsCalculator {
             self.data_storage.flush();
         }
         self.data_storage.set_current_target(0);
+        self.publish_view();
     }
 
     pub(super) fn decide_target(

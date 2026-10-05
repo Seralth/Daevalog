@@ -318,14 +318,31 @@ impl DataStorage {
     /// encounter put back: what ENC reads.
     pub fn get_encounter_snapshot(&self) -> HashMap<i32, TargetCombatData> {
         let inner = self.inner.read();
-        with_carry(&inner, inner.target_combat.clone(), TargetCombatData::clone)
+        with_carry(&inner, inner.target_combat.clone(), TargetCombatData::clone, |_| true)
     }
 
     /// `get_combat_snapshot_light` with the encounter's carry, as above.
     pub fn get_encounter_snapshot_light(&self) -> HashMap<i32, TargetCombatData> {
         let inner = self.inner.read();
         let live = inner.target_combat.iter().map(|(&tid, td)| (tid, light_clone(td))).collect();
-        with_carry(&inner, live, light_clone)
+        with_carry(&inner, live, light_clone, |_| true)
+    }
+
+    /// Only the targets asked for, as the snapshots above hold them: Details
+    /// never copies other targets' hits. `encounter` adds the encounter's
+    /// carry as `get_encounter_snapshot` does; `light` leaves out the hit
+    /// timelines as `get_combat_snapshot_light` does.
+    pub fn get_target_snapshots(&self, targets: &[i32], encounter: bool, light: bool) -> HashMap<i32, TargetCombatData> {
+        let clone: fn(&TargetCombatData) -> TargetCombatData = if light { light_clone } else { TargetCombatData::clone };
+        let inner = self.inner.read();
+        let live = targets.iter()
+            .filter_map(|t| inner.target_combat.get(t).map(|td| (*t, clone(td))))
+            .collect();
+        if encounter {
+            with_carry(&inner, live, clone, |t| targets.contains(&t))
+        } else {
+            live
+        }
     }
 
     /// Clear combat. Who owns which summon is kept: a summon is linked when it

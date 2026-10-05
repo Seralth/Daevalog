@@ -50,13 +50,14 @@ pub(super) fn retire_segment(inner: &mut Inner, data: TargetCombatData) {
 }
 
 /// Put the open encounter's carry back into `out`, merged with any live data
-/// of the same target.
+/// of the same target. Only the targets `keep` takes.
 pub(super) fn with_carry(
     inner: &Inner,
     mut out: HashMap<i32, TargetCombatData>,
     clone: fn(&TargetCombatData) -> TargetCombatData,
+    keep: impl Fn(i32) -> bool,
 ) -> HashMap<i32, TargetCombatData> {
-    for (&tid, carried) in &inner.encounter_carry {
+    for (&tid, carried) in inner.encounter_carry.iter().filter(|(tid, _)| keep(**tid)) {
         let td = match out.remove(&tid) {
             Some(live) => {
                 let mut m = TargetCombatData::merged([&clone(carried), &live]).expect("two segments");

@@ -267,10 +267,12 @@
 
     // The backend knows which targets the rows on screen stand for, one or
     // several (ALL, TRAIN), and merges them the way it built the rows.
-    async getBattleDetail(actorId) {
+    // `summaryOnly` (the hover tooltip): skills without hit timelines.
+    async getBattleDetail(actorId, summaryOnly = false) {
       const aid = Number(actorId);
       const result = await invoke("get_displayed_skill_details", {
         actorIds: Number.isFinite(aid) && aid > 0 ? [aid] : null,
+        summaryOnly: !!summaryOnly,
       });
       const issue = Array.isArray(result?.skills) && result.skills.length
         ? "" : "empty response for the targets on screen";

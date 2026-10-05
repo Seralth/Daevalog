@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use parking_lot::RwLock;
+
 use crate::combat::data_storage::DataStorage;
 use crate::combat::ping_tracker::PingTracker;
 use crate::entity::dps_data::DpsData;
@@ -34,6 +36,41 @@ pub struct DpsCalculator {
     /// row's skill details cover.
     displayed_targets: Vec<i32>,
     displayed_battle_time: i64,
+    /// The above, as details readers see them.
+    view: Arc<RwLock<DetailsView>>,
+}
+
+/// What Details needs of the meter beyond storage: the mode and the targets
+/// behind the rows on screen. The meter publishes it after each change.
+#[derive(Debug, Clone)]
+struct DetailsView {
+    mode: TargetSelectionMode,
+    displayed_targets: Vec<i32>,
+    displayed_battle_time: i64,
+}
+
+/// Builds details readers: calculators that share the meter's storage,
+/// lookups and view but not its mutex, so Details never waits on the meter.
+#[derive(Clone)]
+pub struct DetailsSource {
+    data_storage: Arc<DataStorage>,
+    skill_lookup: Arc<SkillLookup>,
+    npc_lookup: Arc<NpcLookup>,
+    ping_tracker: Arc<PingTracker>,
+    view: Arc<RwLock<DetailsView>>,
+}
+
+impl DetailsSource {
+    /// A calculator for the Details calls only, as the meter stands now.
+    pub fn reader(&self) -> DpsCalculator {
+        let mut reader = DpsCalculator::new(self.data_storage.clone(), self.skill_lookup.clone(),
+            self.npc_lookup.clone(), self.ping_tracker.clone());
+        let view = self.view.read().clone();
+        reader.target_selection_mode = view.mode;
+        reader.displayed_targets = view.displayed_targets;
+        reader.displayed_battle_time = view.displayed_battle_time;
+        reader
+    }
 }
 
 impl DpsCalculator {
@@ -58,7 +95,37 @@ impl DpsCalculator {
             saved_fights: HashMap::new(),
             displayed_targets: Vec::new(),
             displayed_battle_time: 0,
+            view: Arc::new(RwLock::new(DetailsView {
+                mode: TargetSelectionMode::BossTargets,
+                displayed_targets: Vec::new(),
+                displayed_battle_time: 0,
+            })),
         }
+    }
+
+    pub fn details_source(&self) -> DetailsSource {
+        DetailsSource {
+            data_storage: self.data_storage.clone(),
+            skill_lookup: self.skill_lookup.clone(),
+            npc_lookup: self.npc_lookup.clone(),
+            ping_tracker: self.ping_tracker.clone(),
+            view: self.view.clone(),
+        }
+    }
+
+    pub fn get_dps(&mut self) -> DpsData {
+        let dps = self.compute_dps();
+        self.publish_view();
+        dps
+    }
+
+    fn publish_view(&self) {
+        let mut view = self.view.write();
+        view.mode = self.target_selection_mode;
+        if view.displayed_targets != self.displayed_targets {
+            view.displayed_targets.clone_from(&self.displayed_targets);
+        }
+        view.displayed_battle_time = self.displayed_battle_time;
     }
 }
 
@@ -69,6 +136,7 @@ mod tests {
     use super::*;
     use super::fights::fight_dungeon;
     use super::meter_rows::active_time;
+    use crate::entity::details_context::TargetDetailsResponse;
     use crate::entity::fight_record::FightRecord;
     use crate::entity::summon_resolver;
     use crate::entity::damage_packet::ParsedDamagePacket;
@@ -1091,5 +1159,110 @@ mod tests {
             });
         }
         assert!(pulls > 0);
+    }
+
+    /// The hover summary is the full details without hit timelines, healing
+    /// and ping.
+    fn assert_hover_matches_full(full: TargetDetailsResponse, summary: TargetDetailsResponse) {
+        let (mut full, mut summary) = (full, summary);
+        assert!(summary.skills.iter().all(|s| s.hit_timestamps.is_empty()));
+        assert!(summary.heal_skills.is_empty());
+        assert!(summary.ping_history.is_empty());
+        full.heal_skills.clear();
+        full.ping_history.clear();
+        for skill in &mut full.skills { skill.hit_timestamps.clear(); }
+        full.skills.sort_by_key(|s| (s.actor_id, s.code, s.is_dot));
+        summary.skills.sort_by_key(|s| (s.actor_id, s.code, s.is_dot));
+        assert_eq!(serde_json::to_value(full).unwrap(), serde_json::to_value(summary).unwrap());
+    }
+
+    #[test]
+    fn hover_omits_timelines_without_changing_damage_or_actor_filtering() {
+        let storage = Arc::new(DataStorage::new());
+        storage.set_local_player_id(Some(2259));
+        storage.append_damage(hit(2259, 50_000, 1_000));
+        storage.append_damage(hit(2259, 50_000, 1_100));
+        storage.append_damage(hit(2260, 50_000, 1_200));
+        storage.append_damage(hit(2259, 50_001, 1_300));
+        let mut dot = hit(2259, 50_000, 1_400);
+        dot.set_dot(true);
+        storage.append_damage(dot);
+        let calc = meter(&storage);
+        assert!(calc.get_hover_details(50_000, Some(&[2259])).skills.iter().any(|s| s.is_dot));
+        assert!(!calc.get_target_details(50_000, Some(&[2259])).skills[0].hit_timestamps.is_empty());
+        for actors in [None, Some(&[2259][..]), Some(&[2260][..]), Some(&[999][..])] {
+            assert_hover_matches_full(calc.get_target_details(50_000, actors), calc.get_hover_details(50_000, actors));
+        }
+        assert_hover_matches_full(calc.get_target_details(99999, None), calc.get_hover_details(99999, None));
+        // Reading the summary must not strip the stored timeline.
+        assert_eq!(calc.get_target_details(50_000, Some(&[2259])).skills.iter()
+            .find(|s| !s.is_dot).unwrap().hit_timestamps.len(), 2);
+    }
+
+    #[test]
+    fn independent_details_reader_matches_live_calculator_and_ignores_unrelated_hits() {
+        let storage = Arc::new(DataStorage::new());
+        storage.set_local_player_id(Some(2259));
+        storage.append_damage(hit(2259, 50_000, 1_000));
+        let mut live = meter(&storage);
+        live.get_dps();
+        let reader = live.details_source().reader();
+        assert_eq!(serde_json::to_value(reader.get_details_context()).unwrap(),
+            serde_json::to_value(live.get_details_context()).unwrap());
+        let before = serde_json::to_value(reader.get_target_details(50_000, Some(&[2259]))).unwrap();
+        for target in 50_001..50_065 {
+            for i in 0..100 { storage.append_damage(hit(2259, target, 2_000 + i)); }
+        }
+        assert_eq!(serde_json::to_value(reader.get_target_details(50_000, Some(&[2259]))).unwrap(), before);
+        let snapshot = storage.get_target_snapshots(&[50_000], false, false);
+        assert_eq!(snapshot[&50_000].actors.values().flat_map(|a| a.skills.values())
+            .map(|s| s.hit_timestamps.len()).sum::<usize>(), 1);
+        assert!(storage.get_target_snapshots(&[99999], false, false).is_empty());
+        live.restart_target_selection(true);
+        assert_eq!(reader.get_details_context().current_target_id, live.get_details_context().current_target_id);
+    }
+
+    #[test]
+    fn a_details_reader_follows_the_meters_mode_and_rows() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, 1);
+        spawn(&s, 900, BOSS);
+        hits(&s, 2259, 800, 1_000, 10_000);
+        hits(&s, 2259, 900, 20_000, 29_000);
+        hits(&s, 2260, 801, 21_000, 25_000);
+        hits(&s, 2259, 800, 30_000, 31_000);
+        crate::clock::set_override(Some(31_000));
+        let mut live = meter_with_npcs(&s);
+        let source = live.details_source();
+        // Equal, but for the order of skills (map order).
+        let same = |mut a: TargetDetailsResponse, mut b: TargetDetailsResponse| {
+            for d in [&mut a, &mut b] {
+                d.skills.sort_by_key(|s| (s.actor_id, s.code, s.is_dot));
+                d.heal_skills.sort_by_key(|s| (s.actor_id, s.code, s.is_dot));
+            }
+            assert_eq!(serde_json::to_value(a).unwrap(), serde_json::to_value(b).unwrap());
+        };
+        for mode in ["encounter", "allTargets", "bossTargets", "lastHitByMe"] {
+            live.set_target_selection_mode(mode);
+            live.get_dps();
+            let reader = source.reader();
+            if mode == "allTargets" {
+                assert_eq!(reader.get_displayed_details(None).target_id, 0, "several targets, merged");
+            }
+            for actors in [None, Some(&[2259][..])] {
+                same(reader.get_displayed_details(actors), live.get_displayed_details(actors));
+                assert_hover_matches_full(live.get_displayed_details(actors), reader.get_displayed_hover_details(actors));
+                for target in [800, 801, 900] {
+                    same(reader.get_target_details(target, actors), live.get_target_details(target, actors));
+                    assert_hover_matches_full(live.get_target_details(target, actors), reader.get_hover_details(target, actors));
+                }
+            }
+        }
+        live.set_target_selection_mode("encounter");
+        live.get_dps();
+        assert_eq!(source.reader().get_target_details(800, None).total_target_damage, 12 * 500,
+            "the encounter's carry: the trash before the pull still counts");
+        crate::clock::set_override(None);
     }
 }

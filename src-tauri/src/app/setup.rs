@@ -122,6 +122,7 @@ pub fn run() {
 
             let state = AppState {
                 data_storage: data_storage.clone(),
+                details: dps_calculator.details_source(),
                 dps_calculator: Mutex::new(dps_calculator),
                 ping_tracker: ping_tracker.clone(),
                 port_detector: port_detector.clone(),

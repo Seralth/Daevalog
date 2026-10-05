@@ -16,14 +16,14 @@ pub(crate) async fn get_dps_snapshot(app: tauri::AppHandle) -> Result<DpsData, S
 }
 
 #[tauri::command]
-pub(crate) async fn get_skill_details(app: tauri::AppHandle, target_id: i32, actor_ids: Option<Vec<i32>>) -> Result<TargetDetailsResponse, String> {
-    meter::skill_details(app, target_id, actor_ids).await
+pub(crate) async fn get_skill_details(app: tauri::AppHandle, target_id: i32, actor_ids: Option<Vec<i32>>, summary_only: Option<bool>) -> Result<TargetDetailsResponse, String> {
+    meter::skill_details(app, target_id, actor_ids, summary_only.unwrap_or(false)).await
 }
 
 /// Skill details behind a meter row, whatever the mode shows.
 #[tauri::command]
-pub(crate) async fn get_displayed_skill_details(app: tauri::AppHandle, actor_ids: Option<Vec<i32>>) -> Result<TargetDetailsResponse, String> {
-    meter::displayed_skill_details(app, actor_ids).await
+pub(crate) async fn get_displayed_skill_details(app: tauri::AppHandle, actor_ids: Option<Vec<i32>>, summary_only: Option<bool>) -> Result<TargetDetailsResponse, String> {
+    meter::displayed_skill_details(app, actor_ids, summary_only.unwrap_or(false)).await
 }
 
 #[tauri::command]

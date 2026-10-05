@@ -858,7 +858,7 @@ class DpsApp {
     this.hoverTooltipRequestSeqByRowId.set(rowId, requestSeq);
     this.hoverTooltipPendingRowIds.add(rowId);
 
-    this.getDetails(row, { maxSkills: 5, showSkillIcons: false })
+    this.getDetails(row, { maxSkills: 5, showSkillIcons: false, summaryOnly: true })
       .then((details) => {
         this.hoverTooltipPendingRowIds.delete(rowId);
         const currentSeq = this.hoverTooltipRequestSeqByRowId.get(rowId);
@@ -1453,7 +1453,7 @@ class DpsApp {
 
   async getDetails(
     row,
-    { targetId = null, attackerIds = null, totalTargetDamage = null, showSkillIcons = false, maxSkills = null } = {}
+    { targetId = null, attackerIds = null, totalTargetDamage = null, showSkillIcons = false, maxSkills = null, summaryOnly = false } = {}
   ) {
     let raw = null;
     let backendFiltered = false;
@@ -1464,7 +1464,7 @@ class DpsApp {
       raw = await window.dpsData.getTargetDetails(targetId, payload);
       backendFiltered = true;
     } else {
-      raw = await window.dpsData?.getBattleDetail?.(row.id);
+      raw = await window.dpsData?.getBattleDetail?.(row.id, summaryOnly);
     }
     let detailObj = raw;
     // globalThis.uiDebug?.log?.("getBattleDetail", detailObj);

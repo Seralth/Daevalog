@@ -14,7 +14,7 @@ use parking_lot::Mutex;
 
 use crate::capture::combat_port_detector::CombatPortDetector;
 use crate::combat::data_storage::DataStorage;
-use crate::combat::dps_calculator::DpsCalculator;
+use crate::combat::dps_calculator::{DetailsSource, DpsCalculator};
 use crate::combat::ping_tracker::PingTracker;
 use crate::config::settings::Settings;
 use crate::history::fight_history::FightHistoryManager;
@@ -51,6 +51,8 @@ pub(crate) use tray_actions::{open_history_from_tray, open_settings_from_tray, q
 pub struct AppState {
     pub data_storage: Arc<DataStorage>,
     pub dps_calculator: Mutex<DpsCalculator>,
+    /// Readers for the Details calls, which never take the meter's mutex.
+    pub details: DetailsSource,
     pub ping_tracker: Arc<PingTracker>,
     pub port_detector: Arc<CombatPortDetector>,
     pub fight_history: FightHistoryManager,

@@ -132,7 +132,9 @@ impl DpsCalculator {
             .collect();
 
         DetailsContext {
-            current_target_id: self.current_target,
+            // From storage, which the meter keeps in step: a details reader
+            // has no target of its own.
+            current_target_id: self.data_storage.current_target(),
             targets,
             actors,
         }
@@ -142,28 +144,48 @@ impl DpsCalculator {
     /// `get_target_details`, several (ALL, TRAIN) merged into one before the
     /// rows are resolved, so a row's details match the row.
     pub fn get_displayed_details(&self, actor_ids: Option<&[i32]>) -> TargetDetailsResponse {
+        self.displayed_details(actor_ids, false)
+    }
+
+    /// `get_displayed_details` for the hover tooltip: the skills only, without
+    /// hit timelines, healing or ping.
+    pub fn get_displayed_hover_details(&self, actor_ids: Option<&[i32]>) -> TargetDetailsResponse {
+        self.displayed_details(actor_ids, true)
+    }
+
+    fn displayed_details(&self, actor_ids: Option<&[i32]>, summary_only: bool) -> TargetDetailsResponse {
         if let [one] = self.displayed_targets.as_slice() {
-            return self.get_target_details(*one, actor_ids);
+            return self.target_details(*one, actor_ids, false, summary_only);
         }
-        let combat_data = self.combat_snapshot();
+        let combat_data = self.target_snapshots(&self.displayed_targets, summary_only);
         let merged = TargetCombatData::merged(self.displayed_targets.iter().filter_map(|t| combat_data.get(t)));
-        let Some(merged) = merged else { return self.get_target_details(0, actor_ids) };
-        let mut details = self.details_for(&merged, 0, &self.data_storage.get_heal_snapshot(), actor_ids, None);
+        let Some(merged) = merged else { return self.target_details(0, actor_ids, false, summary_only) };
+        let heals = if summary_only { HashMap::new() } else { self.data_storage.get_heal_snapshot() };
+        let mut details = self.details_for(&merged, 0, &heals, actor_ids, None);
+        if summary_only {
+            details.ping_history.clear();
+        }
         details.battle_time = self.displayed_battle_time;
         details
     }
 
     pub fn get_target_details(&self, target_id: i32, actor_ids: Option<&[i32]>) -> TargetDetailsResponse {
-        self.target_details(target_id, actor_ids, false)
+        self.target_details(target_id, actor_ids, false, false)
+    }
+
+    /// `get_target_details` for the hover tooltip: the skills only, without
+    /// hit timelines, healing or ping.
+    pub fn get_hover_details(&self, target_id: i32, actor_ids: Option<&[i32]>) -> TargetDetailsResponse {
+        self.target_details(target_id, actor_ids, false, true)
     }
 
     /// `get_target_details` for a saved fight: only the healing done during it.
     pub(super) fn fight_details(&self, target_id: i32) -> TargetDetailsResponse {
-        self.target_details(target_id, None, true)
+        self.target_details(target_id, None, true, false)
     }
 
-    fn target_details(&self, target_id: i32, actor_ids: Option<&[i32]>, own_heals: bool) -> TargetDetailsResponse {
-        let combat_data = self.combat_snapshot();
+    fn target_details(&self, target_id: i32, actor_ids: Option<&[i32]>, own_heals: bool, summary_only: bool) -> TargetDetailsResponse {
+        let combat_data = self.target_snapshots(&[target_id], summary_only);
         let target_data = match combat_data.get(&target_id) {
             Some(td) => td,
             None => return TargetDetailsResponse {
@@ -178,6 +200,11 @@ impl DpsCalculator {
             },
         };
         let max_hp = self.data_storage.get_mob_hp(target_id).unwrap_or(0);
+        if summary_only {
+            let mut details = self.details_for(target_data, max_hp, &HashMap::new(), actor_ids, None);
+            details.ping_history.clear();
+            return details;
+        }
         let heals = if own_heals {
             self.data_storage.heals_between(target_data.first_damage_time, target_data.last_damage_time)
         } else {
@@ -186,13 +213,11 @@ impl DpsCalculator {
         self.details_for(target_data, max_hp, &heals, actor_ids, None)
     }
 
-    /// The live data; in ENC with what a boss pull cleared of the encounter.
-    fn combat_snapshot(&self) -> HashMap<i32, TargetCombatData> {
-        if self.target_selection_mode == TargetSelectionMode::Encounter {
-            self.data_storage.get_encounter_snapshot()
-        } else {
-            self.data_storage.get_combat_snapshot()
-        }
+    /// The live data of these targets only; in ENC with what a boss pull
+    /// cleared of the encounter. `light` leaves out the hit timelines.
+    fn target_snapshots(&self, targets: &[i32], light: bool) -> HashMap<i32, TargetCombatData> {
+        let encounter = self.target_selection_mode == TargetSelectionMode::Encounter;
+        self.data_storage.get_target_snapshots(targets, encounter, light)
     }
 
     /// Details of one fight segment, live or already cleared out.

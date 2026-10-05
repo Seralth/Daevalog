@@ -14,23 +14,37 @@ pub(crate) async fn dps_snapshot(app: tauri::AppHandle) -> Result<DpsData, Strin
     DPS_TICK.run_waiting(move || app.state::<AppState>().dps_calculator.lock().get_dps()).await
 }
 
+// Details read from a reader built from storage, never through the meter's
+// mutex, so they neither wait on the tick nor hold it up.
+
 /// Details waits for a place: the Details view asks once per target and adds
 /// the answers up, so a refused target would leave the total short.
-pub(crate) async fn skill_details(app: tauri::AppHandle, target_id: i32, actor_ids: Option<Vec<i32>>) -> Result<TargetDetailsResponse, String> {
+/// `summary_only` leaves out hit timelines, healing and ping (the hover tooltip).
+pub(crate) async fn skill_details(app: tauri::AppHandle, target_id: i32, actor_ids: Option<Vec<i32>>, summary_only: bool) -> Result<TargetDetailsResponse, String> {
     CALCULATIONS.run_waiting(move || {
-        app.state::<AppState>().dps_calculator.lock().get_target_details(target_id, actor_ids.as_deref())
+        let reader = app.state::<AppState>().details.reader();
+        if summary_only {
+            reader.get_hover_details(target_id, actor_ids.as_deref())
+        } else {
+            reader.get_target_details(target_id, actor_ids.as_deref())
+        }
     }).await
 }
 
-pub(crate) async fn displayed_skill_details(app: tauri::AppHandle, actor_ids: Option<Vec<i32>>) -> Result<TargetDetailsResponse, String> {
+pub(crate) async fn displayed_skill_details(app: tauri::AppHandle, actor_ids: Option<Vec<i32>>, summary_only: bool) -> Result<TargetDetailsResponse, String> {
     CALCULATIONS.run_waiting(move || {
-        app.state::<AppState>().dps_calculator.lock().get_displayed_details(actor_ids.as_deref())
+        let reader = app.state::<AppState>().details.reader();
+        if summary_only {
+            reader.get_displayed_hover_details(actor_ids.as_deref())
+        } else {
+            reader.get_displayed_details(actor_ids.as_deref())
+        }
     }).await
 }
 
 /// Polled; a refused call keeps the page's last context.
 pub(crate) async fn details_context(app: tauri::AppHandle) -> Result<DetailsContext, String> {
-    CALCULATIONS.run(move || app.state::<AppState>().dps_calculator.lock().get_details_context()).await
+    CALCULATIONS.run(move || app.state::<AppState>().details.reader().get_details_context()).await
 }
 
 pub(crate) fn reset_combat(state: &AppState) {

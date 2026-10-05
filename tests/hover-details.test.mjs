@@ -61,3 +61,14 @@ test("rendered tooltip text distinguishes loading, empty data and errors", () =>
     if (state !== "loading") assert.ok(!app.hoverTooltipEl.innerHTML.includes("Loading..."));
   }
 });
+
+test("hover asks for the summary, without hit timelines", async () => {
+  const asked = [];
+  const { app } = setup(async (id, summaryOnly) => {
+    asked.push(summaryOnly);
+    return JSON.stringify({ skills: [] });
+  });
+  app.applyHoverTooltip({ id: 1 }, { forceRefresh: true });
+  await tick();
+  assert.deepEqual(asked, [true]);
+});
