@@ -11,6 +11,11 @@
     }
   },
   "details": {
+    "hoverTooltip": {
+      "loading": "Wird geladen...",
+      "empty": "Keine Skill-Daten für diesen Kampf",
+      "error": "Skills konnten nicht geladen werden"
+    },
     "header": "Details",
     "title": "Details zu {name}",
     "tooltip": "Schaden über Zeit wird in den Gesamtquoten für Kritisch, Doppelt, Perfekt, Rückenangriff und Parade nicht mitgezählt.",
@@ -136,7 +141,55 @@
     "previewUploadTip": "Schreibt, was das Teilen dieses Kampfes hochladen würde. Es wird nichts gesendet.",
     "previewWorking": "Vorschau wird erstellt…",
     "previewDone": "{slice} KB geschrieben ({sent} KB komprimiert — so viel würde ein Upload senden). {kept} von {seen} Paketen behalten, {blinded} Namen unkenntlich gemacht. Es wurde nichts hochgeladen. Gespeichert unter {dir}",
+    "uploadTip": "Diesen Kampf auf a2tools.app hochladen und einen Link zum Teilen erhalten",
+    "uploadOpen": "Das Log dieses Kampfes auf a2tools.app öffnen",
+    "uploadWorking": "Wird hochgeladen…",
+    "uploadDonePublic": "Hochgeladen. Link kopiert: {url}",
+    "uploadDonePrivate": "Privat hochgeladen. Link kopiert: {url}",
     "openWorld": "Offene Welt"
+  },
+  "gameRecord": {
+    "title": "Spielaufzeichnung",
+    "switch": "Angezeigte Werte",
+    "meter": "Meter",
+    "game": "Spielaufzeichnung",
+    "both": "Beide",
+    "filter": "Nur Kämpfe mit Spielaufzeichnung",
+    "filterTip": "Spielaufzeichnungen stammen aus der Schadensanalyse des Spiels (Strg+X).",
+    "columnTip": "Spielaufzeichnung: die Schadensanalyse des Spiels (Strg+X)",
+    "matches": "Stimmt mit dem Spiel überein",
+    "differOne": "1 Zeile weicht ab",
+    "differ": "{n} Zeilen weichen ab",
+    "notCompared": "Nur Werte des Spiels",
+    "damageMeter": "Schaden, Meter",
+    "damageGame": "Schaden, Spiel",
+    "allMatch": "Alle {n} Skills stimmen überein",
+    "someMatch": "{x} von {n} Skills stimmen überein",
+    "noComparison": "Für diesen Kampf sind keine Pakete gespeichert, daher werden nur die Werte des Spiels gezeigt.",
+    "window": "Spielaufzeichnung von {from} bis {to}.",
+    "covers": "Deckt {s} s dieses Kampfes ab",
+    "alsoCoversOne": "deckt auch 1 weiteren Kampf ab",
+    "alsoCovers": "deckt auch {n} weitere Kämpfe ab",
+    "targetOnly": "Nur der Schaden an {target} wird verglichen.",
+    "onlyDiffer": "Nur abweichende Zeilen",
+    "othersMatch": "{n} weitere Skills stimmen in jedem Wert mit dem Spiel überein.",
+    "gameTag": "Spiel {n}",
+    "note": "Eine Abweichung heißt: Das Meter hat den Kampf anders gelesen als das Spiel. Der Wert des Spiels ist der richtige.",
+    "copy": "Für einen Fehlerbericht kopieren",
+    "copied": "Kopiert",
+    "copyFailed": "Kopieren fehlgeschlagen",
+    "col": {
+      "skill": "Skill",
+      "damage": "Schaden",
+      "share": "Anteil",
+      "hits": "Treffer",
+      "crit": "Krit",
+      "perfect": "Perfekt",
+      "double": "Doppelt",
+      "front": "Front",
+      "back": "Rücken",
+      "addhit": "Zus. Treffer"
+    }
   },
   "settings": {
     "title": "Einstellungen",
@@ -184,11 +237,17 @@
       "dps": "DPS"
     },
     "showPing": "Ping anzeigen",
+    "startInTray": "Im Infobereich starten",
+    "startInTrayHint": "Das Meter startet verborgen. Über das Menü des Symbols im Infobereich holst du es zurück.",
+    "hideFromTaskbar": "Nicht in der Taskleiste zeigen",
+    "hideFromTaskbarHint": "Die Fenster des Meters belegen keinen Platz in der Taskleiste. Das Menü des Symbols im Infobereich zeigt und verbirgt das Meter.",
     "showTotalDps": "Gesamt-DPS/SCH anzeigen",
     "roundDps": "DPS runden",
     "autoHideMeter": "Meter automatisch ausblenden",
     "showSuspendBtn": "Pause-Schaltfläche anzeigen",
     "showLockBtn": "Sperrtaste anzeigen (durchklickbar)",
+    "waylandLayer": "Overlay: Wayland-Ebene",
+    "waylandLayerHint": "Unter nativem Wayland (KDE Plasma, Hyprland, Sway) bleibt das Overlay über jedem Fenster, auch über einem Spiel im Vollbild. Nicht unter GNOME oder XWayland. Wirkt ab dem nächsten Start.",
     "playerLimit": {
       "label": "Max. angezeigte Spieler"
     },
@@ -249,6 +308,7 @@
     "allTargetsWindow": {
       "label": "Zeitfenster für alle Ziele",
       "options": {
+        "off": "Aus (seit dem Zonenwechsel)",
         "30s": "30 Sekunden",
         "1m": "1 Minute",
         "2m": "2 Minuten",
@@ -288,7 +348,9 @@
       "codeHint": "Die Seite sollte sich bereits geöffnet haben. Der Code läuft in 10 Minuten ab.",
       "working": "Warte auf Bestätigung…",
       "failed": "Anmeldung fehlgeschlagen: {error}",
-      "supporter": "Unterstützer"
+      "supporter": "Unterstützer",
+      "autoUpload": "Bosskämpfe automatisch hochladen",
+      "autoUploadHint": "Wenn ein Bosskampf endet, wird er mit der auf a2tools.app gewählten Sichtbarkeit in dein Konto hochgeladen. Andere Spieler bleiben verdeckt. Kämpfe gegen Trainingspuppen werden nie hochgeladen."
     },
     "sendLogs": {
       "hint": "Sendet deine 3 neuesten Paket-Logs für einen Fehlerbericht an den Entwickler.",
@@ -386,7 +448,8 @@
     "all": "Alle Ziele",
     "identifying": "Identifiziere dich...",
     "train": "Trainingspuppe",
-    "boss": "Boss-Ziele"
+    "boss": "Boss-Ziele",
+    "encounter": "Begegnung"
   },
   "classes": {
     "GLADIATOR": "Gladiator",
@@ -418,5 +481,12 @@
     "tierExpedition": "Expedition",
     "tierConquestNormal": "Eroberung (Normal)",
     "tierConquestHard": "Eroberung (Schwer)"
+  },
+  "tray": {
+    "toggle": "Meter zeigen oder verbergen",
+    "lock": "Meter sperren oder entsperren",
+    "settings": "Einstellungen",
+    "history": "Verlauf",
+    "quit": "Beenden"
   }
 }

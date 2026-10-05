@@ -11,6 +11,11 @@
     }
   },
   "details": {
+    "hoverTooltip": {
+      "loading": "Chargement...",
+      "empty": "Aucune donnée de compétence pour ce combat",
+      "error": "Impossible de charger les compétences"
+    },
     "header": "Détails",
     "title": "Détails de {name}",
     "tooltip": "Les dégâts sur la durée ne sont pas comptés dans les taux globaux de critique, double, parfait, attaque dans le dos ou parade.",
@@ -136,7 +141,55 @@
     "previewUploadTip": "Écrit ce que le partage de ce combat enverrait. Rien n'est envoyé.",
     "previewWorking": "Création de l'aperçu…",
     "previewDone": "{slice} Ko écrits ({sent} Ko compressés — ce qu'un envoi transmettrait). {kept} paquets conservés sur {seen}, {blinded} noms masqués. Rien n'a été envoyé. Enregistré dans {dir}",
+    "uploadTip": "Envoyer ce combat sur a2tools.app et obtenir un lien à partager",
+    "uploadOpen": "Ouvrir le journal de ce combat sur a2tools.app",
+    "uploadWorking": "Envoi en cours…",
+    "uploadDonePublic": "Envoyé. Lien copié : {url}",
+    "uploadDonePrivate": "Envoyé en privé. Lien copié : {url}",
     "openWorld": "Monde ouvert"
+  },
+  "gameRecord": {
+    "title": "Relevé du jeu",
+    "switch": "Chiffres affichés",
+    "meter": "Meter",
+    "game": "Relevé du jeu",
+    "both": "Les deux",
+    "filter": "Seulement les combats avec un relevé du jeu",
+    "filterTip": "Les relevés du jeu viennent de l'analyseur de dégâts du jeu (Ctrl+X).",
+    "columnTip": "Relevé du jeu : l'analyseur de dégâts du jeu (Ctrl+X)",
+    "matches": "Identique au jeu",
+    "differOne": "1 ligne diffère",
+    "differ": "{n} lignes diffèrent",
+    "notCompared": "Chiffres du jeu seulement",
+    "damageMeter": "Dégâts, meter",
+    "damageGame": "Dégâts, jeu",
+    "allMatch": "Les {n} compétences correspondent",
+    "someMatch": "{x} compétences sur {n} correspondent",
+    "noComparison": "Aucun paquet enregistré pour ce combat : seuls les chiffres du jeu sont affichés.",
+    "window": "Relevé du jeu de {from} à {to}.",
+    "covers": "Couvre {s} s de ce combat",
+    "alsoCoversOne": "couvre aussi 1 autre combat",
+    "alsoCovers": "couvre aussi {n} autres combats",
+    "targetOnly": "Seuls les dégâts sur {target} sont comparés.",
+    "onlyDiffer": "Seulement les lignes qui diffèrent",
+    "othersMatch": "{n} autres compétences correspondent au jeu sur chaque chiffre.",
+    "gameTag": "jeu {n}",
+    "note": "Une différence veut dire que le meter a lu le combat autrement que le jeu. Le chiffre du jeu est le bon.",
+    "copy": "Copier pour un rapport de bug",
+    "copied": "Copié",
+    "copyFailed": "Copie impossible",
+    "col": {
+      "skill": "Compétence",
+      "damage": "Dégâts",
+      "share": "Part",
+      "hits": "Coups",
+      "crit": "Crit",
+      "perfect": "Parfait",
+      "double": "Double",
+      "front": "Face",
+      "back": "Dos",
+      "addhit": "Coups suppl."
+    }
   },
   "settings": {
     "title": "Paramètres",
@@ -184,11 +237,17 @@
       "dps": "DPS"
     },
     "showPing": "Afficher le ping",
+    "startInTray": "Démarrer dans la zone de notification",
+    "startInTrayHint": "Le meter démarre masqué. Faites-le revenir par le menu de l'icône de la zone de notification.",
+    "hideFromTaskbar": "Ne pas afficher dans la barre des tâches",
+    "hideFromTaskbarHint": "Les fenêtres du meter ne prennent pas de place dans la barre des tâches. Le menu de l'icône de la zone de notification affiche et masque le meter.",
     "showTotalDps": "Afficher DPS/DGT total",
     "roundDps": "Arrondir les DPS",
     "autoHideMeter": "Masquer le meter automatiquement",
     "showSuspendBtn": "Afficher le bouton pause",
     "showLockBtn": "Afficher le bouton de verrouillage (clics traversants)",
+    "waylandLayer": "Overlay : couche Wayland",
+    "waylandLayerHint": "Sous Wayland natif (KDE Plasma, Hyprland, Sway), l'overlay reste au-dessus de toutes les fenêtres, même d'un jeu en plein écran. Pas sous GNOME ni sous XWayland. Prend effet au prochain démarrage.",
     "playerLimit": {
       "label": "Joueurs affichés max."
     },
@@ -249,6 +308,7 @@
     "allTargetsWindow": {
       "label": "Plage de temps toutes cibles",
       "options": {
+        "off": "Désactivé (depuis le changement de zone)",
         "30s": "30 secondes",
         "1m": "1 minute",
         "2m": "2 minutes",
@@ -288,7 +348,9 @@
       "codeHint": "La page devrait déjà être ouverte. Le code expire dans 10 minutes.",
       "working": "En attente de validation…",
       "failed": "Échec de la connexion : {error}",
-      "supporter": "Soutien"
+      "supporter": "Soutien",
+      "autoUpload": "Envoyer les combats de boss automatiquement",
+      "autoUploadHint": "À la fin d'un combat de boss, il est envoyé sur votre compte avec la visibilité choisie sur a2tools.app. Les autres joueurs restent masqués. Les combats contre les mannequins d'entraînement ne sont jamais envoyés."
     },
     "sendLogs": {
       "hint": "Envoie tes 3 derniers journaux de paquets au développeur, pour un rapport de bug.",
@@ -300,11 +362,11 @@
     },
     "encounterTimeout": {
       "label": "La rencontre se termine après (secondes)",
-      "hint": "Secondes sans combat de ta part ou de ton groupe qui mettent fin à une rencontre. Un boss que tu as touché et qui est encore en vie la garde ouverte."
+      "hint": "Secondes sans combat de votre part ou de votre groupe qui mettent fin à une rencontre. Un boss que vous avez touché et qui est encore en vie la garde ouverte."
     },
     "encColumns": {
       "title": "Mode ENC",
-      "hint": "Quand une rencontre se termine et ce que chaque ligne affiche en mode ENC. Un compteur étroit retire les colonnes en partant de la fin.",
+      "hint": "Quand une rencontre se termine et ce que chaque ligne affiche en mode ENC. Un meter étroit retire les colonnes en partant de la fin.",
       "encDps": "ENCDPS",
       "dps": "DPS (temps actif propre)",
       "pct": "Dégâts %",
@@ -386,7 +448,8 @@
     "all": "Toutes les cibles",
     "identifying": "Identification en cours...",
     "train": "Mannequin d'entraînement",
-    "boss": "Cibles boss"
+    "boss": "Cibles boss",
+    "encounter": "Rencontre"
   },
   "classes": {
     "GLADIATOR": "Gladiateur",
@@ -418,5 +481,12 @@
     "tierExpedition": "Expédition",
     "tierConquestNormal": "Conquête (normal)",
     "tierConquestHard": "Conquête (difficile)"
+  },
+  "tray": {
+    "toggle": "Afficher ou masquer le meter",
+    "lock": "Verrouiller ou déverrouiller le meter",
+    "settings": "Paramètres",
+    "history": "Historique",
+    "quit": "Quitter"
   }
 }

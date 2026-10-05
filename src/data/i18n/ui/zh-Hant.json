@@ -11,9 +11,14 @@
     }
   },
   "details": {
+    "hoverTooltip": {
+      "loading": "載入中...",
+      "empty": "這場戰鬥沒有技能資料",
+      "error": "無法載入技能"
+    },
     "header": "詳細",
     "title": "{name} 詳細",
-    "tooltip": "持續傷害（DOT）不包含在總暴擊、雙重、完美、背擊或格擋比率中。",
+    "tooltip": "持續傷害（DOT）不包含在總暴擊、強擊、完美、背擊或格擋比率中。",
     "settings": {
       "ariaLabel": "開啟詳細設定"
     },
@@ -57,8 +62,8 @@
       "parryTooltip": "格擋 %",
       "perfect": "完美",
       "perfectTooltip": "完美 %",
-      "double": "雙重",
-      "doubleTooltip": "雙重 %",
+      "double": "強擊",
+      "doubleTooltip": "強擊 %",
       "back": "背擊",
       "backTooltip": "背擊 %",
       "frontal": "正面",
@@ -93,7 +98,7 @@
       "contribution": "貢獻度",
       "critRate": "暴擊率",
       "perfectRate": "完美率",
-      "doubleRate": "雙重率",
+      "doubleRate": "強擊率",
       "backRate": "背擊率",
       "parryRate": "格擋率",
       "combatTime": "戰鬥時間",
@@ -143,6 +148,49 @@
     "uploadDonePrivate": "已以私人方式上傳。連結已複製：{url}",
     "openWorld": "野外"
   },
+  "gameRecord": {
+    "title": "遊戲紀錄",
+    "switch": "顯示的數值",
+    "meter": "計量器",
+    "game": "遊戲紀錄",
+    "both": "兩者",
+    "filter": "僅顯示有遊戲紀錄的戰鬥",
+    "filterTip": "遊戲紀錄來自遊戲內建的傷害分析（Ctrl+X）。",
+    "columnTip": "遊戲紀錄：遊戲內建的傷害分析（Ctrl+X）",
+    "matches": "與遊戲一致",
+    "differOne": "1 列不同",
+    "differ": "{n} 列不同",
+    "notCompared": "僅遊戲數值",
+    "damageMeter": "傷害（計量器）",
+    "damageGame": "傷害（遊戲）",
+    "allMatch": "全部 {n} 個技能一致",
+    "someMatch": "{n} 個技能中 {x} 個一致",
+    "noComparison": "這場戰鬥沒有儲存封包，因此只顯示遊戲的數值。",
+    "window": "遊戲紀錄：{from} 至 {to}。",
+    "covers": "涵蓋這場戰鬥的 {s} 秒",
+    "alsoCoversOne": "也涵蓋另外 1 場戰鬥",
+    "alsoCovers": "也涵蓋另外 {n} 場戰鬥",
+    "targetOnly": "只比較對 {target} 造成的傷害。",
+    "onlyDiffer": "僅顯示不同的列",
+    "othersMatch": "另外 {n} 個技能的每個數值都與遊戲一致。",
+    "gameTag": "遊戲 {n}",
+    "note": "出現差異，代表計量器對這場戰鬥的讀取與遊戲不同。以遊戲的數值為準。",
+    "copy": "複製以回報錯誤",
+    "copied": "已複製",
+    "copyFailed": "無法複製",
+    "col": {
+      "skill": "技能",
+      "damage": "傷害",
+      "share": "占比",
+      "hits": "命中",
+      "crit": "暴擊",
+      "perfect": "完美",
+      "double": "強擊",
+      "front": "正面",
+      "back": "背擊",
+      "addhit": "追加打擊"
+    }
+  },
   "settings": {
     "title": "設定",
     "lockedPort": "偵測到的裝置/連接埠",
@@ -189,11 +237,17 @@
       "dps": "DPS"
     },
     "showPing": "顯示延遲",
+    "startInTray": "啟動時縮小到系統匣",
+    "startInTrayHint": "計量器啟動時隱藏。可透過系統匣圖示的選單重新顯示。",
+    "hideFromTaskbar": "不在工作列顯示",
+    "hideFromTaskbarHint": "計量器的視窗不佔用工作列位置。系統匣圖示的選單可顯示和隱藏計量器。",
     "showTotalDps": "顯示總DPS/DMG",
     "roundDps": "DPS取整",
     "autoHideMeter": "自動隱藏面板",
     "showSuspendBtn": "顯示暫停按鈕",
     "showLockBtn": "顯示鎖定按鈕（點擊穿透）",
+    "waylandLayer": "懸浮視窗：Wayland 圖層",
+    "waylandLayerHint": "在原生 Wayland（KDE Plasma、Hyprland、Sway）下，懸浮視窗會顯示在所有視窗之上，包括全螢幕遊戲。GNOME 和 XWayland 下無法使用。下次啟動時生效。",
     "playerLimit": {
       "label": "最大顯示人數"
     },
@@ -254,6 +308,7 @@
     "allTargetsWindow": {
       "label": "所有目標時間窗",
       "options": {
+        "off": "關閉（自切換區域起）",
         "30s": "30秒",
         "1m": "1分鐘",
         "2m": "2分鐘",
@@ -350,7 +405,7 @@
   "battleTime": {
     "analysing": "正在監控資料...",
     "idle": "閒置",
-    "notRunning": "AION2 not running",
+    "notRunning": "AION2 未執行",
     "suspended": "應用程式已暫停",
     "waitingBoss": "等待首領"
   },
@@ -386,14 +441,15 @@
   },
   "connection": {
     "auto": "自動",
-    "detecting": "Detecting AION2 connection...",
+    "detecting": "正在偵測 AION2 連線...",
     "loopback": "本地回環"
   },
   "target": {
     "all": "所有目標",
     "identifying": "正在識別你...",
     "train": "訓練用稻草人",
-    "boss": "首領目標"
+    "boss": "首領目標",
+    "encounter": "遭遇戰"
   },
   "classes": {
     "GLADIATOR": "劍聖",
@@ -425,5 +481,12 @@
     "tierExpedition": "遠征",
     "tierConquestNormal": "征服（普通）",
     "tierConquestHard": "征服（困難）"
+  },
+  "tray": {
+    "toggle": "顯示或隱藏計量器",
+    "lock": "鎖定或解鎖計量器",
+    "settings": "設定",
+    "history": "歷史",
+    "quit": "結束"
   }
 }

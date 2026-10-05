@@ -11,6 +11,11 @@
     }
   },
   "details": {
+    "hoverTooltip": {
+      "loading": "Cargando...",
+      "empty": "No hay datos de habilidades de este combate",
+      "error": "No se pudieron cargar las habilidades"
+    },
     "header": "Detalles",
     "title": "Detalles de {name}",
     "tooltip": "El daño por tiempo no se incluye en los porcentajes totales de crítico, doble, perfecto, ataque por la espalda ni parada.",
@@ -136,7 +141,55 @@
     "previewUploadTip": "Escribe lo que se enviaría al compartir este combate. No se envía nada.",
     "previewWorking": "Creando la vista previa…",
     "previewDone": "{slice} KB escritos ({sent} KB comprimidos — lo que enviaría una subida). Se conservaron {kept} de {seen} paquetes y se ocultaron {blinded} nombres. No se subió nada. Guardado en {dir}",
+    "uploadTip": "Sube este combate a a2tools.app y obtén un enlace para compartir",
+    "uploadOpen": "Abrir el registro de este combate en a2tools.app",
+    "uploadWorking": "Subiendo…",
+    "uploadDonePublic": "Subido. Enlace copiado: {url}",
+    "uploadDonePrivate": "Subido como privado. Enlace copiado: {url}",
     "openWorld": "Mundo abierto"
+  },
+  "gameRecord": {
+    "title": "Registro del juego",
+    "switch": "Cifras mostradas",
+    "meter": "Medidor",
+    "game": "Registro del juego",
+    "both": "Ambos",
+    "filter": "Solo combates con registro del juego",
+    "filterTip": "Los registros del juego vienen del analizador de daño del propio juego (Ctrl+X).",
+    "columnTip": "Registro del juego: el analizador de daño del propio juego (Ctrl+X)",
+    "matches": "Coincide con el juego",
+    "differOne": "1 fila difiere",
+    "differ": "{n} filas difieren",
+    "notCompared": "Solo cifras del juego",
+    "damageMeter": "Daño, medidor",
+    "damageGame": "Daño, juego",
+    "allMatch": "Las {n} habilidades coinciden",
+    "someMatch": "{x} de {n} habilidades coinciden",
+    "noComparison": "No hay paquetes guardados de este combate, así que solo se muestran las cifras del juego.",
+    "window": "Registro del juego de {from} a {to}.",
+    "covers": "Cubre {s} s de este combate",
+    "alsoCoversOne": "también cubre 1 combate más",
+    "alsoCovers": "también cubre {n} combates más",
+    "targetOnly": "Solo se compara el daño a {target}.",
+    "onlyDiffer": "Solo filas que difieren",
+    "othersMatch": "Otras {n} habilidades coinciden con el juego en todas las cifras.",
+    "gameTag": "juego {n}",
+    "note": "Una diferencia significa que el medidor leyó el combate de forma distinta al juego. La cifra del juego es la correcta.",
+    "copy": "Copiar para un informe de error",
+    "copied": "Copiado",
+    "copyFailed": "No se pudo copiar",
+    "col": {
+      "skill": "Habilidad",
+      "damage": "Daño",
+      "share": "Parte",
+      "hits": "Golpes",
+      "crit": "Crít",
+      "perfect": "Perfecto",
+      "double": "Doble",
+      "front": "Frontal",
+      "back": "Espalda",
+      "addhit": "Golpes adic."
+    }
   },
   "settings": {
     "title": "Ajustes",
@@ -184,11 +237,17 @@
       "dps": "DPS"
     },
     "showPing": "Mostrar ping",
+    "startInTray": "Iniciar en la bandeja",
+    "startInTrayHint": "El medidor se inicia oculto. Vuelve a mostrarlo desde el menú del icono de la bandeja.",
+    "hideFromTaskbar": "No mostrar en la barra de tareas",
+    "hideFromTaskbarHint": "Las ventanas del medidor no ocupan sitio en la barra de tareas. El menú del icono de la bandeja muestra y oculta el medidor.",
     "showTotalDps": "Mostrar DPS/DÑO total",
     "roundDps": "Redondear DPS",
     "autoHideMeter": "Ocultar el medidor automáticamente",
     "showSuspendBtn": "Mostrar botón de pausa",
     "showLockBtn": "Mostrar botón de bloqueo (clic a través)",
+    "waylandLayer": "Superposición: capa de Wayland",
+    "waylandLayerHint": "En Wayland nativo (KDE Plasma, Hyprland, Sway) la superposición queda encima de todas las ventanas, también de un juego a pantalla completa. No en GNOME ni con XWayland. Se aplica en el próximo inicio.",
     "playerLimit": {
       "label": "Máx. jugadores mostrados"
     },
@@ -249,6 +308,7 @@
     "allTargetsWindow": {
       "label": "Intervalo de todos los objetivos",
       "options": {
+        "off": "Desactivado (desde el cambio de zona)",
         "30s": "30 segundos",
         "1m": "1 minuto",
         "2m": "2 minutos",
@@ -288,7 +348,9 @@
       "codeHint": "La página ya debería haberse abierto. El código caduca en 10 minutos.",
       "working": "Esperando aprobación…",
       "failed": "Error al iniciar sesión: {error}",
-      "supporter": "Mecenas"
+      "supporter": "Mecenas",
+      "autoUpload": "Subir combates de jefe automáticamente",
+      "autoUploadHint": "Cuando termina un combate de jefe, se sube a tu cuenta con la visibilidad que elegiste en a2tools.app. Los demás jugadores quedan ocultos. Los combates contra muñecos de entrenamiento nunca se suben."
     },
     "sendLogs": {
       "hint": "Envía tus 3 registros de paquetes más recientes al desarrollador, para un informe de errores.",
@@ -386,7 +448,8 @@
     "all": "Todos los objetivos",
     "identifying": "Identificándote...",
     "train": "Muñeco de entrenamiento",
-    "boss": "Objetivos jefe"
+    "boss": "Objetivos jefe",
+    "encounter": "Encuentro"
   },
   "classes": {
     "GLADIATOR": "Gladiador",
@@ -418,5 +481,12 @@
     "tierExpedition": "Expedición",
     "tierConquestNormal": "Conquista (normal)",
     "tierConquestHard": "Conquista (difícil)"
+  },
+  "tray": {
+    "toggle": "Mostrar u ocultar el medidor",
+    "lock": "Bloquear o desbloquear el medidor",
+    "settings": "Ajustes",
+    "history": "Historial",
+    "quit": "Salir"
   }
 }

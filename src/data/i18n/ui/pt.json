@@ -11,6 +11,11 @@
     }
   },
   "details": {
+    "hoverTooltip": {
+      "loading": "Carregando...",
+      "empty": "Sem dados de habilidades deste combate",
+      "error": "Não foi possível carregar as habilidades"
+    },
     "header": "Detalhes",
     "title": "Detalhes de {name}",
     "tooltip": "O dano ao longo do tempo não entra nas taxas totais de crítico, duplo, perfeito, ataque pelas costas ou aparar.",
@@ -136,7 +141,55 @@
     "previewUploadTip": "Escreve o que o compartilhamento deste combate enviaria. Nada é enviado.",
     "previewWorking": "Criando a pré-visualização…",
     "previewDone": "{slice} KB gravados ({sent} KB compactados — o que um envio transmitiria). {kept} de {seen} pacotes mantidos, {blinded} nomes ocultados. Nada foi enviado. Salvo em {dir}",
+    "uploadTip": "Envie este combate para o a2tools.app e receba um link para compartilhar",
+    "uploadOpen": "Abrir o registro deste combate no a2tools.app",
+    "uploadWorking": "Enviando…",
+    "uploadDonePublic": "Enviado. Link copiado: {url}",
+    "uploadDonePrivate": "Enviado como privado. Link copiado: {url}",
     "openWorld": "Mundo aberto"
+  },
+  "gameRecord": {
+    "title": "Registro do jogo",
+    "switch": "Números exibidos",
+    "meter": "Medidor",
+    "game": "Registro do jogo",
+    "both": "Ambos",
+    "filter": "Só combates com registro do jogo",
+    "filterTip": "Os registros do jogo vêm do analisador de dano do próprio jogo (Ctrl+X).",
+    "columnTip": "Registro do jogo: o analisador de dano do próprio jogo (Ctrl+X)",
+    "matches": "Igual ao jogo",
+    "differOne": "1 linha difere",
+    "differ": "{n} linhas diferem",
+    "notCompared": "Só números do jogo",
+    "damageMeter": "Dano, medidor",
+    "damageGame": "Dano, jogo",
+    "allMatch": "Todas as {n} habilidades batem",
+    "someMatch": "{x} de {n} habilidades batem",
+    "noComparison": "Nenhum pacote salvo para este combate, então só os números do jogo são exibidos.",
+    "window": "Registro do jogo de {from} a {to}.",
+    "covers": "Cobre {s} s deste combate",
+    "alsoCoversOne": "também cobre 1 outro combate",
+    "alsoCovers": "também cobre outros {n} combates",
+    "targetOnly": "Só o dano em {target} é comparado.",
+    "onlyDiffer": "Só linhas que diferem",
+    "othersMatch": "Outras {n} habilidades batem com o jogo em todos os números.",
+    "gameTag": "jogo {n}",
+    "note": "Uma diferença significa que o medidor leu o combate de forma diferente do jogo. O número do jogo é o certo.",
+    "copy": "Copiar para um relatório de bug",
+    "copied": "Copiado",
+    "copyFailed": "Não foi possível copiar",
+    "col": {
+      "skill": "Habilidade",
+      "damage": "Dano",
+      "share": "Parte",
+      "hits": "Golpes",
+      "crit": "Crít",
+      "perfect": "Perfeito",
+      "double": "Duplo",
+      "front": "Frontal",
+      "back": "Costas",
+      "addhit": "Golpes adic."
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -184,11 +237,17 @@
       "dps": "DPS"
     },
     "showPing": "Mostrar ping",
+    "startInTray": "Iniciar na bandeja",
+    "startInTrayHint": "O medidor inicia oculto. Traga-o de volta pelo menu do ícone da bandeja.",
+    "hideFromTaskbar": "Não mostrar na barra de tarefas",
+    "hideFromTaskbarHint": "As janelas do medidor não ocupam espaço na barra de tarefas. O menu do ícone da bandeja mostra e oculta o medidor.",
     "showTotalDps": "Mostrar DPS/DAN total",
     "roundDps": "Arredondar DPS",
     "autoHideMeter": "Ocultar o medidor automaticamente",
     "showSuspendBtn": "Mostrar botão de pausa",
     "showLockBtn": "Mostrar botão de bloqueio (clicar através)",
+    "waylandLayer": "Sobreposição: camada Wayland",
+    "waylandLayerHint": "No Wayland nativo (KDE Plasma, Hyprland, Sway) a sobreposição fica acima de todas as janelas, até de um jogo em tela cheia. Não no GNOME nem no XWayland. Vale a partir do próximo início.",
     "playerLimit": {
       "label": "Máx. de jogadores exibidos"
     },
@@ -249,6 +308,7 @@
     "allTargetsWindow": {
       "label": "Intervalo de todos os alvos",
       "options": {
+        "off": "Desligado (desde a troca de zona)",
         "30s": "30 segundos",
         "1m": "1 minuto",
         "2m": "2 minutos",
@@ -288,7 +348,9 @@
       "codeHint": "A página já deve ter aberto. O código expira em 10 minutos.",
       "working": "Aguardando aprovação…",
       "failed": "Falha ao entrar: {error}",
-      "supporter": "Apoiador"
+      "supporter": "Apoiador",
+      "autoUpload": "Enviar combates contra chefes automaticamente",
+      "autoUploadHint": "Quando um combate contra chefe termina, ele é enviado para sua conta com a visibilidade escolhida no a2tools.app. Os outros jogadores ficam ocultos. Combates contra bonecos de treino nunca são enviados."
     },
     "sendLogs": {
       "hint": "Envia seus 3 logs de pacotes mais recentes ao desenvolvedor, para um relatório de bug.",
@@ -386,7 +448,8 @@
     "all": "Todos os alvos",
     "identifying": "Identificando você...",
     "train": "Boneco de treino",
-    "boss": "Alvos chefe"
+    "boss": "Alvos chefe",
+    "encounter": "Encontro"
   },
   "classes": {
     "GLADIATOR": "Gladiador",
@@ -418,5 +481,12 @@
     "tierExpedition": "Expedição",
     "tierConquestNormal": "Conquista (normal)",
     "tierConquestHard": "Conquista (difícil)"
+  },
+  "tray": {
+    "toggle": "Mostrar ou ocultar o medidor",
+    "lock": "Bloquear ou desbloquear o medidor",
+    "settings": "Configurações",
+    "history": "Histórico",
+    "quit": "Sair"
   }
 }

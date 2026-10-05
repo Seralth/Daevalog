@@ -11,9 +11,14 @@
     }
   },
   "details": {
+    "hoverTooltip": {
+      "loading": "読み込み中...",
+      "empty": "この戦闘のスキルデータはありません",
+      "error": "スキルを読み込めませんでした"
+    },
     "header": "詳細",
     "title": "{name} の詳細",
-    "tooltip": "継続ダメージは、クリティカル・ダブル・パーフェクト・バックアタック・パリィの合計率には含まれません。",
+    "tooltip": "継続ダメージは、クリティカル・強打・完璧・バックアタック・パリィの合計率には含まれません。",
     "settings": {
       "ariaLabel": "詳細設定を開く"
     },
@@ -56,9 +61,9 @@
       "parry": "パリ",
       "parryTooltip": "パリィ %",
       "perfect": "完璧",
-      "perfectTooltip": "パーフェクト %",
-      "double": "二連",
-      "doubleTooltip": "ダブル %",
+      "perfectTooltip": "完璧 %",
+      "double": "強打",
+      "doubleTooltip": "強打 %",
       "back": "背後",
       "backTooltip": "バックアタック %",
       "frontal": "正面",
@@ -93,8 +98,8 @@
       "contribution": "貢献度",
       "hits": "ヒット数",
       "critRate": "クリティカル率",
-      "perfectRate": "パーフェクト率",
-      "doubleRate": "ダブル率",
+      "perfectRate": "完璧率",
+      "doubleRate": "強打率",
       "backRate": "バックアタック率",
       "parryRate": "パリィ率",
       "combatTime": "戦闘時間",
@@ -136,7 +141,55 @@
     "previewUploadTip": "この戦闘を共有した場合に送信される内容を書き出します。送信はされません。",
     "previewWorking": "プレビューを作成中…",
     "previewDone": "{slice} KB を書き出しました（圧縮後 {sent} KB — 実際に送信されるサイズ）。{seen} 個中 {kept} 個のパケットを保持し、{blinded} 件の名前を伏せました。何もアップロードされていません。保存先: {dir}",
+    "uploadTip": "この戦闘を a2tools.app にアップロードして共有リンクを取得",
+    "uploadOpen": "この戦闘のログを a2tools.app で開く",
+    "uploadWorking": "アップロード中…",
+    "uploadDonePublic": "アップロードしました。リンクをコピーしました: {url}",
+    "uploadDonePrivate": "非公開でアップロードしました。リンクをコピーしました: {url}",
     "openWorld": "フィールド"
+  },
+  "gameRecord": {
+    "title": "ゲームの記録",
+    "switch": "表示する数値",
+    "meter": "メーター",
+    "game": "ゲームの記録",
+    "both": "両方",
+    "filter": "ゲームの記録がある戦闘のみ",
+    "filterTip": "ゲームの記録は、ゲーム内のダメージ分析（Ctrl+X）から取得します。",
+    "columnTip": "ゲームの記録: ゲーム内のダメージ分析（Ctrl+X）",
+    "matches": "ゲームと一致",
+    "differOne": "1 行が異なります",
+    "differ": "{n} 行が異なります",
+    "notCompared": "ゲームの数値のみ",
+    "damageMeter": "ダメージ（メーター）",
+    "damageGame": "ダメージ（ゲーム）",
+    "allMatch": "{n} スキルすべて一致",
+    "someMatch": "{n} スキル中 {x} が一致",
+    "noComparison": "この戦闘のパケットは保存されていないため、ゲームの数値のみ表示します。",
+    "window": "ゲームの記録: {from} から {to} まで。",
+    "covers": "この戦闘の {s} 秒分",
+    "alsoCoversOne": "ほかに 1 件の戦闘も含みます",
+    "alsoCovers": "ほかに {n} 件の戦闘も含みます",
+    "targetOnly": "{target} へのダメージのみ比較します。",
+    "onlyDiffer": "異なる行のみ",
+    "othersMatch": "ほかの {n} スキルはすべての数値がゲームと一致します。",
+    "gameTag": "ゲーム {n}",
+    "note": "違いがあるのは、メーターがゲームと違う読み方をしたためです。正しいのはゲームの数値です。",
+    "copy": "不具合報告用にコピー",
+    "copied": "コピーしました",
+    "copyFailed": "コピーできませんでした",
+    "col": {
+      "skill": "スキル",
+      "damage": "ダメージ",
+      "share": "割合",
+      "hits": "ヒット",
+      "crit": "クリ",
+      "perfect": "完璧",
+      "double": "強打",
+      "front": "正面",
+      "back": "背後",
+      "addhit": "追加ヒット"
+    }
   },
   "settings": {
     "title": "設定",
@@ -184,11 +237,17 @@
       "dps": "DPS"
     },
     "showPing": "pingを表示",
+    "startInTray": "トレイで起動",
+    "startInTrayHint": "メーターは隠れた状態で起動します。トレイアイコンのメニューから表示できます。",
+    "hideFromTaskbar": "タスクバーに表示しない",
+    "hideFromTaskbarHint": "メーターのウィンドウはタスクバーに表示されません。表示と非表示はトレイアイコンのメニューから切り替えます。",
     "showTotalDps": "合計DPS/ダメージを表示",
     "roundDps": "DPSを丸める",
     "autoHideMeter": "メーターを自動的に隠す",
     "showSuspendBtn": "一時停止ボタンを表示",
     "showLockBtn": "ロックボタンを表示（クリック透過）",
+    "waylandLayer": "オーバーレイ: Wayland レイヤー",
+    "waylandLayerHint": "ネイティブの Wayland（KDE Plasma、Hyprland、Sway）では、オーバーレイがフルスクリーンのゲームも含めてすべてのウィンドウの上に表示されます。GNOME と XWayland では使えません。次回の起動から有効になります。",
     "playerLimit": {
       "label": "表示する最大プレイヤー数"
     },
@@ -249,6 +308,7 @@
     "allTargetsWindow": {
       "label": "全ターゲットの時間範囲",
       "options": {
+        "off": "オフ（ゾーン移動から）",
         "30s": "30秒",
         "1m": "1分",
         "2m": "2分",
@@ -288,7 +348,9 @@
       "codeHint": "ページはすでに開いているはずです。コードは10分で期限切れになります。",
       "working": "承認を待っています…",
       "failed": "サインインに失敗しました: {error}",
-      "supporter": "サポーター"
+      "supporter": "サポーター",
+      "autoUpload": "ボス戦を自動でアップロード",
+      "autoUploadHint": "ボス戦が終わると、a2tools.app で選んだ公開設定でアカウントにアップロードされます。ほかのプレイヤーの名前は隠されます。訓練用かかしとの戦闘はアップロードされません。"
     },
     "sendLogs": {
       "hint": "不具合報告のため、最新のパケットログ3件を開発者に送ります。",
@@ -386,7 +448,8 @@
     "all": "全ターゲット",
     "identifying": "あなたを識別中...",
     "train": "訓練用かかし",
-    "boss": "ボスターゲット"
+    "boss": "ボスターゲット",
+    "encounter": "エンカウント"
   },
   "classes": {
     "GLADIATOR": "グラディエーター",
@@ -418,5 +481,12 @@
     "tierExpedition": "遠征",
     "tierConquestNormal": "征服（ノーマル）",
     "tierConquestHard": "征服（ハード）"
+  },
+  "tray": {
+    "toggle": "メーターの表示/非表示",
+    "lock": "メーターのロック/解除",
+    "settings": "設定",
+    "history": "履歴",
+    "quit": "終了"
   }
 }

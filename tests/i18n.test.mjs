@@ -34,3 +34,21 @@ test("built UI resources support language switching and English dungeon fallback
   assert.equal(window.i18n.t("target.all"), en.target.all);
   assert.match(window.i18n.getDungeonLabel(600001), /^Krao Cave/);
 });
+
+const uiDir = new URL("../src/data/i18n/ui/", import.meta.url);
+const flatten = (obj, prefix = "") =>
+  Object.entries(obj).flatMap(([key, value]) =>
+    value && typeof value === "object" ? flatten(value, `${prefix}${key}.`) : [[`${prefix}${key}`, value]]);
+const placeholders = (text) => [...String(text).matchAll(/\{\w+\}/g)].map((m) => m[0]).sort();
+
+test("every language file has every English string, with the same placeholders", () => {
+  const en = new Map(flatten(JSON.parse(readFileSync(new URL("en.json", uiDir)))));
+  for (const lang of ["de", "es", "fr", "ja", "ko", "pt", "ru", "zh-Hans", "zh-Hant"]) {
+    const strings = new Map(flatten(JSON.parse(readFileSync(new URL(`${lang}.json`, uiDir)))));
+    const missing = [...en.keys()].filter((key) => !strings.has(key));
+    assert.deepEqual(missing, [], `${lang}.json is missing strings`);
+    for (const [key, text] of en) {
+      assert.deepEqual(placeholders(strings.get(key)), placeholders(text), `${lang}.json ${key}`);
+    }
+  }
+});
