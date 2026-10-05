@@ -61,9 +61,12 @@ pub(super) fn save_fights_before_exit(app: &tauri::AppHandle) {
     let spawned = std::thread::Builder::new().name("exit-save".into()).spawn(move || {
         let _turn = HISTORY.wait_turn(EXIT_SAVE_TURN);
         let state = saving.state::<AppState>();
-        let records = state.dps_calculator.lock().snapshot_boss_fights_force();
+        let (ticket, records) = {
+            let mut calc = state.dps_calculator.lock();
+            (state.fight_history.snapshot_ticket(), calc.snapshot_boss_fights_force())
+        };
         for record in &records {
-            if let Err(e) = state.fight_history.save_fight(record) {
+            if let Err(e) = state.fight_history.save_snapshot(record, ticket) {
                 tracing::warn!("Failed to save {} on exit: {}", record.id, e);
             }
         }

@@ -47,6 +47,11 @@ pub struct FightHistoryManager {
     /// again every 10s in each window, so the answer is cached and rebuilt only
     /// when the directory actually changes.
     cache: Mutex<Option<(DirStamp, Vec<FightSummary>)>>,
+    /// Snapshots of the live fights are numbered in the order taken, and a
+    /// fight's file keeps the newest one written: an auto-save that finishes
+    /// after the exit save cannot put an older copy back.
+    next_ticket: std::sync::atomic::AtomicU64,
+    newest_written: Mutex<std::collections::HashMap<String, u64>>,
 }
 
 impl FightHistoryManager {
@@ -56,6 +61,8 @@ impl FightHistoryManager {
         Self {
             history_dir,
             cache: Mutex::new(None),
+            next_ticket: std::sync::atomic::AtomicU64::new(0),
+            newest_written: Mutex::new(std::collections::HashMap::new()),
         }
     }
 
@@ -85,7 +92,23 @@ impl FightHistoryManager {
         }
     }
 
+    /// A number for a snapshot of the live fights, taken under the meter's
+    /// lock with the snapshot: later snapshots get higher numbers.
+    pub fn snapshot_ticket(&self) -> u64 {
+        self.next_ticket.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1
+    }
+
     pub fn save_fight(&self, record: &FightRecord) -> Result<(), String> {
+        self.save(record, None)
+    }
+
+    /// Save a fight from the snapshot with `ticket`, unless a newer snapshot
+    /// of it is already written.
+    pub fn save_snapshot(&self, record: &FightRecord, ticket: u64) -> Result<(), String> {
+        self.save(record, Some(ticket))
+    }
+
+    fn save(&self, record: &FightRecord, ticket: Option<u64>) -> Result<(), String> {
         check_id(&record.id)?;
         let file_path = self.history_dir.join(format!("{}.json", record.id));
         let json = serde_json::to_string_pretty(record)
@@ -96,9 +119,30 @@ impl FightHistoryManager {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let temporary = self.history_dir.join(format!(
             ".{}.{}.tmp", record.id, NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
-        if let Err(e) = crate::platform::files::write_private(&temporary, json).and_then(|_| std::fs::rename(&temporary, &file_path)) {
-            let _ = std::fs::remove_file(&temporary);
-            return Err(format!("Write error: {}", e));
+        let written = crate::platform::files::write_private(&temporary, json).and_then(|_| {
+            let mut newest = self.newest_written.lock().unwrap_or_else(|e| e.into_inner());
+            if let (Some(ticket), Some(&done)) = (ticket, newest.get(&record.id)) {
+                if done > ticket {
+                    return Ok(false);
+                }
+            }
+            std::fs::rename(&temporary, &file_path)?;
+            if let Some(ticket) = ticket {
+                newest.insert(record.id.clone(), ticket);
+            }
+            Ok(true)
+        });
+        match written {
+            Ok(true) => {}
+            Ok(false) => {
+                let _ = std::fs::remove_file(&temporary);
+                info!("Fight {} already saved from a newer snapshot", record.id);
+                return Ok(());
+            }
+            Err(e) => {
+                let _ = std::fs::remove_file(&temporary);
+                return Err(format!("Write error: {}", e));
+            }
         }
         self.invalidate();
         info!("Fight saved: {}", record.id);
@@ -272,6 +316,20 @@ mod tests {
             .map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
         assert_eq!(names, vec!["auto_1_1000.json"], "no temporary file left");
         assert_eq!(history.list_fights().len(), 1);
+
+        // An older snapshot written last does not replace a newer one.
+        let older = history.snapshot_ticket();
+        let newer = history.snapshot_ticket();
+        record.total_damage = 4;
+        history.save_snapshot(&record, newer).unwrap();
+        record.total_damage = 3;
+        history.save_snapshot(&record, older).unwrap();
+        assert_eq!(history.load_fight("auto_1_1000").unwrap().total_damage, 4);
+        let later = history.snapshot_ticket();
+        record.total_damage = 5;
+        history.save_snapshot(&record, later).unwrap();
+        assert_eq!(history.load_fight("auto_1_1000").unwrap().total_damage, 5);
+        assert_eq!(std::fs::read_dir(dir.join("history")).unwrap().count(), 1, "no temporary file left");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

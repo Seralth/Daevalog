@@ -182,6 +182,7 @@ fn auto_save(handle: &tauri::AppHandle) {
     if state.data_storage.damage_generation() > 0 {
         // Only if the meter is free; the calculator guard is gone before any disk I/O.
         if let Some(mut calc) = state.dps_calculator.try_lock() {
+            let ticket = state.fight_history.snapshot_ticket();
             let records = calc.snapshot_boss_fights();
             let finished: HashSet<String> = records.iter()
                 .filter(|r| calc.fight_finished(r))
@@ -189,7 +190,7 @@ fn auto_save(handle: &tauri::AppHandle) {
                 .collect();
             drop(calc);
             for record in &records {
-                let _ = state.fight_history.save_fight(record);
+                let _ = state.fight_history.save_snapshot(record, ticket);
                 // The packets behind it, so it can be
                 // uploaded and verified later, and checked
                 // against the game's own record. Training
