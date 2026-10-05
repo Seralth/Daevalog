@@ -1,4 +1,4 @@
-//! Quitting, links, fetching for the page, its log lines and the icon cache.
+//! Quitting, links, the page's log lines and the icon cache.
 
 use crate::platform;
 
@@ -24,11 +24,6 @@ pub(crate) fn log_from_ui(message: String) {
 #[tauri::command]
 pub(crate) fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, data: String) {
     page_support::write_cached_icon(&state, key, data);
-}
-
-#[tauri::command]
-pub(crate) async fn fetch_url(state: tauri::State<'_, AppState>, url: String) -> Result<String, String> {
-    page_support::fetch_url(&state, url).await
 }
 
 #[tauri::command]

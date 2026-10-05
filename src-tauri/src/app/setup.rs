@@ -141,6 +141,8 @@ pub fn run() {
                 i18n_data_dir: found_data_dir.clone(),
                 http: reqwest::Client::builder()
                     .user_agent(concat!("A2Tools-DPS-Meter/", env!("CARGO_PKG_VERSION")))
+                    // Every request is to a2tools.app or its CDN.
+                    .https_only(true)
                     .connect_timeout(Duration::from_secs(10))
                     .timeout(Duration::from_secs(30))
                     .build()
@@ -338,7 +340,6 @@ pub fn run() {
             commands::capture::set_manual_device,
             commands::capture::replay_file,
             commands::capture::test_auto_hide,
-            commands::system::fetch_url,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
