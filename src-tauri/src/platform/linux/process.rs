@@ -257,6 +257,34 @@ pub(crate) fn layer_offered() -> bool {
     LAYER_OFFERED.get().copied().unwrap_or(false)
 }
 
+/// What the meter chose for the display (the log's "display backend: ..."),
+/// for a bug report.
+pub fn display_backend() -> Option<String> {
+    PLAN.get().map(|plan| plan.note.clone())
+}
+
+/// The distribution, from `/etc/os-release`: `NAME` and `VERSION_ID` only.
+pub fn system_name() -> String {
+    let text = std::fs::read_to_string("/etc/os-release")
+        .or_else(|_| std::fs::read_to_string("/usr/lib/os-release"))
+        .unwrap_or_default();
+    os_release_name(&text)
+}
+
+fn os_release_name(text: &str) -> String {
+    let value = |key: &str| {
+        text.lines()
+            .find_map(|line| line.strip_prefix(key)?.strip_prefix('='))
+            .map(|v| v.trim().trim_matches('"').trim_matches('\'').to_string())
+            .filter(|v| !v.is_empty())
+    };
+    match (value("NAME"), value("VERSION_ID")) {
+        (Some(name), Some(version)) => format!("{name} {version}"),
+        (Some(name), None) => name,
+        (None, _) => "Linux".to_string(),
+    }
+}
+
 /// Returns a note for the log.
 pub fn prepare() -> Option<String> {
     let mut notes = Vec::new();
@@ -282,6 +310,14 @@ pub fn prepare() -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_system_name_is_name_and_version_id_only() {
+        let fedora = "NAME=\"Fedora Linux\"\nVERSION=\"40 (KDE Plasma)\"\nID=fedora\nVERSION_ID=40\nPRETTY_NAME=\"Fedora Linux 40 (KDE Plasma)\"\n";
+        assert_eq!(os_release_name(fedora), "Fedora Linux 40");
+        assert_eq!(os_release_name("NAME=\"CachyOS Linux\"\nID=cachyos\nBUILD_ID=rolling\n"), "CachyOS Linux");
+        assert_eq!(os_release_name(""), "Linux");
+    }
 
     fn env_of<'a>(vars: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
         move |name| vars.iter().find(|(k, v)| *k == name && !v.is_empty()).map(|(_, v)| v.to_string())

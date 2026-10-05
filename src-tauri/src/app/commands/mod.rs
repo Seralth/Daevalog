@@ -5,6 +5,7 @@ pub(super) mod capture;
 pub(super) mod history;
 pub(super) mod identity;
 pub(super) mod meter;
+pub(super) mod report;
 pub(super) mod settings;
 pub(super) mod share;
 pub(super) mod system;

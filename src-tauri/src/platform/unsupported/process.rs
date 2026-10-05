@@ -13,3 +13,13 @@ pub fn overlay_layer() -> bool {
 pub fn overlay_layer_by_default() -> bool {
     false
 }
+
+/// The system, for a bug report.
+pub fn system_name() -> String {
+    std::env::consts::OS.to_string()
+}
+
+/// The display backend the meter chose, for a bug report: none here.
+pub fn display_backend() -> Option<String> {
+    None
+}

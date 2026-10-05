@@ -352,6 +352,26 @@ impl Supervisor {
         self.helper().is_some_and(|helper| helper.can_capture())
     }
 
+    /// The capture state in a few words, for a bug report.
+    pub fn state(&self) -> String {
+        let Some(helper) = self.helper() else {
+            return "unavailable (the capture helper is not running)".into();
+        };
+        if !helper.alive.load(Ordering::SeqCst) {
+            return "unavailable (the capture helper stopped)".into();
+        }
+        match *helper.status.lock() {
+            None => "helper running, no status yet".into(),
+            Some(status) if !status.capable => "unavailable (the helper has no capture permission)".into(),
+            Some(status) if status.opened == 0 => "unavailable (helper running, no device opened)".into(),
+            Some(status) => format!(
+                "helper running, {} device{} opened",
+                status.opened,
+                if status.opened == 1 { "" } else { "s" }
+            ),
+        }
+    }
+
     /// Stop the helper for good: the meter is quitting.
     pub fn stop(&self) {
         self.stopping.store(true, Ordering::SeqCst);

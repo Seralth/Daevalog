@@ -68,3 +68,15 @@ pub fn can_capture() -> bool {
         None => platform::admin::is_admin(),
     }
 }
+
+/// The capture state in a few words, for a bug report.
+pub fn state() -> String {
+    match platform::pcap::HELPER {
+        Some(_) => match SUPERVISOR.get() {
+            Some(supervisor) => supervisor.state(),
+            None => "unavailable (capture did not start)".into(),
+        },
+        None if platform::admin::is_admin() => "in the meter's process, as administrator".into(),
+        None => "unavailable (the meter is not running as administrator)".into(),
+    }
+}

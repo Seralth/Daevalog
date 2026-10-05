@@ -33,6 +33,7 @@ mod meter;
 mod overlay_lock;
 mod page_support;
 mod replay;
+mod report;
 mod screenshots;
 mod setting_changes;
 mod setup;
