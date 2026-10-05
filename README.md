@@ -55,6 +55,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).
 - Packet capture takes TCP only, and only the game server's port once the meter has found it.
 - The fonts come with the meter. A window no longer loads them from unpkg.com.
+- Pretendard now comes with the meter and is the app's main font, as the stylesheet always intended.
 
 ### Left out
 - Guessing who an unnamed actor is from its class.
@@ -98,3 +99,11 @@ Daevalog DPS Meter is licensed under the GNU General Public License, version 3. 
 AION 2 is a trademark of NCSOFT. Daevalog DPS Meter is not affiliated with or endorsed by NCSOFT.
 
 The README of A2Tools DPS Meter, with Windows instructions and the community links of the A2Tools project, is in the [A2Tools DPS Meter repository](https://github.com/taengu/A2Tools-DPS-Meter).
+
+### Fonts
+
+The meter comes with these fonts. Each is under the SIL Open Font License, version 1.1.
+
+- Noto Sans SC: [public/vendor/fonts/noto-sans-sc/LICENSE](public/vendor/fonts/noto-sans-sc/LICENSE)
+- Noto Sans TC: [public/vendor/fonts/noto-sans-tc/LICENSE](public/vendor/fonts/noto-sans-tc/LICENSE)
+- Pretendard: [public/vendor/fonts/pretendard/LICENSE](public/vendor/fonts/pretendard/LICENSE)
