@@ -440,6 +440,15 @@ impl Blinder {
         // Every buffer handed to the blinder is one framed packet: skip its
         // length and opcode.
         let header = super::stream_processor::read_varint(buf, 0);
+        // Damage, damage over time and HP updates are ids and numbers only.
+        // Scanning them for names blinded skill ids that read as text:
+        // `02 | 50 77 f6 00` (Water Spirit: Ice Chain) is "Pw".
+        if header.length > 0 {
+            let o = header.length as usize;
+            if buf.len() >= o + 2 && EVENT_OPCODES.contains(&[buf[o], buf[o + 1]]) {
+                return 0;
+            }
+        }
         let mut i = if header.length > 0 { header.length as usize + 2 } else { 0 };
         while i < buf.len() {
             let len = buf[i] as usize;
@@ -1098,6 +1107,17 @@ mod tests {
         let mut packet = frame_packet(&body).unwrap();
         Blinder::new(&[]).blind(&mut packet);
         assert!(packet.windows(4).any(|w| w == [0xd3, 0x86, 0x01, 0x00]));
+    }
+
+    #[test]
+    fn damage_records_are_not_scanned_for_names() {
+        // Water Spirit: Ice Chain, 2026-10-04: actor 48405 ends in 02, and the
+        // skill id 16152400 starts `50 77`, "Pw".
+        let mut body = vec![0x04, 0x38, 0xfe, 0x9e, 0x02, 0x04, 0x00, 0x95, 0xfa, 0x02, 0x50, 0x77, 0xf6, 0x00];
+        body.resize(40, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        Blinder::new(&[]).blind(&mut packet);
+        assert!(packet.windows(4).any(|w| w == [0x50, 0x77, 0xf6, 0x00]));
     }
 
     #[test]
