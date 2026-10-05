@@ -23,7 +23,6 @@ use crate::config::settings::Settings;
 use crate::history::fight_history::FightHistoryManager;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
-use super::drag_resize::WAYLAND_LAYER_KEY;
 use super::overlay_lock::{toggle_overlay_lock, OverlayLock};
 use super::setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use super::tool_windows::open_details_on_monitor;
@@ -194,11 +193,7 @@ pub fn run() {
                 // a layer surface can only be made before it is first shown.
                 let scale = window.scale_factor().unwrap_or(1.0);
                 let logical = saved.map_or((0, 0), |(x, y)| ((x as f64 / scale) as i32, (y as f64 / scale) as i32));
-                let layer = platform::window::init_overlay_layer(
-                    &window,
-                    state_ref.settings.get(WAYLAND_LAYER_KEY).as_deref() == Some("true"),
-                    logical,
-                );
+                let layer = platform::window::init_overlay_layer(&window, platform::process::overlay_layer(), logical);
                 if let (false, Some((x, y))) = (layer, saved) {
                     let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
                 }

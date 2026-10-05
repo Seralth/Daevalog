@@ -4,3 +4,12 @@
 pub fn prepare() -> Option<String> {
     None
 }
+
+/// No Wayland layer overlay here.
+pub fn overlay_layer() -> bool {
+    false
+}
+
+pub fn overlay_layer_by_default() -> bool {
+    false
+}

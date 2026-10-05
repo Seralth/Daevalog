@@ -363,6 +363,11 @@ mod layer {
     }
 }
 
+/// Whether gtk-layer-shell is installed.
+pub(crate) fn layer_library_loads() -> bool {
+    layer::api().is_some()
+}
+
 /// Set once the overlay became a layer surface; only the overlay ever is one.
 static LAYER_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -733,6 +738,10 @@ pub fn overlay_layer_position(window: &tauri::WebviewWindow) -> Option<(i32, i32
 
 /// Whether the overlay can be a layer surface in this session.
 pub fn layer_supported() -> bool {
+    // Under XWayland GTK sees no layer-shell, but the switch must stay in reach.
+    if super::process::layer_offered() {
+        return true;
+    }
     let Some(api) = layer::api() else { return false };
     // SAFETY: as in `layer_position`.
     super::dialog::on_gtk_thread(move || unsafe { (api.is_supported)() } != 0).unwrap_or(false)

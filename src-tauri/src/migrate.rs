@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 const OLD_IDENTIFIER: &str = "com.a2tools.dps-meter";
 /// Must match `identifier` in tauri.conf.json (checked by a test).
-const IDENTIFIER: &str = "com.daevalog.dps-meter";
+pub(crate) const IDENTIFIER: &str = "com.daevalog.dps-meter";
 
 /// Move `<base>/<old>` to `<base>/<new>` when only the old folder exists.
 /// Returns whether it moved.

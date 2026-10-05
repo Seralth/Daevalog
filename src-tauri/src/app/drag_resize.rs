@@ -48,9 +48,6 @@ pub(super) fn start_drag(app: tauri::AppHandle, state: tauri::State<'_, AppState
     None
 }
 
-/// The setting that makes the overlay a Wayland layer surface (next start).
-pub(super) const WAYLAND_LAYER_KEY: &str = "dpsMeter.waylandLayer";
-
 /// Put the layer-surface overlay at `x`, `y` (logical pixels) during a drag.
 /// Returns where it went.
 #[tauri::command]
@@ -69,12 +66,16 @@ pub(super) fn end_overlay_drag(app: tauri::AppHandle) {
     }
 }
 
-/// Whether the Wayland layer setting can work here, and whether the overlay
-/// is a layer surface now.
+/// Whether the Wayland layer setting can work here, whether the overlay is a
+/// layer surface now, and whether the setting is on until the player sets it.
 #[tauri::command]
 pub(super) fn wayland_layer_state(app: tauri::AppHandle) -> serde_json::Value {
     let active = app.get_webview_window("main").is_some_and(|w| platform::window::is_layer(&w));
-    serde_json::json!({ "supported": platform::window::layer_supported(), "active": active })
+    serde_json::json!({
+        "supported": platform::window::layer_supported(),
+        "active": active,
+        "byDefault": platform::process::overlay_layer_by_default(),
+    })
 }
 
 /// Drag a tool window (Details, History, Settings) by its header. Their CSS
