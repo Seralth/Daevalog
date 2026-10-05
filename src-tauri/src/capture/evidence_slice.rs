@@ -246,6 +246,8 @@ pub const ALLOWED_OPCODES: &[(&[u8; 2], &str)] = &[
     (&opcodes::HP_MP, "hp/mp update"),
     (&opcodes::SUMMON_OWNERSHIP, "summon ownership"),
     (&opcodes::ZONE_CHANGE, "zone change"),
+    (&opcodes::MAP_LOAD, "map load"),
+    (&opcodes::PARTY_SCOPE, "party scope"),
     (&opcodes::SPAWN, "death / spawn"),
     (&opcodes::DEATH, "death (post 2026-06 opcode shift)"),
     (&opcodes::SPAWN_OLD, "summon spawn"),
@@ -988,6 +990,7 @@ fn upgrade_v1_record(record: &[u8]) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
 
     fn host_with(records_at: &[usize], len: usize) -> Vec<u8> {
         // A non-allowlisted host: <len> 0x99 0x36 ... with `04 38` at the given offsets.
@@ -1148,6 +1151,39 @@ mod tests {
         assert!(!is_allowed(&damage, Keep::State));
         assert!(is_allowed(&damage, Keep::All));
         assert!(is_allowed(&spawn, Keep::State));
+    }
+
+    fn hex(s: &str) -> Vec<u8> {
+        (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+    }
+
+    #[test]
+    fn map_loads_and_party_scope_records_are_kept_without_their_text() {
+        // Captured 2026-10-04: a party-scope record, a load into World_L_A
+        // (1010), and a load naming a cutscene.
+        let scope = hex("0f0638eab601b26c18000c00");
+        let world = hex("34213601000000f2030000dd7f3c00000000006868d047d0c62c470098da46fa63284300000000000000000000004f0000");
+        let cutscene = hex("492136030000009b8a01001d8a01000000000006bfcd47aaa3904700482c46069fb6c2020000000000000000000039154375747363656e655f4c5f415f5365715f3131353100");
+        let at = |ms, bytes: &Vec<u8>| CapturedPacket { captured_at_ms: ms, stream: "Client:1".into(), bytes: bytes.clone() };
+        // The first two in the prelude, the rest in the fight window.
+        let packets = vec![at(0, &scope), at(0, &world), at(100_000, &cutscene), at(100_000, &scope)];
+        let slice = build(&packets, 100_000, 110_000, &HashMap::new()).unwrap();
+        assert_eq!(slice.records.len(), 4);
+        let kept: Vec<u8> = slice.records.iter().flat_map(|(_, r)| r.clone()).collect();
+        assert!(kept.windows(4).any(|w| w == [0x9b, 0x8a, 0x01, 0x00]), "the map id survives");
+        assert!(!kept.windows(8).any(|w| w == b"Cutscene"), "the text does not");
+
+        let storage = Arc::new(crate::combat::data_storage::DataStorage::new());
+        let mut processor = crate::capture::stream_processor::StreamProcessor::new(
+            storage.clone(),
+            Arc::new(crate::i18n::lookup::SkillLookup::new()),
+            Arc::new(crate::i18n::lookup::NpcLookup::new()),
+        );
+        storage.set_current_dungeon(600021);
+        for (_, record) in &slice.records[..2] {
+            processor.consume_stream(record);
+        }
+        assert_eq!(storage.current_dungeon_id(), 0, "the replay saw the load into the open world");
     }
 
     fn framed(payload: &[u8]) -> Vec<u8> {
