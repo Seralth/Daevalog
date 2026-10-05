@@ -2,9 +2,9 @@
 
 use tauri::Emitter;
 
-use crate::{i18n, logging};
+use crate::logging;
 
-use crate::app::setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
+use crate::app::setting_changes::{self, apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use crate::app::AppState;
 
 /// Whether this build can show a Discord activity (it has a Discord
@@ -51,13 +51,7 @@ pub(crate) fn clear_settings(state: tauri::State<'_, AppState>) {
 
 #[tauri::command]
 pub(crate) fn set_language(state: tauri::State<'_, AppState>, language: String) {
-    tracing::info!("Language change requested: {}", language);
-    if let Some(ref data_dir) = state.i18n_data_dir {
-        i18n::lookup::load_language(&state.skill_lookup, &state.npc_lookup, data_dir, &language);
-    } else {
-        tracing::warn!("No i18n data dir available for language reload");
-    }
-    state.settings.set("dpsMeter.language", &language);
+    setting_changes::set_language(&state, language);
 }
 
 #[tauri::command]
