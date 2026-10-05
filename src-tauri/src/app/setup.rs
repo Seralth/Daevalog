@@ -247,61 +247,7 @@ pub fn run() {
                 dispatcher.run(rx).await;
             });
 
-            // Register global hotkeys from saved settings (or defaults)
-            let hotkey_handle = app.handle().clone();
-            let hotkey_manager = platform::hotkeys::HotkeyManager::new();
-
-            let reload_label = app.state::<AppState>().settings
-                .get("dpsMeter.hotkey").unwrap_or_default();
-            let toggle_label = app.state::<AppState>().settings
-                .get("dpsMeter.toggleWindowHotkey").unwrap_or_default();
-            let lock_label = app.state::<AppState>().settings
-                .get("dpsMeter.lockHotkey").unwrap_or_default();
-
-            let (reload_mods, reload_vk) = platform::hotkeys::parse_hotkey_label(&reload_label)
-                .unwrap_or((0x0002 | 0x0001, 0x52)); // Default: Ctrl+Alt+R
-            let (toggle_mods, toggle_vk) = platform::hotkeys::parse_hotkey_label(&toggle_label)
-                .unwrap_or((0x0002 | 0x0001, 0x26)); // Default: Ctrl+Alt+Up
-            let (lock_mods, lock_vk) = platform::hotkeys::parse_hotkey_label(&lock_label)
-                .unwrap_or((0x0002 | 0x0001, 0x4C)); // Default: Ctrl+Alt+L
-
-            hotkey_manager.start(
-                reload_mods, reload_vk,
-                toggle_mods, toggle_vk,
-                lock_mods, lock_vk,
-                {
-                    let h = hotkey_handle.clone();
-                    move || {
-                        tracing::info!("Hotkey: reload triggered");
-                        if let Some(state) = h.try_state::<AppState>() {
-                            state.dps_calculator.lock().restart_target_selection(true);
-                            state.data_storage.reset_nicknames();
-                        }
-                        // Notify frontend to clear UI
-                        let _ = h.emit("combat-reset", ());
-                        let _ = h.emit("dps-update", &entity::dps_data::DpsData::new());
-                    }
-                },
-                {
-                    let h = hotkey_handle.clone();
-                    move || {
-                        // Toggle window visibility
-                        if let Some(window) = h.get_webview_window("main") {
-                            if window.is_visible().unwrap_or(false) {
-                                let _ = window.hide();
-                            } else {
-                                let _ = window.show();
-                                let _ = window.set_always_on_top(true);
-                                let _ = window.set_focus();
-                            }
-                        }
-                    }
-                },
-                {
-                    let h = hotkey_handle;
-                    move || toggle_overlay_lock(&h)
-                },
-            );
+            register_hotkeys(app.handle());
 
             tasks::spawn_meter_tick(app.handle());
 
@@ -400,4 +346,62 @@ pub fn run() {
                 save_fights_before_exit(app);
             }
         });
+}
+
+fn register_hotkeys(app: &tauri::AppHandle) {
+    // Register global hotkeys from saved settings (or defaults)
+    let hotkey_handle = app.clone();
+    let hotkey_manager = platform::hotkeys::HotkeyManager::new();
+
+    let reload_label = app.state::<AppState>().settings
+        .get("dpsMeter.hotkey").unwrap_or_default();
+    let toggle_label = app.state::<AppState>().settings
+        .get("dpsMeter.toggleWindowHotkey").unwrap_or_default();
+    let lock_label = app.state::<AppState>().settings
+        .get("dpsMeter.lockHotkey").unwrap_or_default();
+
+    let (reload_mods, reload_vk) = platform::hotkeys::parse_hotkey_label(&reload_label)
+        .unwrap_or((0x0002 | 0x0001, 0x52)); // Default: Ctrl+Alt+R
+    let (toggle_mods, toggle_vk) = platform::hotkeys::parse_hotkey_label(&toggle_label)
+        .unwrap_or((0x0002 | 0x0001, 0x26)); // Default: Ctrl+Alt+Up
+    let (lock_mods, lock_vk) = platform::hotkeys::parse_hotkey_label(&lock_label)
+        .unwrap_or((0x0002 | 0x0001, 0x4C)); // Default: Ctrl+Alt+L
+
+    hotkey_manager.start(
+        reload_mods, reload_vk,
+        toggle_mods, toggle_vk,
+        lock_mods, lock_vk,
+        {
+            let h = hotkey_handle.clone();
+            move || {
+                tracing::info!("Hotkey: reload triggered");
+                if let Some(state) = h.try_state::<AppState>() {
+                    state.dps_calculator.lock().restart_target_selection(true);
+                    state.data_storage.reset_nicknames();
+                }
+                // Notify frontend to clear UI
+                let _ = h.emit("combat-reset", ());
+                let _ = h.emit("dps-update", &entity::dps_data::DpsData::new());
+            }
+        },
+        {
+            let h = hotkey_handle.clone();
+            move || {
+                // Toggle window visibility
+                if let Some(window) = h.get_webview_window("main") {
+                    if window.is_visible().unwrap_or(false) {
+                        let _ = window.hide();
+                    } else {
+                        let _ = window.show();
+                        let _ = window.set_always_on_top(true);
+                        let _ = window.set_focus();
+                    }
+                }
+            }
+        },
+        {
+            let h = hotkey_handle;
+            move || toggle_overlay_lock(&h)
+        },
+    );
 }
