@@ -1518,7 +1518,9 @@ mod tests {
         hits(&s, 2259, 800, 1_000, 8_000);
         crate::clock::set_override(Some(12_000));
         assert!(s.note_zone_change(), "the load out of the instance");
-        assert_eq!(s.current_dungeon_id(), 0);
+        assert_eq!(s.current_dungeon_id(), 600002, "a load alone does not say where to");
+        s.note_map_load(1010);
+        assert_eq!(s.current_dungeon_id(), 0, "World_L_A is open world");
         let mut saved = snapshot_at(&mut calc, 12_000);
         hits(&s, 2259, 900, 20_000, 30_000);
         crate::clock::set_override(Some(31_000));
@@ -1552,11 +1554,46 @@ mod tests {
         hits(&s, 2259, 800, 1_000, 5_000);
         crate::clock::set_override(Some(5_500));
         assert!(!s.note_zone_change(), "mid-fight: no combat reset");
-        assert_eq!(s.current_dungeon_id(), 0, "until the roster names it again");
+        s.note_map_load(600002);
+        assert_eq!(s.current_dungeon_id(), 600002, "the load names the instance again");
         hits(&s, 2259, 800, 6_000, 9_000);
         crate::clock::set_override(Some(10_000));
         assert_eq!(dungeon_of(&calc.snapshot_boss_fights_force(), "auto_800_1000"), 600002);
         crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_boss_after_a_teleport_inside_an_instance_keeps_the_dungeon() {
+        // taengu's 600011 capture: a teleport to the last boss room, the boss
+        // killed before the roster names the instance again.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        s.set_current_dungeon(600011);
+        crate::clock::set_override(Some(1_000));
+        s.note_zone_change();
+        s.note_map_load(600011);
+        hits(&s, 2259, 800, 2_000, 30_000);
+        crate::clock::set_override(Some(31_000));
+        assert_eq!(dungeon_of(&calc.snapshot_boss_fights_force(), "auto_800_2000"), 600011);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn world_layers_are_open_world_and_seals_are_not() {
+        assert!(crate::combat::data_storage::is_open_world_map(1010), "World_L_A");
+        assert!(crate::combat::data_storage::is_open_world_map(101021), "a layer of World_L_A");
+        assert!(!crate::combat::data_storage::is_open_world_map(310051), "Seal_Verteron_051");
+        assert!(!crate::combat::data_storage::is_open_world_map(600021), "Fire_Temple_Easy");
+        assert!(!crate::combat::data_storage::is_open_world_map(999_999_999), "unknown map");
+
+        let s = DataStorage::new();
+        s.set_current_dungeon(600021);
+        s.note_map_load(310051);
+        assert_eq!(s.current_dungeon_id(), 600021, "a seal does not end it");
+        s.note_map_load(101021);
+        assert_eq!(s.current_dungeon_id(), 0, "a world layer does");
     }
 
     #[test]
@@ -2020,6 +2057,50 @@ mod tests {
             }
         });
         assert_eq!(checked, [true, true]);
+    }
+
+    /// Every capture in /caps: when the dungeon id changes, and the saved
+    /// boss fights with their dungeon ids.
+    #[test]
+    #[ignore]
+    fn dungeon_ids_in_all_captures() {
+        let mut caps: Vec<_> = std::fs::read_dir("/caps").unwrap().filter_map(|e| e.ok()).map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|x| x == "txt")).collect();
+        caps.sort();
+        let clock = |ts: i64| format!("{:02}:{:02}:{:02}", ts / 3_600_000 % 24, ts / 60_000 % 60, ts / 1000 % 60);
+        for cap in caps {
+            eprintln!("{}", cap.display());
+            let mut last = 0;
+            let mut last_save = 0;
+            let mut calc: Option<DpsCalculator> = None;
+            let mut saved: HashMap<String, (i64, i32, i32)> = HashMap::new();
+            replay_capture(cap.to_str().unwrap(), |ts, s| {
+                let id = s.current_dungeon_id();
+                if id != last {
+                    eprintln!("  {} dungeon {last} -> {id}", clock(ts));
+                    last = id;
+                }
+                if ts - last_save < 5_000 { return; }
+                last_save = ts;
+                crate::clock::set_override(Some(ts));
+                let calc = calc.get_or_insert_with(|| {
+                    let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
+                    let skills = Arc::new(SkillLookup::new());
+                    let npcs = Arc::new(NpcLookup::new());
+                    crate::i18n::lookup::load_language(&skills, &npcs, &data, "en");
+                    DpsCalculator::new(s.clone(), skills, npcs, Arc::new(PingTracker::new()))
+                });
+                for r in calc.snapshot_boss_fights() {
+                    saved.insert(r.id.clone(), (r.start_time_ms, r.mob_code, r.dungeon_id));
+                }
+                crate::clock::set_override(None);
+            });
+            let mut fights: Vec<_> = saved.into_values().collect();
+            fights.sort();
+            for (start, mob, dungeon) in fights {
+                eprintln!("  saved {} mob {mob} dungeon {dungeon}", clock(start));
+            }
+        }
     }
 
     /// Every capture in /caps: no player or hit target is anyone's summon, and
