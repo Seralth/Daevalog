@@ -1570,6 +1570,20 @@ body.mainPlayerDpsBold .meter .item .content .dps > p {
   font-size: 12px;
   text-align: right;
 }
+/* WebKit's number spinner ignores the theme; the arrow keys still step. */
+.settingsPanel .settingsNumberInput {
+  appearance: textfield;
+}
+.settingsPanel .settingsNumberInput::-webkit-inner-spin-button,
+.settingsPanel .settingsNumberInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* A group with one row keeps the two-column layout, so the row lines up
+   with the rows of the groups around it. */
+.settingsPanel .settingsGroupSplitFixed {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
 .settingsPanel .settingsNumberInput:hover {
   background: var(--set-field-bg-hover);
   border-color: var(--set-field-border-hover);
