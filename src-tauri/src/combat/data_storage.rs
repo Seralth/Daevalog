@@ -236,9 +236,30 @@ pub struct ActorCombatData {
     pub job: Option<JobClass>,
     /// Skills keyed by (raw_skill_code, is_dot)
     pub skills: HashMap<(i32, bool), SkillCombatData>,
-    /// Damage per second as (unix second, damage), oldest first, for the
-    /// meter's "last N minutes" window. Kept for DAMAGE_HISTORY_MS.
-    pub damage_by_second: VecDeque<(i64, i64)>,
+    /// Damage and hits per unix second, oldest first, for the meter's
+    /// windows (last N minutes, an encounter, last 10/30/60 s). Kept for
+    /// DAMAGE_HISTORY_MS.
+    pub by_second: VecDeque<(i64, SecondStats)>,
+}
+
+/// One second of an actor's damage on a target.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct SecondStats {
+    pub damage: i64,
+    /// Direct hits; ticks over time are left out, as in the details panel.
+    pub hits: i64,
+    pub crits: i64,
+    /// The biggest direct hit, as the details panel's per-skill max.
+    pub max_hit: i64,
+}
+
+impl SecondStats {
+    pub fn add(&mut self, other: &SecondStats) {
+        self.damage += other.damage;
+        self.hits += other.hits;
+        self.crits += other.crits;
+        self.max_hit = self.max_hit.max(other.max_hit);
+    }
 }
 
 impl ActorCombatData {
@@ -252,8 +273,8 @@ impl ActorCombatData {
         self.first_damage_time = self.first_damage_time.min(other.first_damage_time);
         self.last_damage_time = self.last_damage_time.max(other.last_damage_time);
         self.job = self.job.or(other.job);
-        for (sec, dmg) in other.damage_by_second {
-            self.add_damage_at(sec, dmg);
+        for (sec, stats) in other.by_second {
+            self.add_at(sec, &stats);
         }
         for (key, skill) in other.skills {
             match self.skills.get_mut(&key) {
@@ -276,28 +297,46 @@ impl ActorCombatData {
             last_damage_time: 0,
             job: None,
             skills: HashMap::new(),
-            damage_by_second: VecDeque::new(),
+            by_second: VecDeque::new(),
         }
     }
 
     /// Damage dealt in the window starting at `since_ms` (unix ms).
     pub fn damage_since(&self, since_ms: i64) -> i64 {
-        let since = since_ms.div_euclid(1000);
-        self.damage_by_second.iter().rev()
-            .take_while(|&&(sec, _)| sec >= since)
-            .map(|&(_, dmg)| dmg)
-            .sum()
+        self.stats_since(since_ms).damage
     }
 
-    fn add_damage_at(&mut self, sec: i64, dmg: i64) {
-        match self.damage_by_second.iter().rposition(|&(s, _)| s <= sec) {
-            Some(i) if self.damage_by_second[i].0 == sec => self.damage_by_second[i].1 += dmg,
-            Some(i) => self.damage_by_second.insert(i + 1, (sec, dmg)),
-            None => self.damage_by_second.push_front((sec, dmg)),
+    /// Damage and hits in the window starting at `since_ms` (unix ms).
+    pub fn stats_since(&self, since_ms: i64) -> SecondStats {
+        let since = since_ms.div_euclid(1000);
+        let mut out = SecondStats::default();
+        for (_, stats) in self.by_second.iter().rev().take_while(|&&(sec, _)| sec >= since) {
+            out.add(stats);
+        }
+        out
+    }
+
+    /// Hits over all the actor's skills, with no window, so not limited to
+    /// DAMAGE_HISTORY_MS.
+    pub fn stats_total(&self) -> SecondStats {
+        let mut out = SecondStats { damage: self.total_damage, ..SecondStats::default() };
+        for skill in self.skills.values().filter(|s| !s.is_dot) {
+            out.hits += skill.hit_count as i64;
+            out.crits += skill.crit_count as i64;
+            out.max_hit = out.max_hit.max(skill.max_damage as i64);
+        }
+        out
+    }
+
+    fn add_at(&mut self, sec: i64, stats: &SecondStats) {
+        match self.by_second.iter().rposition(|&(s, _)| s <= sec) {
+            Some(i) if self.by_second[i].0 == sec => self.by_second[i].1.add(stats),
+            Some(i) => self.by_second.insert(i + 1, (sec, *stats)),
+            None => self.by_second.push_front((sec, *stats)),
         }
         let oldest = sec - DAMAGE_HISTORY_MS / 1000;
-        while self.damage_by_second.front().is_some_and(|&(s, _)| s < oldest) {
-            self.damage_by_second.pop_front();
+        while self.by_second.front().is_some_and(|&(s, _)| s < oldest) {
+            self.by_second.pop_front();
         }
     }
 }
@@ -1452,7 +1491,7 @@ impl DataStorage {
                                 last_damage_time: ad.last_damage_time,
                                 job: ad.job,
                                 skills,
-                                damage_by_second: ad.damage_by_second.clone(),
+                                by_second: ad.by_second.clone(),
                             },
                         )
                     })
@@ -1641,7 +1680,13 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     // Update actor data within target
     let actor_data = target_data.actors.entry(actor_id).or_insert_with(ActorCombatData::new);
     actor_data.total_damage += total_dmg as i64;
-    actor_data.add_damage_at(timestamp.div_euclid(1000), total_dmg as i64);
+    let direct = !pdp.is_dot();
+    actor_data.add_at(timestamp.div_euclid(1000), &SecondStats {
+        damage: total_dmg as i64,
+        hits: direct as i64,
+        crits: (direct && pdp.is_crit()) as i64,
+        max_hit: if direct { pdp.damage() as i64 } else { 0 },
+    });
     if timestamp < actor_data.first_damage_time {
         actor_data.first_damage_time = timestamp;
     }
@@ -2081,18 +2126,30 @@ mod tests {
 
     #[test]
     fn damage_window_sums_recent_seconds_only() {
+        let dmg = |damage| SecondStats { damage, ..SecondStats::default() };
         let mut a = ActorCombatData::new();
-        a.add_damage_at(100, 10);
-        a.add_damage_at(100, 5);
-        a.add_damage_at(103, 20);
-        a.add_damage_at(101, 7); // out of order
-        assert_eq!(a.damage_by_second, VecDeque::from([(100, 15), (101, 7), (103, 20)]));
+        a.add_at(100, &dmg(10));
+        a.add_at(100, &dmg(5));
+        a.add_at(103, &dmg(20));
+        a.add_at(101, &dmg(7)); // out of order
+        let damages: Vec<(i64, i64)> = a.by_second.iter().map(|&(s, st)| (s, st.damage)).collect();
+        assert_eq!(damages, vec![(100, 15), (101, 7), (103, 20)]);
         assert_eq!(a.damage_since(101_000), 27);
         assert_eq!(a.damage_since(100_000), 42);
         assert_eq!(a.damage_since(104_000), 0);
         // Seconds older than the history are dropped.
-        a.add_damage_at(100 + DAMAGE_HISTORY_MS / 1000 + 2, 1);
-        assert_eq!(a.damage_by_second.front(), Some(&(103, 20)));
+        a.add_at(100 + DAMAGE_HISTORY_MS / 1000 + 2, &dmg(1));
+        assert_eq!(a.by_second.front(), Some(&(103, dmg(20))));
+    }
+
+    #[test]
+    fn hit_window_counts_direct_hits_crits_and_the_biggest_hit() {
+        let mut a = ActorCombatData::new();
+        a.add_at(100, &SecondStats { damage: 900, hits: 1, crits: 1, max_hit: 900 });
+        a.add_at(101, &SecondStats { damage: 300, hits: 1, crits: 0, max_hit: 300 });
+        a.add_at(101, &SecondStats { damage: 50, hits: 0, crits: 0, max_hit: 0 });
+        assert_eq!(a.stats_since(100_000), SecondStats { damage: 1250, hits: 2, crits: 1, max_hit: 900 });
+        assert_eq!(a.stats_since(101_000), SecondStats { damage: 350, hits: 1, crits: 0, max_hit: 300 });
     }
 
     fn who(s: &DataStorage) -> (Option<i64>, Option<String>, bool) {

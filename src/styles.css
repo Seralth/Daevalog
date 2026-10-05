@@ -811,6 +811,44 @@ body.linuxOverlay .meter {
   text-align: right;
 }
 
+/* Chosen columns (ENC mode, see meterColumns.js). The first figure keeps
+   the readout's large type, the rest the share's smaller type. Each figure
+   has its own minimum width, so the header labels sit over the numbers. */
+.list .item .dps.hasCols > p.col {
+  text-align: right;
+  white-space: nowrap;
+}
+.list .item .dps.hasCols > p.col:not(.colFirst) {
+  font-variation-settings: "wght" 600, "wdth" 75;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.88);
+}
+.list .item.colHeader {
+  height: 12px;
+  background: none;
+  cursor: default;
+  pointer-events: none;
+}
+.list .item.colHeader .classIcon { height: 0; }
+.list .item.colHeader .dps { background: none; }
+.list .item.colHeader .content .dps > p.col {
+  font-variation-settings: "wght" 600, "wdth" 75;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--hud-faint);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+.meter.slim .list .item.colHeader { height: 10px; }
+.meter.slim .list .item.colHeader .content .dps > p.col { font-size: 8.5px; }
+.meter.slim .list .item .dps.hasCols > p.col:not(.colFirst) { font-size: 10.5px; }
+body.legacyUi .list .item .dps.hasCols > p.col {
+  font-family: inherit;
+  font-size: inherit;
+  font-variation-settings: normal;
+  color: inherit;
+}
+body.legacyUi .list .item.colHeader .content .dps > p.col { font-size: 10px; }
+
 /* Party combat power in thousands ("864k"), sat between the name and the
    readout. Cyan sets it apart
    as a different kind of number from the white DPS figure — it is reference

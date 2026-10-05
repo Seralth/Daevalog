@@ -35,6 +35,7 @@ class DpsApp {
       onlyShowUser: "dpsMeter.onlyShowUser",
       allTargetsWindowMs: "dpsMeter.allTargetsWindowMs",
       encounterTimeoutSec: "dpsMeter.encounterTimeoutSec",
+      encColumns: "dpsMeter.encColumns",
       trainSelectionMode: "dpsMeter.trainSelectionMode",
       targetSelectionWindowMs: "dpsMeter.targetSelectionWindowMs",
       meterFillOpacity: "dpsMeter.meterFillOpacity",
@@ -257,6 +258,16 @@ class DpsApp {
       getSortDirection: () => this.listSortDirection,
       getPinUserToTop: () => this.pinMeToTop,
       getPlayerLimit: () => this.playerLimit,
+      getColumns: () => this.getRowColumns(),
+      columnFormats: {
+        rate: (v) => this.formatDpsThousands(v),
+        amount: (v) => this.formatAbbreviatedNumber(v),
+        count: (v) => this.dpsFormatter.format(Math.round(v)),
+      },
+      getColumnLabel: (key) => {
+        const col = window.MeterColumns?.COLUMNS?.find((c) => c.key === key);
+        return this.i18n?.t(`meter.columns.${key}`, col?.short ?? key) ?? col?.short ?? key;
+      },
       onHoverUserRow: (row, event) => {
         if (this.shouldSuppressRowInteractions()) return;
         this.openHoverDetailsRow(row, event);
@@ -356,6 +367,8 @@ class DpsApp {
     this.showTotalDps = this.safeGetSetting(this.storageKeys.showTotalDps) !== "false";
     // Defaults on: `!== "false"` treats "never set" as enabled.
     this.roundDps = this.safeGetSetting(this.storageKeys.roundDps) !== "false";
+    // Columns for ENC mode rows; null keeps the usual readout.
+    this.encColumns = window.MeterColumns?.parse?.(this.safeGetSetting(this.storageKeys.encColumns)) ?? null;
     this.meterTotalBar = document.querySelector(".meterTotalBar");
     this.meterTotalDpsEl = document.querySelector(".meterTotalDps");
     this.meterTotalDmgEl = document.querySelector(".meterTotalDmg");
@@ -1221,6 +1234,7 @@ class DpsApp {
       // Combat power comes from the party roster packet, so it only exists for
       // players actually in your party; 0 means "unknown", not "zero CP".
       const combatPower = Math.trunc(Number(isObj ? value.combatPower : 0)) || 0;
+      const num = (v) => (isObj && Number.isFinite(Number(v)) ? Number(v) : 0);
 
       rows.push({
         id: String(id),
@@ -1230,6 +1244,15 @@ class DpsApp {
         totalDamage,
         damageContribution,
         combatPower,
+        // For the ENC columns: DPS over the player's own active time and over
+        // the last 10/30/60 s, direct hits, crits among them, biggest hit.
+        activeDps: num(value?.activeDps),
+        last10Dps: num(value?.last10Dps),
+        last30Dps: num(value?.last30Dps),
+        last60Dps: num(value?.last60Dps),
+        hits: num(value?.hits),
+        critHits: num(value?.critHits),
+        maxHit: num(value?.maxHit),
         isUser: name === this.USER_NAME || numericId === localId,
         isIdentifying,
         // Resolved in Rust against a downloaded roster; the frontend only
@@ -2309,6 +2332,7 @@ class DpsApp {
     this._updateSuspendStatusMessage();
 
     this.initPlayerLimitDropdown();
+    this.initEncColumnsSettings();
     if (this.saveRawPacketsCheckbox) {
       const storedSaveRaw = this.safeGetSetting(this.storageKeys.saveRawPackets) === "true";
       this.saveRawPacketsCheckbox.checked = storedSaveRaw;
@@ -4229,6 +4253,12 @@ class DpsApp {
       this.renderCurrentRows();
       return;
     }
+    if (key === this.storageKeys.encColumns) {
+      this.encColumns = window.MeterColumns?.parse?.(value) ?? null;
+      this.syncEncColumnsSettings();
+      this.renderCurrentRows();
+      return;
+    }
     if (key === this.storageKeys.defaultMeterMode) {
       const validModes = ["bossTargets", "lastHitByMe", "allTargets", "trainTargets", "encounter"];
       if (!validModes.includes(value)) return;
@@ -4261,6 +4291,68 @@ class DpsApp {
     control.dispatchEvent(new Event("change", { bubbles: true }));
     if (control.type === "range") {
       control.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }
+
+  // The ENC columns the rows show, or null for the usual readout: other
+  // modes, and ENC until a choice is saved.
+  getRowColumns() {
+    return this.targetSelection === "encounter" ? this.encColumns : null;
+  }
+
+  // The ENC column switches in Settings. Before a choice is saved they show
+  // what the row shows today; the first change saves the whole set. The last
+  // switch on cannot be turned off, so a row always has a number.
+  initEncColumnsSettings() {
+    const list = document.querySelector(".encColumnsList");
+    const Columns = window.MeterColumns;
+    if (!list || !Columns || list.dataset.wired) return;
+    list.dataset.wired = "1";
+    const current = () =>
+      this.encColumns ?? Columns.defaultsFor(this.safeGetStorage(this.storageKeys.displayMode) || this.displayMode);
+    this.encColumnsCheckboxes = new Map();
+    for (const col of Columns.COLUMNS) {
+      const label = document.createElement("label");
+      label.className = "settingsToggle";
+      const text = document.createElement("span");
+      text.className = "settingsToggleLabel settingsLabel";
+      text.dataset.i18n = `settings.encColumns.${col.key}`;
+      text.textContent = this.i18n?.t(`settings.encColumns.${col.key}`, col.label) ?? col.label;
+      const control = document.createElement("span");
+      control.className = "settingsToggleControl";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.dataset.column = col.key;
+      const track = document.createElement("span");
+      track.className = "settingsToggleTrack";
+      track.setAttribute("aria-hidden", "true");
+      control.append(input, track);
+      label.append(text, control);
+      list.appendChild(label);
+      this.encColumnsCheckboxes.set(col.key, input);
+      input.addEventListener("change", () => {
+        const chosen = Columns.COLUMNS.map((c) => c.key)
+          .filter((key) => this.encColumnsCheckboxes.get(key)?.checked);
+        if (!chosen.length) {
+          input.checked = true;
+          return;
+        }
+        this.encColumns = chosen;
+        this.safeSetSetting(this.storageKeys.encColumns, Columns.serialize(chosen));
+        this.syncEncColumnsSettings();
+        this.renderCurrentRows();
+      });
+    }
+    this._encColumnsCurrent = current;
+    this.syncEncColumnsSettings();
+  }
+
+  syncEncColumnsSettings() {
+    if (!this.encColumnsCheckboxes || !this._encColumnsCurrent) return;
+    const chosen = new Set(this._encColumnsCurrent());
+    for (const [key, input] of this.encColumnsCheckboxes) {
+      input.checked = chosen.has(key);
+      input.disabled = chosen.size === 1 && chosen.has(key);
     }
   }
 

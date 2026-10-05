@@ -9,7 +9,13 @@ const createMeterUI = ({
   getSortDirection,
   getPinUserToTop,
   getPlayerLimit,
+  // Column keys for the rows (see meterColumns.js), or null for the usual
+  // readout. With them: the meter's number formats and the header labels.
+  getColumns,
+  columnFormats,
+  getColumnLabel,
 }) => {
+  const Columns = window.MeterColumns;
   const MAX_CACHE = 32;
   const cjkRegex = /[\u3400-\u9FFF\uF900-\uFAFF]/;
   const classIconSrcByJob = new Map();
@@ -123,6 +129,9 @@ const createMeterUI = ({
       lastClassIconSrc: "",
       lastIsUser: false,
       lastIsIdentifying: false,
+      colsKey: "",
+      colEls: [],
+      colTexts: [],
       hoverRipplePlayed: false,
       hoverRippleTimer: null,
     };
@@ -223,6 +232,86 @@ const createMeterUI = ({
 
   let lastOrderKey = "";
 
+  // List width for fitting columns, kept by a ResizeObserver so a render
+  // never has to measure. A resize that changes what fits renders again.
+  let listWidth = 0;
+  let lastRawRows = null;
+  let lastFitKey = "";
+  if (typeof ResizeObserver === "function") {
+    new ResizeObserver((entries) => {
+      const width = entries[entries.length - 1]?.contentRect?.width || 0;
+      if (width === listWidth) return;
+      listWidth = width;
+      const wanted = getColumns?.() || null;
+      const fitKey = wanted ? Columns.fit(wanted, listWidth).join(",") : "";
+      if (fitKey !== lastFitKey && lastRawRows && !pendingRenderRows) {
+        updateFromRows(lastRawRows);
+      }
+    }).observe(elList);
+  }
+
+  const resolveColumns = () => {
+    const wanted = typeof getColumns === "function" ? getColumns() : null;
+    if (!Columns || !Array.isArray(wanted) || !wanted.length) return null;
+    const width = listWidth || elList.clientWidth || 0;
+    return Columns.fit(wanted, width);
+  };
+
+  const widthOf = (key) => Columns.COLUMNS.find((c) => c.key === key)?.width ?? 0;
+
+  const buildCells = (container, columns) => {
+    const cells = columns.map((key, i) => {
+      const cell = document.createElement("p");
+      cell.className = `col col-${key}${i === 0 ? " colFirst" : ""}`;
+      // The first figure is free to size to its text: it is the leftmost, so
+      // its width moves nothing under the header.
+      if (i > 0) cell.style.minWidth = `${widthOf(key)}px`;
+      return cell;
+    });
+    container.replaceChildren(...cells);
+    container.classList.add("hasCols");
+    return cells;
+  };
+
+  // Rows put their figures in the same boxes as this header, so the labels
+  // sit over the numbers at any width.
+  let headerEl = null;
+  let headerKey = "";
+  const updateHeader = (columns, visible) => {
+    if (!columns || !visible) {
+      if (headerEl) headerEl.style.display = "none";
+      return;
+    }
+    if (!headerEl) {
+      headerEl = document.createElement("div");
+      headerEl.className = "item colHeader";
+      headerEl.setAttribute("aria-hidden", "true");
+      const content = document.createElement("div");
+      content.className = "content";
+      const rank = document.createElement("span");
+      rank.className = "rank";
+      const icon = document.createElement("div");
+      icon.className = "classIcon";
+      const name = document.createElement("div");
+      name.className = "name";
+      const cols = document.createElement("div");
+      cols.className = "dps";
+      content.append(rank, icon, name, cols);
+      headerEl.appendChild(content);
+    }
+    const lang = window.i18n?.getLanguage?.() || "";
+    const key = `${columns.join(",")}|${lang}`;
+    if (headerKey !== key) {
+      const cells = buildCells(headerEl.querySelector(".dps"), columns);
+      cells.forEach((cell, i) => {
+        cell.textContent = getColumnLabel?.(columns[i]) ?? columns[i];
+      });
+      headerKey = key;
+    }
+    headerEl.style.display = "";
+    if (elList.firstChild !== headerEl) elList.prepend(headerEl);
+  };
+
   const renderRows = (rows, rankById) => {
     const now = nowMs();
     const nextVisibleIds = new Set();
@@ -253,6 +342,10 @@ const createMeterUI = ({
 
     const needsReorder = orderKey !== lastOrderKey;
     lastOrderKey = orderKey;
+
+    const columns = resolveColumns();
+    const colsKey = columns ? columns.join(",") : "";
+    lastFitKey = colsKey;
 
     for (const { row, id } of validRows) {
       nextVisibleIds.add(id);
@@ -367,16 +460,40 @@ const createMeterUI = ({
         view.prevContribClass = contributionClass;
       }
 
-      const metricText = metric.text;
-      if (view.lastMetricText !== metricText) {
-        view.dpsNumber.textContent = metricText;
-        view.lastMetricText = metricText;
+      if (view.colsKey !== colsKey) {
+        if (columns) {
+          view.colEls = buildCells(view.dpsContainer, columns);
+        } else {
+          view.dpsContainer.replaceChildren(view.dpsNumber, view.dpsContribution);
+          view.dpsContainer.classList.remove("hasCols");
+          view.colEls = [];
+          view.lastMetricText = null;
+          view.lastContributionText = null;
+        }
+        view.colTexts = [];
+        view.colsKey = colsKey;
       }
 
-      const contributionText = `${damageContribution.toFixed(1)}%`;
-      if (view.lastContributionText !== contributionText) {
-        view.dpsContribution.textContent = contributionText;
-        view.lastContributionText = contributionText;
+      if (columns) {
+        for (let i = 0; i < columns.length; i++) {
+          const text = Columns.cellText(columns[i], row, columnFormats, damageContribution);
+          if (view.colTexts[i] !== text) {
+            view.colEls[i].textContent = text;
+            view.colTexts[i] = text;
+          }
+        }
+      } else {
+        const metricText = metric.text;
+        if (view.lastMetricText !== metricText) {
+          view.dpsNumber.textContent = metricText;
+          view.lastMetricText = metricText;
+        }
+
+        const contributionText = `${damageContribution.toFixed(1)}%`;
+        if (view.lastContributionText !== contributionText) {
+          view.dpsContribution.textContent = contributionText;
+          view.lastContributionText = contributionText;
+        }
       }
 
       const rankText = String(rankById?.get(id) ?? "");
@@ -413,6 +530,8 @@ const createMeterUI = ({
 
     lastVisibleIds = nextVisibleIds;
 
+    updateHeader(columns, validRows.length > 0);
+
     pruneCache(nextVisibleIds);
   };
 
@@ -421,6 +540,7 @@ const createMeterUI = ({
     const rows = pendingRenderRows;
     pendingRenderRows = null;
     if (!rows) return;
+    lastRawRows = rows;
 
     const arr = Array.isArray(rows) ? rows.slice() : [];
     const sortDirection = typeof getSortDirection === "function" ? getSortDirection() : "desc";
@@ -455,7 +575,10 @@ const createMeterUI = ({
       renderRowsRafId = 0;
     }
     pendingRenderRows = null;
+    lastRawRows = null;
     lastOrderKey = "";
+    headerEl = null;
+    headerKey = "";
     elList.classList.remove("hasRows");
     lastVisibleIds = new Set();
 
