@@ -429,16 +429,6 @@
     "fallback": "스킬 {code}",
     "dot": "{name} - DOT"
   },
-  "update": {
-    "title": "새 업데이트 사용 가능",
-    "install": "지금 설치",
-    "notes": "릴리스 노트",
-    "manual": "수동 설치",
-    "later": "나중에 업데이트",
-    "text": "새 업데이트가 있습니다!\n\n현재 버전: {current}\n최신 버전: {latest}",
-    "installing": "업데이트 설치 중...",
-    "downloadError": "다운로드 실패. 다시 시도하거나 수동으로 설치하세요."
-  },
   "connection": {
     "auto": "자동",
     "detecting": "AION2 연결을 찾는 중...",

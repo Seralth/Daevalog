@@ -12,7 +12,7 @@ Daevalog DPS Meter reads the game's network traffic. Daevalog DPS Meter does not
 - **Differences from A2Tools DPS Meter.** Daevalog DPS Meter may differ from A2Tools DPS Meter in features, behaviour and security handling.
 - **No compatibility promise.** Compatibility with A2Tools DPS Meter is kept where practical: settings, saved fights, the upload format and the a2tools.app log service. No compatibility is promised. A future version may drop compatibility without warning or notice.
 - **No releases yet.** No packages are published. Build from source, as described below.
-- **No automatic updates.** Daevalog DPS Meter never updates itself. The update check of A2Tools DPS Meter is switched off.
+- **No automatic updates.** Daevalog DPS Meter never updates itself and never checks for updates. The update check and the updater of A2Tools DPS Meter are removed. A package is updated by the package manager that installed it.
 - **Revision numbers.** Builds are numbered by revision, for example `r200.g8e3c962`: the commit count, then the commit. The version in the app and in uploads is the A2Tools DPS Meter release the fork is based on.
 
 ## Reporting problems
@@ -62,7 +62,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 ### Left out
 - Guessing who an unnamed actor is from its class.
 - The one-time popups that offer Discord activity, and sign-in with automatic upload.
-- Automatic updates.
+- The update check and the updater.
 
 Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull requests.
 

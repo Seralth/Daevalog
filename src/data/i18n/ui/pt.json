@@ -429,16 +429,6 @@
     "fallback": "Habilidade {code}",
     "dot": "{name} - DoT"
   },
-  "update": {
-    "title": "Nova atualização disponível",
-    "install": "Instalar agora",
-    "notes": "Notas da versão",
-    "manual": "Instalação manual",
-    "later": "Atualizar depois",
-    "text": "Uma nova atualização está disponível!\n\nVersão atual: {current}\nÚltima versão: {latest}",
-    "installing": "Instalando a atualização...",
-    "downloadError": "Falha no download. Tente novamente ou instale manualmente."
-  },
   "connection": {
     "auto": "Auto",
     "detecting": "Detectando a conexão do AION2...",

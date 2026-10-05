@@ -429,16 +429,6 @@
     "fallback": "Skill {code}",
     "dot": "{name} - DoT"
   },
-  "update": {
-    "title": "Neues Update verfügbar",
-    "install": "Jetzt installieren",
-    "notes": "Versionshinweise",
-    "manual": "Manuelle Installation",
-    "later": "Später aktualisieren",
-    "text": "Ein neues Update ist verfügbar!\n\nAktuelle Version: {current}\nNeueste Version: {latest}",
-    "installing": "Update wird installiert...",
-    "downloadError": "Download fehlgeschlagen. Bitte erneut versuchen oder manuell installieren."
-  },
   "connection": {
     "auto": "Auto",
     "detecting": "AION2-Verbindung wird erkannt...",

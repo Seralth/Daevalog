@@ -13,11 +13,6 @@ sends, what it keeps, and what an upload contains.
 
 ## What the meter sends
 
-**A version check.** On startup, `checkRelease.js` fetches
-`https://a2tools.app/latest-v2.json` and compares the version to the running
-build. It sends no identifiers, no telemetry, and no combat data. If an update is
-available and you accept it, the MSI is downloaded from `cdn.a2tools.app`.
-
 **The supporter list.** Downloaded from the CDN every few hours and matched on
 your machine (see below). Nothing about your party is sent.
 

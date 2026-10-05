@@ -429,16 +429,6 @@
     "fallback": "技能 {code}",
     "dot": "{name} - DOT"
   },
-  "update": {
-    "title": "有新更新",
-    "install": "立即安装",
-    "notes": "更新说明",
-    "manual": "手动安装",
-    "later": "稍后更新",
-    "text": "有新更新可用！\n\n当前版本：{current}\n最新版本：{latest}",
-    "installing": "正在安装更新...",
-    "downloadError": "下载失败。请重试或手动安装。"
-  },
   "connection": {
     "auto": "自动",
     "detecting": "正在检测 AION2 连接...",

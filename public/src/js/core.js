@@ -479,9 +479,6 @@ class DpsApp {
       this.updateSupportPrimaryAction(lang);
       this.updateSupportQrImage(this.supportPrimaryButton?.dataset.support || "afdian");
     });
-    // Settings, Details and History run this same bundle; only the overlay
-    // checks, or every Settings open would ask again.
-    if (window.A2_VIEW === "main") window.ReleaseChecker?.start?.();
     this.setupConsoleDebugging();
     this.bindNativeHotkeyBridge();
 

@@ -3149,101 +3149,6 @@ body.legacyUi .meter .item .content .name.isSupporter,
   }
 }
 
-.updateModal {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 999999;
-  &.isOpen {
-    display: flex;
-  }
-
-  .updateModalCard {
-    width: 360px;
-    border-radius: 24px;
-    background: rgb(12, 22, 40);
-    padding: 24px;
-    font-weight: bold;
-    color: white;
-    .updateModalTitle {
-      font-size: 24px;
-    }
-    .updateModalText {
-      margin: 24px 0;
-      white-space: pre-line;
-    }
-    .updateModalActions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .updateModalBtn {
-      border: none;
-      font-size: 18px;
-      font-weight: bold;
-      border-radius: 8px;
-      padding: 8px;
-      width: 100%;
-      cursor: pointer;
-      color: white;
-      text-shadow: var(--text-shadow);
-    }
-    .updateModalBtn.updateInstallBtn {
-      background: #4caf50;
-    }
-    .updateModalBtn.updateNotesBtn {
-      background: #2196f3;
-    }
-    .updateModalBtn.updateManualBtn {
-      background: #78909c;
-    }
-    .updateModalBtn.updateLaterBtn {
-      background: #ff9800;
-    }
-    .updateProgress {
-      margin-top: 16px;
-      text-align: center;
-    }
-    .updateProgressTrack {
-      width: 100%;
-      height: 8px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .updateProgressBar {
-      height: 100%;
-      width: 0%;
-      background: #4caf50;
-      border-radius: 4px;
-      transition: width 0.2s;
-    }
-    .updateProgressText {
-      margin-top: 8px;
-      font-size: 14px;
-      color: rgba(255,255,255,0.8);
-    }
-    .updateProgressActions {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .updateProgressActions .updateModalBtn {
-      flex: 1;
-    }
-    .updateModalBtn.updateCancelBtn {
-      background: #ff5252;
-    }
-    .updateStatusText {
-      margin-top: 16px;
-      text-align: center;
-      font-size: 14px;
-    }
-  }
-}
-
 /* Compatibility: flatten nested rules for environments without CSS nesting support. */
 
 
@@ -4193,91 +4098,6 @@ body.legacyUi .meter .item .content .name.isSupporter,
   flex-shrink: 0;
 }
 
-.updateModal.isOpen {
-  display: flex;
-}
-.updateModal .updateModalCard {
-  width: 360px;
-  border-radius: 24px;
-  background: rgb(12, 22, 40);
-  padding: 24px;
-  font-weight: bold;
-  color: white;
-}
-.updateModal .updateModalCard .updateModalTitle {
-  font-size: 24px;
-}
-.updateModal .updateModalCard .updateModalText {
-  margin: 24px 0;
-  white-space: pre-line;
-}
-.updateModal .updateModalCard .updateModalActions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.updateModal .updateModalCard .updateModalBtn {
-  border: none;
-  font-size: 18px;
-  font-weight: bold;
-  border-radius: 8px;
-  padding: 8px;
-  width: 100%;
-  cursor: pointer;
-  color: white;
-  text-shadow: var(--text-shadow);
-}
-.updateModal .updateModalCard .updateModalBtn.updateInstallBtn {
-  background: #4caf50;
-}
-.updateModal .updateModalCard .updateModalBtn.updateNotesBtn {
-  background: #2196f3;
-}
-.updateModal .updateModalCard .updateModalBtn.updateManualBtn {
-  background: #78909c;
-}
-.updateModal .updateModalCard .updateModalBtn.updateLaterBtn {
-  background: #ff9800;
-}
-.updateModal .updateModalCard .updateModalBtn.updateCancelBtn {
-  background: #ff5252;
-}
-.updateModal .updateModalCard .updateProgress {
-  margin-top: 16px;
-  text-align: center;
-}
-.updateModal .updateModalCard .updateProgressTrack {
-  width: 100%;
-  height: 8px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.updateModal .updateModalCard .updateProgressBar {
-  height: 100%;
-  width: 0%;
-  background: #4caf50;
-  border-radius: 4px;
-  transition: width 0.2s;
-}
-.updateModal .updateModalCard .updateProgressText {
-  margin-top: 8px;
-  font-size: 14px;
-  color: rgba(255,255,255,0.8);
-}
-.updateModal .updateModalCard .updateProgressActions {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-.updateModal .updateModalCard .updateProgressActions .updateModalBtn {
-  flex: 1;
-}
-.updateModal .updateModalCard .updateStatusText {
-  margin-top: 16px;
-  text-align: center;
-  font-size: 14px;
-}
 .supportModal {
   display: none;
   position: fixed;
@@ -6712,7 +6532,6 @@ html.detailsWindow .pingDisplay,
 html.detailsWindow .settingsPanel,
 /* History has its own window again, so it never draws over a fight. */
 html.detailsWindow .historyPanel,
-html.detailsWindow .updateModal,
 html.detailsWindow .hoverDetailsTooltip {
   display: none !important;
 }
@@ -6786,7 +6605,6 @@ html.historyWindow .resizeHandle,
 html.historyWindow .pingDisplay,
 html.historyWindow .settingsPanel,
 html.historyWindow .detailsPanel,
-html.historyWindow .updateModal,
 html.historyWindow .hoverDetailsTooltip,
 html.historyWindow .detailsMonitorBadge {
   display: none !important;
@@ -6982,7 +6800,6 @@ html.settingsWindow .resizeHandle,
 html.settingsWindow .pingDisplay,
 html.settingsWindow .detailsPanel,
 html.settingsWindow .historyPanel,
-html.settingsWindow .updateModal,
 html.settingsWindow .hoverDetailsTooltip,
 html.settingsWindow .detailsMonitorBadge {
   display: none !important;
@@ -7057,7 +6874,6 @@ html.settingsWindow .settingsHeader a {
 .settingsPanel,
 .detailsPanel,
 .historyPanel,
-.updateModal,
 .pingDisplay,
 .meter button,
 .meter input,

@@ -429,16 +429,6 @@
     "fallback": "スキル {code}",
     "dot": "{name} - 継続ダメージ"
   },
-  "update": {
-    "title": "新しいアップデートがあります",
-    "install": "今すぐインストール",
-    "notes": "リリースノート",
-    "manual": "手動インストール",
-    "later": "後で更新",
-    "text": "新しいアップデートがあります！\n\n現在のバージョン: {current}\n最新バージョン: {latest}",
-    "installing": "アップデートをインストール中...",
-    "downloadError": "ダウンロードに失敗しました。もう一度試すか、手動でインストールしてください。"
-  },
   "connection": {
     "auto": "自動",
     "detecting": "AION2の接続を検出中...",

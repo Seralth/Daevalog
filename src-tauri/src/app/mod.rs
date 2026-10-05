@@ -40,7 +40,6 @@ mod supporter_roster;
 mod tasks;
 mod tool_windows;
 mod tray_actions;
-mod updater;
 
 pub(crate) use overlay_lock::{overlay_lock_available, toggle_overlay_lock};
 use overlay_lock::OverlayLock;
@@ -61,9 +60,8 @@ pub struct AppState {
     pub npc_lookup: Arc<NpcLookup>,
     pub app_data_dir: std::path::PathBuf,
     pub i18n_data_dir: Option<std::path::PathBuf>,
-    /// One client, reused. The update check and the MSI download each used a
-    /// one-shot `reqwest::get`, which builds a fresh client and TLS stack per
-    /// call; anything periodic wants a pool rather than a handshake every time.
+    /// One client, reused: anything periodic wants a pool rather than a TLS
+    /// handshake every time.
     pub http: reqwest::Client,
     /// The header's suspend button: while set, the capture dispatcher drops
     /// every packet. Shared with it (`CaptureDispatcher::use_suspend_flag`).

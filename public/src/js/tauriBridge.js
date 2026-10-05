@@ -719,25 +719,6 @@
       invoke("write_cached_icon", { key, data }).catch(() => {});
     },
 
-    // --- Fetch ---
-    fetchUrlAsync(url, callbackId) {
-      // checkRelease.js registers a callback via window._fetchUrlCallback(id, raw)
-      // Add cache-buster and no-cache headers to avoid stale CDN responses
-      const bustUrl = url + (url.includes("?") ? "&" : "?") + "_t=" + Date.now();
-      fetch(bustUrl, { cache: "no-store" })
-        .then((r) => r.text())
-        .then((text) => {
-          if (callbackId && typeof window._fetchUrlCallback === "function") {
-            window._fetchUrlCallback(callbackId, text);
-          }
-        })
-        .catch(() => {
-          if (callbackId && typeof window._fetchUrlCallback === "function") {
-            window._fetchUrlCallback(callbackId, JSON.stringify({ error: "fetch failed" }));
-          }
-        });
-    },
-
     // --- Admin ---
     isAdmin() {
       return invoke("is_admin");
