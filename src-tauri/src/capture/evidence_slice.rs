@@ -509,14 +509,13 @@ fn looks_like_text(span: &[u8]) -> bool {
         }
     }
     // At least half the characters being letters or digits rules out runs of
-    // punctuation that happen to decode. One character is never a name: a
-    // skill id such as 100051 (`d3 86 01 00`) after a `02` byte decodes as one
-    // letter, and blinding it moved a spirit's hits to a skill that does not
-    // exist (2026-10-04 capture against the game's own record).
+    // punctuation that happen to decode. One character can be a name ("é",
+    // "あ"), so it is blinded; the skill ids that read as one letter sit in
+    // damage records, which are not scanned at all.
     // A short run must be letters or digits only: Water Bomb (16001105,
     // `51 28 f4 00`) after a `02` byte reads "Q(", half a letter.
     let chars = s.chars().count();
-    chars >= 2 && letters * 2 >= chars && (chars > 3 || letters == chars)
+    letters * 2 >= chars && (chars > 3 || letters == chars)
 }
 
 /// Every byte of a record in the clear, bundles decompressed.
@@ -1051,6 +1050,16 @@ mod tests {
         let mut packet = frame_packet(&body).unwrap();
         Blinder::new(&[]).blind(&mut packet);
         assert!(packet.windows(4).any(|w| w == [0xd3, 0x86, 0x01, 0x00]));
+    }
+
+    #[test]
+    fn a_one_character_name_is_blinded() {
+        // A player spawn carrying the one-letter name "あ" (`e3 81 82`).
+        let mut body = vec![0x44, 0x36, 0x9e, 0x9b, 0x01, 0x03, 0xe3, 0x81, 0x82];
+        body.resize(40, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        Blinder::new(&[]).blind(&mut packet);
+        assert!(!packet.windows(3).any(|w| w == [0xe3, 0x81, 0x82]));
     }
 
     #[test]
