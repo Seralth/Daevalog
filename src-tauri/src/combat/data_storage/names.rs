@@ -3,7 +3,8 @@
 use std::collections::{HashMap, HashSet};
 
 use super::damage::purge_friendly_damage;
-use super::{rebind_roster_after_naming, ActorCombatData, DataStorage, Inner};
+use super::roster::rebind_roster_after_naming;
+use super::{ActorCombatData, DataStorage, Inner};
 
 impl DataStorage {
     /// Bind a nickname from a LOWER-CONFIDENCE source (fuzzy actor-name rules,
