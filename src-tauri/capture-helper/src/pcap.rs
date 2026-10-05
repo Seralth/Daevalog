@@ -579,6 +579,15 @@ fn parse_tcp_payload(frame: &[u8], link_type: c_int, device_name: &str) -> Optio
     if ip_header[9] != 6 {
         return None; // Not TCP
     }
+    // The packet ends where IPv4's total length says. Ethernet pads short
+    // frames to 60 bytes, and the padding is not payload. A total length of
+    // 0 (a large segment from TCP offload) means the rest of the frame.
+    let total_len = u16::from_be_bytes([ip_header[2], ip_header[3]]) as usize;
+    let ip_end = match total_len {
+        0 => frame.len(),
+        n if n < ip_header_len + 20 => return None,
+        n => (ip_offset + n).min(frame.len()),
+    };
 
     let src_ip = [ip_header[12], ip_header[13], ip_header[14], ip_header[15]];
     let dst_ip = [ip_header[16], ip_header[17], ip_header[18], ip_header[19]];
@@ -596,10 +605,10 @@ fn parse_tcp_payload(frame: &[u8], link_type: c_int, device_name: &str) -> Optio
     let tcp_header_len = ((tcp_header[12] >> 4) as usize) * 4;
 
     let payload_offset = tcp_offset + tcp_header_len;
-    if payload_offset >= frame.len() {
+    if payload_offset >= ip_end {
         return None;
     }
-    let payload = &frame[payload_offset..];
+    let payload = &frame[payload_offset..ip_end];
     if payload.is_empty() {
         return None;
     }
@@ -661,6 +670,26 @@ mod tests {
         // Raw IP on a device that claims Ethernet: the exact read fails, the
         // guess finds IPv4 at 0, as it always did.
         check(1, &[]);
+    }
+
+    /// A bare ACK is 54 bytes on Ethernet, padded to the 60-byte minimum.
+    /// The 6 padding bytes are not payload.
+    #[test]
+    fn ethernet_padding_is_not_payload() {
+        let mut ip = vec![0x45, 0, 0, 40, 0, 0, 0, 0, 64, 6, 0, 0, 193, 202, 112, 99, 10, 0, 0, 2];
+        ip.extend_from_slice(&[0x34, 0x10, 0xC7, 0x38, 0, 0, 0, 1, 0, 0, 0, 2, 0x50, 0x10, 0, 0, 0, 0, 0, 0]);
+        let frame = [[0u8; 12].as_slice(), &[0x08, 0x00], &ip, &[0u8; 6]].concat();
+        assert_eq!(frame.len(), 60);
+        assert!(parse_tcp_payload(&frame, 1, "dev").is_none());
+
+        // With a payload, the padding after it is cut off too.
+        let mut short = ipv4_tcp();
+        let frame = [[0u8; 12].as_slice(), &[0x08, 0x00], &short, &[0u8; 4]].concat();
+        assert_eq!(parse_tcp_payload(&frame, 1, "dev").expect("parsed").data, b"hi");
+        // A total length of 0 (TCP offload) keeps the rest of the frame.
+        short[2..4].copy_from_slice(&[0, 0]);
+        let frame = [[0u8; 12].as_slice(), &[0x08, 0x00], &short].concat();
+        assert_eq!(parse_tcp_payload(&frame, 1, "dev").expect("parsed").data, b"hi");
     }
 
     #[test]
