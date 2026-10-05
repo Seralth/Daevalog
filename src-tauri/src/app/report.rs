@@ -87,7 +87,8 @@ pub(crate) fn prepare_log(data_dir: &Path, name: Option<&str>) -> Result<Prepare
     let text = std::fs::read(&source).map_err(|e| format!("Could not read {}: {e}", log.name))?;
     let text = String::from_utf8_lossy(&text);
     let prepared = report_log::prepare(&text).map_err(|e| format!("Could not prepare {}: {e}", log.name))?;
-    let out_name = format!("report_{}", log.name);
+    // Compressed: GitHub takes attachments up to 25 MB, and a busy log is more.
+    let out_name = format!("report_{}.gz", log.name);
     let out = data_dir.join(&out_name);
     let mut file = platform::files::private_options()
         .create(true)
@@ -95,7 +96,8 @@ pub(crate) fn prepare_log(data_dir: &Path, name: Option<&str>) -> Result<Prepare
         .truncate(true)
         .open(&out)
         .map_err(|e| format!("Could not write {out_name}: {e}"))?;
-    std::io::Write::write_all(&mut file, prepared.text.as_bytes()).map_err(|e| format!("Could not write {out_name}: {e}"))?;
+    let gz = crate::share::gzip(prepared.text.as_bytes()).map_err(|e| format!("Could not write {out_name}: {e}"))?;
+    std::io::Write::write_all(&mut file, &gz).map_err(|e| format!("Could not write {out_name}: {e}"))?;
     tracing::info!(
         "Prepared {out_name} for a bug report: {} names known, {} places blinded",
         prepared.names_known,
@@ -149,13 +151,14 @@ mod tests {
         assert_eq!(names, ["packets_20261005_101010.txt", "packets_20261004_004203.txt"]);
 
         let newest = prepare_log(&dir, None).unwrap();
-        assert_eq!(newest.name, "report_packets_20261005_101010.txt");
-        let copy = std::fs::read_to_string(dir.join(&newest.name)).unwrap();
+        assert_eq!(newest.name, "report_packets_20261005_101010.txt.gz");
+        let mut copy = String::new();
+        std::io::Read::read_to_string(&mut flate2::read::GzDecoder::new(std::fs::File::open(dir.join(&newest.name)).unwrap()), &mut copy).unwrap();
         assert!(copy.contains(report_log::MARK));
         assert!(!copy.contains("4E6169636861"), "the name is blinded");
         assert!(prepare_log(&dir, Some("debug.log")).is_err());
         assert!(prepare_log(&dir, Some("../packets_20261004_004203.txt")).is_err());
-        assert_eq!(prepare_log(&dir, Some("packets_20261004_004203.txt")).unwrap().name, "report_packets_20261004_004203.txt");
+        assert_eq!(prepare_log(&dir, Some("packets_20261004_004203.txt")).unwrap().name, "report_packets_20261004_004203.txt.gz");
 
         let _ = std::fs::remove_dir_all(&dir);
     }

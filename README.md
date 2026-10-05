@@ -110,6 +110,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - Targets you stopped fighting more than 30 seconds ago leave the meter's memory, unless the current mode still shows them. ALL without a time window keeps everything since the zone change.
 - When packet capture cannot start on Linux, the meter says so in its own window, instead of the Windows prompt to download Npcap.
 - The version in Settings opens the releases of this repository.
+- **Report a problem** in Settings opens the right issue form with your version and system filled in (you see exactly what before it opens), and can prepare a packet log with every character name replaced, to attach without exposing other players.
 - **Open log folder** in Settings opens the folder with `debug.log` and the packet logs, to attach to an issue here. "Send logs to a2tools.app" says where the logs go: to the A2Tools developer, where Daevalog cannot help with them.
 
 ### Linux desktop
