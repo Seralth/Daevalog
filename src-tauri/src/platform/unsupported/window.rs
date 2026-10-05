@@ -55,3 +55,26 @@ pub fn input_region_supported() -> bool {
 pub fn set_input_region(_window: &tauri::WebviewWindow, _rect: Option<(f64, f64, f64, f64, f64)>) -> bool {
     false
 }
+
+/// No Wayland layer surfaces on this platform: the overlay is a normal window.
+pub fn init_overlay_layer(_window: &tauri::WebviewWindow, _enabled: bool, _pos: (i32, i32)) -> bool {
+    false
+}
+
+pub fn is_layer(_window: &tauri::WebviewWindow) -> bool {
+    false
+}
+
+pub fn place_overlay_layer(_window: &tauri::WebviewWindow, _x: i32, _y: i32) -> Option<(i32, i32)> {
+    None
+}
+
+pub fn begin_layer_drag(_window: &tauri::WebviewWindow) -> bool {
+    false
+}
+
+pub fn end_layer_drag(_window: &tauri::WebviewWindow) {}
+
+pub fn overlay_layer_position(_window: &tauri::WebviewWindow) -> Option<(i32, i32)> {
+    None
+}

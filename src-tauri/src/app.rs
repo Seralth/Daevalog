@@ -1853,14 +1853,44 @@ async fn choose_screenshot_folder(
     platform::screenshot::pick_folder(&webview_window, current.as_deref())
 }
 
+/// Returns the overlay's place in logical pixels when it is a Wayland layer
+/// surface: it has no compositor move, so the page drags it itself with
+/// `move_overlay`. The third value says whether pointer events in the drag
+/// measure from that first place (Sway) rather than the current one.
 #[tauri::command]
-fn start_drag(app: tauri::AppHandle, state: tauri::State<'_, AppState>) {
+fn start_drag(app: tauri::AppHandle, state: tauri::State<'_, AppState>) -> Option<(i32, i32, bool)> {
     // A locked overlay stays where it is.
     if state.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst) {
-        return;
+        return None;
     }
+    let window = app.get_webview_window("main")?;
+    if platform::window::is_layer(&window) {
+        let from_start = platform::window::begin_layer_drag(&window);
+        let (x, y) = platform::window::overlay_layer_position(&window)?;
+        return Some((x, y, from_start));
+    }
+    platform::window::start_drag(&window);
+    None
+}
+
+/// The setting that makes the overlay a Wayland layer surface (next start).
+const WAYLAND_LAYER_KEY: &str = "dpsMeter.waylandLayer";
+
+/// Put the layer-surface overlay at `x`, `y` (logical pixels) during a drag.
+/// Returns where it went.
+#[tauri::command]
+fn move_overlay(app: tauri::AppHandle, state: tauri::State<'_, AppState>, x: i32, y: i32) -> Option<(i32, i32)> {
+    if state.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst) {
+        return None;
+    }
+    platform::window::place_overlay_layer(&app.get_webview_window("main")?, x, y)
+}
+
+/// The page saw the end of a layer-overlay drag.
+#[tauri::command]
+fn end_overlay_drag(app: tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
-        platform::window::start_drag(&window);
+        platform::window::end_layer_drag(&window);
     }
 }
 
@@ -2295,7 +2325,8 @@ pub fn run() {
             // from: a desktop without one would leave no way to the meter.
             let has_tray = crate::tray::create(app.handle());
             crate::tray::apply_taskbar(app.handle());
-            if has_tray && crate::tray::start_in_tray(app.handle()) {
+            let start_hidden = has_tray && crate::tray::start_in_tray(app.handle());
+            if start_hidden {
                 if let Some(main) = app.get_webview_window("main") {
                     let _ = main.hide();
                 }
@@ -2327,17 +2358,30 @@ pub fn run() {
             // Restore saved window position and ensure always-on-top
             if let Some(window) = app.get_webview_window("main") {
                 let state_ref = app.state::<AppState>();
-                if let (Some(x), Some(y)) = (state_ref.settings.get("window.x"), state_ref.settings.get("window.y")) {
-                    if let (Ok(x), Ok(y)) = (x.parse::<i32>(), y.parse::<i32>()) {
+                let saved = match (state_ref.settings.get("window.x"), state_ref.settings.get("window.y")) {
+                    (Some(x), Some(y)) => x.parse::<i32>().ok().zip(y.parse::<i32>().ok())
                         // Don't restore minimized positions (Windows uses -32000,-32000)
-                        if x > -10000 && y > -10000 {
-                            let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
-                        }
-                    }
+                        .filter(|&(x, y)| x > -10000 && y > -10000),
+                    _ => None,
+                };
+                // On Linux the overlay starts hidden (tauri.linux.conf.json):
+                // a layer surface can only be made before it is first shown.
+                let scale = window.scale_factor().unwrap_or(1.0);
+                let logical = saved.map_or((0, 0), |(x, y)| ((x as f64 / scale) as i32, (y as f64 / scale) as i32));
+                let layer = platform::window::init_overlay_layer(
+                    &window,
+                    state_ref.settings.get(WAYLAND_LAYER_KEY).as_deref() == Some("true"),
+                    logical,
+                );
+                if let (false, Some((x, y))) = (layer, saved) {
+                    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
                 }
                 let _ = window.set_always_on_top(true);
                 if let Ok(size) = window.inner_size() {
                     platform::window::set_size(&window, tauri::Size::Physical(size));
+                }
+                if !start_hidden {
+                    let _ = window.show();
                 }
             }
 
@@ -2500,7 +2544,11 @@ pub fn run() {
                         // --- Save window position every ~5 seconds (every 10 ticks) ---
                         if tick_count % 10 == 0 {
                             if let Some(window) = handle.get_webview_window("main") {
-                                if let Ok(pos) = window.outer_position() {
+                                let scale = window.scale_factor().unwrap_or(1.0);
+                                let layer_pos = platform::window::overlay_layer_position(&window).map(|(x, y)| {
+                                    tauri::PhysicalPosition { x: (x as f64 * scale) as i32, y: (y as f64 * scale) as i32 }
+                                });
+                                if let Some(pos) = layer_pos.or_else(|| window.outer_position().ok()) {
                                     // Don't save minimized/hidden positions
                                     if pos.x > -10000 && pos.y > -10000 {
                                         state.settings.set("window.x", &pos.x.to_string());
@@ -2744,6 +2792,8 @@ pub fn run() {
             default_screenshot_folder,
             choose_screenshot_folder,
             start_drag,
+            move_overlay,
+            end_overlay_drag,
             start_tool_drag,
             begin_tool_resize,
             compositor_resize_supported,

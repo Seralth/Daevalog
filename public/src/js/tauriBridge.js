@@ -1016,9 +1016,73 @@
     // Everything else in .meter: native drag
     if (target?.closest?.(".meter")) {
       e.stopImmediatePropagation();
-      invoke("start_drag");
+      // No text selection: on a layer overlay the page itself follows the
+      // pointer, and a selection dragged past the edge scrolls the meter.
+      if (isLinux) e.preventDefault();
+      invoke("start_drag").then((place) => { if (place) dragLayerOverlay(e, place); }).catch(() => {});
     }
   }, { capture: true });
+
+  // A Wayland layer surface has no compositor move: the page places the
+  // overlay itself, under the pointer where the drag began inside it. Pointer
+  // events are measured from the overlay's place: under Sway from where it
+  // was when the drag began, under KWin from the last place sent before the
+  // event happened (KWin moves the overlay as soon as it gets one). Under
+  // Hyprland the backend follows Hyprland's own pointer position instead.
+  function dragLayerOverlay(start, origin) {
+    const fromStart = !!origin[2];
+    const anchorX = start.clientX;
+    const anchorY = start.clientY;
+    // Event times share performance.now()'s clock when the compositor stamps
+    // them with the monotonic clock, as KWin, Hyprland and Sway do.
+    const sameClock = Math.abs(performance.now() - start.timeStamp) < 1000;
+    let places = [{ x: origin[0], y: origin[1], at: -Infinity }];
+    let lastTime = start.timeStamp;
+    let pending = null;
+    let running = false;
+    const placeAt = (when) => {
+      if (fromStart) return places[0];
+      let i = places.length - 1;
+      while (i > 0 && places[i].at > when) i--;
+      places = places.slice(i);
+      return places[0];
+    };
+    const pump = async () => {
+      if (running) return;
+      running = true;
+      while (pending) {
+        const { ev, arrived } = pending;
+        pending = null;
+        const from = placeAt(sameClock ? ev.timeStamp : arrived);
+        const x = Math.round(from.x + ev.clientX - anchorX);
+        const y = Math.round(from.y + ev.clientY - anchorY);
+        const last = places[places.length - 1];
+        if (x === last.x && y === last.y) continue;
+        try {
+          const placed = await invoke("move_overlay", { x, y });
+          if (placed) places.push({ x: placed[0], y: placed[1], at: performance.now() });
+          if (fromStart) places.splice(1, places.length - 2);
+        } catch {}
+      }
+      running = false;
+    };
+    const move = (ev) => {
+      if ((ev.buttons & 1) === 0) return up();
+      // GTK sends the last pointer event again after the overlay moves.
+      if (ev.timeStamp <= lastTime) return;
+      lastTime = ev.timeStamp;
+      pending = { ev, arrived: performance.now() };
+      pump();
+    };
+    // A release carries the place of the last motion, so it adds nothing.
+    const up = () => {
+      document.removeEventListener("mousemove", move, true);
+      document.removeEventListener("mouseup", up, true);
+      invoke("end_overlay_drag").catch(() => {});
+    };
+    document.addEventListener("mousemove", move, true);
+    document.addEventListener("mouseup", up, true);
+  }
 
   // ===== Tool windows on Linux: drag by the header, resize from the edges =====
   // The tool windows are frameless. On Windows their headers drag through
