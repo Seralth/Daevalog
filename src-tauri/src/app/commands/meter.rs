@@ -3,7 +3,7 @@
 use crate::entity::details_context::{DetailsContext, TargetDetailsResponse};
 use crate::entity::dps_data::DpsData;
 
-use crate::app::AppState;
+use crate::app::{meter, AppState};
 
 #[tauri::command]
 pub(crate) fn get_app_version() -> &'static str {
@@ -49,9 +49,5 @@ pub(crate) fn set_all_targets_window_ms(state: tauri::State<'_, AppState>, ms: i
 
 #[tauri::command]
 pub(crate) fn reset_combat(state: tauri::State<'_, AppState>) {
-    state.dps_calculator.lock().restart_target_selection(true);
-    // Don't reset port detector or ping — keep the network connection alive
-    // Only clear combat data and re-learn nicknames from future packets
-    state.data_storage.reset_nicknames();
-    state.data_storage.hide_party_placeholders();
+    meter::reset_combat(&state);
 }

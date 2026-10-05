@@ -24,6 +24,7 @@ mod auto_upload;
 mod commands;
 mod drag_resize;
 mod local_player;
+mod meter;
 mod overlay_lock;
 mod replay;
 mod screenshots;
