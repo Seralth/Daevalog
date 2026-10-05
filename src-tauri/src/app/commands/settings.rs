@@ -2,8 +2,6 @@
 
 use tauri::Emitter;
 
-use crate::logging;
-
 use crate::app::setting_changes::{self, apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use crate::app::AppState;
 
@@ -61,6 +59,5 @@ pub(crate) fn set_debug_logging(state: tauri::State<'_, AppState>, enabled: bool
 
 #[tauri::command]
 pub(crate) fn set_packet_logging(state: tauri::State<'_, AppState>, enabled: bool) {
-    logging::logger::set_packet_log_enabled(enabled, &state.app_data_dir);
-    state.settings.set("dpsMeter.saveRawPackets", if enabled { "true" } else { "false" });
+    setting_changes::set_packet_logging(&state, enabled);
 }

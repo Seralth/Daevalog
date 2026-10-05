@@ -29,3 +29,8 @@ pub(crate) fn set_debug_logging(state: &AppState, enabled: bool) {
     logging::logger::set_debug_enabled(enabled, &state.app_data_dir);
     state.settings.set("dpsMeter.debugLoggingEnabled", if enabled { "true" } else { "false" });
 }
+
+pub(crate) fn set_packet_logging(state: &AppState, enabled: bool) {
+    logging::logger::set_packet_log_enabled(enabled, &state.app_data_dir);
+    state.settings.set("dpsMeter.saveRawPackets", if enabled { "true" } else { "false" });
+}
