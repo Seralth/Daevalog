@@ -5,7 +5,8 @@
 //! A2_RECORD=record_<ticks>.dat     the game's record (required); Aion 2 saves
 //!                                  them under .../PersistentDownloadDir/DamageAnalyzer/
 //! A2_REPLAY_FILE=packets_x.txt     a capture that covers the fight (required)
-//! A2_SLACK_MS=1000                 keep replaying this long after the record ends
+//! A2_SLACK_MS=500                  widen the record's window by this much on each
+//!                                  side (its clock and the capture's differ a little)
 //! cargo test --lib record_check -- --ignored --nocapture
 //! ```
 //!
@@ -119,8 +120,9 @@ fn record_check() {
         eprintln!("set A2_RECORD and A2_REPLAY_FILE");
         return;
     };
-    let slack: i64 = env("A2_SLACK_MS").and_then(|v| v.parse().ok()).unwrap_or(1000);
+    let slack: i64 = env("A2_SLACK_MS").and_then(|v| v.parse().ok()).unwrap_or(500);
     let record = read_record(&record_path);
+    let from = add_time(&record.start, -slack);
     let until = add_time(&record.end, slack);
     println!("record: {} {} .. {}, {} damage, {} skills", record.target, record.start, record.end,
              record.total, record.skills.len());
@@ -149,7 +151,7 @@ fn record_check() {
         if tod > until.as_str() {
             break;
         }
-        if before.is_none() && tod >= record.start.as_str() {
+        if before.is_none() && tod >= from.as_str() {
             before = Some(storage.get_combat_snapshot());
         }
         let Ok(when) = chrono::DateTime::parse_from_rfc3339(ts) else { continue };
