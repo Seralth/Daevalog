@@ -5,6 +5,7 @@
 //! (`wire`). On Windows the meter captures in its own process with the same
 //! code (`pcap`).
 
+pub mod owner;
 pub mod pcap;
 pub mod wire;
 

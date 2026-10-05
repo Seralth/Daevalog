@@ -93,6 +93,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - Discord activity is off by default.
 - Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).
 - Packet capture runs in a small helper program, `daevalog-capture`. Only the helper holds `cap_net_raw`, and it gives it up once the network devices are open. The meter itself runs with no capability.
+- The capture helper passes on only your own connections; other users' traffic and system services are never read through it.
 - Packet capture takes TCP only, and only the game server's port once the meter has found it.
 - The fonts come with the meter, with Pretendard as the main font, as the stylesheet always intended. A window no longer loads fonts from unpkg.com.
 - Links open only https addresses and the meter's own folders.

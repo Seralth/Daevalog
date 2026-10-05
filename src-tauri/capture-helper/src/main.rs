@@ -3,7 +3,8 @@
 //! capability.
 //!
 //! It opens every capture device, gives up its capabilities, and sends each
-//! TCP payload to the meter on standard output (see `wire`). It takes
+//! TCP payload of the starting user's own connections to the meter on
+//! standard output (see `wire`, `owner`). It takes
 //! `Control` messages on standard input and quits when that input ends.
 
 #[cfg(target_os = "linux")]
@@ -25,6 +26,7 @@ mod helper {
     use std::sync::atomic::AtomicBool;
     use std::sync::{Arc, Mutex, OnceLock};
 
+    use daevalog_capture::owner::{Owners, Proc};
     use daevalog_capture::pcap::{self, linux, PcapLib, Sink};
     use daevalog_capture::wire::{read_frame, Control, Report, Status};
     use daevalog_capture::{Level, Segment};
@@ -37,6 +39,13 @@ mod helper {
 
     /// Standard output, unbuffered: one write per frame, under the lock.
     static OUT: OnceLock<Mutex<File>> = OnceLock::new();
+
+    /// The sockets of the user who started the helper. Only their packets
+    /// go to the meter.
+    static OWNERS: OnceLock<Mutex<Owners>> = OnceLock::new();
+
+    /// How often packets left out as other users' are logged.
+    const STATS_SECS: u64 = 60;
 
     fn send(report: &Report) {
         let bytes = report.encode();
@@ -56,7 +65,24 @@ mod helper {
 
     impl Sink for Pipe {
         fn packet(&mut self, segment: Segment) {
-            send(&Report::Packet(segment));
+            let Some(owners) = OWNERS.get() else { return };
+            let ours = owners.lock().unwrap_or_else(|e| e.into_inner()).admit(&segment, &mut Proc);
+            if ours {
+                send(&Report::Packet(segment));
+            }
+        }
+    }
+
+    fn log_left_out() {
+        let mut logged = 0;
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(STATS_SECS));
+            let Some(owners) = OWNERS.get() else { continue };
+            let total = owners.lock().unwrap_or_else(|e| e.into_inner()).left_out;
+            if total > logged {
+                say(Level::Info, &format!("Left out {} packets of other users' connections in the last minute", total - logged));
+                logged = total;
+            }
         }
     }
 
@@ -77,6 +103,10 @@ mod helper {
         let Ok(out) = std::io::stdout().as_fd().try_clone_to_owned() else { std::process::exit(1) };
         let _ = OUT.set(Mutex::new(File::from(out)));
         daevalog_capture::set_logger(say);
+        // The real uid: the user who ran the helper. It has file
+        // capabilities, not setuid, so this is never someone else.
+        // SAFETY: getuid cannot fail.
+        let _ = OWNERS.set(Mutex::new(Owners::new(unsafe { libc::getuid() })));
 
         let capable = capabilities().is_some_and(|(effective, _)| effective & (1 << CAP_NET_RAW) != 0);
         let fail = |message: &str| -> ! {
@@ -125,6 +155,7 @@ mod helper {
 
         let running = Arc::new(AtomicBool::new(true));
         pcap::start_filter_watcher(pcap.clone(), running.clone());
+        std::thread::spawn(log_left_out);
 
         let delay = !virtual_devices.is_empty();
         for live in virtual_devices {
