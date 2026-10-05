@@ -49,7 +49,6 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_process::init())
         .on_window_event(|window, event| {
             // Closing the overlay quits, even with another window still open.
             if let (tauri::WindowEvent::CloseRequested { api, .. }, "main") = (event, window.label()) {

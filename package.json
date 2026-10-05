@@ -11,8 +11,7 @@
     "rename-msi": "node -e \"const fs=require('fs'),p=require('path'),d='src-tauri/target/release/bundle/msi';fs.readdirSync(d).filter(f=>f.endsWith('.msi')).forEach(f=>{const n=f.replace(/ /g,'-');if(n!==f){fs.renameSync(p.join(d,f),p.join(d,n));console.log(f+' -> '+n)}})\""
   },
   "dependencies": {
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-process": "^2"
+    "@tauri-apps/api": "^2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

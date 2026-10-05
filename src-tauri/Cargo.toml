@@ -32,7 +32,6 @@ desktop = [
     "dep:tauri",
     "dep:tauri-build",
     "dep:tauri-plugin-opener",
-    "dep:tauri-plugin-process",
     "dep:libloading",
     "dep:daevalog-capture",
     "dep:tokio",
@@ -89,7 +88,6 @@ tauri-build = { version = "2", features = [], optional = true }
 [dependencies]
 tauri = { version = "2", features = ["tray-icon"], optional = true }
 tauri-plugin-opener = { version = "2", optional = true }
-tauri-plugin-process = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 libloading = { version = "0.8", optional = true }
