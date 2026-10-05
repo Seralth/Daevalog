@@ -87,14 +87,25 @@ pub struct DetailSkillEntry {
     #[serde(default)]
     pub max_dmg: i32,
     pub crit: i32,
+    #[serde(default)]
+    pub shield_block: i32,
     pub parry: i32,
     pub back: i32,
     #[serde(default)]
     pub frontal: i32,
     pub perfect: i32,
     pub double: i32,
-    pub smite: i32,
-    pub powershard: i32,
+    #[serde(default)]
+    pub iron_wall: i32,
+    // Saved fights before the flags were renamed have the old names.
+    #[serde(default, alias = "smite")]
+    pub regeneration: i32,
+    #[serde(default, alias = "powershard")]
+    pub perfect_block: i32,
+    #[serde(default)]
+    pub miss: i32,
+    #[serde(default)]
+    pub resist: i32,
     pub regen: i32,
     #[serde(default)]
     pub job: String,
@@ -130,4 +141,19 @@ pub struct TargetDetailsResponse {
     /// `dmg` = heal amount, `time` = tick count, `is_dot` = HoT. Empty for old files.
     #[serde(default)]
     pub heal_skills: Vec<DetailSkillEntry>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_skill_row_saved_before_the_flag_rename_reads_under_the_new_names() {
+        let old = r#"{"actorId":1,"code":2,"name":"x","time":3,"dmg":4,"multiHitCount":0,"multiHitDamage":0,
+            "crit":0,"parry":1,"back":0,"perfect":0,"double":0,"smite":5,"powershard":6,"regen":0}"#;
+        let row: DetailSkillEntry = serde_json::from_str(old).unwrap();
+        assert_eq!((row.parry, row.regeneration, row.perfect_block, row.shield_block, row.miss), (1, 5, 6, 0, 0));
+        let json = serde_json::to_string(&row).unwrap();
+        assert!(json.contains(r#""regeneration":5"#) && json.contains(r#""perfectBlock":6"#) && !json.contains("smite"));
+    }
 }

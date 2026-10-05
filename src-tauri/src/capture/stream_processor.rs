@@ -2,9 +2,9 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 
-use crate::combat::data_storage::DataStorage;
+use crate::combat::data_storage::{DataStorage, NoDamageHit};
 use crate::entity::damage_packet::ParsedDamagePacket;
-use crate::entity::special_damage::SpecialDamage;
+use crate::entity::special_damage::{self, SpecialDamage};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
 /// VarInt decode result.
@@ -1829,8 +1829,11 @@ impl StreamProcessor {
                 None => break,
             };
             let and_result = switch_value & mask;
+            // Switch bit 0x04: the record has a value. Without it, the hit
+            // type says why: a miss or a resist, read below and counted.
+            let no_value = matches!(and_result, 0 | 2);
 
-            if !(4..=7).contains(&and_result) {
+            if !(4..=7).contains(&and_result) && !no_value {
                 break;
             }
 
@@ -1878,6 +1881,23 @@ impl StreamProcessor {
             };
             let damage_type = dummy_type as u8;
 
+            // Hit type 1 (Miss) and 6 (Resist) carry no damage: count them on
+            // the skill and stop here, as the parser always did on these.
+            if no_value {
+                if !require_trusted && actor_value != target_value {
+                    if let Some(kind) = NoDamageHit::from_hit_type(dummy_type) {
+                        let skill = self.normalize_skill_id(exact_skill_code as i32);
+                        let counted = self.data_storage.append_no_damage_hit(target_value, actor_value, skill, kind);
+                        tracing::trace!(
+                            target: "hit_flags",
+                            "{} actor={actor_value} target={target_value} skill={skill} damage=- type={dummy_type} layout={and_result} counted={counted}",
+                            crate::clock::now_ms(),
+                        );
+                    }
+                }
+                break;
+            }
+
             let temp_v: usize = match and_result {
                 5 => 12,
                 6 => 10,
@@ -1885,46 +1905,44 @@ impl StreamProcessor {
                 _ => 8,
             };
 
-            // Special damage flags. Per the 2026-06 layout, the block after the
-            // skill code is: <damage_type/crit> <modifications byte> 00 <direction byte>.
+            // Switch bit 0x02: the game's damage plotter follows the hit type,
+            // `<flags byte> <restoration HP varint> <angle byte>`. The HP is
+            // two bytes from 128 up; `temp_v` counts it as one.
             let mut specials = Vec::new();
             // The raw flag bytes, for `A2_REPLAY_FLAGS` in the replay report.
             let mut raw_mods: Option<u8> = None;
             let mut raw_dir: Option<u8> = None;
-            if [5, 6, 7].contains(&and_result) && offset < packet.len() {
-                // Modifications byte = attack-quality flags. Verified: Perfect=0x04
-                // (per skill against the game's Damage Analyzer PerfectCount, and the
-                // combat log's [Perfect Critical]); Double=0x08 (the game's HardHit,
-                // 강타, combat log [Double Critical]). Unverified guesses, never seen
-                // set: Parry=0x02, Smite=0x20, PowerShard=0x40; the game counts none
-                // of the three. 0x80 mirrors switch bit 0x10 and is fixed per skill:
-                // a skill property, not a hit result.
-                let mods = packet[offset] as u32;
-                raw_mods = Some(packet[offset]);
-                if mods & 0x02 != 0 { specials.push(SpecialDamage::Parry); }
-                if mods & 0x04 != 0 { specials.push(SpecialDamage::Perfect); }
-                if mods & 0x08 != 0 { specials.push(SpecialDamage::Double); }
-                if mods & 0x20 != 0 { specials.push(SpecialDamage::Smite); }
-                if mods & 0x40 != 0 { specials.push(SpecialDamage::PowerShard); }
-                // Direction byte (2 later) = positional enum, NOT the modifications
-                // byte. Verified against the combat log and the game's Damage Analyzer
-                // (BackAttackCount, FrontAttackCount per skill): 0x00 = no positional
-                // tag, 0x01 = Back, 0x02 = Front.
-                if offset + 2 < packet.len() {
-                    raw_dir = Some(packet[offset + 2]);
-                    match packet[offset + 2] {
-                        0x01 => specials.push(SpecialDamage::Back),
-                        0x02 => specials.push(SpecialDamage::Frontal),
-                        _ => {}
-                    }
+            let mut raw_hp: Option<i32> = None;
+            let mut plotter_extra = 0;
+            if and_result & 0x02 != 0 {
+                let Some(plotter) = read_plotter(packet, offset) else { break };
+                // Flags byte, bit for bit the game's plotter fields. Verified
+                // per skill against the game's Damage Analyzer: Perfect 0x04,
+                // Double 0x08 (the game's HardHit, 강타). From the 2026-10-04
+                // captures (hit sizes, issue #5): Shield Block 0x01, Parry 0x02,
+                // Iron Wall 0x10, Regeneration 0x20, Perfect Block 0x40. 0x80
+                // is not a plotter field: it mirrors switch bit 0x10 and is
+                // fixed per skill.
+                raw_mods = Some(plotter.flags);
+                specials = special_damage::from_hit_flags(plotter.flags);
+                // Angle byte. Verified against the combat log and the game's
+                // Damage Analyzer (BackAttackCount, FrontAttackCount per skill):
+                // 0x00 = no positional tag, 0x01 = Back, 0x02 = Front.
+                raw_dir = plotter.angle;
+                raw_hp = Some(plotter.hp);
+                match plotter.angle {
+                    Some(0x01) => specials.push(SpecialDamage::Back),
+                    Some(0x02) => specials.push(SpecialDamage::Frontal),
+                    _ => {}
                 }
+                plotter_extra = plotter.hp_len - 1;
             }
             // Damage type 3 = Critical, verified per skill against CriticalCount.
             if damage_type == 3 {
                 specials.push(SpecialDamage::Critical);
             }
 
-            offset += temp_v;
+            offset += temp_v + plotter_extra;
             if offset >= packet.len() {
                 break;
             }
@@ -2154,10 +2172,11 @@ impl StreamProcessor {
                 pdp.set_damage(final_damage);
                 tracing::trace!(
                     target: "hit_flags",
-                    "{} actor={actor_value} target={target_value} skill={resolved_skill_code} damage={final_damage} type={dummy_type} layout={and_result} mods={} dir={} multi={multi_hit_count}",
+                    "{} actor={actor_value} target={target_value} skill={resolved_skill_code} damage={final_damage} type={dummy_type} layout={and_result} mods={} dir={} multi={multi_hit_count} hp={}",
                     pdp.timestamp(),
                     raw_mods.map_or("-".to_string(), |m| format!("{m:#04x}")),
                     raw_dir.map_or("-".to_string(), |d| format!("{d:#04x}")),
+                    raw_hp.map_or("-".to_string(), |h| h.to_string()),
                 );
 
                 self.data_storage.append_damage(pdp);
@@ -2446,6 +2465,22 @@ fn parse_hit_tail_as(packet: &[u8], mut offset: usize, layout: i32, switch_value
         || (rest.len() >= 2 && rest[1] == 0x00 && (1..=7).contains(&rest[0]))
         || rest.starts_with(&[0x04, 0x38]);
     clean_end.then_some((offset, field, count, damage as i32))
+}
+
+/// The damage plotter after a record's hit type: the flags byte, the HP a
+/// Regeneration hit restored, and the angle byte (absent at the very end).
+struct Plotter {
+    flags: u8,
+    hp: i32,
+    hp_len: usize,
+    angle: Option<u8>,
+}
+
+fn read_plotter(packet: &[u8], offset: usize) -> Option<Plotter> {
+    let flags = *packet.get(offset)?;
+    let mut at = offset + 1;
+    let hp = try_read_varint(packet, &mut at)?;
+    Some(Plotter { flags, hp, hp_len: at - offset - 1, angle: packet.get(at).copied() })
 }
 
 fn should_use_repeated_hit_damage(switch_value: i32, encoded_damage: i32, multi_hit_count: i32, first_multi_hit_value: Option<i32>, all_match: bool) -> bool {
@@ -2776,6 +2811,7 @@ fn unicode_script(ch: char) -> UnicodeScript {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::combat::data_storage::SkillCombatData;
 
     /// Damage records from a live capture (2026-10-04, target 30001, actor
     /// 1395), each checked against the game's own Damage Analyzer record of
@@ -2807,6 +2843,126 @@ mod tests {
         assert_eq!(parse("fe9e0204009e9b01c3f8f5000302792b156003000000ac52b7030300"), (439, 1, 0, 0, 0));
         // Layout 6, switch 0x16: no additional hits.
         assert_eq!(parse("b1ea011600f30a40c0f40063028000010b199b5f01000000ac52d007"), (976, 1, 0, 0, 0));
+    }
+
+    fn hex(s: &str) -> Vec<u8> {
+        (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+    }
+
+    /// Hand one `04 38` record (the bytes after the opcode) to the parser.
+    fn feed(p: &mut StreamProcessor, record: &str) -> bool {
+        let mut packet = vec![0x00, 0x04, 0x38];
+        packet.extend(hex(record));
+        packet[0] = packet.len() as u8;
+        p.parsing_damage(&packet, false, false)
+    }
+
+    fn processor() -> (Arc<DataStorage>, StreamProcessor) {
+        let storage = Arc::new(DataStorage::new());
+        let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        p.set_override_timestamp(Some(1_000));
+        (storage, p)
+    }
+
+    fn skill_of(storage: &DataStorage, target: i32, actor: i32, skill: i32) -> SkillCombatData {
+        let row = crate::entity::skill_group::row_skill(skill, &SkillLookup::new());
+        storage.get_combat_snapshot()[&target].actors[&actor].skills[&(row, false)].clone()
+    }
+
+    /// Player hits from the captures of 2026-10-04, one per flag the player
+    /// side shows: the flags byte after the hit type, then the angle.
+    #[test]
+    fn hit_flags_are_read_from_player_records() {
+        let parse = |record: &str, target: i32, actor: i32, skill: i32| {
+            let (storage, mut p) = processor();
+            assert!(feed(&mut p, record), "{record}");
+            let s = skill_of(&storage, target, actor, skill);
+            (s.total_damage, s.crit_count, s.parry_count, s.perfect_count, s.double_count, s.frontal_count)
+        };
+        // Flags 0x02, the target parried: 106 damage, front.
+        assert_eq!(parse("e9de020600c80b9147ff003f02020002aff4b76301000000e4506a0100", 44905, 1480, 16730001), (106, 0, 1, 0, 0, 1));
+        // A critical hit the target parried.
+        assert_eq!(parse("fcc2010600bf6bc759d1003203020002c711c75101000000904e660100", 24956, 13759, 13720007), (102, 1, 1, 0, 0, 1));
+        // Flags 0x04, Perfect, no angle.
+        assert_eq!(parse("cac20406009e389147ff00e102040000aff4b76301000000a4587f0100", 74058, 7198, 16730001), (127, 0, 0, 1, 0, 0));
+        // Flags 0x08, Double.
+        assert_eq!(parse("bfe6020600d23310ffd6006f0208000055a2fb5302000000aa56d20e0200", 45887, 6610, 14090000), (1874, 0, 0, 0, 1, 0));
+    }
+
+    /// The flags only monsters' hits on players show in the captures of
+    /// 2026-10-04 (`<target> 06 00 <actor> <skill> <uid> <hit type>`, then the
+    /// plotter). The parser leaves these records out; the plotter is read
+    /// the same way.
+    #[test]
+    fn hit_flags_of_received_hits() {
+        let plotter = |record: &str, at: usize| {
+            let p = read_plotter(&hex(record), at).unwrap();
+            (special_damage::from_hit_flags(p.flags), p.hp, p.angle)
+        };
+        use SpecialDamage::*;
+        // 0x01 Shield Block: 74 damage.
+        assert_eq!(plotter("ca6f0600ca9804b8c112000102010002ebab530701000000904e4a0100", 13), (vec![ShieldBlock], 0, Some(2)));
+        // 0x10 Iron Wall.
+        assert_eq!(plotter("fe2a0600c68d03b8c112000102100002ebab530701000000904e740100", 13), (vec![IronWall], 0, Some(2)));
+        // 0x20 Regeneration, 13 HP back from a hit of 68.
+        assert_eq!(plotter("df7e0600a3b103b0b512000302200d02cbf84e0701000000904e440100", 13), (vec![Regeneration], 13, Some(2)));
+        // 0x40 Perfect Block, with Shield Block or Parry; the hit does 1.
+        assert_eq!(plotter("e9230600ee9e03e4cc120001024100021b09580701000000904e010100", 13), (vec![ShieldBlock, PerfectBlock], 0, Some(2)));
+        assert_eq!(plotter("e06d0600aeb1024cba12000202420002bbc5500701000000904e010100", 13), (vec![Parry, PerfectBlock], 0, Some(2)));
+    }
+
+    /// Restoration HP is a varint: 177 takes two bytes (`b1 01`). Read as one
+    /// byte, as the fixed skip did, the angle came out as Back (the `01`) and
+    /// the value one varint early: the actor's scalar 10000 instead of 889.
+    #[test]
+    fn restoration_hp_is_a_varint() {
+        let record = hex("ed080600f0ef04bab51200010220b10102b3fc4e0701000000904ef9060100");
+        let p = read_plotter(&record, 13).unwrap();
+        assert_eq!((p.flags, p.hp, p.hp_len, p.angle), (0x20, 177, 2, Some(2)));
+        // Then 8 bytes, the scalar and the value: 177 HP is 20 % of 889, as on
+        // every Regeneration hit with HP in the captures.
+        let mut at = 13 + 1 + p.hp_len + 1 + 8;
+        assert_eq!(try_read_varint(&record, &mut at), Some(10_000));
+        assert_eq!(try_read_varint(&record, &mut at), Some(889));
+        // The second two-byte record: 204 HP of 1020.
+        let record = hex("ee0d0600849d03bab51200010220cc0101b3fc4e0701000000904efc070100");
+        let p = read_plotter(&record, 13).unwrap();
+        assert_eq!((p.hp, p.angle), (204, Some(1)));
+        let mut at = 13 + 1 + p.hp_len + 1 + 8 + 2;
+        assert_eq!(try_read_varint(&record, &mut at), Some(1020));
+    }
+
+    /// Hit type 1 (Miss) and 6 (Resist) records have no value. They count on
+    /// the skill and leave damage, hits and targets as they were.
+    #[test]
+    fn misses_and_resists_count_without_damage() {
+        // A Resist of Divine Punishment, the same cast (uid 5d) as a hit of
+        // 1976 on the same target (2026-10-04 00:44:09).
+        let (storage, mut p) = processor();
+        assert!(feed(&mut p, "a8a3041400be77802a04015d02109aa06501000000dc51b80f010100"));
+        assert!(!feed(&mut p, "a8a3040001be77802a04015d06139aa06501000000dc5101c9e1f5050100"));
+        let s = skill_of(&storage, 70056, 15294, 17050240);
+        assert_eq!((s.total_damage, s.hit_count, s.resist_count, s.miss_count), (1976, 1, 1, 0));
+        assert_eq!(storage.get_combat_snapshot()[&70056].total_damage, 1976);
+
+        // A Miss of Dimensional Control (2026-10-04 03:56:02), a skill that
+        // never deals damage, after another hit of the same player.
+        let miss = "e981020000899803172df9000101079d556101000000904e0100";
+        let (storage, mut p) = processor();
+        assert!(!feed(&mut p, miss));
+        assert!(storage.get_combat_snapshot().is_empty(), "no target from a miss alone");
+        let mut hit = ParsedDamagePacket::new();
+        hit.set_timestamp(1_000);
+        hit.set_target_id(33001);
+        hit.set_actor_id(52233);
+        hit.set_skill_code(16000000);
+        hit.set_type(2);
+        hit.set_damage(500);
+        storage.append_damage(hit);
+        assert!(!feed(&mut p, miss));
+        let s = skill_of(&storage, 33001, 52233, 16330007);
+        assert_eq!((s.total_damage, s.hit_count, s.miss_count, s.resist_count), (0, 0, 1, 0));
+        assert_eq!(storage.get_combat_snapshot()[&33001].total_damage, 500);
     }
 
     /// Map loads from a live capture (2026-10-04): into Fire Temple, a

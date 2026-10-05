@@ -1159,13 +1159,17 @@ impl DpsCalculator {
                     min_dmg: i32::MAX,
                     max_dmg: 0,
                     crit: 0,
+                    shield_block: 0,
                     parry: 0,
                     back: 0,
                     frontal: 0,
                     perfect: 0,
                     double: 0,
-                    smite: 0,
-                    powershard: 0,
+                    iron_wall: 0,
+                    regeneration: 0,
+                    perfect_block: 0,
+                    miss: 0,
+                    resist: 0,
                     regen: 0,
                     job,
                     is_dot,
@@ -1186,11 +1190,15 @@ impl DpsCalculator {
                 entry.crit += skill_data.crit_count;
                 entry.back += skill_data.back_count;
                 entry.frontal += skill_data.frontal_count;
+                entry.shield_block += skill_data.shield_block_count;
                 entry.parry += skill_data.parry_count;
                 entry.perfect += skill_data.perfect_count;
                 entry.double += skill_data.double_count;
-                entry.smite += skill_data.smite_count;
-                entry.powershard += skill_data.powershard_count;
+                entry.iron_wall += skill_data.iron_wall_count;
+                entry.regeneration += skill_data.regeneration_count;
+                entry.perfect_block += skill_data.perfect_block_count;
+                entry.miss += skill_data.miss_count;
+                entry.resist += skill_data.resist_count;
                 entry.regen = entry.regen.saturating_add(skill_data.heal_amount);
                 // Add timestamps relative to fight start
                 for &ts in &skill_data.hit_timestamps {
@@ -1241,13 +1249,17 @@ impl DpsCalculator {
                     min_dmg: 0,
                     max_dmg: 0,
                     crit: 0,
+                    shield_block: 0,
                     parry: 0,
                     back: 0,
                     frontal: 0,
                     perfect: 0,
                     double: 0,
-                    smite: 0,
-                    powershard: 0,
+                    iron_wall: 0,
+                    regeneration: 0,
+                    perfect_block: 0,
+                    miss: 0,
+                    resist: 0,
                     regen: 0,
                     job,
                     is_dot: is_hot,

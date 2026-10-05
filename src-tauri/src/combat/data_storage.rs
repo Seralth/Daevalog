@@ -74,6 +74,27 @@ pub struct HealSkillData {
     pub tick_count: i32,
 }
 
+/// A hit the game reports with no damage, by its hit type (`EHitType`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NoDamageHit {
+    /// Hit type 1.
+    Miss,
+    /// Hit type 6. In the 2026-10-04 captures nearly every one comes with a
+    /// damage record of the same skill on the same target: what was resisted
+    /// is the skill's effect, not its damage.
+    Resist,
+}
+
+impl NoDamageHit {
+    pub fn from_hit_type(hit_type: i32) -> Option<Self> {
+        match hit_type {
+            1 => Some(Self::Miss),
+            6 => Some(Self::Resist),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SkillCombatData {
     pub skill_code: i32,
@@ -85,11 +106,17 @@ pub struct SkillCombatData {
     pub crit_count: i32,
     pub back_count: i32,
     pub frontal_count: i32,
+    pub shield_block_count: i32,
     pub parry_count: i32,
     pub perfect_count: i32,
     pub double_count: i32,
-    pub smite_count: i32,
-    pub powershard_count: i32,
+    pub iron_wall_count: i32,
+    pub regeneration_count: i32,
+    pub perfect_block_count: i32,
+    /// Hits with no damage: hit type 1 (Miss) and 6 (Resist). Not in
+    /// `hit_count`.
+    pub miss_count: i32,
+    pub resist_count: i32,
     pub multi_hit_count: i32,
     pub multi_hit_damage: i32,
     pub multi_hit_hits: i32,
@@ -117,11 +144,15 @@ impl SkillCombatData {
             crit_count: self.crit_count,
             back_count: self.back_count,
             frontal_count: self.frontal_count,
+            shield_block_count: self.shield_block_count,
             parry_count: self.parry_count,
             perfect_count: self.perfect_count,
             double_count: self.double_count,
-            smite_count: self.smite_count,
-            powershard_count: self.powershard_count,
+            iron_wall_count: self.iron_wall_count,
+            regeneration_count: self.regeneration_count,
+            perfect_block_count: self.perfect_block_count,
+            miss_count: self.miss_count,
+            resist_count: self.resist_count,
             multi_hit_count: self.multi_hit_count,
             multi_hit_damage: self.multi_hit_damage,
             multi_hit_hits: self.multi_hit_hits,
@@ -140,11 +171,15 @@ impl SkillCombatData {
         self.crit_count += other.crit_count;
         self.back_count += other.back_count;
         self.frontal_count += other.frontal_count;
+        self.shield_block_count += other.shield_block_count;
         self.parry_count += other.parry_count;
         self.perfect_count += other.perfect_count;
         self.double_count += other.double_count;
-        self.smite_count += other.smite_count;
-        self.powershard_count += other.powershard_count;
+        self.iron_wall_count += other.iron_wall_count;
+        self.regeneration_count += other.regeneration_count;
+        self.perfect_block_count += other.perfect_block_count;
+        self.miss_count += other.miss_count;
+        self.resist_count += other.resist_count;
         self.multi_hit_count += other.multi_hit_count;
         self.multi_hit_damage = self.multi_hit_damage.saturating_add(other.multi_hit_damage);
         self.multi_hit_hits += other.multi_hit_hits;
@@ -167,11 +202,15 @@ impl SkillCombatData {
             crit_count: 0,
             back_count: 0,
             frontal_count: 0,
+            shield_block_count: 0,
             parry_count: 0,
             perfect_count: 0,
             double_count: 0,
-            smite_count: 0,
-            powershard_count: 0,
+            iron_wall_count: 0,
+            regeneration_count: 0,
+            perfect_block_count: 0,
+            miss_count: 0,
+            resist_count: 0,
             multi_hit_count: 0,
             multi_hit_damage: 0,
             multi_hit_hits: 0,
@@ -1040,6 +1079,27 @@ impl DataStorage {
         }
     }
 
+    /// A hit that did no damage, on the skill's row: only where the actor
+    /// already has damage on this target, so no target or meter row appears
+    /// and no total, hit count or fight time moves. False when not counted.
+    pub fn append_no_damage_hit(&self, target_id: i32, actor_id: i32, skill_code: i32, kind: NoDamageHit) -> bool {
+        let mut inner = self.inner.write();
+        let Some(actor) = inner.target_combat.get_mut(&target_id).and_then(|t| t.actors.get_mut(&actor_id)) else {
+            return false;
+        };
+        let skill = actor
+            .skills
+            .entry((skill_code, false))
+            .or_insert_with(|| SkillCombatData::new(skill_code, false));
+        match kind {
+            NoDamageHit::Miss => skill.miss_count += 1,
+            NoDamageHit::Resist => skill.resist_count += 1,
+        }
+        drop(inner);
+        self.touch();
+        true
+    }
+
     pub fn append_mob(&self, mid: i32, code: i32) {
         let mut inner = self.inner.write();
         inner.mob_storage.insert(mid, code);
@@ -1700,11 +1760,18 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     if pdp.is_crit() { skill_data.crit_count += 1; }
     if pdp.specials().contains(&SpecialDamage::Back) { skill_data.back_count += 1; }
     if pdp.specials().contains(&SpecialDamage::Frontal) { skill_data.frontal_count += 1; }
-    if pdp.specials().contains(&SpecialDamage::Parry) { skill_data.parry_count += 1; }
-    if pdp.specials().contains(&SpecialDamage::Perfect) { skill_data.perfect_count += 1; }
-    if pdp.specials().contains(&SpecialDamage::Double) { skill_data.double_count += 1; }
-    if pdp.specials().contains(&SpecialDamage::Smite) { skill_data.smite_count += 1; }
-    if pdp.specials().contains(&SpecialDamage::PowerShard) { skill_data.powershard_count += 1; }
+    for special in pdp.specials() {
+        match special {
+            SpecialDamage::ShieldBlock => skill_data.shield_block_count += 1,
+            SpecialDamage::Parry => skill_data.parry_count += 1,
+            SpecialDamage::Perfect => skill_data.perfect_count += 1,
+            SpecialDamage::Double => skill_data.double_count += 1,
+            SpecialDamage::IronWall => skill_data.iron_wall_count += 1,
+            SpecialDamage::Regeneration => skill_data.regeneration_count += 1,
+            SpecialDamage::PerfectBlock => skill_data.perfect_block_count += 1,
+            SpecialDamage::Back | SpecialDamage::Frontal | SpecialDamage::Critical => {}
+        }
+    }
     if pdp.multi_hit_count() > 0 {
         skill_data.multi_hit_count += 1;
         skill_data.multi_hit_damage = skill_data.multi_hit_damage.saturating_add(pdp.multi_hit_damage());
