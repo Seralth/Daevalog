@@ -133,6 +133,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - Every fight segment is saved before any reset. Only fights that you or your party fought are saved.
 - A fight cleared by a zone change keeps the ids, names and spirit links it had.
 - A fight's healing is the healing done during that fight, in live Details and in the saved fight alike.
+- MP and other resource restores are not counted as healing or damage. A mob healing itself is not counted as healing.
 - A fight saved when the meter closes is never overwritten by an older auto-save.
 
 ### Privacy
