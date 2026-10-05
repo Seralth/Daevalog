@@ -24,8 +24,8 @@ mod auto_upload;
 mod capture_control;
 mod commands;
 mod drag_resize;
-mod game_records;
 mod fights;
+mod game_records;
 mod local_player;
 mod meter;
 mod overlay_lock;
@@ -34,8 +34,8 @@ mod replay;
 mod screenshots;
 mod setting_changes;
 mod setup;
-mod sign_in;
 mod sharing;
+mod sign_in;
 mod supporter_roster;
 mod tasks;
 mod tool_windows;
@@ -76,8 +76,6 @@ pub struct AppState {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn the_csp_allows_every_inline_handler() {
         use sha2::{Digest, Sha256};

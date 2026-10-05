@@ -26,8 +26,8 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 use super::drag_resize::WAYLAND_LAYER_KEY;
 use super::overlay_lock::{toggle_overlay_lock, OverlayLock};
 use super::setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
-use super::tray_actions::save_fights_before_exit;
 use super::tool_windows::open_details_on_monitor;
+use super::tray_actions::save_fights_before_exit;
 use super::{commands, drag_resize, overlay_lock, screenshots, supporter_roster, tasks, tool_windows, updater, AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
