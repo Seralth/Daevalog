@@ -73,15 +73,7 @@ pub(crate) async fn preview_share(
     state: tauri::State<'_, AppState>,
     fight_id: String,
 ) -> Result<share::PreviewResult, String> {
-    let record = state.fight_history.load_fight(&fight_id)?;
-    let app_data_dir = state.app_data_dir.clone();
-    tokio::task::spawn_blocking(move || {
-        let captures = share::find_captures(&app_data_dir);
-        let out_dir = app_data_dir.join("share-preview");
-        share::preview(&record, &captures, &out_dir)
-    })
-    .await
-    .map_err(|e| format!("preview task failed: {e}"))?
+    sharing::preview_share(&state, fight_id).await
 }
 
 /// Send the newest packet captures to the developer (Settings, beside packet
