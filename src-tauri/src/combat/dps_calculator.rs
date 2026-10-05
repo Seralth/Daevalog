@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use crate::clock::now_ms;
-use crate::combat::data_storage::{DataStorage, HealSkillData, SegmentIdentity, TargetCombatData, IDLE_RESET_MS, MIN_SAVED_FIGHT_MS};
+use crate::combat::data_storage::{DataStorage, HealSkillData, SecondStats, SegmentIdentity, TargetCombatData, IDLE_RESET_MS, MIN_SAVED_FIGHT_MS};
 use crate::combat::ping_tracker::PingTracker;
 use crate::entity::details_context::*;
 use crate::entity::dps_data::DpsData;
@@ -263,6 +263,10 @@ impl DpsCalculator {
                     for (i, secs) in LAST_WINDOWS_S.iter().enumerate() {
                         extra.last[i] += actor_data.damage_since(now - secs * 1000);
                     }
+                    extra.hits.add(&match since {
+                        Some(since) => actor_data.stats_since(since),
+                        None => actor_data.stats_total(),
+                    });
                     if actor_data.job.is_some() && combined_jobs.get(&actor_id).and_then(|j| j.as_ref()).is_none() {
                         combined_jobs.insert(actor_id, actor_data.job);
                     }
@@ -399,6 +403,9 @@ impl DpsCalculator {
                     let value = extra.last[i] as f64 / *secs as f64;
                     match i { 0 => data.last10_dps = value, 1 => data.last30_dps = value, _ => data.last60_dps = value }
                 }
+                data.hits = extra.hits.hits;
+                data.crit_hits = extra.hits.crits;
+                data.max_hit = extra.hits.max_hit;
             }
             data.damage_contribution = if total_damage > 0.0 {
                 data.amount / total_damage * 100.0
@@ -1295,13 +1302,14 @@ fn actor_stats<'a>(targets: impl Iterator<Item = &'a TargetCombatData>) -> HashM
 /// The Last N columns, in seconds.
 const LAST_WINDOWS_S: [i64; 3] = [10, 30, 60];
 
-/// A row's own time in combat and its recent damage, gathered over the
-/// actors (player and summons) the row stands for.
+/// A row's own time in combat, its recent damage and its hits, gathered
+/// over the actors (player and summons) the row stands for.
 #[derive(Default, Clone)]
 struct ActorExtra {
     first: Option<i64>,
     last_hit: Option<i64>,
     last: [i64; 3],
+    hits: SecondStats,
 }
 
 impl ActorExtra {
@@ -1318,6 +1326,7 @@ impl ActorExtra {
         for i in 0..3 {
             self.last[i] += other.last[i];
         }
+        self.hits.add(&other.hits);
     }
 
     /// Damage over first-to-last hit, at least one second.
@@ -1380,6 +1389,7 @@ fn build_nickname_canonical_map_from_aggregates(
 mod tests {
     use super::*;
     use crate::entity::damage_packet::ParsedDamagePacket;
+    use crate::entity::special_damage::SpecialDamage;
 
     fn hit(actor: i32, target: i32, at: i64) -> ParsedDamagePacket {
         let mut p = ParsedDamagePacket::new();
@@ -1668,6 +1678,36 @@ mod tests {
         assert!(close(other.active_dps, 3.0 * 500.0 / 2.0), "own DPS over its own 2 s");
         assert!(close(me.last10_dps, 11.0 * 500.0 / 10.0), "60..70 s");
         assert!(close(me.last60_dps, 61.0 * 500.0 / 60.0), "10..70 s");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn encounter_rows_count_hits_crits_and_the_biggest_hit() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, 1);
+        // Before the encounter: left out once 20 s pass without combat.
+        hits(&s, 2259, 800, 1_000, 2_000);
+        crate::clock::set_override(Some(30_000));
+        let mut crit = hit(2259, 800, 30_000);
+        crit.set_damage(2_000);
+        crit.set_specials(vec![SpecialDamage::Critical]);
+        s.append_damage(crit);
+        hits(&s, 2259, 800, 31_000, 33_000);
+        let mut tick = hit(2259, 800, 33_500);
+        tick.set_dot(true);
+        tick.set_damage(5_000);
+        crate::clock::set_override(Some(33_500));
+        s.append_damage(tick);
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("encounter");
+        let me = &calc.get_dps().map[&2259];
+        assert_eq!((me.hits, me.crit_hits, me.max_hit), (4, 1, 2_000), "a tick is not a hit");
+
+        // Without a window the whole fight counts.
+        calc.set_target_selection_mode("lastHitByMe");
+        let me = &calc.get_dps().map[&2259];
+        assert_eq!((me.hits, me.crit_hits, me.max_hit), (6, 1, 2_000));
         crate::clock::set_override(None);
     }
 

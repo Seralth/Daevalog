@@ -38,6 +38,14 @@ pub struct PersonalData {
     pub last30_dps: f64,
     #[serde(default)]
     pub last60_dps: f64,
+    /// Direct hits, crits among them, and the biggest direct hit, over the
+    /// same span as `amount`.
+    #[serde(default)]
+    pub hits: i64,
+    #[serde(default)]
+    pub crit_hits: i64,
+    #[serde(default)]
+    pub max_hit: i64,
 }
 
 impl PersonalData {
@@ -55,6 +63,9 @@ impl PersonalData {
             last10_dps: 0.0,
             last30_dps: 0.0,
             last60_dps: 0.0,
+            hits: 0,
+            crit_hits: 0,
+            max_hit: 0,
         }
     }
 
@@ -72,6 +83,9 @@ impl PersonalData {
             last10_dps: 0.0,
             last30_dps: 0.0,
             last60_dps: 0.0,
+            hits: 0,
+            crit_hits: 0,
+            max_hit: 0,
         }
     }
 
