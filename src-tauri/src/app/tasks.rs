@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use tauri::{Emitter, Manager};
 
+use crate::blocking::{DPS_TICK, HISTORY};
 use crate::{platform, share};
 
 use super::auto_upload::auto_upload;
@@ -16,6 +17,7 @@ pub(super) fn spawn_meter_tick(app: &tauri::AppHandle) {
     let handle = app.clone();
     tauri::async_runtime::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_millis(500));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         let mut tick_count: u64 = 0;
         let mut hide_delay: u64 = 0; // ticks to wait before hiding
         loop {
@@ -24,19 +26,28 @@ pub(super) fn spawn_meter_tick(app: &tauri::AppHandle) {
 
             if let Some(state) = handle.try_state::<AppState>() {
                 let t0 = std::time::Instant::now();
-                let lock_guard = state.dps_calculator.lock();
-                let lock_ms = t0.elapsed().as_millis();
-                let dps = {
-                    let mut calc = lock_guard;
-                    calc.get_dps()
-                };
-                let calc_ms = t0.elapsed().as_millis();
-                let _ = handle.emit("dps-update", &dps);
-                let total_ms = t0.elapsed().as_millis();
-                if total_ms > 200 {
-                    tracing::warn!("Slow: lock={}ms calc={}ms emit={}ms total={}ms gen={}",
-                        lock_ms, calc_ms - lock_ms, total_ms - calc_ms, total_ms,
-                        state.data_storage.damage_generation());
+                let calculating = handle.clone();
+                let result = DPS_TICK.run_waiting(move || {
+                    let state = calculating.state::<AppState>();
+                    let started = std::time::Instant::now();
+                    let mut calc = state.dps_calculator.lock();
+                    let lock_ms = started.elapsed().as_millis();
+                    let dps = calc.get_dps();
+                    (dps, lock_ms, started.elapsed().as_millis() - lock_ms)
+                }).await;
+                match result {
+                    Ok((dps, lock_ms, calc_ms)) => {
+                        let emitting = std::time::Instant::now();
+                        let _ = handle.emit("dps-update", &dps);
+                        let emit_ms = emitting.elapsed().as_millis();
+                        let total_ms = t0.elapsed().as_millis();
+                        if total_ms > 200 {
+                            tracing::warn!("Slow: lock={}ms calc={}ms emit={}ms total={}ms gen={}",
+                                lock_ms, calc_ms, emit_ms, total_ms,
+                                state.data_storage.damage_generation());
+                        }
+                    }
+                    Err(error) => tracing::warn!("DPS update deferred: {error}"),
                 }
 
                 if let Some(ping) = state.ping_tracker.current_ping_ms() {
@@ -152,59 +163,64 @@ pub(super) fn spawn_meter_tick(app: &tauri::AppHandle) {
 }
 
 pub(super) fn spawn_auto_save(app: &tauri::AppHandle) {
-    // Separate task for boss fight auto-save (every 30s, on blocking thread)
+    // Boss fight auto-save every 30 s, in the history queue: the disk and JSON
+    // work never runs on the async workers, and the next round waits for this one.
     let handle_save = app.clone();
     tauri::async_runtime::spawn(async move {
         loop {
             tokio::time::sleep(Duration::from_secs(30)).await;
-            if let Some(state) = handle_save.try_state::<AppState>() {
-                if state.data_storage.damage_generation() > 0 {
-                    // Run on blocking thread to avoid starving the async runtime
-                    // snapshot_boss_fights acquires the dps_calculator lock
-                    // Run synchronously but only if lock is available
-                    if let Some(mut calc) = state.dps_calculator.try_lock() {
-                        let records = calc.snapshot_boss_fights();
-                        let finished: HashSet<String> = records.iter()
-                            .filter(|r| calc.fight_finished(r))
-                            .map(|r| r.id.clone())
-                            .collect();
-                        drop(calc);
-                        for record in &records {
-                            let _ = state.fight_history.save_fight(record);
-                            // The packets behind it, so it can be
-                            // uploaded and verified later, and checked
-                            // against the game's own record. Training
-                            // dummies keep one for that check; they are
-                            // never uploaded.
-                            if let Err(e) = share::save_slice(
-                                &state.app_data_dir, record, &state.data_storage) {
-                                tracing::debug!("No slice for {}: {e}", record.id);
-                            }
-                        }
-                        if !records.is_empty() {
-                            share::prune_slices(&state.app_data_dir);
-                        }
-                        if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
-                            for record in records.into_iter()
-                                .filter(|r| share::wants_auto_upload(&state.app_data_dir, r, finished.contains(&r.id)))
-                            {
-                                auto_upload(handle_save.clone(), record);
-                            }
-                        }
-                    }
-                }
-                // Automatic uploads that failed and are due again,
-                // fighting or not: a meter left open after the
-                // connection came back catches up on its own.
-                if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
-                    let now = crate::clock::now_ms();
-                    for id in share::auto_upload_retries_due(&state.app_data_dir, now) {
-                        if let Ok(record) = state.fight_history.load_fight(&id) {
-                            auto_upload(handle_save.clone(), record);
-                        }
-                    }
-                }
+            let handle = handle_save.clone();
+            if let Err(error) = HISTORY.run_waiting(move || auto_save(&handle)).await {
+                tracing::warn!("Auto-save failed: {error}");
             }
         }
     });
+}
+
+fn auto_save(handle: &tauri::AppHandle) {
+    let Some(state) = handle.try_state::<AppState>() else { return };
+    if state.data_storage.damage_generation() > 0 {
+        // Only if the meter is free; the calculator guard is gone before any disk I/O.
+        if let Some(mut calc) = state.dps_calculator.try_lock() {
+            let records = calc.snapshot_boss_fights();
+            let finished: HashSet<String> = records.iter()
+                .filter(|r| calc.fight_finished(r))
+                .map(|r| r.id.clone())
+                .collect();
+            drop(calc);
+            for record in &records {
+                let _ = state.fight_history.save_fight(record);
+                // The packets behind it, so it can be
+                // uploaded and verified later, and checked
+                // against the game's own record. Training
+                // dummies keep one for that check; they are
+                // never uploaded.
+                if let Err(e) = share::save_slice(
+                    &state.app_data_dir, record, &state.data_storage) {
+                    tracing::debug!("No slice for {}: {e}", record.id);
+                }
+            }
+            if !records.is_empty() {
+                share::prune_slices(&state.app_data_dir);
+            }
+            if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
+                for record in records.into_iter()
+                    .filter(|r| share::wants_auto_upload(&state.app_data_dir, r, finished.contains(&r.id)))
+                {
+                    auto_upload(handle.clone(), record);
+                }
+            }
+        }
+    }
+    // Automatic uploads that failed and are due again,
+    // fighting or not: a meter left open after the
+    // connection came back catches up on its own.
+    if state.settings.get(share::AUTO_UPLOAD_KEY).as_deref() == Some("true") {
+        let now = crate::clock::now_ms();
+        for id in share::auto_upload_retries_due(&state.app_data_dir, now) {
+            if let Ok(record) = state.fight_history.load_fight(&id) {
+                auto_upload(handle.clone(), record);
+            }
+        }
+    }
 }

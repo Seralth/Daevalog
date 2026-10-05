@@ -11,24 +11,24 @@ pub(crate) fn get_app_version() -> &'static str {
 }
 
 #[tauri::command]
-pub(crate) fn get_dps_snapshot(state: tauri::State<'_, AppState>) -> DpsData {
-    state.dps_calculator.lock().get_dps()
+pub(crate) async fn get_dps_snapshot(app: tauri::AppHandle) -> Result<DpsData, String> {
+    meter::dps_snapshot(app).await
 }
 
 #[tauri::command]
-pub(crate) fn get_skill_details(state: tauri::State<'_, AppState>, target_id: i32, actor_ids: Option<Vec<i32>>) -> TargetDetailsResponse {
-    state.dps_calculator.lock().get_target_details(target_id, actor_ids.as_deref())
+pub(crate) async fn get_skill_details(app: tauri::AppHandle, target_id: i32, actor_ids: Option<Vec<i32>>) -> Result<TargetDetailsResponse, String> {
+    meter::skill_details(app, target_id, actor_ids).await
 }
 
 /// Skill details behind a meter row, whatever the mode shows.
 #[tauri::command]
-pub(crate) fn get_displayed_skill_details(state: tauri::State<'_, AppState>, actor_ids: Option<Vec<i32>>) -> TargetDetailsResponse {
-    state.dps_calculator.lock().get_displayed_details(actor_ids.as_deref())
+pub(crate) async fn get_displayed_skill_details(app: tauri::AppHandle, actor_ids: Option<Vec<i32>>) -> Result<TargetDetailsResponse, String> {
+    meter::displayed_skill_details(app, actor_ids).await
 }
 
 #[tauri::command]
-pub(crate) fn get_details_context(state: tauri::State<'_, AppState>) -> DetailsContext {
-    state.dps_calculator.lock().get_details_context()
+pub(crate) async fn get_details_context(app: tauri::AppHandle) -> Result<DetailsContext, String> {
+    meter::details_context(app).await
 }
 
 #[tauri::command]

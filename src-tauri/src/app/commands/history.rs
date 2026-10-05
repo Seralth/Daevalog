@@ -10,23 +10,23 @@ use crate::app::{fights, AppState};
 /// ~350ms, during which no other IPC and no window painting can proceed. Each
 /// window calls this at startup and again every 10s, which is what made opening
 /// History feel like it hung.
-pub(crate) async fn get_fight_history(state: tauri::State<'_, AppState>) -> Result<Vec<FightSummary>, String> {
-    Ok(state.fight_history.list_fights())
+pub(crate) async fn get_fight_history(app: tauri::AppHandle) -> Result<Vec<FightSummary>, String> {
+    fights::list_fights(app).await
 }
 
 #[tauri::command]
-pub(crate) fn save_fight(state: tauri::State<'_, AppState>, record: FightRecord) -> Result<(), String> {
-    state.fight_history.save_fight(&record)
+pub(crate) async fn save_fight(app: tauri::AppHandle, record: FightRecord) -> Result<(), String> {
+    fights::save_fight(app, record).await
 }
 
 #[tauri::command]
-pub(crate) fn load_fight(state: tauri::State<'_, AppState>, id: String) -> Result<FightRecord, String> {
-    fights::load_fight(&state, id)
+pub(crate) async fn load_fight(app: tauri::AppHandle, id: String) -> Result<FightRecord, String> {
+    fights::load_fight(app, id).await
 }
 
 #[tauri::command]
-pub(crate) fn delete_fight(state: tauri::State<'_, AppState>, id: String) -> Result<(), String> {
-    fights::delete_fight(&state, id)
+pub(crate) async fn delete_fight(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    fights::delete_fight(app, id).await
 }
 
 #[tauri::command]

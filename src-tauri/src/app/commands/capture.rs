@@ -20,8 +20,8 @@ pub(crate) fn reset_auto_detection(state: tauri::State<'_, AppState>) {
 }
 
 #[tauri::command]
-pub(crate) fn get_available_devices() -> Vec<String> {
-    capture_control::get_available_devices()
+pub(crate) async fn get_available_devices() -> Vec<String> {
+    capture_control::get_available_devices().await
 }
 
 #[tauri::command]

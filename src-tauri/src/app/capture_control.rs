@@ -27,12 +27,12 @@ pub(crate) fn reset_auto_detection(state: &AppState) {
     state.ping_tracker.reset();
 }
 
-pub(crate) fn get_available_devices() -> Vec<String> {
-    // Load the OS's pcap library and enumerate devices
-    match crate::capture::pcap_capturer::list_device_labels() {
-        Ok(labels) => labels,
-        Err(_) => Vec::new(),
-    }
+pub(crate) async fn get_available_devices() -> Vec<String> {
+    // Load the OS's pcap library and enumerate devices. That can block in the
+    // library, so not on the main thread.
+    tauri::async_runtime::spawn_blocking(|| {
+        crate::capture::pcap_capturer::list_device_labels().unwrap_or_default()
+    }).await.unwrap_or_default()
 }
 
 pub(crate) fn set_manual_device(state: &AppState, device: String) {

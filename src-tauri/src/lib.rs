@@ -46,4 +46,7 @@ pub mod share;
 mod app;
 
 #[cfg(feature = "desktop")]
+mod blocking;
+
+#[cfg(feature = "desktop")]
 pub use app::run;
