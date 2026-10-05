@@ -5274,19 +5274,9 @@ const startApp = async ({ forced = false } = {}) => {
     hasJavaBridge: !!window.javaBridge,
     forced,
   });
-  // Window controls answer at once: the translations below load first, and
-  // until they had, Quit and closing the settings window did nothing.
-  document.querySelector(".quitButton")?.addEventListener("click", () => {
-    window.javaBridge?.exitApp?.();
-  });
-  if (window.A2_VIEW === "settings") {
-    const close = () => window.javaBridge?.closeSettingsWindow?.();
-    document.querySelector(".settingsClose")?.addEventListener("click", close);
-    document.querySelector(".settingsWindowClose")?.addEventListener("click", close);
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") close();
-    });
-  }
+  // Quit, Close and Escape in the Settings window are answered by a script
+  // the window runs before this page (SETTINGS_WINDOW_SCRIPT in app.rs), so
+  // they work before any of this has loaded.
   try {
     await window.i18n?.init?.();
     window.lucide?.createIcons?.();
