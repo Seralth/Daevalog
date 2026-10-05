@@ -438,14 +438,17 @@ class DpsApp {
         const clipboardSuccess = !!result?.clipboard;
         const fileSuccess = !!result?.file;
         if (!this.detailsScreenshotNote) return;
+        const note = (key, fallback) => this.i18n?.t(key, fallback) ?? fallback;
         if (!clipboardSuccess && !fileSuccess) {
-          this.detailsScreenshotNote.textContent = this.i18n?.t("details.screenshot.failed", "Screenshot failed") ?? "Screenshot failed";
+          this.detailsScreenshotNote.textContent = note("details.screenshot.failed", "Screenshot failed");
         } else if (clipboardSuccess && fileSuccess) {
-          this.detailsScreenshotNote.textContent = "Saved to clipboard + file";
+          this.detailsScreenshotNote.textContent = note("details.screenshot.savedToBoth", "Saved to clipboard + file");
         } else if (fileSuccess) {
-          this.detailsScreenshotNote.textContent = "Saved to file";
+          this.detailsScreenshotNote.textContent = note("details.screenshot.savedToFile", "Saved to file");
+        } else if (saveFile) {
+          this.detailsScreenshotNote.textContent = note("details.screenshot.fileFailed", "Saved to clipboard (file failed)");
         } else {
-          this.detailsScreenshotNote.textContent = saveFile ? "Saved to clipboard (file failed)" : "Saved to clipboard";
+          this.detailsScreenshotNote.textContent = note("details.screenshot.savedToClipboard", "Saved to clipboard");
         }
         this.detailsScreenshotBtn.setAttribute("title", fileSuccess ? `${tooltipText}: ${result.file}` : tooltipText);
         this.detailsScreenshotNote.classList.add("isVisible");

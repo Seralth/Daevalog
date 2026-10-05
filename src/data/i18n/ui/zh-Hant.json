@@ -16,8 +16,6 @@
       "empty": "這場戰鬥沒有技能資料",
       "error": "無法載入技能"
     },
-    "header": "詳細",
-    "title": "{name} 詳細",
     "tooltip": "持續傷害（DOT）不包含在總暴擊、強擊、完美、背擊或格擋比率中。",
     "settings": {
       "ariaLabel": "開啟詳細設定"
@@ -40,12 +38,11 @@
     "screenshot": {
       "ariaLabel": "將截圖儲存到剪貼簿",
       "captured": "已擷取截圖",
-      "savedToClipboard": "已儲存到剪貼簿"
-    },
-    "sort": {
-      "recent": "最近",
-      "time": "時間",
-      "damage": "傷害"
+      "savedToClipboard": "已儲存到剪貼簿",
+      "failed": "截圖失敗",
+      "savedToFile": "已儲存到檔案",
+      "savedToBoth": "已儲存到剪貼簿和檔案",
+      "fileFailed": "已儲存到剪貼簿（檔案儲存失敗）"
     },
     "skills": {
       "skill": "技能",
@@ -106,10 +103,13 @@
       "multiHitHits": "多段打擊",
       "maxHp": "最大HP",
       "hits": "命中次數",
-      "selfHealing": "自我治療"
+      "regen": "再生",
+      "totalHealing": "總治療量",
+      "hps": "HPS",
+      "healTicks": "治療跳數",
+      "hotTicks": "持續治療跳數",
+      "healSkills": "技能"
     },
-    "titleFor": "針對",
-    "titleVs": "vs",
     "fightVs": "戰鬥 vs",
     "all": "全部",
     "history": {
@@ -117,7 +117,11 @@
     },
     "dpsChart": "DPS 圖表",
     "historyBtn": "歷史",
-    "timeline": "時間軸"
+    "timeline": "時間軸",
+    "mode": {
+      "dmg": "傷害",
+      "heal": "治療"
+    }
   },
   "history": {
     "title": "戰鬥歷史",
@@ -172,24 +176,11 @@
     "alsoCovers": "也涵蓋另外 {n} 場戰鬥",
     "targetOnly": "只比較對 {target} 造成的傷害。",
     "onlyDiffer": "僅顯示不同的列",
-    "othersMatch": "另外 {n} 個技能的每個數值都與遊戲一致。",
     "gameTag": "遊戲 {n}",
     "note": "出現差異，代表計量器對這場戰鬥的讀取與遊戲不同。以遊戲的數值為準。",
     "copy": "複製以回報錯誤",
     "copied": "已複製",
-    "copyFailed": "無法複製",
-    "col": {
-      "skill": "技能",
-      "damage": "傷害",
-      "share": "占比",
-      "hits": "命中",
-      "crit": "暴擊",
-      "perfect": "完美",
-      "double": "強擊",
-      "front": "正面",
-      "back": "背擊",
-      "addhit": "追加打擊"
-    }
+    "copyFailed": "無法複製"
   },
   "settings": {
     "title": "設定",

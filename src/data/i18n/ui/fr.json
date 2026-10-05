@@ -16,8 +16,6 @@
       "empty": "Aucune donnée de compétence pour ce combat",
       "error": "Impossible de charger les compétences"
     },
-    "header": "Détails",
-    "title": "Détails de {name}",
     "tooltip": "Les dégâts sur la durée ne sont pas comptés dans les taux globaux de CRIT, coups puissants, coups parfaits, attaque dans le dos ou blocage avec arme.",
     "settings": {
       "ariaLabel": "Ouvrir les paramètres des détails"
@@ -40,12 +38,11 @@
     "screenshot": {
       "ariaLabel": "Copier la capture dans le presse-papiers",
       "captured": "Capture effectuée",
-      "savedToClipboard": "Copiée dans le presse-papiers"
-    },
-    "sort": {
-      "recent": "Récent",
-      "time": "Temps",
-      "damage": "Dégâts"
+      "savedToClipboard": "Copiée dans le presse-papiers",
+      "failed": "La capture a échoué",
+      "savedToFile": "Enregistrée dans un fichier",
+      "savedToBoth": "Copiée dans le presse-papiers et enregistrée dans un fichier",
+      "fileFailed": "Copiée dans le presse-papiers (échec de l'enregistrement du fichier)"
     },
     "skills": {
       "skill": "Compétence",
@@ -103,13 +100,16 @@
       "backRate": "Taux d'attaque dans le dos",
       "parryRate": "Taux de blocage avec arme",
       "combatTime": "Temps de combat",
-      "selfHealing": "Auto-soin",
       "multiHitDamage": "Dégâts des multi-coups",
       "multiHitHits": "Multi-coups",
-      "maxHp": "PV max."
+      "maxHp": "PV max.",
+      "regen": "Restauration",
+      "totalHealing": "Régénération totale",
+      "hps": "HPS",
+      "healTicks": "Ticks de soin",
+      "hotTicks": "Ticks de HoT",
+      "healSkills": "Compétences"
     },
-    "titleFor": "pour",
-    "titleVs": "contre",
     "fightVs": "Combat contre",
     "all": "Tout",
     "history": {
@@ -117,7 +117,11 @@
     },
     "dpsChart": "Graphique DPS",
     "historyBtn": "Historique",
-    "timeline": "Chronologie"
+    "timeline": "Chronologie",
+    "mode": {
+      "dmg": "DGT",
+      "heal": "SOINS"
+    }
   },
   "history": {
     "title": "Historique des combats",
@@ -172,24 +176,11 @@
     "alsoCovers": "couvre aussi {n} autres combats",
     "targetOnly": "Seuls les dégâts sur {target} sont comparés.",
     "onlyDiffer": "Seulement les lignes qui diffèrent",
-    "othersMatch": "{n} autres compétences correspondent au jeu sur chaque chiffre.",
     "gameTag": "jeu {n}",
     "note": "Une différence veut dire que le meter a lu le combat autrement que le jeu. Le chiffre du jeu est le bon.",
     "copy": "Copier pour un rapport de bug",
     "copied": "Copié",
-    "copyFailed": "Copie impossible",
-    "col": {
-      "skill": "Compétence",
-      "damage": "Dégâts",
-      "share": "Part",
-      "hits": "Coups",
-      "crit": "Crit",
-      "perfect": "Coup parfait",
-      "double": "Coup puissant",
-      "front": "Frontal",
-      "back": "Dos",
-      "addhit": "Multi-coups"
-    }
+    "copyFailed": "Copie impossible"
   },
   "settings": {
     "title": "Paramètres",

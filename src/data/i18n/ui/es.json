@@ -16,8 +16,6 @@
       "empty": "No hay datos de habilidades de este combate",
       "error": "No se pudieron cargar las habilidades"
     },
-    "header": "Detalles",
-    "title": "Detalles de {name}",
     "tooltip": "El daño por tiempo no se incluye en los porcentajes totales de crítico, golpe, perforación, ataque por la espalda ni bloqueo con arma.",
     "settings": {
       "ariaLabel": "Abrir ajustes de detalles"
@@ -40,12 +38,11 @@
     "screenshot": {
       "ariaLabel": "Copiar captura al portapapeles",
       "captured": "Captura realizada",
-      "savedToClipboard": "Copiada al portapapeles"
-    },
-    "sort": {
-      "recent": "Reciente",
-      "time": "Tiempo",
-      "damage": "Daño"
+      "savedToClipboard": "Copiada al portapapeles",
+      "failed": "No se pudo hacer la captura",
+      "savedToFile": "Guardada en un archivo",
+      "savedToBoth": "Copiada al portapapeles y guardada en un archivo",
+      "fileFailed": "Copiada al portapapeles (no se pudo guardar el archivo)"
     },
     "skills": {
       "skill": "Habilidad",
@@ -103,13 +100,16 @@
       "backRate": "Tasa de ataque por la espalda",
       "parryRate": "Tasa de bloqueo con arma",
       "combatTime": "Tiempo de combate",
-      "selfHealing": "Autocuración",
       "multiHitDamage": "Daño de multigolpe",
       "multiHitHits": "Multigolpes",
-      "maxHp": "PV máx."
+      "maxHp": "PV máx.",
+      "regen": "Recuperación",
+      "totalHealing": "Recuperación total",
+      "hps": "HPS",
+      "healTicks": "Tics de curación",
+      "hotTicks": "Tics de HoT",
+      "healSkills": "Habilidades"
     },
-    "titleFor": "de",
-    "titleVs": "contra",
     "fightVs": "Combate contra",
     "all": "Todo",
     "history": {
@@ -117,7 +117,11 @@
     },
     "dpsChart": "Gráfico de DPS",
     "historyBtn": "Historial",
-    "timeline": "Cronología"
+    "timeline": "Cronología",
+    "mode": {
+      "dmg": "DÑO",
+      "heal": "CUR"
+    }
   },
   "history": {
     "title": "Historial de combates",
@@ -172,24 +176,11 @@
     "alsoCovers": "también cubre {n} combates más",
     "targetOnly": "Solo se compara el daño a {target}.",
     "onlyDiffer": "Solo filas que difieren",
-    "othersMatch": "Otras {n} habilidades coinciden con el juego en todas las cifras.",
     "gameTag": "juego {n}",
     "note": "Una diferencia significa que el medidor leyó el combate de forma distinta al juego. La cifra del juego es la correcta.",
     "copy": "Copiar para un informe de error",
     "copied": "Copiado",
-    "copyFailed": "No se pudo copiar",
-    "col": {
-      "skill": "Habilidad",
-      "damage": "Daño",
-      "share": "Parte",
-      "hits": "Golpes",
-      "crit": "Crít",
-      "perfect": "Perforación",
-      "double": "Golpe",
-      "front": "Frontal",
-      "back": "Espalda",
-      "addhit": "Multigolpe"
-    }
+    "copyFailed": "No se pudo copiar"
   },
   "settings": {
     "title": "Ajustes",

@@ -16,8 +16,6 @@
       "empty": "この戦闘のスキルデータはありません",
       "error": "スキルを読み込めませんでした"
     },
-    "header": "詳細",
-    "title": "{name} の詳細",
     "tooltip": "継続ダメージは、クリティカル・強打・完璧・後方ダメージ・武器ガードの合計率には含まれません。",
     "settings": {
       "ariaLabel": "詳細設定を開く"
@@ -40,12 +38,11 @@
     "screenshot": {
       "ariaLabel": "スクリーンショットをクリップボードにコピー",
       "captured": "スクリーンショットを撮影しました",
-      "savedToClipboard": "クリップボードにコピーしました"
-    },
-    "sort": {
-      "recent": "最近",
-      "time": "時間",
-      "damage": "ダメージ"
+      "savedToClipboard": "クリップボードにコピーしました",
+      "failed": "スクリーンショットに失敗しました",
+      "savedToFile": "ファイルに保存しました",
+      "savedToBoth": "クリップボードとファイルに保存しました",
+      "fileFailed": "クリップボードにコピーしました（ファイル保存に失敗）"
     },
     "skills": {
       "skill": "スキル",
@@ -103,13 +100,16 @@
       "backRate": "後方ダメージ率",
       "parryRate": "武器ガード率",
       "combatTime": "戦闘時間",
-      "selfHealing": "自己回復",
       "multiHitDamage": "多段ヒットのダメージ",
       "multiHitHits": "多段ヒット",
-      "maxHp": "最大HP"
+      "maxHp": "最大HP",
+      "regen": "再生",
+      "totalHealing": "総回復量",
+      "hps": "HPS",
+      "healTicks": "回復ティック",
+      "hotTicks": "HoTティック",
+      "healSkills": "スキル"
     },
-    "titleFor": "対象",
-    "titleVs": "対",
     "fightVs": "戦闘相手",
     "all": "すべて",
     "history": {
@@ -117,7 +117,11 @@
     },
     "dpsChart": "DPSチャート",
     "historyBtn": "履歴",
-    "timeline": "タイムライン"
+    "timeline": "タイムライン",
+    "mode": {
+      "dmg": "ダメージ",
+      "heal": "回復"
+    }
   },
   "history": {
     "title": "戦闘履歴",
@@ -172,24 +176,11 @@
     "alsoCovers": "ほかに {n} 件の戦闘も含みます",
     "targetOnly": "{target} へのダメージのみ比較します。",
     "onlyDiffer": "異なる行のみ",
-    "othersMatch": "ほかの {n} スキルはすべての数値がゲームと一致します。",
     "gameTag": "ゲーム {n}",
     "note": "違いがあるのは、メーターがゲームと違う読み方をしたためです。正しいのはゲームの数値です。",
     "copy": "不具合報告用にコピー",
     "copied": "コピーしました",
-    "copyFailed": "コピーできませんでした",
-    "col": {
-      "skill": "スキル",
-      "damage": "ダメージ",
-      "share": "割合",
-      "hits": "ヒット",
-      "crit": "クリ",
-      "perfect": "完璧",
-      "double": "強打",
-      "front": "前方",
-      "back": "後方",
-      "addhit": "多段ヒット"
-    }
+    "copyFailed": "コピーできませんでした"
   },
   "settings": {
     "title": "設定",

@@ -16,8 +16,6 @@
       "empty": "Keine Skill-Daten für diesen Kampf",
       "error": "Skills konnten nicht geladen werden"
     },
-    "header": "Details",
-    "title": "Details zu {name}",
     "tooltip": "Schaden über Zeit wird in den Gesamtquoten für Krit.-Treffer, Wucht, Perfektion, Treffer (Rückseitig) und Waffenblock nicht mitgezählt.",
     "settings": {
       "ariaLabel": "Detaileinstellungen öffnen"
@@ -40,12 +38,11 @@
     "screenshot": {
       "ariaLabel": "Screenshot in die Zwischenablage",
       "captured": "Screenshot aufgenommen",
-      "savedToClipboard": "In Zwischenablage gespeichert"
-    },
-    "sort": {
-      "recent": "Zuletzt",
-      "time": "Zeit",
-      "damage": "Schaden"
+      "savedToClipboard": "In Zwischenablage gespeichert",
+      "failed": "Screenshot fehlgeschlagen",
+      "savedToFile": "In Datei gespeichert",
+      "savedToBoth": "In Zwischenablage und Datei gespeichert",
+      "fileFailed": "In Zwischenablage gespeichert (Datei fehlgeschlagen)"
     },
     "skills": {
       "skill": "Skill",
@@ -103,13 +100,16 @@
       "backRate": "Rate (Rückseitig)",
       "parryRate": "Waffenblock-Rate",
       "combatTime": "Kampfzeit",
-      "selfHealing": "Selbstheilung",
       "multiHitDamage": "Mehrfachtreffer-Schaden",
       "multiHitHits": "Mehrfachtreffer",
-      "maxHp": "Max. LP"
+      "maxHp": "Max. LP",
+      "regen": "Regeneration",
+      "totalHealing": "Gesamtregeneration",
+      "hps": "HPS",
+      "healTicks": "Heilticks",
+      "hotTicks": "HoT-Ticks",
+      "healSkills": "Skills"
     },
-    "titleFor": "für",
-    "titleVs": "gegen",
     "fightVs": "Kampf gegen",
     "all": "Alle",
     "history": {
@@ -117,7 +117,11 @@
     },
     "dpsChart": "DPS-Diagramm",
     "historyBtn": "Verlauf",
-    "timeline": "Zeitleiste"
+    "timeline": "Zeitleiste",
+    "mode": {
+      "dmg": "SCH",
+      "heal": "HEIL"
+    }
   },
   "history": {
     "title": "Kampfverlauf",
@@ -172,24 +176,11 @@
     "alsoCovers": "deckt auch {n} weitere Kämpfe ab",
     "targetOnly": "Nur der Schaden an {target} wird verglichen.",
     "onlyDiffer": "Nur abweichende Zeilen",
-    "othersMatch": "{n} weitere Skills stimmen in jedem Wert mit dem Spiel überein.",
     "gameTag": "Spiel {n}",
     "note": "Eine Abweichung heißt: Das Meter hat den Kampf anders gelesen als das Spiel. Der Wert des Spiels ist der richtige.",
     "copy": "Für einen Fehlerbericht kopieren",
     "copied": "Kopiert",
-    "copyFailed": "Kopieren fehlgeschlagen",
-    "col": {
-      "skill": "Skill",
-      "damage": "Schaden",
-      "share": "Anteil",
-      "hits": "Treffer",
-      "crit": "Krit",
-      "perfect": "Perfektion",
-      "double": "Wucht",
-      "front": "Frontal",
-      "back": "Rückseitig",
-      "addhit": "Mehrfachtreffer"
-    }
+    "copyFailed": "Kopieren fehlgeschlagen"
   },
   "settings": {
     "title": "Einstellungen",

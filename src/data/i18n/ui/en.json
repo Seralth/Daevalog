@@ -16,8 +16,6 @@
       "empty": "No skill data for this fight",
       "error": "Could not load skills"
     },
-    "header": "Details",
-    "title": "{name} Details",
     "tooltip": "Damage over time hits are not included in total crit, double, perfect or back attack ratios.",
     "settings": {
       "ariaLabel": "Open details settings"
@@ -40,12 +38,11 @@
     "screenshot": {
       "ariaLabel": "Save screenshot to clipboard",
       "captured": "Captured Screenshot",
-      "savedToClipboard": "Saved to clipboard"
-    },
-    "sort": {
-      "recent": "Recent",
-      "time": "Time",
-      "damage": "Damage"
+      "savedToClipboard": "Saved to clipboard",
+      "failed": "Screenshot failed",
+      "savedToFile": "Saved to file",
+      "savedToBoth": "Saved to clipboard + file",
+      "fileFailed": "Saved to clipboard (file failed)"
     },
     "skills": {
       "skill": "Skill",
@@ -103,13 +100,16 @@
       "backRate": "Back Attack Rate",
       "parryRate": "Parry Rate",
       "combatTime": "Combat Time",
-      "selfHealing": "Self-Healing",
       "multiHitDamage": "Multi-Hit Damage",
       "multiHitHits": "Multi-Hits",
-      "maxHp": "Max HP"
+      "maxHp": "Max HP",
+      "regen": "Regeneration",
+      "totalHealing": "Total Heal",
+      "hps": "HPS",
+      "healTicks": "Heal Ticks",
+      "hotTicks": "HoT Ticks",
+      "healSkills": "Skills"
     },
-    "titleFor": "for",
-    "titleVs": "vs",
     "fightVs": "Fight vs",
     "all": "All",
     "history": {
@@ -117,7 +117,11 @@
     },
     "dpsChart": "DPS Chart",
     "historyBtn": "History",
-    "timeline": "Timeline"
+    "timeline": "Timeline",
+    "mode": {
+      "dmg": "DMG",
+      "heal": "HEAL"
+    }
   },
   "history": {
     "title": "Battle History",
@@ -172,24 +176,11 @@
     "alsoCovers": "also covers {n} other fights",
     "targetOnly": "Only damage to {target} is compared.",
     "onlyDiffer": "Only rows that differ",
-    "othersMatch": "{n} other skills match the game on every number.",
     "gameTag": "game {n}",
     "note": "A difference means the meter read the fight differently from the game. The game's number is the right one.",
     "copy": "Copy for a bug report",
     "copied": "Copied",
-    "copyFailed": "Could not copy",
-    "col": {
-      "skill": "Skill",
-      "damage": "Damage",
-      "share": "Share",
-      "hits": "Hits",
-      "crit": "Crit",
-      "perfect": "Perfect",
-      "double": "Double",
-      "front": "Front",
-      "back": "Back",
-      "addhit": "Multi-Hit"
-    }
+    "copyFailed": "Could not copy"
   },
   "settings": {
     "title": "Settings",

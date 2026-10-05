@@ -16,8 +16,6 @@
       "empty": "这场战斗没有技能数据",
       "error": "无法加载技能"
     },
-    "header": "详情",
-    "title": "{name} 详情",
     "tooltip": "持续伤害（DOT）不计入总暴击、强击、完美、背击或格挡比例。",
     "settings": {
       "ariaLabel": "打开详情设置"
@@ -40,12 +38,11 @@
     "screenshot": {
       "ariaLabel": "将截图保存到剪贴板",
       "captured": "已捕获截图",
-      "savedToClipboard": "已保存到剪贴板"
-    },
-    "sort": {
-      "recent": "最近",
-      "time": "时间",
-      "damage": "伤害"
+      "savedToClipboard": "已保存到剪贴板",
+      "failed": "截图失败",
+      "savedToFile": "已保存到文件",
+      "savedToBoth": "已保存到剪贴板和文件",
+      "fileFailed": "已保存到剪贴板（文件保存失败）"
     },
     "skills": {
       "skill": "技能",
@@ -106,10 +103,13 @@
       "multiHitHits": "多段打击",
       "maxHp": "最大HP",
       "hits": "命中次数",
-      "selfHealing": "自我治疗"
+      "regen": "再生",
+      "totalHealing": "总治疗量",
+      "hps": "HPS",
+      "healTicks": "治疗跳数",
+      "hotTicks": "持续治疗跳数",
+      "healSkills": "技能"
     },
-    "titleFor": "针对",
-    "titleVs": "vs",
     "fightVs": "战斗 vs",
     "all": "全部",
     "history": {
@@ -117,7 +117,11 @@
     },
     "dpsChart": "DPS 图表",
     "historyBtn": "历史",
-    "timeline": "时间轴"
+    "timeline": "时间轴",
+    "mode": {
+      "dmg": "伤害",
+      "heal": "治疗"
+    }
   },
   "history": {
     "title": "战斗历史",
@@ -172,24 +176,11 @@
     "alsoCovers": "还覆盖另外 {n} 场战斗",
     "targetOnly": "只比较对 {target} 造成的伤害。",
     "onlyDiffer": "仅显示不同的行",
-    "othersMatch": "另外 {n} 个技能的每个数值都与游戏一致。",
     "gameTag": "游戏 {n}",
     "note": "出现差异，说明计量器对这场战斗的读取与游戏不同。以游戏的数值为准。",
     "copy": "复制用于错误报告",
     "copied": "已复制",
-    "copyFailed": "无法复制",
-    "col": {
-      "skill": "技能",
-      "damage": "伤害",
-      "share": "占比",
-      "hits": "命中",
-      "crit": "暴击",
-      "perfect": "完美",
-      "double": "强击",
-      "front": "正面",
-      "back": "背击",
-      "addhit": "追加打击"
-    }
+    "copyFailed": "无法复制"
   },
   "settings": {
     "title": "设置",
