@@ -50,6 +50,20 @@ struct PcapPkthdr {
     len: c_uint,
 }
 
+/// `struct pcap_stat`. Windows has three more fields, which `pcap_stats`
+/// leaves alone; the room for them is there anyway.
+#[repr(C)]
+#[derive(Default)]
+struct PcapStat {
+    ps_recv: c_uint,
+    ps_drop: c_uint,
+    ps_ifdrop: c_uint,
+    _windows: [c_uint; 3],
+}
+
+/// How often each capture thread looks at its kernel drop count.
+const STATS_MS: i64 = 60_000;
+
 /// `struct bpf_program`, filled by `pcap_compile`.
 #[repr(C)]
 struct BpfProgram {
@@ -223,6 +237,7 @@ pub struct PcapLib {
     freecode: unsafe extern "C" fn(*mut BpfProgram),
     geterr: unsafe extern "C" fn(PcapT) -> *const c_char,
     breakloop: unsafe extern "C" fn(PcapT),
+    stats: Option<unsafe extern "C" fn(PcapT, *mut PcapStat) -> c_int>,
     /// Older libpcap's filter compiler is not thread-safe.
     compile_lock: Mutex<()>,
 }
@@ -273,6 +288,7 @@ impl PcapLib {
                 lib.get(b"pcap_geterr").map_err(|e| format!("pcap_geterr: {}", e))?;
             let breakloop: Symbol<unsafe extern "C" fn(PcapT)> =
                 lib.get(b"pcap_breakloop").map_err(|e| format!("pcap_breakloop: {}", e))?;
+            let stats = lib.get::<unsafe extern "C" fn(PcapT, *mut PcapStat) -> c_int>(b"pcap_stats").ok().map(|f| *f);
 
             Ok(Self {
                 findalldevs: *findalldevs,
@@ -286,6 +302,7 @@ impl PcapLib {
                 freecode: *freecode,
                 geterr: *geterr,
                 breakloop: *breakloop,
+                stats,
                 compile_lock: Mutex::new(()),
                 _lib: lib,
             })
@@ -400,8 +417,20 @@ impl PcapLib {
         // logged once per wanted port.
         let mut retry_at = 0;
         let mut failed: Option<u32> = None;
+        let mut stats_at = now_ms() + STATS_MS;
+        let mut dropped = 0;
         while running.load(Ordering::SeqCst) {
             let now = now_ms();
+            if now >= stats_at {
+                stats_at = now + STATS_MS;
+                if let Some(total) = self.kernel_drops(handle) {
+                    let new = total.wrapping_sub(dropped);
+                    dropped = total;
+                    if new > 0 {
+                        log(Level::Warn, &format!("Capture on {}: the kernel dropped {} packets in the last minute", label, new));
+                    }
+                }
+            }
             let want = wanted_filter_port(now);
             let want_port = want.map_or(0, u32::from);
             if want_port != applied.load(Ordering::Relaxed) && now >= retry_at {
@@ -495,6 +524,15 @@ impl PcapLib {
             return Err(format!("pcap_setfilter \"{}\": {}", expr, self.last_error(handle)));
         }
         Ok(())
+    }
+
+    /// Packets the kernel dropped for this handle since it was opened: its
+    /// buffer was full. (Not `ps_ifdrop`: on Linux that is the whole
+    /// interface's drop count, mostly traffic nobody asked for.)
+    fn kernel_drops(&self, handle: PcapT) -> Option<c_uint> {
+        let stats = self.stats?;
+        let mut stat = PcapStat::default();
+        (unsafe { stats(handle, &mut stat) } == 0).then_some(stat.ps_drop)
     }
 
     fn last_error(&self, handle: PcapT) -> String {
