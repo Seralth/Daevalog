@@ -28,7 +28,7 @@ use super::overlay_lock::{toggle_overlay_lock, OverlayLock};
 use super::setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use super::tray_actions::save_fights_before_exit;
 use super::tool_windows::open_details_on_monitor;
-use super::{commands, drag_resize, overlay_lock, replay, screenshots, supporter_roster, tasks, tool_windows, updater, AppState};
+use super::{commands, drag_resize, overlay_lock, screenshots, supporter_roster, tasks, tool_windows, updater, AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -333,7 +333,7 @@ pub fn run() {
             commands::capture::reset_auto_detection,
             commands::capture::get_available_devices,
             commands::capture::set_manual_device,
-            replay::replay_file,
+            commands::capture::replay_file,
             commands::capture::test_auto_hide,
             commands::system::fetch_url,
             updater::show_update_window,

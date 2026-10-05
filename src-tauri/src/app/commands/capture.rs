@@ -1,8 +1,8 @@
-//! Packet capture: its status, device, suspend, the game window and debug status.
+//! Packet capture: its status, device, suspend, the game window, debug status and replays.
 
 use crate::platform;
 
-use crate::app::{capture_control, AppState};
+use crate::app::{capture_control, replay, AppState};
 
 #[tauri::command]
 pub(crate) fn get_capture_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
@@ -52,4 +52,9 @@ pub(crate) fn test_auto_hide() -> serde_json::Value {
 #[tauri::command]
 pub(crate) fn debug_status(state: tauri::State<'_, AppState>) -> serde_json::Value {
     capture_control::debug_status(&state)
+}
+
+#[tauri::command]
+pub(crate) async fn replay_file(state: tauri::State<'_, AppState>, file_path: String) -> Result<String, String> {
+    replay::replay_file(&state, file_path).await
 }

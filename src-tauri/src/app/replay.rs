@@ -2,8 +2,7 @@
 
 use super::AppState;
 
-#[tauri::command]
-pub(super) async fn replay_file(state: tauri::State<'_, AppState>, file_path: String) -> Result<String, String> {
+pub(crate) async fn replay_file(state: &AppState, file_path: String) -> Result<String, String> {
     // Keep the live fights, then reset existing data before replay
     {
         let mut calc = state.dps_calculator.lock();
