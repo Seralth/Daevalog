@@ -118,12 +118,18 @@ fn record_check() {
     let summons = storage.get_summon_data();
 
     // The fight: the target named as in the record whose damage from one
-    // owner in the window comes closest to the record's total.
+    // owner in the window comes closest to the record's total. A record is
+    // always the local player's, so once the meter knows you, the owner is you.
+    let me = storage.local_player_id().and_then(|v| i32::try_from(v).ok());
     let mut best: Option<(i64, i32, i32, BTreeMap<i32, Row>)> = None;
     for (&target, t) in &after {
         let rows = game_record::rows_between(before.get(&target), t, &summons, &skills);
         let named = npcs.get_npc_name(storage.get_mob_data().get(&target).copied().unwrap_or(0)) == record.target;
-        let Some(owner) = game_record::closest_owner(&rows, record.total) else { continue };
+        let owner = match me {
+            Some(me) => rows.keys().any(|(o, _)| *o == me).then_some(me),
+            None => game_record::closest_owner(&rows, record.total),
+        };
+        let Some(owner) = owner else { continue };
         let mine = game_record::rows_of(&rows, owner);
         let d: i64 = mine.values().map(|r| r.damage).sum();
         let gap = (d - record.total).abs() + if named { 0 } else { record.total };
