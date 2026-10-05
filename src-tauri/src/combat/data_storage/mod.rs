@@ -48,6 +48,7 @@ mod aggregates;
 mod damage;
 mod encounter;
 mod entities;
+mod heal;
 mod identity;
 mod names;
 mod roster;
@@ -283,27 +284,6 @@ impl DataStorage {
     /// Something the meter shows changed without new damage: recompute.
     fn touch(&self) {
         self.damage_generation.fetch_add(1, Ordering::Relaxed);
-    }
-
-    /// Record a heal tick done by `actor_id` with `skill_code` (is_hot marks a HoT).
-    /// Keyed by the healer so "healing done" can be shown per player. Self-heals count.
-    pub fn append_heal(&self, actor_id: i32, skill_code: i32, amount: i64, is_hot: bool) {
-        if amount <= 0 || !self.is_plausible_entity_id(actor_id) {
-            return;
-        }
-        let mut inner = self.inner.write();
-        let e = inner
-            .heal_storage
-            .entry(actor_id)
-            .or_default()
-            .entry((skill_code, is_hot))
-            .or_default();
-        e.total_heal += amount;
-        e.tick_count += 1;
-    }
-
-    pub fn get_heal_snapshot(&self) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
-        self.inner.read().heal_storage.clone()
     }
 
     pub fn set_current_target(&self, target: i32) {
