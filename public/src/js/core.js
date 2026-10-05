@@ -8,7 +8,6 @@ const REMOTE_APPLIED_SETTING_CONTROLS = {
   "dpsMeter.mainPlayerDpsBold": ".playerDpsBoldCheckbox",
   "dpsMeter.showPing": ".showPingCheckbox",
   "dpsMeter.bossNameSize": ".bossNameSizeInput",
-  "dpsMeter.showSupporterColors": ".showSupporterColorsCheckbox",
   "dpsMeter.showSuspendBtn": ".showSuspendBtnCheckbox",
   "dpsMeter.showLockBtn": ".showLockBtnCheckbox",
 };
@@ -25,7 +24,6 @@ class DpsApp {
     this.pinMeToTop = false;
     this.slimMode = false;
     this.mainPlayerNamesBold = true;
-    this.showSupporterColors = true;
     this.mainPlayerDpsBold = true;
     this.includeMainMeterScreenshot = false;
     this.saveScreenshotToFolder = false;
@@ -54,7 +52,6 @@ class DpsApp {
       debugLogging: "dpsMeter.debugLoggingEnabled",
       pinMeToTop: "dpsMeter.pinMeToTop",
       mainPlayerNamesBold: "dpsMeter.mainPlayerNamesBold",
-      showSupporterColors: "dpsMeter.showSupporterColors",
       mainPlayerDpsBold: "dpsMeter.mainPlayerDpsBold",
       showPing: "dpsMeter.showPing",
       showTotalDps: "dpsMeter.showTotalDps",
@@ -786,12 +783,8 @@ class DpsApp {
 
     const tooltipName = String(row?.name || "-").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const tooltipClassIcon = row?.job ? `<img class="hoverDetailsTooltipClassIcon" src="./assets/${row.job}.png" alt="" onerror="this.style.display='none'">` : "";
-    // Wrapped rather than styled on the header, so the icon keeps its own colour.
-    const tooltipNameHtml = row?.isSupporter
-      ? `<span class="isSupporter">${tooltipName}</span>`
-      : tooltipName;
     this.hoverTooltipEl.innerHTML = `
-      <div class="hoverDetailsTooltipHeader">${tooltipClassIcon}${tooltipNameHtml}</div>
+      <div class="hoverDetailsTooltipHeader">${tooltipClassIcon}${tooltipName}</div>
       <div class="hoverDetailsTooltipStats">
         <span>${this.i18n?.t("header.display.dps", "DPS") ?? "DPS"}: ${dpsText}</span>
         <span>${this.i18n?.t("details.stats.totalDamage", "Total Damage") ?? "Total Damage"}: ${totalDamageText}</span>
@@ -1229,9 +1222,6 @@ class DpsApp {
         maxHit: num(value?.maxHit),
         isUser: name === this.USER_NAME || numericId === localId,
         isIdentifying,
-        // Resolved in Rust against a downloaded roster; the frontend only
-        // renders it. Cosmetic only — it must not reach sorting or bar colour.
-        isSupporter: !!(isObj && value.isSupporter) && this.showSupporterColors !== false,
       });
     }
 

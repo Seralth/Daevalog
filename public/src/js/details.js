@@ -516,11 +516,9 @@ const createDetailsUI = ({
       }
 
       const nameEl = document.createElement("span");
-      const actorRow = detailsActors.get(actorId);
       nameEl.className =
         "detailsPartyBarName" +
-        (cjkRegex.test(name) ? " isCjk" : "") +
-        (actorRow?.isSupporter ? " isSupporter" : "");
+        (cjkRegex.test(name) ? " isCjk" : "");
       nameEl.textContent = name;
       if (color) nameEl.style.color = color;
 
@@ -538,19 +536,6 @@ const createDetailsUI = ({
 
       contentEl.appendChild(nameEl);
 
-      // Same star the meter rows use, so a supporter is marked the same way
-      // wherever their name appears rather than only on the live overlay.
-      if (actorRow?.isSupporter) {
-        const badgeEl = document.createElement("span");
-        badgeEl.className = "supporterBadge";
-        badgeEl.style.display = "inline-flex";
-        badgeEl.setAttribute("aria-hidden", "true");
-        badgeEl.innerHTML =
-          '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" ' +
-          'aria-hidden="true"><path d="M3 7l4.2 3L12 4l4.8 6L21 7l-1.8 10H4.8L3 7z"/>' +
-          '</svg>';
-        contentEl.appendChild(badgeEl);
-      }
       contentEl.appendChild(dpsEl);
       contentEl.appendChild(dmgEl);
       contentEl.appendChild(pctEl);

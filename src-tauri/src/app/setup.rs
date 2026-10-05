@@ -26,7 +26,7 @@ use super::overlay_lock::{toggle_overlay_lock, OverlayLock};
 use super::setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use super::tool_windows::open_details_on_monitor;
 use super::tray_actions::{flush_settings_before_exit, quit, save_fights_before_exit};
-use super::{commands, drag_resize, overlay_lock, screenshots, supporter_roster, tasks, tool_windows, AppState};
+use super::{commands, drag_resize, overlay_lock, screenshots, tasks, tool_windows, AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -268,8 +268,6 @@ pub fn run() {
             tasks::spawn_meter_tick(app.handle());
 
             tasks::spawn_auto_save(app.handle());
-
-            supporter_roster::spawn_roster_poll(app.handle());
 
             Ok(())
         })

@@ -38,7 +38,6 @@ mod setting_changes;
 mod setup;
 mod sharing;
 mod sign_in;
-mod supporter_roster;
 mod tasks;
 mod tool_windows;
 mod tray_actions;

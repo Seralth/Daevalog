@@ -1,4 +1,4 @@
-//! What every row set shares: names, canonical ids, cached classes, party placeholders and supporter marks.
+//! What every row set shares: names, canonical ids, cached classes, and party placeholders.
 
 use std::collections::{HashMap, HashSet};
 
@@ -27,29 +27,6 @@ impl DpsCalculator {
     /// in one place so a new return path cannot quietly skip half of it.
     pub(super) fn finalize_rows(&self, dps_data: &mut DpsData) {
         self.add_party_rows(dps_data);
-        self.mark_supporters(dps_data);
-    }
-
-    /// Flag supporters so the UI can render their names gold.
-    ///
-    /// Resolved here rather than in the frontend because the roster is hashed
-    /// and the join needs `dbid`, which the frontend never sees. Runs on the
-    /// 500ms tick, so it returns immediately when there is no roster — which is
-    /// the normal case until one is published.
-    fn mark_supporters(&self, dps_data: &mut DpsData) {
-        let roster = self.data_storage.supporters();
-        if roster.is_empty() {
-            return;
-        }
-        let party = self.data_storage.get_party_members();
-        for row in dps_data.map.values_mut() {
-            let name = row.nickname.trim();
-            if name.is_empty() {
-                continue;
-            }
-            let dbid = party.get(name).map(|m| m.dbid).unwrap_or(0);
-            row.is_supporter = roster.contains(name, dbid);
-        }
     }
 
     fn add_party_rows(&self, dps_data: &mut DpsData) {

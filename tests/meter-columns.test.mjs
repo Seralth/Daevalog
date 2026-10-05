@@ -76,7 +76,6 @@ test("rows carry the backend's ENC figures, and only ENC uses the columns", () =
   const C = columns();
   const dps = app(C);
   dps.USER_NAME = "";
-  dps.showSupporterColors = true;
   const [row] = dps.buildRowsFromMapObject({
     7: {
       job: "Gladiator", nickname: "Aki", dps: 100, amount: 1000, damageContribution: 50,

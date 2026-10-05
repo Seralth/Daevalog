@@ -17,8 +17,6 @@ impl DpsCalculator {
         let combat_data = self.data_storage.get_combat_snapshot_light();
         let nickname_data = self.data_storage.get_nicknames();
         let summon_data = self.data_storage.get_summon_data();
-        let supporters = self.data_storage.supporters();
-        let party_members = self.data_storage.get_party_members();
         let mob_hp_data = self.data_storage.get_mob_hp_data();
         let mob_data = self.data_storage.get_mob_data();
 
@@ -114,13 +112,6 @@ impl DpsCalculator {
                     // identity a saved record keeps.
                     dbid: 0,
                     server_id: 0,
-                    // Joined to the party roster as the meter rows are: the
-                    // published roster is keyed by dbid, and by name alone no
-                    // supporter ever turned gold here (2026-10-05).
-                    is_supporter: supporters.contains(
-                        nick,
-                        party_members.get(nick.as_str()).map(|m| m.dbid).unwrap_or(0),
-                    ),
                     // Same reason again: the live rows already show combat
                     // power from the roster; the saved record is where it
                     // has to persist.

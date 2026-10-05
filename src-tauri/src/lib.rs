@@ -20,7 +20,6 @@ pub mod entity;
 pub mod game_record;
 pub mod i18n;
 pub mod rederive;
-pub mod supporters;
 pub mod version;
 
 // ── desktop only ───────────────────────────────────────────────────────────

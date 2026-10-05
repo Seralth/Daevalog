@@ -18,15 +18,6 @@ pub struct PersonalData {
     /// Combat power from the party roster packet, or 0 when this player isn't in
     /// your party (the roster is the only source, so non-party players have none).
     pub combat_power: i64,
-    /// Renders this player's name gold. Resolved locally against a roster the
-    /// meter downloads — see `crate::supporters`; nothing about your party is
-    /// ever sent anywhere to work this out.
-    ///
-    /// Cosmetic and nothing else. It must never affect ordering, bar colour, or
-    /// any number, because a meter that flatters the people who paid is not a
-    /// meter anybody should trust.
-    #[serde(default)]
-    pub is_supporter: bool,
     /// Damage over this player's own time in combat, first to last hit,
     /// beside `dps` (over the whole fight or encounter).
     #[serde(default)]
@@ -58,7 +49,6 @@ impl PersonalData {
             analyzed_data: HashMap::new(),
             nickname,
             combat_power: 0,
-            is_supporter: false,
             active_dps: 0.0,
             last10_dps: 0.0,
             last30_dps: 0.0,
@@ -78,7 +68,6 @@ impl PersonalData {
             analyzed_data: HashMap::new(),
             nickname,
             combat_power: 0,
-            is_supporter: false,
             active_dps: 0.0,
             last10_dps: 0.0,
             last30_dps: 0.0,

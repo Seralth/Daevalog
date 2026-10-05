@@ -204,7 +204,6 @@ mod tests {
             hits_received: 0,
             dbid,
             server_id: (dbid >> 48) as u16,
-            is_supporter: false,
             level: 0,
             gear_score: 0,
             combat_power: 0,

@@ -325,8 +325,6 @@
         "highestDamage": "最大ダメージ"
       }
     },
-    "showSupporterColors": "サポーターの色を表示",
-    "showSupporterColorsHint": "サポーターの名前が金色で表示されます。見た目だけで、数値は一切変わりません。",
     "account": {
       "title": "A2 Toolsアカウント",
       "signedOut": "サインインしていません",

@@ -114,7 +114,6 @@ impl DpsCalculator {
     ) -> FightRecord {
         let target_id = target_data.target_id;
         let party_members = self.data_storage.get_party_members();
-        let supporters = self.data_storage.supporters();
         let battle_time = (target_data.last_damage_time - target_data.first_damage_time).max(0);
         let (nickname_data, summon_data_snap, local_id, identity_dungeon) = match identity {
             Some(i) => (i.nicknames.clone(), i.summons.clone(), i.local_player_id, i.dungeon_id),
@@ -173,8 +172,6 @@ impl DpsCalculator {
                     hits_received: hits_recv,
                     dbid: roster.map(|m| m.dbid).unwrap_or(0),
                     server_id: roster.map(|m| m.server_id).unwrap_or(0),
-                    is_supporter: supporters
-                        .contains(nick, roster.map(|m| m.dbid).unwrap_or(0)),
                     level: roster.map(|m| m.level).unwrap_or(0),
                     gear_score: roster.map(|m| m.gear_score).unwrap_or(0),
                     combat_power: roster.map(|m| m.combat_power).unwrap_or(0),

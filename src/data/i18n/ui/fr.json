@@ -325,8 +325,6 @@
         "highestDamage": "Dégâts les plus élevés"
       }
     },
-    "showSupporterColors": "Afficher les couleurs des soutiens",
-    "showSupporterColorsHint": "Le nom des soutiens s'affiche en doré. Purement esthétique — aucun chiffre n'est modifié.",
     "account": {
       "title": "Compte A2 Tools",
       "signedOut": "Non connecté",

@@ -325,8 +325,6 @@
         "highestDamage": "Höchster Schaden"
       }
     },
-    "showSupporterColors": "Unterstützerfarben anzeigen",
-    "showSupporterColorsHint": "Namen von Unterstützern erscheinen golden. Rein kosmetisch — es ändert keine Zahl.",
     "account": {
       "title": "A2 Tools-Konto",
       "signedOut": "Nicht angemeldet",

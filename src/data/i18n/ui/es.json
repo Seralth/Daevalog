@@ -325,8 +325,6 @@
         "highestDamage": "Mayor daño"
       }
     },
-    "showSupporterColors": "Mostrar colores de mecenas",
-    "showSupporterColorsHint": "Los nombres de los mecenas se muestran en dorado. Solo estético — no cambia ninguna cifra.",
     "account": {
       "title": "Cuenta de A2 Tools",
       "signedOut": "No has iniciado sesión",

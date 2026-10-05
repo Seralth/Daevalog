@@ -325,8 +325,6 @@
         "highestDamage": "Maior dano"
       }
     },
-    "showSupporterColors": "Mostrar cores dos apoiadores",
-    "showSupporterColorsHint": "Os nomes dos apoiadores aparecem em dourado. Apenas estético — não altera nenhum número.",
     "account": {
       "title": "Conta A2 Tools",
       "signedOut": "Não conectado",

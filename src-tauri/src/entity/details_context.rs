@@ -29,10 +29,6 @@ pub struct DetailsActorSummary {
     /// World/server id, the top 16 bits of `dbid`. 0 when unknown.
     #[serde(default)]
     pub server_id: u16,
-    /// Renders this name gold in the Details party bars. See
-    /// `crate::supporters`; cosmetic only.
-    #[serde(default)]
-    pub is_supporter: bool,
     /// Character level, gear score and combat power from the party roster, as
     /// the game reported them for this fight. 0 when the roster never named
     /// the actor: only your own party's members are on it.

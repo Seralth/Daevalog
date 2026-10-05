@@ -38,7 +38,6 @@ Object.assign(DpsApp.prototype, {
     this.meterLayoutDropdownBtn = document.querySelector(".meterLayoutDropdownBtn");
     this.meterLayoutDropdownMenu = document.querySelector(".meterLayoutDropdownMenu");
     this.playerNamesBoldCheckbox = document.querySelector(".playerNamesBoldCheckbox");
-    this.showSupporterColorsCheckbox = document.querySelector(".showSupporterColorsCheckbox");
     this.autoUploadCheckbox = document.querySelector(".autoUploadCheckbox");
     this.accountStateEl = document.querySelector(".accountState");
     this.accountHintEl = document.querySelector(".accountHint");
@@ -98,10 +97,6 @@ Object.assign(DpsApp.prototype, {
     }
     const storedDebugLogging = this.safeGetSetting(this.storageKeys.debugLogging) === "true";
     const storedPinMeToTop = this.safeGetSetting(this.storageKeys.pinMeToTop) === "true";
-    // Default on: a supporter's gold name is the thing they paid for, so it
-    // should be visible unless a viewer has deliberately turned it off.
-    this.showSupporterColors =
-      this.safeGetSetting(this.storageKeys.showSupporterColors) !== "false";
     const mainPlayerNamesBoldSetting = this.safeGetSetting(this.storageKeys.mainPlayerNamesBold);
     const storedMainPlayerNamesBold = mainPlayerNamesBoldSetting !== "false";
     const mainPlayerDpsBoldSetting = this.safeGetSetting(this.storageKeys.mainPlayerDpsBold);
@@ -427,16 +422,6 @@ Object.assign(DpsApp.prototype, {
       });
     }
 
-    if (this.showSupporterColorsCheckbox) {
-      this.showSupporterColorsCheckbox.checked = this.showSupporterColors;
-      this.showSupporterColorsCheckbox.addEventListener("change", (event) => {
-        this.showSupporterColors = !!event.target?.checked;
-        this.safeSetSetting(
-          this.storageKeys.showSupporterColors,
-          String(this.showSupporterColors)
-        );
-      });
-    }
     if (this.playerNamesBoldCheckbox) {
       this.playerNamesBoldCheckbox.checked = this.mainPlayerNamesBold;
       this.playerNamesBoldCheckbox.addEventListener("change", (event) => {

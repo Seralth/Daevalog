@@ -325,8 +325,6 @@
         "highestDamage": "最高伤害"
       }
     },
-    "showSupporterColors": "显示赞助者颜色",
-    "showSupporterColorsHint": "赞助者的名字显示为金色。仅为外观，不会改变任何数值。",
     "account": {
       "title": "A2 Tools 账号",
       "signedOut": "未登录",

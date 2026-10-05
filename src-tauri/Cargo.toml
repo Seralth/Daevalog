@@ -68,11 +68,6 @@ path = "tools/a2t_probe.rs"
 required-features = ["desktop"]
 
 [[bin]]
-name = "a2t-roster"
-path = "tools/a2t_roster.rs"
-required-features = ["desktop"]
-
-[[bin]]
 name = "a2t-derive"
 path = "tools/a2t_derive.rs"
 required-features = ["desktop"]

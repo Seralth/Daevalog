@@ -325,8 +325,6 @@
         "highestDamage": "最高傷害"
       }
     },
-    "showSupporterColors": "顯示贊助者顏色",
-    "showSupporterColorsHint": "贊助者的名字顯示為金色。僅為外觀，不會改變任何數值。",
     "account": {
       "title": "A2 Tools 帳號",
       "signedOut": "尚未登入",

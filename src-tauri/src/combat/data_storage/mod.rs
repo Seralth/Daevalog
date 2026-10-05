@@ -160,9 +160,6 @@ struct Inner {
 
     // Local player
     local_player_id: Option<i64>,
-    /// Behind an Arc because `get_dps` reads it every 500ms and the set can hold
-    /// thousands of entries; cloning it on each tick would be pure waste.
-    supporters: std::sync::Arc<crate::supporters::Roster>,
     local_character_name: Option<String>,
     /// Set once the game itself has said who the local player is (the `33 36`
     /// self record). That outranks the window title and any name the UI has
@@ -220,7 +217,6 @@ impl DataStorage {
                 has_boss_in_segment: false,
                 current_target: 0,
                 local_player_id: None,
-                supporters: std::sync::Arc::new(crate::supporters::Roster::default()),
                 local_character_name: None,
                 local_identity_from_game: false,
                 loot_identity: LootIdentity::default(),

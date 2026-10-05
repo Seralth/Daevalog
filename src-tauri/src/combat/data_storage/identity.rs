@@ -205,15 +205,6 @@ impl DataStorage {
         self.inner.read().local_identity_from_game
     }
 
-    /// Replace the supporter roster. Called after each download.
-    pub fn set_supporters(&self, roster: crate::supporters::Roster) {
-        self.inner.write().supporters = std::sync::Arc::new(roster);
-    }
-
-    pub fn supporters(&self) -> std::sync::Arc<crate::supporters::Roster> {
-        self.inner.read().supporters.clone()
-    }
-
     pub fn set_local_player_id(&self, id: Option<i64>) {
         self.inner.write().local_player_id = id;
     }

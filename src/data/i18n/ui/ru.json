@@ -325,8 +325,6 @@
         "highestDamage": "Наибольший урон"
       }
     },
-    "showSupporterColors": "Показывать цвета спонсоров",
-    "showSupporterColorsHint": "Имена спонсоров отображаются золотым. Только внешний вид — ни одно число не меняется.",
     "account": {
       "title": "Аккаунт A2 Tools",
       "signedOut": "Вы не вошли",

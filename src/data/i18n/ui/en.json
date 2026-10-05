@@ -325,8 +325,6 @@
         "highestDamage": "Highest Damage"
       }
     },
-    "showSupporterColors": "Show supporter colours",
-    "showSupporterColorsHint": "Supporters' names render gold. Cosmetic only — it never changes any number.",
     "account": {
       "title": "A2 Tools Account",
       "signedOut": "Not signed in",
