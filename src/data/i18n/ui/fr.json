@@ -347,8 +347,10 @@
       "button": "Envoyer les journaux à a2tools.app",
       "confirm": "Envoyer vos 3 derniers journaux de paquets à a2tools.app ?\n\nLes journaux de paquets sont le trafic brut du jeu enregistré pendant que la journalisation était activée, noms de personnages compris. Là-bas, seul le développeur d'A2 Tools peut les ouvrir, et ils sont supprimés après 30 jours. Une fois envoyés, Daevalog ne peut ni les voir ni vous aider avec.",
       "sending": "Envoi...",
-      "sent": "Envoyé à a2tools.app. Votre code de rapport est {code}. Daevalog ne peut pas vous aider avec les journaux envoyés là-bas. Pour un problème avec Daevalog, joignez votre journal local à un ticket sur github.com/Seralth/Daevalog.",
-      "failed": "Envoi impossible : {error}"
+      "sent": "Envoyé à a2tools.app. Votre code de rapport est {code}. Daevalog ne peut pas vous aider avec les journaux envoyés là-bas. Pour un problème avec Daevalog, ouvrez un ticket sur github.com/Seralth/Daevalog et joignez debug.log depuis « Ouvrir le dossier des journaux » ; pour des chiffres faux, un journal de paquets aussi. Les journaux de paquets contiennent des noms de personnages, et les tickets sont publics.",
+      "failed": "Envoi impossible : {error}",
+      "openFolder": "Ouvrir le dossier des journaux",
+      "openFolderTip": "debug.log et les journaux de paquets. Joignez-les à un ticket sur github.com/Seralth/Daevalog."
     },
     "encounterTimeout": {
       "label": "La rencontre se termine après (secondes)",

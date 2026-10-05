@@ -33,6 +33,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - Damage totals past 2.1 billion no longer wrap around.
 - When packet capture cannot start on Linux, the meter says so in its own window, instead of the Windows prompt to download Npcap.
 - The version in Settings opens the releases of this repository.
+- **Open log folder** in Settings opens the folder with `debug.log` and the packet logs, to attach to an issue here. "Send logs to a2tools.app" says where the logs go: to the A2 Tools developer, where Daevalog cannot help with them.
 
 ### Linux desktop
 - **Tray icon,** with "Start in the tray" and "Keep out of the taskbar". The tray menu shows, hides, locks and unlocks the meter. Every control also stays in the meter's own window, so the meter works on a desktop without a tray.

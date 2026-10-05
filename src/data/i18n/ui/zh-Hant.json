@@ -347,8 +347,10 @@
       "button": "傳送紀錄到 a2tools.app",
       "confirm": "要將最新的 3 個封包紀錄傳送到 a2tools.app 嗎？\n\n封包紀錄是開啟封包記錄期間錄下的原始遊戲通訊，包含角色名稱。在那裡只有 A2 Tools 開發者能開啟，並會在 30 天後刪除。傳送後，Daevalog 無法查看，也無法提供協助。",
       "sending": "傳送中...",
-      "sent": "已傳送到 a2tools.app。你的回報代碼是 {code}。傳送到那裡的紀錄 Daevalog 無法提供協助。如果是 Daevalog 的問題，請把本機紀錄附加到 github.com/Seralth/Daevalog 的 issue 中。",
-      "failed": "無法傳送：{error}"
+      "sent": "已傳送到 a2tools.app。你的回報代碼是 {code}。傳送到那裡的紀錄 Daevalog 無法提供協助。如果是 Daevalog 的問題，請在 github.com/Seralth/Daevalog 建立 issue，並從「開啟紀錄資料夾」附加 debug.log；數值不對時，也請附加一個封包紀錄。封包紀錄包含角色名稱，且 issue 是公開的。",
+      "failed": "無法傳送：{error}",
+      "openFolder": "開啟紀錄資料夾",
+      "openFolderTip": "debug.log 和封包紀錄。請附加到 github.com/Seralth/Daevalog 的 issue 中。"
     },
     "encounterTimeout": {
       "label": "遭遇戰結束時間（秒）",

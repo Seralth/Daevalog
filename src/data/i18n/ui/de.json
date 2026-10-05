@@ -347,8 +347,10 @@
       "button": "Logs an a2tools.app senden",
       "confirm": "Deine 3 neuesten Paket-Logs an a2tools.app senden?\n\nPaket-Logs sind der rohe Spielverkehr, aufgezeichnet während die Paketaufzeichnung an war, einschließlich Charakternamen. Dort kann sie nur der A2-Tools-Entwickler öffnen, und sie werden nach 30 Tagen gelöscht. Einmal gesendet, kann Daevalog sie weder sehen noch dabei helfen.",
       "sending": "Wird gesendet...",
-      "sent": "An a2tools.app gesendet. Dein Berichtscode ist {code}. Bei dort gesendeten Logs kann Daevalog nicht helfen. Bei einem Problem mit Daevalog hänge dein lokales Log an ein Issue auf github.com/Seralth/Daevalog an.",
-      "failed": "Senden fehlgeschlagen: {error}"
+      "sent": "An a2tools.app gesendet. Dein Berichtscode ist {code}. Bei dort gesendeten Logs kann Daevalog nicht helfen. Bei einem Problem mit Daevalog öffne ein Issue auf github.com/Seralth/Daevalog und hänge debug.log aus „Log-Ordner öffnen“ an; bei falschen Zahlen auch ein Paket-Log. Paket-Logs enthalten Charakternamen, und Issues sind öffentlich.",
+      "failed": "Senden fehlgeschlagen: {error}",
+      "openFolder": "Log-Ordner öffnen",
+      "openFolderTip": "debug.log und die Paket-Logs. Hänge sie an ein Issue auf github.com/Seralth/Daevalog an."
     },
     "encounterTimeout": {
       "label": "Begegnung endet nach (Sekunden)",

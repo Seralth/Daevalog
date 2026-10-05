@@ -29,6 +29,7 @@ Object.assign(DpsApp.prototype, {
     this.showPingCheckbox = document.querySelector(".showPingCheckbox");
     this.saveRawPacketsCheckbox = document.querySelector(".saveRawPacketsCheckbox");
     this.sendLogsBtn = document.querySelector(".sendLogsBtn");
+    this.openLogFolderBtn = document.querySelector(".openLogFolderBtn");
     this.sendLogsStatus = document.querySelector(".sendLogsStatus");
     this.pinMeToTopCheckbox = document.querySelector(".pinMeToTopCheckbox");
     this.detailsMonitorDropdownBtn = document.querySelector(".detailsMonitorDropdownBtn");

@@ -440,6 +440,10 @@
       invoke("open_url", { url }).catch(() => {});
     },
 
+    openDataFolder() {
+      invoke("open_data_folder").catch(() => {});
+    },
+
     // --- Ping ---
     getPingMs() {
       return cachedPing;

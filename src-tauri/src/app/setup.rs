@@ -300,6 +300,7 @@ pub fn run() {
             commands::capture::get_aion2_window_title,
             commands::capture::debug_status,
             commands::system::quit_app,
+            commands::system::open_data_folder,
             commands::system::open_url,
             commands::system::read_cached_icon,
             commands::system::write_cached_icon,

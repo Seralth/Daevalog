@@ -347,8 +347,10 @@
       "button": "发送日志到 a2tools.app",
       "confirm": "要将最新的 3 个数据包日志发送到 a2tools.app 吗？\n\n数据包日志是开启数据包记录期间录下的原始游戏通信，包含角色名称。在那里只有 A2 Tools 开发者能打开，并会在 30 天后删除。发送后，Daevalog 无法查看，也无法提供帮助。",
       "sending": "发送中...",
-      "sent": "已发送到 a2tools.app。你的反馈代码是 {code}。发送到那里的日志 Daevalog 无法提供帮助。如果是 Daevalog 的问题，请把本地日志附加到 github.com/Seralth/Daevalog 的 issue 中。",
-      "failed": "无法发送：{error}"
+      "sent": "已发送到 a2tools.app。你的反馈代码是 {code}。发送到那里的日志 Daevalog 无法提供帮助。如果是 Daevalog 的问题，请在 github.com/Seralth/Daevalog 创建 issue，并从“打开日志文件夹”附加 debug.log；数值不对时，也请附加一个数据包日志。数据包日志包含角色名称，且 issue 是公开的。",
+      "failed": "无法发送：{error}",
+      "openFolder": "打开日志文件夹",
+      "openFolderTip": "debug.log 和数据包日志。请附加到 github.com/Seralth/Daevalog 的 issue 中。"
     },
     "encounterTimeout": {
       "label": "遭遇战结束时间（秒）",

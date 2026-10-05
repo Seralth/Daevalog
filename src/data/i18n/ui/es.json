@@ -347,8 +347,10 @@
       "button": "Enviar registros a a2tools.app",
       "confirm": "¿Enviar tus 3 registros de paquetes más recientes a a2tools.app?\n\nLos registros de paquetes son el tráfico bruto del juego grabado mientras el registro de paquetes estaba activado, incluidos los nombres de personajes. Allí solo el desarrollador de A2 Tools puede abrirlos, y se borran a los 30 días. Una vez enviados, Daevalog no puede verlos ni ayudar con ellos.",
       "sending": "Enviando...",
-      "sent": "Enviado a a2tools.app. Tu código de informe es {code}. Daevalog no puede ayudar con los registros enviados allí. Para un problema con Daevalog, adjunta tu registro local a una incidencia en github.com/Seralth/Daevalog.",
-      "failed": "No se pudo enviar: {error}"
+      "sent": "Enviado a a2tools.app. Tu código de informe es {code}. Daevalog no puede ayudar con los registros enviados allí. Para un problema con Daevalog, abre una incidencia en github.com/Seralth/Daevalog y adjunta debug.log desde «Abrir carpeta de registros»; si los números son incorrectos, también un registro de paquetes. Los registros de paquetes incluyen nombres de personajes, y las incidencias son públicas.",
+      "failed": "No se pudo enviar: {error}",
+      "openFolder": "Abrir carpeta de registros",
+      "openFolderTip": "debug.log y los registros de paquetes. Adjúntalos a una incidencia en github.com/Seralth/Daevalog."
     },
     "encounterTimeout": {
       "label": "El encuentro termina tras (segundos)",

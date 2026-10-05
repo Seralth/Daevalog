@@ -2192,6 +2192,7 @@ class DpsApp {
     const status = this.sendLogsStatus;
     if (!btn || btn.dataset.wired) return;
     btn.dataset.wired = "1";
+    this.openLogFolderBtn?.addEventListener("click", () => window.javaBridge?.openDataFolder?.());
     const t = (key, fallback, vars) =>
       vars ? (window.i18n?.format?.(key, vars, fallback) ?? fallback)
            : (window.i18n?.t?.(key, fallback) ?? fallback);
@@ -2215,8 +2216,10 @@ class DpsApp {
         const code = result?.code || "?";
         show(t("settings.sendLogs.sent",
           `Sent to a2tools.app. Your report code is ${code}. Daevalog cannot help with ` +
-          "logs sent there. For a problem with Daevalog, attach your local log to an " +
-          "issue at github.com/Seralth/Daevalog.",
+          "logs sent there. For a problem with Daevalog, open an issue at " +
+          "github.com/Seralth/Daevalog and attach debug.log from Open log folder; for " +
+          "wrong numbers, a packet log too. Packet logs include character names, and " +
+          "issues are public.",
           { code }));
       } catch (err) {
         const msg = String(err?.message || err || "");

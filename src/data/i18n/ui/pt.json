@@ -347,8 +347,10 @@
       "button": "Enviar logs para a2tools.app",
       "confirm": "Enviar seus 3 logs de pacotes mais recentes para a2tools.app?\n\nLogs de pacotes são o tráfego bruto do jogo gravado enquanto o registro de pacotes estava ligado, incluindo nomes de personagens. Lá, só o desenvolvedor do A2 Tools pode abri-los, e eles são apagados após 30 dias. Depois de enviados, o Daevalog não pode vê-los nem ajudar com eles.",
       "sending": "Enviando...",
-      "sent": "Enviado para a2tools.app. Seu código de relatório é {code}. O Daevalog não pode ajudar com logs enviados para lá. Para um problema com o Daevalog, anexe seu log local a uma issue em github.com/Seralth/Daevalog.",
-      "failed": "Não foi possível enviar: {error}"
+      "sent": "Enviado para a2tools.app. Seu código de relatório é {code}. O Daevalog não pode ajudar com logs enviados para lá. Para um problema com o Daevalog, abra uma issue em github.com/Seralth/Daevalog e anexe o debug.log de \"Abrir pasta de logs\"; para números errados, um log de pacotes também. Logs de pacotes incluem nomes de personagens, e as issues são públicas.",
+      "failed": "Não foi possível enviar: {error}",
+      "openFolder": "Abrir pasta de logs",
+      "openFolderTip": "debug.log e os logs de pacotes. Anexe-os a uma issue em github.com/Seralth/Daevalog."
     },
     "encounterTimeout": {
       "label": "O encontro termina após (segundos)",

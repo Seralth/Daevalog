@@ -347,8 +347,10 @@
       "button": "Send logs to a2tools.app",
       "confirm": "Send your 3 newest packet logs to a2tools.app?\n\nPacket logs are raw game traffic recorded while packet logging was on, including character names. Only the A2 Tools developer can open them there, and they are deleted after 30 days. Once sent, Daevalog cannot see or help with them.",
       "sending": "Sending...",
-      "sent": "Sent to a2tools.app. Your report code is {code}. Daevalog cannot help with logs sent there. For a problem with Daevalog, attach your local log to an issue at github.com/Seralth/Daevalog.",
-      "failed": "Could not send: {error}"
+      "sent": "Sent to a2tools.app. Your report code is {code}. Daevalog cannot help with logs sent there. For a problem with Daevalog, open an issue at github.com/Seralth/Daevalog and attach debug.log from Open log folder; for wrong numbers, a packet log too. Packet logs include character names, and issues are public.",
+      "failed": "Could not send: {error}",
+      "openFolder": "Open log folder",
+      "openFolderTip": "debug.log and the packet logs. Attach them to an issue at github.com/Seralth/Daevalog."
     },
     "encounterTimeout": {
       "label": "Encounter ends after (seconds)",

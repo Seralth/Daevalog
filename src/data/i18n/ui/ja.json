@@ -347,8 +347,10 @@
       "button": "a2tools.app にログを送る",
       "confirm": "最新のパケットログ3件を a2tools.app に送りますか？\n\nパケットログは、パケット記録をオンにしていた間のゲーム通信そのもので、キャラクター名が含まれます。送信先で開けるのは A2 Tools の開発者だけで、30日後に削除されます。送信後は、Daevalog から見ることも対応することもできません。",
       "sending": "送信中...",
-      "sent": "a2tools.app に送信しました。報告コードは {code} です。送信したログについて Daevalog は対応できません。Daevalog の問題は、手元のログを github.com/Seralth/Daevalog の issue に添付してください。",
-      "failed": "送信できませんでした: {error}"
+      "sent": "a2tools.app に送信しました。報告コードは {code} です。送信したログについて Daevalog は対応できません。Daevalog の問題は github.com/Seralth/Daevalog に issue を作成し、「ログフォルダーを開く」から debug.log を添付してください。数値がおかしい場合はパケットログも添付してください。パケットログにはキャラクター名が含まれ、issue は公開されます。",
+      "failed": "送信できませんでした: {error}",
+      "openFolder": "ログフォルダーを開く",
+      "openFolderTip": "debug.log とパケットログです。github.com/Seralth/Daevalog の issue に添付してください。"
     },
     "encounterTimeout": {
       "label": "エンカウント終了までの秒数",
