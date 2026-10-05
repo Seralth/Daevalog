@@ -23,10 +23,6 @@ impl DataStorage {
         record_heal(&mut self.inner.write(), HealTick { at, actor: actor_id, skill: skill_code, is_hot, amount });
     }
 
-    pub fn get_heal_snapshot(&self) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
-        self.inner.read().heal_storage.clone()
-    }
-
     /// Healing done from `from_ms` to `to_ms`: one fight's.
     pub fn heals_between(&self, from_ms: i64, to_ms: i64) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
         heals_between(&self.inner.read(), from_ms, to_ms)
@@ -34,9 +30,6 @@ impl DataStorage {
 }
 
 pub(super) fn record_heal(inner: &mut Inner, tick: HealTick) {
-    let e = inner.heal_storage.entry(tick.actor).or_default().entry((tick.skill, tick.is_hot)).or_default();
-    e.total_heal += tick.amount;
-    e.tick_count += 1;
     inner.heal_ticks.push_back(tick);
     if inner.heal_ticks.len() % PRUNE_EVERY == 0 {
         prune_heal_ticks(inner);

@@ -733,6 +733,13 @@ mod tests {
         hits(&s, 2259, 800, 1_000, 8_000);
         s.append_heal(2259, 17_800_000, 222, false, 4_000);
         s.append_heal(2259, 17_800_000, 333, false, 9_500);
+        let live = |calc: &DpsCalculator| calc.get_target_details(800, None).heal_skills.iter().map(|h| h.dmg as i64).sum::<i64>();
+        assert_eq!(live(&calc), 222, "live Details: the same window");
+        calc.set_target_selection_mode("allTargets");
+        calc.get_dps();
+        let shown = calc.get_displayed_details(None).heal_skills.iter().map(|h| h.dmg as i64).sum::<i64>();
+        assert_eq!(shown, 222, "in every mode");
+        calc.set_target_selection_mode("bossTargets");
         let saved = snapshot_at(&mut calc, 30_000);
         assert_eq!(ids(&saved), vec!["auto_800_1000"]);
         assert_eq!(healed(&saved[0]), 222, "saved while live");

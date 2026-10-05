@@ -97,9 +97,7 @@ struct Inner {
     permanent_nicknames: HashMap<i32, String>,
     summon_storage: HashMap<i32, i32>,
     mob_storage: HashMap<i32, i32>,
-    /// Healing done per (healer actor) -> (skill_code, is_hot) -> aggregate.
-    heal_storage: HashMap<i32, HashMap<(i32, bool), HealSkillData>>,
-    /// The same healing tick by tick, so a saved fight takes only its own.
+    /// Healing done, tick by tick, so each fight takes only its own.
     heal_ticks: VecDeque<HealTick>,
     /// Spawn-time / observed-peak MAX HP per entity (denominator for the HP bar).
     mob_hp_data: HashMap<i32, i32>,
@@ -197,7 +195,6 @@ impl DataStorage {
                 permanent_nicknames: HashMap::new(),
                 summon_storage: HashMap::new(),
                 mob_storage: HashMap::new(),
-                heal_storage: HashMap::new(),
                 heal_ticks: VecDeque::new(),
                 mob_hp_data: HashMap::new(),
                 mob_current_hp: HashMap::new(),
@@ -362,7 +359,6 @@ impl DataStorage {
         inner.has_boss_in_segment = false;
         inner.mob_hp_data.clear();
         inner.mob_current_hp.clear();
-        inner.heal_storage.clear();
         inner.heal_ticks.clear();
         inner.current_target = 0;
     }
@@ -382,7 +378,6 @@ impl DataStorage {
         inner.has_boss_in_segment = false;
         inner.mob_hp_data.clear();
         inner.mob_current_hp.clear();
-        inner.heal_storage.clear();
         inner.heal_ticks.clear();
         inner.current_target = 0;
     }
@@ -842,7 +837,7 @@ mod tests {
         assert!(!snap.contains_key(&100), "the owner is no target");
         assert!(!snap.contains_key(&501), "nor is the spirit");
         assert_eq!(snap[&900].total_damage, 300);
-        assert!(s.get_heal_snapshot().is_empty(), "nor is it healing");
+        assert!(s.heals_between(i64::MIN, i64::MAX).is_empty(), "nor is it healing");
         assert!(!s.is_known_player(500));
     }
 

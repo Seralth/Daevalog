@@ -269,14 +269,6 @@ fn forget_entity(inner: &mut Inner, id: i32) {
     for tick in inner.heal_ticks.iter_mut().filter(|t| t.actor == id) {
         tick.actor = owner;
     }
-    if let Some(heals) = inner.heal_storage.remove(&id) {
-        let mine = inner.heal_storage.entry(owner).or_default();
-        for (key, h) in heals {
-            let e = mine.entry(key).or_default();
-            e.total_heal += h.total_heal;
-            e.tick_count += h.tick_count;
-        }
-    }
     let held: Vec<(i32, i32)> = inner.held_dot_ticks.keys().filter(|k| k.1 == id).copied().collect();
     for key in held {
         let mut ticks = inner.held_dot_ticks.remove(&key).unwrap_or_default();
