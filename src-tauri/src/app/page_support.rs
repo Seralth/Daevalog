@@ -9,3 +9,13 @@ pub(crate) fn read_cached_icon(state: &AppState, key: String) -> Option<String> 
     let path = state.app_data_dir.join("icon_cache").join(&key);
     std::fs::read_to_string(&path).ok()
 }
+
+pub(crate) fn write_cached_icon(state: &AppState, key: String, data: String) {
+    if !crate::history::fight_history::is_plain_name(&key) {
+        return;
+    }
+    let cache_dir = state.app_data_dir.join("icon_cache");
+    let _ = std::fs::create_dir_all(&cache_dir);
+    let path = cache_dir.join(&key);
+    let _ = std::fs::write(&path, &data);
+}

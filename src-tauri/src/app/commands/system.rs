@@ -29,13 +29,7 @@ pub(crate) fn log_from_ui(message: String) {
 
 #[tauri::command]
 pub(crate) fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, data: String) {
-    if !crate::history::fight_history::is_plain_name(&key) {
-        return;
-    }
-    let cache_dir = state.app_data_dir.join("icon_cache");
-    let _ = std::fs::create_dir_all(&cache_dir);
-    let path = cache_dir.join(&key);
-    let _ = std::fs::write(&path, &data);
+    page_support::write_cached_icon(&state, key, data);
 }
 
 #[tauri::command]
