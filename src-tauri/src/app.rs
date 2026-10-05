@@ -2680,13 +2680,13 @@ pub fn run() {
                                 for record in &records {
                                     let _ = state.fight_history.save_fight(record);
                                     // The packets behind it, so it can be
-                                    // uploaded and verified later. Training
-                                    // dummies are not logs.
-                                    if !record.is_train {
-                                        if let Err(e) = share::save_slice(
-                                            &state.app_data_dir, record, &state.data_storage) {
-                                            tracing::debug!("No slice for {}: {e}", record.id);
-                                        }
+                                    // uploaded and verified later, and checked
+                                    // against the game's own record. Training
+                                    // dummies keep one for that check; they are
+                                    // never uploaded.
+                                    if let Err(e) = share::save_slice(
+                                        &state.app_data_dir, record, &state.data_storage) {
+                                        tracing::debug!("No slice for {}: {e}", record.id);
                                     }
                                 }
                                 if !records.is_empty() {
