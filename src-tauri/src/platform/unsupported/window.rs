@@ -75,6 +75,10 @@ pub fn begin_layer_drag(_window: &tauri::WebviewWindow) -> bool {
 
 pub fn end_layer_drag(_window: &tauri::WebviewWindow) {}
 
+pub fn layer_supported() -> bool {
+    false
+}
+
 pub fn overlay_layer_position(_window: &tauri::WebviewWindow) -> Option<(i32, i32)> {
     None
 }

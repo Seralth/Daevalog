@@ -65,6 +65,7 @@ class DpsApp {
       bossLogs: "dpsMeter.bossLogsEnabled",
       saveRawPackets: "dpsMeter.saveRawPackets",
       autoUpload: "dpsMeter.autoUpload",
+      waylandLayer: "dpsMeter.waylandLayer",
       discordActivity: "dpsMeter.discordActivity",
       windowOpacity: "dpsMeter.windowOpacity",
       bossNameSize: "dpsMeter.bossNameSize",
@@ -2386,6 +2387,22 @@ class DpsApp {
         .catch(() => {});
     }
 
+    // Shown where the session has layer-shell, or while it is on, so it can
+    // always be turned off again.
+    const waylandLayerCheckbox = document.querySelector(".waylandLayerCheckbox");
+    if (waylandLayerCheckbox && /Linux/.test(navigator.userAgent)) {
+      waylandLayerCheckbox.checked = this.safeGetSetting(this.storageKeys.waylandLayer) === "true";
+      waylandLayerCheckbox.addEventListener("change", (event) => {
+        this.safeSetSetting(this.storageKeys.waylandLayer, String(!!event.target?.checked));
+      });
+      Promise.resolve(window.__TAURI__?.core?.invoke?.("wayland_layer_state"))
+        .then((layer) => {
+          if (layer?.supported || waylandLayerCheckbox.checked) {
+            document.querySelector(".waylandLayerSetting")?.style.removeProperty("display");
+          }
+        })
+        .catch(() => {});
+    }
     if (this.autoUploadCheckbox) {
       // Off unless turned on: an upload publishes a fight.
       this.autoUploadCheckbox.checked =

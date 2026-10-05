@@ -731,6 +731,13 @@ pub fn overlay_layer_position(window: &tauri::WebviewWindow) -> Option<(i32, i32
     super::dialog::on_gtk_thread(move || layer_position(&window.gtk_window().ok()?)).flatten()
 }
 
+/// Whether the overlay can be a layer surface in this session.
+pub fn layer_supported() -> bool {
+    let Some(api) = layer::api() else { return false };
+    // SAFETY: as in `layer_position`.
+    super::dialog::on_gtk_thread(move || unsafe { (api.is_supported)() } != 0).unwrap_or(false)
+}
+
 /// The window size for a `size` meter on the layer overlay: no larger than the
 /// room from its place to the monitor's right and bottom edges, plus the
 /// border. Also keeps the meter's size for the input region.

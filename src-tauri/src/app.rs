@@ -1894,6 +1894,14 @@ fn end_overlay_drag(app: tauri::AppHandle) {
     }
 }
 
+/// Whether the Wayland layer setting can work here, and whether the overlay
+/// is a layer surface now.
+#[tauri::command]
+fn wayland_layer_state(app: tauri::AppHandle) -> serde_json::Value {
+    let active = app.get_webview_window("main").is_some_and(|w| platform::window::is_layer(&w));
+    serde_json::json!({ "supported": platform::window::layer_supported(), "active": active })
+}
+
 /// Drag a tool window (Details, History, Settings) by its header. Their CSS
 /// marks the header `-webkit-app-region: drag`, which WebView2 honours and
 /// WebKitGTK does not, so on Linux the page asks for the drag instead.
@@ -2794,6 +2802,7 @@ pub fn run() {
             start_drag,
             move_overlay,
             end_overlay_drag,
+            wayland_layer_state,
             start_tool_drag,
             begin_tool_resize,
             compositor_resize_supported,
