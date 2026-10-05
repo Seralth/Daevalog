@@ -7,10 +7,10 @@ use crate::entity::job_class::JobClass;
 use crate::entity::special_damage::SpecialDamage;
 use crate::entity::summon_resolver;
 
+use super::encounter::{carry_encounter, encounter_ended, note_encounter, retire_all, retire_segment};
 use super::{
-    apply_pending_nickname, bind_roster_names_by_class, carry_encounter, encounter_ended, link_summon, note_encounter,
-    now_ms, owner_link, retire_all, retire_segment, ActorCombatData, DataStorage, Inner, NoDamageHit, SecondStats,
-    SkillCombatData, TargetCombatData, IDLE_RESET_MS, ROSTER_BIND_EVERY,
+    apply_pending_nickname, bind_roster_names_by_class, link_summon, now_ms, owner_link, ActorCombatData, DataStorage,
+    Inner, NoDamageHit, SecondStats, SkillCombatData, TargetCombatData, IDLE_RESET_MS, ROSTER_BIND_EVERY,
 };
 
 impl DataStorage {
