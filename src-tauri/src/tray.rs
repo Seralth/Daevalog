@@ -1,4 +1,5 @@
-//! The tray icon: show or hide the meter, open Settings or History, quit.
+//! The tray icon: show or hide the meter, lock or unlock it, open Settings or
+//! History, quit.
 //!
 //! Two settings go with it, both off unless turned on: start with the meter
 //! hidden in the tray, and keep the meter's windows out of the taskbar.
@@ -97,11 +98,18 @@ fn build(app: &AppHandle) -> tauri::Result<()> {
     // On Linux the tray sends no click events, so this menu is the only way
     // to the meter there: showing it comes first.
     let toggle = MenuItem::with_id(app, "toggle", text("toggle", "Show or hide the meter"), true, None::<&str>)?;
+    // Where the desktop has no lock hotkey (Sway), this is the other way to
+    // the click-through lock.
+    let lock = MenuItem::with_id(app, "lock", text("lock", "Lock or unlock the meter"), true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", text("settings", "Settings"), true, None::<&str>)?;
     let history = MenuItem::with_id(app, "history", text("history", "History"), true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
     let quit = MenuItem::with_id(app, "quit", text("quit", "Quit"), true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&toggle, &settings, &history, &separator, &quit])?;
+    let menu = if crate::app::overlay_lock_available() {
+        Menu::with_items(app, &[&toggle, &lock, &settings, &history, &separator, &quit])?
+    } else {
+        Menu::with_items(app, &[&toggle, &settings, &history, &separator, &quit])?
+    };
 
     let mut tray = TrayIconBuilder::with_id("main")
         .tooltip("Daevalog DPS Meter")
@@ -109,6 +117,7 @@ fn build(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "toggle" => toggle_meter(app),
+            "lock" => crate::app::toggle_overlay_lock(app),
             "settings" => crate::app::open_settings_from_tray(app),
             "history" => crate::app::open_history_from_tray(app),
             "quit" => crate::app::quit_from_tray(app),

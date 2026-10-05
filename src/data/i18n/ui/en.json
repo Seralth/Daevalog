@@ -403,6 +403,7 @@
   },
   "tray": {
     "toggle": "Show or hide the meter",
+    "lock": "Lock or unlock the meter",
     "settings": "Settings",
     "history": "History",
     "quit": "Quit"

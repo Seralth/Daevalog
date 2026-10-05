@@ -130,7 +130,7 @@ fn pointer_over_lock_button(app: &tauri::AppHandle, lock: &OverlayLock) -> bool 
 }
 
 /// Whether the click-through lock can work here.
-fn overlay_lock_available() -> bool {
+pub(crate) fn overlay_lock_available() -> bool {
     platform::window::input_region_supported() || platform::window::cursor_position().is_some()
 }
 
@@ -178,6 +178,19 @@ fn apply_overlay_lock(app: &tauri::AppHandle, locked: bool) {
             lock.watching.store(false, Ordering::SeqCst);
         });
     }
+}
+
+/// Lock the overlay if it is unlocked and the other way round, and tell the
+/// page so its button and saved setting follow. For the hotkey and the tray.
+pub fn toggle_overlay_lock(app: &tauri::AppHandle) {
+    let locked = app
+        .try_state::<AppState>()
+        .is_some_and(|s| s.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst));
+    if !overlay_lock_available() && !locked {
+        return; // the lock is not offered here
+    }
+    apply_overlay_lock(app, !locked);
+    let _ = app.emit("overlay-lock-changed", !locked);
 }
 
 // ===== TAURI COMMANDS =====
@@ -2416,18 +2429,7 @@ pub fn run() {
                 },
                 {
                     let h = hotkey_handle;
-                    move || {
-                        // Toggle the click-through lock, and tell the page so
-                        // its button and saved setting follow.
-                        let locked = h
-                            .try_state::<AppState>()
-                            .is_some_and(|s| s.overlay_lock.locked.load(std::sync::atomic::Ordering::SeqCst));
-                        if !overlay_lock_available() && !locked {
-                            return; // the lock is not offered here
-                        }
-                        apply_overlay_lock(&h, !locked);
-                        let _ = h.emit("overlay-lock-changed", !locked);
-                    }
+                    move || toggle_overlay_lock(&h)
                 },
             );
 
