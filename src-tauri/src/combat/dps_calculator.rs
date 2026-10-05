@@ -892,7 +892,7 @@ impl DpsCalculator {
             is_train: self.npc_lookup.is_training_dummy(mob_code),
             app_version: crate::entity::fight_record::APP_VERSION.to_string(),
             mob_code,
-            dungeon_id,
+            dungeon_id: fight_dungeon(&self.npc_lookup, mob_code, dungeon_id),
             server_id: self.data_storage.fight_server_id(),
         }
     }
@@ -1338,6 +1338,15 @@ impl ActorExtra {
     }
 }
 
+/// The instance a fight on NPC `mob_code` was in, given the one the fight was
+/// stamped with (`stamped`, 0 for none). The NPC table names the instance of
+/// many bosses, and that wins: it also places a boss fought after a teleport
+/// inside an instance, before the roster names it. Any other target keeps the
+/// stamped id (from taengu/A2Tools-DPS-Meter 19b98ba and c6e08a9).
+fn fight_dungeon(npcs: &NpcLookup, mob_code: i32, stamped: i32) -> i32 {
+    npcs.dungeon_of(mob_code).unwrap_or(stamped)
+}
+
 fn resolve_nickname(uid: i32, nicknames: &HashMap<i32, String>, summon_data: &HashMap<i32, i32>) -> String {
     if let Some(name) = nicknames.get(&uid) {
         return name.clone();
@@ -1503,6 +1512,27 @@ mod tests {
         assert!(calc.fight_finished(&saved[0]));
         assert!(snapshot_at(&mut calc, 125_000).is_empty());
         crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_fight_takes_its_dungeon_from_the_boss_when_the_table_names_it() {
+        let npcs = NpcLookup::new();
+        npcs.load_from_json(r#"{
+            "2310218": {"name": "Divine Auldor", "isBoss": true, "dungeonId": 600011},
+            "2310206": {"name": "Guardian Captain Raur", "isBoss": true, "dungeonId": 600011},
+            "2300475": {"name": "Gargaum", "isBoss": true},
+            "2701090": {"name": "Mutated Bargott", "isBoss": true},
+            "2310219": {"name": "Auldor Sanctum Gatekeeper"}
+        }"#);
+        // After a teleport, before the roster names the instance again.
+        assert_eq!(fight_dungeon(&npcs, 2310218, 0), 600011);
+        // A stale id gives way to the boss's own instance.
+        assert_eq!(fight_dungeon(&npcs, 2310206, 600072), 600011);
+        // A boss the table does not place keeps the stamped id.
+        assert_eq!(fight_dungeon(&npcs, 2300475, 610073), 610073);
+        assert_eq!(fight_dungeon(&npcs, 2701090, 0), 0);
+        // Trash keeps the stamped id.
+        assert_eq!(fight_dungeon(&npcs, 2310219, 600011), 600011);
     }
 
     fn dungeon_of(records: &[FightRecord], id: &str) -> i32 {
