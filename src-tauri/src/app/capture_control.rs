@@ -1,5 +1,7 @@
 //! Capture status and control, for the capture commands.
 
+use crate::platform;
+
 use super::AppState;
 
 pub(crate) fn get_capture_status(state: &AppState) -> serde_json::Value {
@@ -44,4 +46,13 @@ pub(crate) fn suspend_capture(state: &AppState, suspended: bool) {
     // on (a player found it in 2.0.37, issue #6).
     state.capture_suspended.store(suspended, std::sync::atomic::Ordering::SeqCst);
     tracing::info!("Capture {}", if suspended { "suspended" } else { "resumed" });
+}
+
+pub(crate) fn test_auto_hide() -> serde_json::Value {
+    let aion_fg = platform::window_detector::is_aion2_foreground();
+    let aion_title = platform::window_detector::find_aion2_window_title();
+    serde_json::json!({
+        "aion2_foreground": aion_fg,
+        "aion2_title": aion_title,
+    })
 }

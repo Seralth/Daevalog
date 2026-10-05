@@ -46,12 +46,7 @@ pub(crate) fn get_aion2_window_title() -> Option<String> {
 
 #[tauri::command]
 pub(crate) fn test_auto_hide() -> serde_json::Value {
-    let aion_fg = platform::window_detector::is_aion2_foreground();
-    let aion_title = platform::window_detector::find_aion2_window_title();
-    serde_json::json!({
-        "aion2_foreground": aion_fg,
-        "aion2_title": aion_title,
-    })
+    capture_control::test_auto_hide()
 }
 
 #[tauri::command]
