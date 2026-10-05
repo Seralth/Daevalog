@@ -43,7 +43,7 @@ jobs:
       - name: Build dependencies
         run: |
           pacman -Syu --noconfirm --needed git rust nodejs npm pkgconf \
-            webkit2gtk-4.1 gtk3 libayatana-appindicator libpcap libcap hicolor-icon-theme
+            webkit2gtk-4.1 gtk3 libayatana-appindicator gtk-layer-shell libpcap libcap hicolor-icon-theme
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ inputs.ref }}
