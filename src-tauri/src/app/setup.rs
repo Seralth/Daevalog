@@ -58,7 +58,7 @@ pub fn run() {
             // Resolve data directory
             let app_data_dir = app.path().app_data_dir()
                 .unwrap_or_else(|_| std::path::PathBuf::from("."));
-            let _ = std::fs::create_dir_all(&app_data_dir);
+            let _ = platform::files::create_private_dir(&app_data_dir);
 
             // Load resources — try multiple paths (dev vs production)
             let skill_lookup = SkillLookup::new();

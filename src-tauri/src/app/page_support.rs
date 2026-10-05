@@ -15,9 +15,9 @@ pub(crate) fn write_cached_icon(state: &AppState, key: String, data: String) {
         return;
     }
     let cache_dir = state.app_data_dir.join("icon_cache");
-    let _ = std::fs::create_dir_all(&cache_dir);
+    let _ = crate::platform::files::create_private_dir(&cache_dir);
     let path = cache_dir.join(&key);
-    let _ = std::fs::write(&path, &data);
+    let _ = crate::platform::files::write_private(&path, &data);
 }
 
 pub(crate) fn log_from_ui(message: String) {

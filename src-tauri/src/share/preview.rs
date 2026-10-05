@@ -15,6 +15,7 @@ use crate::capture::stream_processor::StreamProcessor;
 use crate::combat::data_storage::DataStorage;
 use crate::entity::fight_record::FightRecord;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
+use crate::platform::files;
 
 /// What the dry run produced, for the UI to show.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -222,7 +223,7 @@ pub fn preview(
 
     let compressed = gzip(&encoded)?;
 
-    std::fs::create_dir_all(out_dir).map_err(|e| e.to_string())?;
+    files::create_private_dir(out_dir).map_err(|e| e.to_string())?;
     // Both: the `.a2es` is what `a2t-inspect` reads, the `.gz` is byte for byte
     // what an upload would put on the wire. Writing only the compressed one
     // would make the artifact harder to check, which is the opposite of why
@@ -230,9 +231,9 @@ pub fn preview(
     let slice_path = out_dir.join(format!("{}.a2es", record.id));
     let compressed_path = out_dir.join(format!("{}.a2es.gz", record.id));
     let envelope_path = out_dir.join(format!("{}.upload.json", record.id));
-    std::fs::write(&slice_path, &encoded).map_err(|e| e.to_string())?;
-    std::fs::write(&compressed_path, &compressed).map_err(|e| e.to_string())?;
-    std::fs::write(&envelope_path, json.as_bytes()).map_err(|e| e.to_string())?;
+    files::write_private(&slice_path, &encoded).map_err(|e| e.to_string())?;
+    files::write_private(&compressed_path, &compressed).map_err(|e| e.to_string())?;
+    files::write_private(&envelope_path, json.as_bytes()).map_err(|e| e.to_string())?;
 
     Ok(PreviewResult {
         out_dir: out_dir.display().to_string(),

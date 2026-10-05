@@ -52,6 +52,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 
 ### Privacy
 - The sign-in, upload and webview paths are hardened.
+- The data folder and the files the meter writes there are readable by your user only.
 - An upload is always your own choice. No upload option is turned on for you.
 - Discord activity is off by default.
 - Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).

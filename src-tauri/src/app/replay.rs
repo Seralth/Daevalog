@@ -1,8 +1,13 @@
 //! Replaying a packet log file into the meter.
 
-use super::AppState;
+use super::{data_folder, AppState};
 
 pub(crate) async fn replay_file(state: &AppState, file_path: String) -> Result<String, String> {
+    // Only the meter's own packet logs, links resolved.
+    let Some(file_path) = data_folder::inside(std::path::Path::new(&file_path), &state.app_data_dir) else {
+        tracing::warn!("Not replaying a file outside the meter's data folder");
+        return Err("Only files in the meter's data folder can be replayed".to_string());
+    };
     // Keep the live fights, then reset existing data before replay
     {
         let mut calc = state.dps_calculator.lock();

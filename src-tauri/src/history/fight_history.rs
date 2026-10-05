@@ -52,7 +52,7 @@ pub struct FightHistoryManager {
 impl FightHistoryManager {
     pub fn new(app_data_dir: PathBuf) -> Self {
         let history_dir = app_data_dir.join("history");
-        let _ = std::fs::create_dir_all(&history_dir);
+        let _ = crate::platform::files::create_private_dir(&history_dir);
         Self {
             history_dir,
             cache: Mutex::new(None),
@@ -96,7 +96,7 @@ impl FightHistoryManager {
         static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let temporary = self.history_dir.join(format!(
             ".{}.{}.tmp", record.id, NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
-        if let Err(e) = std::fs::write(&temporary, json).and_then(|_| std::fs::rename(&temporary, &file_path)) {
+        if let Err(e) = crate::platform::files::write_private(&temporary, json).and_then(|_| std::fs::rename(&temporary, &file_path)) {
             let _ = std::fs::remove_file(&temporary);
             return Err(format!("Write error: {}", e));
         }

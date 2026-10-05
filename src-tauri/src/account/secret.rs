@@ -44,7 +44,7 @@ pub fn save(app_data_dir: &Path, token: &str) -> Result<(), String> {
     })?;
     let path = token_path(app_data_dir);
     let previous = std::fs::read(&path).ok();
-    match std::fs::write(&path, &sealed) {
+    match crate::platform::files::write_private(&path, &sealed) {
         Ok(()) => {
             // Where the OS keeps the secret itself (a Linux keyring), the old
             // one would otherwise stay there after the file stops naming it.

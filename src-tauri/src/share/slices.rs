@@ -59,7 +59,7 @@ pub(super) fn read_meta(app_data_dir: &Path, id: &str) -> SliceMeta {
 
 pub(super) fn write_meta(app_data_dir: &Path, id: &str, meta: &SliceMeta) {
     if let Ok(json) = serde_json::to_string(meta) {
-        let _ = std::fs::write(meta_path(app_data_dir, id), json);
+        let _ = crate::platform::files::write_private(meta_path(app_data_dir, id), json);
     }
 }
 
@@ -107,8 +107,8 @@ pub fn write_slice(
     let compressed = gzip(&evidence_slice::encode(&slice))?;
 
     let dir = slices_dir(app_data_dir);
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    std::fs::write(slice_path(app_data_dir, id), &compressed).map_err(|e| e.to_string())?;
+    crate::platform::files::create_private_dir(&dir).map_err(|e| e.to_string())?;
+    crate::platform::files::write_private(slice_path(app_data_dir, id), &compressed).map_err(|e| e.to_string())?;
     let mut meta = read_meta(app_data_dir, id);
     meta.uploader_actor_id = uploader_actor_id;
     write_meta(app_data_dir, id, &meta);

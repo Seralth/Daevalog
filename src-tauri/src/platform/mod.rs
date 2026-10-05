@@ -32,6 +32,7 @@ mod os;
 #[path = "unsupported/mod.rs"]
 mod os;
 
+pub mod files;
 pub mod hotkeys;
 pub mod procfs;
 pub mod screenshot;

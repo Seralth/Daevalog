@@ -119,7 +119,7 @@ pub fn set_debug_enabled(enabled: bool, log_dir: &std::path::Path) {
     let prev = DEBUG_ENABLED.swap(enabled, Ordering::SeqCst);
     if enabled && !prev {
         let path = log_dir.join("debug.log");
-        if let Ok(file) = std::fs::OpenOptions::new()
+        if let Ok(file) = crate::platform::files::private_options()
             .create(true).append(true).open(&path)
         {
             {
@@ -180,7 +180,7 @@ fn open_packet_file(log_dir: &std::path::Path) -> Option<(std::io::BufWriter<std
         path = log_dir.join(format!("packets_{}_{}.txt", stamp, nth));
         nth += 1;
     }
-    let file = std::fs::OpenOptions::new()
+    let file = crate::platform::files::private_options()
         .create(true)
         .write(true)
         .truncate(true)

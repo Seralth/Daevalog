@@ -142,7 +142,7 @@ pub async fn upload_detailed(
         let mut meta = meta;
         meta.url = Some(result.url.clone());
         meta.visibility = Some(result.visibility.clone());
-        let _ = std::fs::create_dir_all(slices_dir(app_data_dir));
+        let _ = crate::platform::files::create_private_dir(&slices_dir(app_data_dir));
         write_meta(app_data_dir, &record.id, &meta);
         return Ok(result);
     }

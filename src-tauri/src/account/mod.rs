@@ -41,10 +41,22 @@ const PRODUCTION_URL: &str = "https://a2tools.app";
 /// will not.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
 
-/// Where the account lives. `A2TOOLS_API` points the meter at another server
-/// without a rebuild.
+/// Where the account lives. In a debug build, `A2TOOLS_API` points the meter
+/// at another server without a rebuild.
 pub fn base_url() -> String {
-    api_base(std::env::var("A2TOOLS_API").ok().as_deref())
+    let value = std::env::var("A2TOOLS_API").ok();
+    api_base(dev_override(value.as_deref(), cfg!(debug_assertions)))
+}
+
+/// The override is for development: a release build ignores it, so a stray
+/// environment variable cannot send the token and uploads elsewhere.
+fn dev_override(value: Option<&str>, debug_build: bool) -> Option<&str> {
+    if debug_build || value.is_none() {
+        return value;
+    }
+    static WARNED: std::sync::Once = std::sync::Once::new();
+    WARNED.call_once(|| tracing::warn!("A2TOOLS_API is ignored in a release build; using {PRODUCTION_URL}"));
+    None
 }
 
 /// The token goes to this server in a header, so an override must be https.
@@ -390,6 +402,14 @@ mod tests {
         assert_eq!(api_base(Some("http://localhost:8787")), "https://a2tools.app");
         assert_eq!(api_base(Some("ftp://a2tools.app")), "https://a2tools.app");
         assert_eq!(api_base(Some("a2tools.app")), "https://a2tools.app");
+    }
+
+    #[test]
+    fn the_api_override_is_for_debug_builds_only() {
+        assert_eq!(dev_override(Some("https://staging.example.org"), true), Some("https://staging.example.org"));
+        assert_eq!(dev_override(Some("https://staging.example.org"), false), None);
+        assert_eq!(dev_override(None, false), None);
+        assert_eq!(api_base(dev_override(Some("https://staging.example.org"), false)), "https://a2tools.app");
     }
 
     #[test]

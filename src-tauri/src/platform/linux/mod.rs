@@ -10,6 +10,7 @@
 
 pub mod admin;
 pub mod clock;
+pub mod files;
 mod dialog;
 pub mod hotkeys;
 pub mod pcap;
