@@ -45,7 +45,7 @@ Nothing is transmitted when you fight, log in, or close the app.
 The meter reads game network traffic with Npcap in order to compute damage. Two
 different things get written to disk, and they are **not** equally sensitive.
 
-### Fight history — `%APPDATA%\com.daevalog.dps-meter\history\*.json`
+### Fight history — `~/.local/share/com.daevalog.dps-meter/history/*.json`
 
 One JSON file per boss fight, saved automatically. It holds damage, skills,
 timings, and per-player summaries.
@@ -63,7 +63,7 @@ keeps the game traffic it has just parsed in memory for about an hour
 draw the meter. **It is never written to disk** and is gone when the meter
 closes.
 
-### Evidence Slices — `%APPDATA%\com.daevalog.dps-meter\slices\`
+### Evidence Slices — `~/.local/share/com.daevalog.dps-meter/slices/`
 
 When a boss fight is saved, the meter cuts that fight's Evidence Slice from
 memory and saves it beside the history: `<fight>.a2es.gz`, typically tens of
@@ -73,7 +73,7 @@ capture: it holds only the packet types the damage parser reads, with every
 character name replaced by an opaque token. Deleting a fight deletes its slice,
 and slices for fights that have aged out of history are removed.
 
-### Packet capture — `%APPDATA%\com.daevalog.dps-meter\packets_*.txt`
+### Packet capture — `~/.local/share/com.daevalog.dps-meter/packets_*.txt`
 
 **Off by default.** Written only while *Settings → Diagnostics → Enable packet
 logging* is on. This is a debugging tool, and you should understand what it
@@ -101,8 +101,9 @@ Run that test on your own capture and read the output before you share one with
 anybody, including us.
 
 These files are **never uploaded**, automatically or otherwise: an upload sends a
-slice, not a capture. They grow for as long as the setting is on. Delete them when you are done; the
-meter does not need them.
+slice, not a capture. While the setting is on, the meter keeps the newest 2 GB
+of captures and deletes older ones. Delete them when you are done; the meter does
+not need them.
 
 ### The other capture tool
 
@@ -219,7 +220,7 @@ Two things exist so you do not have to take the section above on trust.
 
 **A dry run.** In Battle History, the eye icon on any fight writes the exact two
 files an upload would send — `<fight>.a2es` and `<fight>.upload.json` — into
-`%APPDATA%\com.daevalog.dps-meter\share-preview\`, and opens the folder. It makes
+`~/.local/share/com.daevalog.dps-meter/share-preview/`, and opens the folder. It makes
 no network call. It builds from a packet capture covering that fight, so packet
 logging has to have been on at the time; the slice the meter saved on its own,
 in `slices\`, is the same artifact and can be read the same way after

@@ -21,12 +21,42 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 
 ## Changes from A2Tools DPS Meter
 
-- Packets are framed by the real length rule: payload plus 4.
-- Spirits are linked to their owners by the game's link records and the spawn caster field. Owners are not guessed by power scalar or class.
-- Every fight segment is saved before any reset. Only fights that the player or the party fought are saved.
-- The backend alone decides which player is the local player.
-- The sign-in, upload and webview paths are hardened.
+### Meter
+- **Encounter mode (ENC).** An encounter ends after a set time without combat by you or your party: 15 seconds by default, 5 to 300 seconds in Settings. A boss you hit keeps the encounter open while it lives. You choose what each row shows: ENCDPS, DPS over your own active time, damage share, total, crit rate, the last 10, 30 or 60 seconds, biggest hit and hits.
+- **The game's own record.** The meter reads the records of the game's Damage Analyzer (Ctrl+X in the game) and matches them to saved fights. History and Details show the meter's numbers, the game's numbers, or both side by side, and mark every difference.
+- **Skill rows as in the game.** Skills are grouped the way the game's Damage Analyzer groups them. Additional hits are read from the damage record, the spirits' hits included.
+- **Hit results.** Details can show Shield Block, Parry, Perfect Block, Endurance, Regeneration, Miss and Resist for each skill. Hit types carry the game's names.
+- **Skill details on hover** in every mode, including the modes that show several targets.
+- **Every UI string in all 10 languages.**
+
+### Linux desktop
+- **Tray icon,** with "Start in the tray" and "Keep out of the taskbar". The tray menu shows, hides, locks and unlocks the meter. Every control also stays in the meter's own window, so the meter works on a desktop without a tray.
+- **Click-through lock** on X11 and on native Wayland. A locked meter always shows its lock button.
+- **Lock hotkey** through the desktop's global shortcuts (the GlobalShortcuts portal), on desktops that offer them.
+- **Wayland layer overlay** (optional) on KDE Plasma, Hyprland and Sway: the meter stays above a fullscreen game.
 - Windows behave correctly under KDE Plasma (KWin), and the overlay draws on WebKitGTK 2.54.
+
+### Parsing
+- Packets are framed by the real length rule: payload plus 4.
+- Each connection to the game server is read on its own. A TLS connection is left out whole.
+- A fight keeps the dungeon it was fought in. A map load into the open world ends the dungeon.
+- Spirits are linked to their owners by the game's link records and the spawn caster field. Owners are not guessed by power scalar or class.
+- Fight slices keep skill ids that look like short text. They are no longer blanked out as names.
+
+### Fights and identity
+- The backend alone decides which player is the local player, from the game's own record of you.
+- Every fight segment is saved before any reset. Only fights that you or your party fought are saved.
+- A fight cleared by a zone change keeps the ids, names and spirit links it had.
+
+### Privacy
+- The sign-in, upload and webview paths are hardened.
+- An upload is always your own choice. No upload option is turned on for you.
+- Discord activity is off by default.
+
+### Left out
+- Guessing who an unnamed actor is from its class.
+- The one-time popups that offer Discord activity, and sign-in with automatic upload.
+- Automatic updates.
 
 Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull requests.
 
