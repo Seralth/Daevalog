@@ -21,6 +21,18 @@ Your settings, saved fights and sign-in are kept in `~/.local/share/com.daevalog
 
 [docs/linux.md](docs/linux.md) is the full Linux guide: desktops, display settings, logs and troubleshooting.
 
+### Supported systems
+
+- Arch and Arch-based distributions (CachyOS, EndeavourOS, Manjaro): Arch package.
+- Ubuntu-based distributions (Linux Mint, Pop!_OS) and Debian: .deb package.
+- Fedora, Bazzite and openSUSE Tumbleweed: .rpm package.
+- NixOS: a flake is planned.
+- SteamOS (Steam Deck): through distrobox, as the Linux guide describes.
+
+Other distributions: build from source. Packages for them are made on request.
+
+Flatpak and AppImage are not supported: neither can give the capture helper the permission it needs. Requests for them will be closed.
+
 ## Status
 
 - **Linux first.** Daevalog is developed and tested on Linux, with AION 2 running under Proton. The Windows code is still in the source, but Daevalog is not built, tested or supported on Windows.

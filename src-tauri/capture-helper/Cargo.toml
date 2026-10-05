@@ -1,6 +1,6 @@
 [package]
 name = "daevalog-capture"
-version = "2.0.44"
+version = "1.0.0"
 description = "Daevalog DPS Meter - packet capture, and the helper process that holds the capture permission on Linux"
 authors = ["taengu"]
 edition = "2024"
