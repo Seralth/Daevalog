@@ -8,7 +8,7 @@
 pub const LIBRARIES: &[&str] = &["libpcap.so.1", "libpcap.so.0.8", "libpcap.so"];
 
 pub const MISSING_HELP: &str = "Install libpcap (e.g. `sudo apt install libpcap0.8`), then let the meter \
-capture without root: `sudo setcap cap_net_raw,cap_net_admin=eip <path to the meter>`";
+capture without root: `sudo setcap cap_net_raw=ep <path to the meter>`";
 
 pub fn library_available() -> bool {
     // SAFETY: loading libpcap runs no initialisation we depend on not running.

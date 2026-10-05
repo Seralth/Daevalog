@@ -98,7 +98,7 @@ jobs:
             find "./usr/lib/A2Tools DPS Meter" -type d | sed 's|^\.||; s|.*|%dir "&"|'
             find . \( -type f -o -type l \) | sed 's|^\.||' | while IFS= read -r f; do
               if [ "$f" = /usr/bin/a2tools-dps-meter ]; then
-                printf '%%caps(cap_net_raw,cap_net_admin=eip) "%s"\n' "$f"
+                printf '%%caps(cap_net_raw=ep) "%s"\n' "$f"
               else
                 printf '"%s"\n' "$f"
               fi
@@ -279,6 +279,6 @@ jobs:
       - name: Captures host traffic
         run: |
           distrobox enter --root a2tools -- sudo pacman -S --noconfirm tcpdump
-          distrobox enter --root a2tools -- sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/tcpdump
+          distrobox enter --root a2tools -- sudo setcap cap_net_raw=ep /usr/bin/tcpdump
           ( sleep 3; for i in 1 2 3 4 5; do curl -s -o /dev/null https://cdn.a2tools.app/latest-v2.json; sleep 1; done ) &
           distrobox enter --root a2tools -- timeout 20 tcpdump -i any -c 5 -n 'tcp port 443'

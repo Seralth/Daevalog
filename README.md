@@ -52,6 +52,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - The sign-in, upload and webview paths are hardened.
 - An upload is always your own choice. No upload option is turned on for you.
 - Discord activity is off by default.
+- Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).
 
 ### Left out
 - Guessing who an unnamed actor is from its class.
@@ -63,7 +64,7 @@ Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull
 ## Build from source
 
 - Arch-based systems: `cd packaging/arch && makepkg -si`.
-- Other distributions: follow the steps in `build()` in `packaging/arch/PKGBUILD`. Packet capture needs `cap_net_raw` and `cap_net_admin` on the binary. The Arch package sets both.
+- Other distributions: follow the steps in `build()` in `packaging/arch/PKGBUILD`. Packet capture needs `cap_net_raw` on the binary, and nothing else. The Arch package sets it.
 
 The package is `daevalog-dps-meter`. It replaces an installed `a2tools-dps-meter` package. Settings, saved fights and the sign-in live in `~/.local/share/com.daevalog.dps-meter`. On the first start, the meter moves the folder of an A2Tools DPS Meter install (`com.a2tools.dps-meter`) to that place.
 

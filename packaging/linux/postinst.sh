@@ -8,11 +8,11 @@
 
 BIN=/usr/bin/a2tools-dps-meter
 
-if setcap cap_net_raw,cap_net_admin=eip "$BIN" 2>/dev/null; then
+if setcap cap_net_raw=ep "$BIN" 2>/dev/null; then
   echo "A2Tools DPS Meter may now capture packets."
 else
   echo "Could not grant packet-capture permission. Run:"
-  echo "    sudo setcap cap_net_raw,cap_net_admin=eip $BIN"
+  echo "    sudo setcap cap_net_raw=ep $BIN"
 fi
 
 # Never fail the install over it: the meter runs, and says it cannot capture.
