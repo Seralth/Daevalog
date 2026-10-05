@@ -33,13 +33,13 @@ static RING: Mutex<Ring> = Mutex::new(Ring { packets: VecDeque::new(), bytes: 0 
 
 /// Remember one captured segment. Called for exactly the segments the packet
 /// logger would have been given, with the clock the parser stamps hits with.
-pub fn record(src_port: u16, data: &[u8]) {
+pub fn record(stream: String, data: &[u8]) {
     let now = crate::clock::now_ms();
     let mut ring = RING.lock();
     ring.bytes += data.len();
     ring.packets.push_back(CapturedPacket {
         captured_at_ms: now,
-        stream: format!("Client:{src_port}"),
+        stream,
         bytes: data.to_vec(),
     });
     while let Some(front) = ring.packets.front() {
@@ -71,14 +71,14 @@ mod tests {
     fn keeps_recent_segments_and_forgets_old_ones() {
         clear();
         crate::clock::set_override(Some(1_000_000));
-        record(7777, &[1, 2, 3]);
+        record("Client:50000:7777".into(), &[1, 2, 3]);
         crate::clock::set_override(Some(1_000_000 + KEEP_MS + 1));
-        record(7777, &[4, 5]);
+        record("Client:50000:7777".into(), &[4, 5]);
         let held = snapshot();
         crate::clock::set_override(None);
         assert_eq!(held.len(), 1);
         assert_eq!(held[0].bytes, vec![4, 5]);
-        assert_eq!(held[0].stream, "Client:7777");
+        assert_eq!(held[0].stream, "Client:50000:7777");
         clear();
     }
 }

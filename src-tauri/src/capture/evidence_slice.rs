@@ -258,7 +258,8 @@ pub const ALLOWED_OPCODES: &[(&[u8; 2], &str)] = &[
 #[derive(Debug, Clone)]
 pub struct CapturedPacket {
     pub captured_at_ms: i64,
-    /// The TCP stream this arrived on — the packet logger writes `Client:<port>`.
+    /// The TCP stream this arrived on — the packet logger writes
+    /// `Client:<client port>:<server port>` (older logs `Client:<server port>`).
     ///
     /// Required, and it is not bookkeeping: a captured buffer is a TCP segment,
     /// not a packet. Packets straddle segments, so framing a segment on its own

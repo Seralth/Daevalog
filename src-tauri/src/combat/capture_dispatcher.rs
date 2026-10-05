@@ -155,6 +155,7 @@ impl CaptureDispatcher {
         // for the no-combat-needed signature lock (see SIGNATURE_LOCK_THRESHOLD).
         // Per-flow signature-rate tracker: (count_in_window, last_hit_ms).
         let mut sig_hits: HashMap<(u16, u16), (u32, i64)> = HashMap::new();
+        let mut connections = ConnectionFilter::default();
         let mut last_window_check_ms: i64 = 0;
         let mut is_aion_running = false;
         let mut window_logged: Option<bool> = None;
@@ -267,6 +268,10 @@ impl CaptureDispatcher {
                 }
             }
 
+            if !connections.admit(&cap) {
+                continue;
+            }
+
             // Pre-lock filters. Once a port is locked these checks are skipped
             // entirely (the port/direction filters above already gate traffic),
             // keeping the hot path cheap during heavy combat.
@@ -284,7 +289,10 @@ impl CaptureDispatcher {
             crate::logging::logger::log_packet(&cap);
             // And keep it in memory for a while, so a boss fight can be shared
             // without packet logging having been on. See `share::ring`.
-            crate::share::ring::record(cap.src_port, &cap.data);
+            crate::share::ring::record(
+                crate::capture::captured_payload::stream_key(cap.src_port, cap.dst_port),
+                &cap.data,
+            );
 
             // Get or create assembler
             let a = cap.src_port.min(cap.dst_port);
@@ -353,6 +361,37 @@ fn looks_like_tls(data: &[u8]) -> bool {
     TLS_CONTENT_TYPES.contains(&content_type) && major == 0x03 && TLS_VERSIONS.contains(&minor)
 }
 
+/// The game server also talks TLS from its port, on a second connection. A
+/// connection whose first segment is a TLS record is left out whole: of the
+/// log, the slices and the parser. Decided once per connection, so no byte
+/// inside the game's stream is ever skipped.
+#[derive(Default)]
+struct ConnectionFilter {
+    seen: std::collections::HashSet<(u16, u16)>,
+    tls: std::collections::HashSet<(u16, u16)>,
+}
+
+impl ConnectionFilter {
+    fn admit(&mut self, cap: &CapturedPayload) -> bool {
+        let connection = (cap.src_port.min(cap.dst_port), cap.src_port.max(cap.dst_port));
+        if self.seen.insert(connection) && is_tls_record(&cap.data) {
+            tracing::info!("Connection {} -> {} carries TLS: not the game, left out", cap.src_port, cap.dst_port);
+            self.tls.insert(connection);
+        }
+        !self.tls.contains(&connection)
+    }
+}
+
+/// A whole TLS record header: content type 20-23, version 3.x, and a length
+/// a record can have (at most 2^14 + 256 bytes).
+fn is_tls_record(data: &[u8]) -> bool {
+    if data.len() < 5 || !looks_like_tls(data) {
+        return false;
+    }
+    let len = u16::from_be_bytes([data[3], data[4]]) as usize;
+    (1..=16_384 + 256).contains(&len)
+}
+
 fn contains_bytes(data: &[u8], needle: &[u8]) -> bool {
     needle.len() <= data.len() && data.windows(needle.len()).any(|w| w == needle)
 }
@@ -371,6 +410,44 @@ fn device_matches(locked: &str, packet_device: Option<&str>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_tls_record_header_is_told_from_game_bytes() {
+        // TLS application data, 1402 bytes, as a second connection sends it.
+        assert!(is_tls_record(&[0x17, 0x03, 0x03, 0x05, 0x7a, 0x88]));
+        // A server hello.
+        assert!(is_tls_record(&[0x16, 0x03, 0x03, 0x00, 0x5d]));
+        // Game frames: a map load and a damage record.
+        assert!(!is_tls_record(&[0x34, 0x21, 0x36, 0x01, 0x00, 0x00]));
+        assert!(!is_tls_record(&[0x24, 0x04, 0x38, 0xfe, 0x9e, 0x02]));
+        // Too short, or a length no record has.
+        assert!(!is_tls_record(&[0x17, 0x03, 0x03, 0x05]));
+        assert!(!is_tls_record(&[0x17, 0x03, 0x03, 0xff, 0xff]));
+    }
+
+    #[test]
+    fn each_connection_has_its_own_stream_name() {
+        use crate::capture::captured_payload::stream_key;
+        assert_eq!(stream_key(13328, 50349), "Client:50349:13328");
+        assert_ne!(stream_key(13328, 50349), stream_key(13328, 50350));
+        // Readers take the server port from after the last ':'.
+        assert_eq!(stream_key(13328, 50349).rsplit(':').next(), Some("13328"));
+    }
+
+    #[test]
+    fn a_tls_connection_from_the_game_port_is_left_out_whole() {
+        let seg = |client: u16, data: &[u8]| CapturedPayload { src_port: 13328, dst_port: client, ..cap("eth0", data) };
+        let mut filter = ConnectionFilter::default();
+        // The game's connection, then a TLS one from the same server port, interleaved.
+        assert!(filter.admit(&seg(50349, &[0x24, 0x04, 0x38, 0xfe, 0x9e, 0x02])));
+        assert!(!filter.admit(&seg(50350, &[0x17, 0x03, 0x03, 0x05, 0x7a, 0x88, 0x71])));
+        assert!(filter.admit(&seg(50349, &[0x34, 0x21, 0x36, 0x01])));
+        // Later TLS segments, whatever they start with, stay out.
+        assert!(!filter.admit(&seg(50350, &[0x88, 0x71, 0x04, 0x38])));
+        // A game segment that happens to start like a TLS header later on is
+        // not judged again: its connection is already known as the game's.
+        assert!(filter.admit(&seg(50349, &[0x17, 0x03, 0x03, 0x00, 0x10])));
+    }
 
     fn cap(device: &str, data: &[u8]) -> CapturedPayload {
         CapturedPayload {

@@ -273,7 +273,7 @@ pub fn log_packet(cap: &CapturedPayload) {
     let mut guard = PACKET_LOGGER.lock();
     if let Some(ref mut logger) = *guard {
         let ts = chrono::Local::now().format("%+");
-        let key = format!("Client:{}", cap.src_port);
+        let key = crate::capture::captured_payload::stream_key(cap.src_port, cap.dst_port);
         let hex: String = cap.data.iter().map(|b| format!("{:02X}", b)).collect();
         let line = format!("{}|{}|{}\n", ts, key, hex);
         if logger.writer.write_all(line.as_bytes()).is_ok() {
