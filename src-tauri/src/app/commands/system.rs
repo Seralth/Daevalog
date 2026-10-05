@@ -1,7 +1,5 @@
 //! Quitting, links, fetching for the page, its log lines and the icon cache.
 
-use std::time::Duration;
-
 use crate::platform;
 
 use crate::app::tray_actions::save_fights_before_exit;
@@ -30,16 +28,7 @@ pub(crate) fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, 
 
 #[tauri::command]
 pub(crate) async fn fetch_url(state: tauri::State<'_, AppState>, url: String) -> Result<String, String> {
-    state
-        .http
-        .get(&url)
-        .timeout(Duration::from_secs(15))
-        .send()
-        .await
-        .map_err(|e| e.to_string())?
-        .text()
-        .await
-        .map_err(|e| e.to_string())
+    page_support::fetch_url(&state, url).await
 }
 
 #[tauri::command]

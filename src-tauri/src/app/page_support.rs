@@ -1,5 +1,7 @@
 //! What the pages ask the backend for: the icon cache, fetched URLs and log lines.
 
+use std::time::Duration;
+
 use super::AppState;
 
 pub(crate) fn read_cached_icon(state: &AppState, key: String) -> Option<String> {
@@ -26,4 +28,17 @@ pub(crate) fn log_from_ui(message: String) {
     // each one short.
     let message: String = message.chars().take(300).collect();
     tracing::warn!("UI: {message}");
+}
+
+pub(crate) async fn fetch_url(state: &AppState, url: String) -> Result<String, String> {
+    state
+        .http
+        .get(&url)
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())
 }
