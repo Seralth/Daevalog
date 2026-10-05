@@ -1,6 +1,7 @@
 // The game's own Damage Analyzer numbers (Ctrl+X in game) beside the meter's,
 // in Details for a saved fight. The backend matches records to fights and
-// replays the fight's packets over the record's window (game_record_details).
+// replays the fight's packets over the record's window (game_record_details);
+// details.js draws the numbers in its standard skill table (setGameView).
 const createGameRecordUI = () => {
   const panel = document.querySelector(".detailsPanel");
   const section = panel?.querySelector(".gameRecordSection");
@@ -15,8 +16,8 @@ const createGameRecordUI = () => {
   const onlyDifferEl = section.querySelector(".gameRecordOnlyDiffer input");
   const onlyDifferLabel = section.querySelector(".gameRecordOnlyDiffer");
   const coverageEl = section.querySelector(".gameRecordCoverage");
-  const tableEl = section.querySelector(".gameRecordTable");
   const copyBtn = section.querySelector(".gameRecordCopy");
+  const footEl = section.querySelector(".gameRecordFoot");
   const bodyEls = [...section.querySelectorAll(".gameRecordBody")];
 
   const t = (key, fallback) => window.i18n?.t?.(key, fallback) ?? fallback;
@@ -30,16 +31,20 @@ const createGameRecordUI = () => {
     return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
   };
 
-  // Damage, then the counts in the order the backend sends them.
-  const COLUMNS = [
-    ["hits", "Hits"], ["crit", "Crit"], ["perfect", "Perfect"], ["double", "Double"],
-    ["front", "Front"], ["back", "Back"], ["addhit", "Add. hits"],
-  ];
-
   let records = [];
   let current = null;
+  let fight = null;
+  let api = null;
   let view = "both";
   let seq = 0;
+
+  // The player the record is about, and their class for icons and colours.
+  const player = () => {
+    const actors = Array.isArray(fight?.actors) ? fight.actors : [];
+    const id = Number(current?.actorId) || Number(actors[0]?.actorId) || 0;
+    const actor = actors.find((a) => Number(a.actorId) === id);
+    return { actorId: id, job: actor?.job || "" };
+  };
 
   const syncView = () => {
     const compared = !!current?.compared;
@@ -50,8 +55,6 @@ const createGameRecordUI = () => {
       b.setAttribute("aria-pressed", v === view ? "true" : "false");
       b.disabled = v === "both" && !compared;
     });
-    // Meter: the usual skill list. Game record or Both: the record's table.
-    panel.classList.toggle("showGameRecord", !!current && view !== "meter");
     bodyEls.forEach((el) => { el.hidden = view === "meter"; });
   };
 
@@ -61,6 +64,7 @@ const createGameRecordUI = () => {
     meterTotalBox.hidden = !c.compared;
     meterTotalEl.textContent = num(c.meterTotal);
     onlyDifferLabel.hidden = !c.compared || view !== "both";
+    footEl.classList.toggle("isHiddenForRecord", !c.compared);
     verdictEl.classList.remove("isMatch", "isDiffer");
     if (!c.compared) {
       verdictEl.textContent = t("gameRecord.noComparison", "No packets saved for this fight, so only the game's numbers are shown.");
@@ -87,68 +91,22 @@ const createGameRecordUI = () => {
     coverageEl.textContent = parts.join(" ");
   };
 
-  const cell = (value, gameValue, showTag) => {
-    const el = document.createElement("span");
-    el.className = "gameRecordNum";
-    el.textContent = num(value);
-    if (showTag && value !== gameValue) {
-      el.classList.add("isDiffer");
-      const tag = document.createElement("span");
-      tag.className = "gameRecordTag";
-      tag.textContent = f("gameRecord.gameTag", { n: num(gameValue) }, "game {n}");
-      el.appendChild(tag);
-    }
-    return el;
-  };
-
+  // Hand the numbers to the standard table, or give it back to the meter.
   const table = () => {
-    const c = current;
-    const both = view === "both" && c.compared;
-    const side = (r) => (both ? r.meter : r.game);
-    const total = c.rows.reduce((s, r) => s + side(r).damage, 0) || 1;
-    const onlyDiffer = both && onlyDifferEl.checked;
-    const rows = c.rows.filter((r) => (both || r.game.damage > 0 || r.game.counts.some(Boolean)) && (!onlyDiffer || !r.same));
-
-    tableEl.innerHTML = "";
-    const head = document.createElement("div");
-    head.className = "gameRecordRow gameRecordHead";
-    const headCells = [
-      t("gameRecord.col.skill", "Skill"), t("gameRecord.col.damage", "Damage"), t("gameRecord.col.share", "Share"),
-      ...COLUMNS.map(([k, label]) => t(`gameRecord.col.${k}`, label)),
-    ];
-    headCells.forEach((label, i) => {
-      const el = document.createElement("span");
-      if (i === 0) el.className = "gameRecordName";
-      el.textContent = label;
-      head.appendChild(el);
-    });
-    tableEl.appendChild(head);
-
-    rows.forEach((r) => {
-      const row = document.createElement("div");
-      row.className = "gameRecordRow";
-      if (both && !r.same) row.classList.add("isDiffer");
-      const name = document.createElement("span");
-      name.className = "gameRecordName";
-      name.textContent = c.names?.[r.skillId] || `#${r.skillId}`;
-      row.appendChild(name);
-      row.appendChild(cell(side(r).damage, r.game.damage, both));
-      const share = document.createElement("span");
-      share.className = "gameRecordShare";
-      share.textContent = `${((side(r).damage / total) * 100).toFixed(1)}%`;
-      row.appendChild(share);
-      COLUMNS.forEach((_, i) => row.appendChild(cell(side(r).counts[i], r.game.counts[i], both)));
-      tableEl.appendChild(row);
-    });
-
-    const hidden = c.rows.length - rows.length;
-    if (onlyDiffer && hidden > 0) {
-      const note = document.createElement("div");
-      note.className = "gameRecordMore";
-      note.textContent = f("gameRecord.othersMatch", { n: hidden }, "{n} other skills match the game on every number.");
-      tableEl.appendChild(note);
+    if (!api?.setGameView) return;
+    if (!current || view === "meter") {
+      api.setGameView(null);
+      return;
     }
-    copyBtn.hidden = !c.compared;
+    const both = view === "both" && current.compared;
+    api.setGameView({
+      mode: both ? "both" : "game",
+      rows: current.rows,
+      names: current.names,
+      gameTotal: current.gameTotal,
+      onlyDiffer: both && onlyDifferEl.checked,
+      ...player(),
+    });
   };
 
   const render = () => {
@@ -175,14 +133,16 @@ const createGameRecordUI = () => {
     records = [];
     current = null;
     section.hidden = true;
-    panel.classList.remove("showGameRecord");
+    api?.setGameView?.(null);
+    api = null;
   };
 
   // A saved fight opened in Details: show its game records, if it has any.
-  const show = async (fight) => {
+  // `detailsApi.setGameView` draws them in the standard table.
+  const show = async (record, detailsApi) => {
     hide();
     const mine = seq;
-    const id = fight?.id;
+    const id = record?.id;
     if (!id) return;
     let list = [];
     try {
@@ -191,6 +151,8 @@ const createGameRecordUI = () => {
       list = [];
     }
     if (mine !== seq || !Array.isArray(list) || list.length === 0) return;
+    fight = record;
+    api = detailsApi || null;
     records = list;
     current = records[records.length - 1];
     fillPick();

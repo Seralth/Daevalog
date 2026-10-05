@@ -337,6 +337,7 @@ impl Checker {
                 let names: BTreeMap<i32, String> =
                     c.rows.iter().map(|r| (r.skill_id, self.skills.get_skill_name(r.skill_id))).collect();
                 RecordView {
+                    actor_id: crate::share::slice_uploader(&self.app_data_dir, fight_id),
                     covered_ms: (c.end_ms.min(span.1) - c.start_ms.max(span.0)).max(0),
                     other_fights: c.fights.len() - 1,
                     report: report(fight, &c, &names, self.zone),
@@ -364,6 +365,8 @@ pub struct FightStatus {
 pub struct RecordView {
     #[serde(flatten)]
     pub check: RecordCheck,
+    /// The player in this fight, as the meter saved it with the slice.
+    pub actor_id: Option<i32>,
     /// How much of this fight the record's window covers.
     pub covered_ms: i64,
     /// Other saved fights the record covers too.

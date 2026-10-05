@@ -638,6 +638,11 @@ pub fn read_slice(app_data_dir: &Path, id: &str) -> Option<(Vec<u8>, Option<i32>
     Some((out, read_meta(app_data_dir, id).uploader_actor_id))
 }
 
+/// The player's actor id in a fight's kept slice.
+pub fn slice_uploader(app_data_dir: &Path, id: &str) -> Option<i32> {
+    read_meta(app_data_dir, id).uploader_actor_id
+}
+
 /// The size and time of a fight's kept slice, which change while it is written.
 pub fn slice_stamp(app_data_dir: &Path, id: &str) -> Option<(u64, std::time::SystemTime)> {
     let meta = std::fs::metadata(slice_path(app_data_dir, id)).ok()?;
