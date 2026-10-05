@@ -344,7 +344,9 @@
       "sent": "已发送到 a2tools.app。你的反馈代码是 {code}。发送到那里的日志 Daevalog 无法提供帮助。Daevalog 的问题请用“报告问题”。",
       "failed": "无法发送：{error}",
       "openFolder": "打开日志文件夹",
-      "openFolderTip": "debug.log、数据包日志和已准备的副本。Daevalog 的问题请用“报告问题”。"
+      "openFolderTip": "debug.log、数据包日志和已准备的副本。Daevalog 的问题请用“报告问题”。",
+      "send": "发送",
+      "cancel": "取消"
     },
     "report": {
       "button": "报告问题",

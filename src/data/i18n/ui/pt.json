@@ -344,7 +344,9 @@
       "sent": "Enviado para a2tools.app. Seu código de relatório é {code}. O Daevalog não pode ajudar com logs enviados para lá. Para um problema com o Daevalog, use \"Relatar um problema\".",
       "failed": "Não foi possível enviar: {error}",
       "openFolder": "Abrir pasta de logs",
-      "openFolderTip": "debug.log, os logs de pacotes e as cópias preparadas. Para um problema com o Daevalog, use \"Relatar um problema\"."
+      "openFolderTip": "debug.log, os logs de pacotes e as cópias preparadas. Para um problema com o Daevalog, use \"Relatar um problema\".",
+      "send": "Enviar",
+      "cancel": "Cancelar"
     },
     "report": {
       "button": "Relatar um problema",

@@ -344,7 +344,9 @@
       "sent": "Sent to a2tools.app. Your report code is {code}. Daevalog cannot help with logs sent there. For a problem with Daevalog, use Report a problem.",
       "failed": "Could not send: {error}",
       "openFolder": "Open log folder",
-      "openFolderTip": "debug.log, the packet logs and prepared copies. For a problem with Daevalog, use Report a problem."
+      "openFolderTip": "debug.log, the packet logs and prepared copies. For a problem with Daevalog, use Report a problem.",
+      "send": "Send",
+      "cancel": "Cancel"
     },
     "report": {
       "button": "Report a problem",

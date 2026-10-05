@@ -6914,6 +6914,20 @@ html.settingsWindow .meter {
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
 }
+.confirmText {
+  white-space: pre-line;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+}
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.confirmYes {
+  border-color: var(--isUser-fill, rgba(255, 255, 255, 0.3));
+}
 .reportLogSelect {
   flex: 1;
   min-width: 0;

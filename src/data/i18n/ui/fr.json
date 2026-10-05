@@ -344,7 +344,9 @@
       "sent": "Envoyé à a2tools.app. Votre code de rapport est {code}. Daevalog ne peut pas vous aider avec les journaux envoyés là-bas. Pour un problème avec Daevalog, utilisez « Signaler un problème ».",
       "failed": "Envoi impossible : {error}",
       "openFolder": "Ouvrir le dossier des journaux",
-      "openFolderTip": "debug.log, les journaux de paquets et les copies préparées. Pour un problème avec Daevalog, utilisez « Signaler un problème »."
+      "openFolderTip": "debug.log, les journaux de paquets et les copies préparées. Pour un problème avec Daevalog, utilisez « Signaler un problème ».",
+      "send": "Envoyer",
+      "cancel": "Annuler"
     },
     "report": {
       "button": "Signaler un problème",

@@ -344,7 +344,9 @@
       "sent": "a2tools.app に送信しました。報告コードは {code} です。送信したログについて Daevalog は対応できません。Daevalog の問題は「問題を報告」から報告してください。",
       "failed": "送信できませんでした: {error}",
       "openFolder": "ログフォルダーを開く",
-      "openFolderTip": "debug.log、パケットログ、準備したコピーです。Daevalog の問題は「問題を報告」から報告してください。"
+      "openFolderTip": "debug.log、パケットログ、準備したコピーです。Daevalog の問題は「問題を報告」から報告してください。",
+      "send": "送信",
+      "cancel": "キャンセル"
     },
     "report": {
       "button": "問題を報告",

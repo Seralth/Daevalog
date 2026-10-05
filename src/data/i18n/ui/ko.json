@@ -344,7 +344,9 @@
       "sent": "a2tools.app으로 보냈습니다. 신고 코드는 {code}입니다. 그곳으로 보낸 로그는 Daevalog에서 도와드릴 수 없습니다. Daevalog 문제는 '문제 신고'를 이용해 주세요.",
       "failed": "보내지 못했습니다: {error}",
       "openFolder": "로그 폴더 열기",
-      "openFolderTip": "debug.log, 패킷 로그, 준비한 사본입니다. Daevalog 문제는 '문제 신고'를 이용해 주세요."
+      "openFolderTip": "debug.log, 패킷 로그, 준비한 사본입니다. Daevalog 문제는 '문제 신고'를 이용해 주세요.",
+      "send": "보내기",
+      "cancel": "취소"
     },
     "report": {
       "button": "문제 신고",

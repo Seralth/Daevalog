@@ -344,7 +344,9 @@
       "sent": "Enviado a a2tools.app. Tu código de informe es {code}. Daevalog no puede ayudar con los registros enviados allí. Para un problema con Daevalog, usa «Informar de un problema».",
       "failed": "No se pudo enviar: {error}",
       "openFolder": "Abrir carpeta de registros",
-      "openFolderTip": "debug.log, los registros de paquetes y las copias preparadas. Para un problema con Daevalog, usa «Informar de un problema»."
+      "openFolderTip": "debug.log, los registros de paquetes y las copias preparadas. Para un problema con Daevalog, usa «Informar de un problema».",
+      "send": "Enviar",
+      "cancel": "Cancelar"
     },
     "report": {
       "button": "Informar de un problema",

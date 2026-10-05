@@ -344,7 +344,9 @@
       "sent": "已傳送到 a2tools.app。你的回報代碼是 {code}。傳送到那裡的紀錄 Daevalog 無法提供協助。Daevalog 的問題請用「回報問題」。",
       "failed": "無法傳送：{error}",
       "openFolder": "開啟紀錄資料夾",
-      "openFolderTip": "debug.log、封包紀錄和已準備的副本。Daevalog 的問題請用「回報問題」。"
+      "openFolderTip": "debug.log、封包紀錄和已準備的副本。Daevalog 的問題請用「回報問題」。",
+      "send": "傳送",
+      "cancel": "取消"
     },
     "report": {
       "button": "回報問題",
