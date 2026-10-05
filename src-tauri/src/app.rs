@@ -2912,8 +2912,13 @@ mod tests {
         let conf: serde_json::Value =
             serde_json::from_str(&read(root.join("src-tauri/tauri.conf.json"))).unwrap();
         let mut pages = vec![read(root.join("index.html"))];
-        for entry in std::fs::read_dir(root.join("public/src/js")).unwrap() {
-            pages.push(read(entry.unwrap().path()));
+        // Every script, subfolders included.
+        let mut dirs = vec![root.join("public/src/js")];
+        while let Some(dir) = dirs.pop() {
+            for entry in std::fs::read_dir(dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() { dirs.push(path) } else { pages.push(read(path)) }
+            }
         }
         // `onload="..."` and the like, in the page and in HTML the scripts build.
         let mut handlers = Vec::new();
