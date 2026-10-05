@@ -103,3 +103,10 @@ Say thanks and fund new cool projects & features!
 ## License
 
 [GPL-3.0](LICENSE)
+
+### Fonts
+
+The meter comes with these fonts. Each is under the SIL Open Font License, version 1.1.
+
+- Noto Sans SC: [public/vendor/fonts/noto-sans-sc/LICENSE](public/vendor/fonts/noto-sans-sc/LICENSE)
+- Noto Sans TC: [public/vendor/fonts/noto-sans-tc/LICENSE](public/vendor/fonts/noto-sans-tc/LICENSE)
