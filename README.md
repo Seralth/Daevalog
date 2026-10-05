@@ -72,6 +72,12 @@ Uploads tell a2tools.app they are compatible with A2Tools DPS Meter 2.0.44.
 
 [docs/PRIVACY.md](docs/PRIVACY.md) says what the meter sends, what it keeps, and what an upload contains.
 
+### Thanks to a2tools.app
+
+a2tools.app is hosted and paid for by taengu, the A2Tools developer. Daevalog can upload fights and send logs there because he allows it. Thank you.
+
+taengu accepts tips for the site and his work: [Ko-fi](https://ko-fi.com/hiddencube), [爱发电 (afdian)](https://afdian.com/a/hiddencube), [PayPal](https://www.paypal.me/taengoo), [NOWPayments](https://nowpayments.io/donation/thehiddencube). The full list is in the [A2Tools DPS Meter README](https://github.com/taengu/A2Tools-DPS-Meter#support). Daevalog takes no money.
+
 ## Coming from A2Tools DPS Meter?
 
 This section lists what Daevalog does differently from A2Tools DPS Meter.
@@ -145,17 +151,6 @@ Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull
 ## For developers
 
 `docs/ARCHITECTURE.md` describes the design. `CONTRIBUTING.md` describes how to test a change.
-
-## Support A2Tools
-
-Daevalog is built on the work of taengu and the A2Tools project. If Daevalog is useful to you, please consider supporting A2Tools:
-
-- [Buy me a Coffee (Ko-fi)](https://ko-fi.com/hiddencube)
-- [爱发电 (afdian)](https://afdian.com/a/hiddencube)
-- [PayPal](https://www.paypal.me/taengoo)
-- [Donate with crypto (NOWPayments)](https://nowpayments.io/donation/thehiddencube)
-
-The full and current list of A2Tools donation options, including WeChat and wallet addresses, is in the [A2Tools DPS Meter README](https://github.com/taengu/A2Tools-DPS-Meter#support). Daevalog does not take donations on behalf of A2Tools.
 
 ## License and credits
 
