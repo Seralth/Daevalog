@@ -12,7 +12,7 @@ The data moves through six layers, in this order. Each layer uses only the layer
 
 | Layer | Job | Main files |
 |---|---|---|
-| 1. Capture | Read packets from the network card with libpcap. Find the game connection and lock onto its port. | `capture/pcap_capturer.rs`, `combat/capture_dispatcher.rs`, `capture/combat_port_detector.rs` |
+| 1. Capture | Read packets from the network card with libpcap. On Linux a helper process (`daevalog-capture`) holds the capture permission and pipes TCP payloads to the meter. Find the game connection and lock onto its port. | `capture-helper/` (libpcap, the helper, its pipe), `capture/live.rs`, `capture/helper_process.rs`, `capture/pcap_capturer.rs`, `combat/capture_dispatcher.rs`, `capture/combat_port_detector.rs` |
 | 2. Stream | Join TCP payloads into one byte stream per connection. | `capture/stream_assembler.rs`, `capture/packet_accumulator.rs` |
 | 3. Framing | Cut the byte stream into game packets. Open compressed bundles. | `capture/framing.rs` |
 | 4. Parsing | Read each game packet: damage, damage over time (DoT), heals, spawns, names, party roster, zone change, map load (which map a load enters, to tell an instance from the open world). | `capture/stream_processor/`, `entity/damage_packet.rs` |

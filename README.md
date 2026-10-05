@@ -61,6 +61,7 @@ Report problems with Daevalog DPS Meter in the issues of this repository. Do not
 - An upload is always your own choice. No upload option is turned on for you.
 - Discord activity is off by default.
 - Packet capture uses `cap_net_raw` only, and only this machine's own traffic (no promiscuous mode).
+- Packet capture runs in a small helper program, `daevalog-capture`. Only the helper holds `cap_net_raw`, and it gives it up once the network devices are open. The meter itself runs with no capability.
 - Packet capture takes TCP only, and only the game server's port once the meter has found it.
 - The fonts come with the meter, with Pretendard as the main font, as the stylesheet always intended. A window no longer loads fonts from unpkg.com.
 - Links open only https addresses and the meter's own folders.
@@ -77,7 +78,7 @@ Fixes that suit A2Tools DPS Meter are offered to that project as issues and pull
 ## Build from source
 
 - Arch-based systems: `cd packaging/arch && makepkg -si`.
-- Other distributions: follow the steps in `build()` in `packaging/arch/PKGBUILD`. Packet capture needs `cap_net_raw` on the binary, and nothing else. The Arch package sets it.
+- Other distributions: follow the steps in `build()` in `packaging/arch/PKGBUILD`. Packet capture needs `cap_net_raw` on the capture helper `daevalog-capture`, which sits next to the meter, and nothing else. The meter binary needs none. The Arch package sets it.
 
 The package is `daevalog-dps-meter`. It replaces an installed `a2tools-dps-meter` package. Settings, saved fights and the sign-in live in `~/.local/share/com.daevalog.dps-meter`. On the first start, the meter moves the folder of an A2Tools DPS Meter install (`com.a2tools.dps-meter`) to its new home.
 

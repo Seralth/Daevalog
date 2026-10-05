@@ -37,8 +37,11 @@ Nothing is transmitted when you fight, log in, or close the app.
 
 ## What it captures locally
 
-The meter reads game network traffic with Npcap in order to compute damage. Two
-different things get written to disk, and they are **not** equally sensitive.
+The meter reads game network traffic with Npcap (Windows) or libpcap (Linux) in
+order to compute damage. On Linux a small helper program, `daevalog-capture`,
+does the capturing: it alone holds the capture permission, and it passes the
+meter only TCP payloads. Two different things get written to disk, and they are
+**not** equally sensitive.
 
 ### Fight history — `~/.local/share/com.daevalog.dps-meter/history/*.json`
 

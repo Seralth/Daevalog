@@ -307,24 +307,29 @@ cp src/data/skill_icons.json src/data/dot_skill_ids.json public/src/data/
 
 npm install
 npx tauri build --no-bundle
+cargo build --release -p daevalog-capture --manifest-path src-tauri/Cargo.toml
 ```
 
-When it finishes, the meter is this one file:
+When it finishes, the meter is these two files, which stay together in one folder:
 
 ```bash
 src-tauri/target/release/daevalog-dps-meter
+src-tauri/target/release/daevalog-capture
 ```
 
-To pick up fixes later: `git pull`, then run the `npx tauri build --no-bundle` line again, then redo step 3.
+`daevalog-capture` is the capture helper. The meter starts it from its own folder; it reads the network traffic and passes the game's packets to the meter.
 
-### 3. Allow the meter to capture packets
+To pick up fixes later: `git pull`, then run the `npx tauri build --no-bundle` and `cargo build` lines again, then redo step 3.
 
-Reading the game's network traffic needs a capability Linux only gives on request. Grant it to the meter's file, from the `Daevalog` folder:
+### 3. Allow the capture helper to capture packets
+
+Reading the game's network traffic needs a capability Linux only gives on request. Grant it to the capture helper only, from the `Daevalog` folder:
 
 ```bash
-sudo setcap cap_net_raw=ep src-tauri/target/release/daevalog-dps-meter
+sudo setcap cap_net_raw=ep src-tauri/target/release/daevalog-capture
 ```
 
+- The meter itself needs no capability. If an older build of the meter has one, remove it: `sudo setcap -r src-tauri/target/release/daevalog-dps-meter`.
 - Redo this after every rebuild: a new build is a new file and loses the permission.
 - Older versions of this guide also granted `cap_net_admin`. The line above replaces the whole list, so running it again removes that.
 - Do not run the meter itself with `sudo`. It would run as root, keep its settings in root's home folder, and often fail to open its window.
@@ -401,7 +406,7 @@ That is Hyprland's Lua configuration. If you use `hyprland.conf` instead, set th
 | Sign-in says the token could not be stored securely | The meter keeps your sign-in in the desktop keyring and never in a plain file. The message says what went wrong. **No desktop keyring is running**: install and start GNOME Keyring (`gnome-keyring`) or KWallet, or turn on Secret Service in KeePassXC; on Hyprland, Sway or i3 start the keyring with your session (for example `exec-once = gnome-keyring-daemon --start --components=secrets`). **Stayed locked**: accept the keyring's unlock prompt. **No collection**: accept the prompt to create a keyring (the meter asks for one). Then sign in again. |
 | Build fails mentioning `webkit2gtk-4.1`, `pkg-config` or a missing library | Re-run the install line for your distribution. Distributions older than Ubuntu 22.04 lack `webkit2gtk-4.1` and cannot build it. |
 | `debug.log` says it failed to load libpcap | Install libpcap (`libpcap0.8` on Debian and Ubuntu, `libpcap` elsewhere), then start the meter again. |
-| The meter warns it is not running as admin, or `debug.log` has no `Capture active` lines | The capture permission is missing. Package: reinstall it. Build from source: run the `setcap` line again (a rebuild loses it). |
+| The meter warns it is not running as admin, or `debug.log` has no `Capture active` lines, or says `Packet capture is off` | The capture helper `daevalog-capture` is missing from the meter's folder, or lacks the capture permission. Package: reinstall it. Build from source: build the helper and run the `setcap` line again (a rebuild loses it). |
 | `debug.log` says `No AION2 window found` while the game is running | The meter did not find the game process. Send us the output of `ps aux \| grep -i aion` along with your logs. |
 | `debug.log` says `Not locked yet` with `0 with game markers` while you fight | Capture sees traffic but not the game's. Tell us if you use a VPN or ping reducer. |
 | The window never opens, and the terminal says `Error 71 (Protocol error) dispatching to Wayland display`; or the window is blank or white | WebKit handed its frames to the compositor as GPU buffers, which some setups reject (NVIDIA drivers especially). The meter now has WebKit hand them over in shared memory instead (`WEBKIT_DMABUF_RENDERER_FORCE_SHM=1`). Remove `WEBKIT_DISABLE_DMABUF_RENDERER=1` if you added it to a launcher: on WebKitGTK 2.54 it leaves the window mostly blank. If the window is still wrong, try `GDK_BACKEND=x11 daevalog-dps-meter`, which runs it through XWayland, and tell us. |
