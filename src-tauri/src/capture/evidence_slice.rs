@@ -500,8 +500,12 @@ fn looks_like_text(span: &[u8]) -> bool {
         }
     }
     // At least half the characters being letters or digits rules out runs of
-    // punctuation that happen to decode.
-    letters * 2 >= s.chars().count().max(1)
+    // punctuation that happen to decode. One character is never a name: a
+    // skill id such as 100051 (`d3 86 01 00`) after a `02` byte decodes as one
+    // letter, and blinding it moved a spirit's hits to a skill that does not
+    // exist (2026-10-04 capture against the game's own record).
+    let chars = s.chars().count();
+    chars >= 2 && letters * 2 >= chars
 }
 
 /// Every byte of a record in the clear, bundles decompressed.
@@ -1081,6 +1085,17 @@ mod tests {
         let mut packet = frame_packet(&body).unwrap();
         Blinder::new(&[]).blind(&mut packet);
         assert!(!packet.windows(2).any(|w| w == b"M7"));
+    }
+
+    #[test]
+    fn a_skill_id_that_decodes_as_one_letter_is_left_alone() {
+        // A spirit's damage record (2026-10-04): `.. 02 | d3 86 01 00` is a
+        // byte 02 then skill 100051, and d3 86 is valid UTF-8 for one letter.
+        let mut body = vec![0x04, 0x38, 0xfe, 0x9e, 0x02, 0x04, 0x00, 0x9e, 0x9b, 0x01, 0x02, 0xd3, 0x86, 0x01, 0x00];
+        body.resize(40, 0x00);
+        let mut packet = frame_packet(&body).unwrap();
+        Blinder::new(&[]).blind(&mut packet);
+        assert!(packet.windows(4).any(|w| w == [0xd3, 0x86, 0x01, 0x00]));
     }
 
     #[test]
