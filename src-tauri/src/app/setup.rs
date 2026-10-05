@@ -26,12 +26,9 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 use super::drag_resize::WAYLAND_LAYER_KEY;
 use super::overlay_lock::{toggle_overlay_lock, OverlayLock};
 use super::setting_changes::{apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
-use super::supporter_roster::{
-    fetch_supporter_roster, load_supporter_override, ROSTER_POLL_OVERRIDE, ROSTER_POLL_PUBLISHED,
-};
 use super::tray_actions::save_fights_before_exit;
 use super::tool_windows::open_details_on_monitor;
-use super::{commands, drag_resize, overlay_lock, replay, screenshots, tasks, tool_windows, updater, AppState};
+use super::{commands, drag_resize, overlay_lock, replay, screenshots, supporter_roster, tasks, tool_windows, updater, AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -310,61 +307,7 @@ pub fn run() {
 
             tasks::spawn_auto_save(app.handle());
 
-            // Supporter roster: fetched, never queried. See `crate::supporters`
-            // — asking the server "is this player a supporter?" would hand it a
-            // list of who you play with, every fight, for a cosmetic.
-            let handle_roster = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                let mut had_override = false;
-                loop {
-                    let mut wait = ROSTER_POLL_PUBLISHED;
-                    if let Some(state) = handle_roster.try_state::<AppState>() {
-                        // The override wins when present, and is re-read every
-                        // pass so editing it takes effect without a restart.
-                        match load_supporter_override(&state.app_data_dir) {
-                            Some(roster) => {
-                                had_override = true;
-                                wait = ROSTER_POLL_OVERRIDE;
-                                state.data_storage.set_supporters(roster);
-                            }
-                            None => {
-                                let just_lost_override = had_override;
-                                if had_override {
-                                    tracing::info!("Supporter roster override removed");
-                                    had_override = false;
-                                }
-                                match fetch_supporter_roster(&state.http).await {
-                                    Some(roster) => {
-                                        tracing::info!(
-                                            "Supporter roster: {} entries",
-                                            roster.len()
-                                        );
-                                        state.data_storage.set_supporters(roster);
-                                    }
-                                    None => {
-                                        tracing::debug!("Supporter roster unavailable");
-                                        // Keep looking for the override often, so
-                                        // dropping the file in works on a machine
-                                        // that has never reached the CDN.
-                                        wait = ROSTER_POLL_OVERRIDE;
-                                        // Only wipe the roster if the override we
-                                        // were using has just gone away. Clearing
-                                        // on any failed fetch would mean one CDN
-                                        // hiccup removes every supporter's gold
-                                        // until the next successful poll.
-                                        if just_lost_override {
-                                            state
-                                                .data_storage
-                                                .set_supporters(Default::default());
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    tokio::time::sleep(wait).await;
-                }
-            });
+            supporter_roster::spawn_roster_poll(app.handle());
 
             Ok(())
         })
