@@ -57,12 +57,23 @@ fn prune_heal_ticks(inner: &mut Inner) {
 
 pub(super) fn heals_between(inner: &Inner, from_ms: i64, to_ms: i64) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
     let mut out: HashMap<i32, HashMap<(i32, bool), HealSkillData>> = HashMap::new();
-    for t in inner.heal_ticks.iter().filter(|t| (from_ms..=to_ms).contains(&t.at)) {
+    for t in inner.heal_ticks.iter().filter(|t| (from_ms..=to_ms).contains(&t.at) && !is_mob(inner, t.actor)) {
         let e = out.entry(t.actor).or_default().entry((t.skill, t.is_hot)).or_default();
         e.total_heal += t.amount;
         e.tick_count = e.tick_count.saturating_add(1);
     }
     out
+}
+
+/// A mob is no healer. Protection Circle HoT ticks on a player carry a mob
+/// in the healer field (the boss, 2026-10-05), and saved boss fights listed
+/// the boss as a healer. A summon spawns like a mob, so a linked one is kept;
+/// so is an id the game named as a player since.
+fn is_mob(inner: &Inner, id: i32) -> bool {
+    inner.mob_storage.contains_key(&id)
+        && !inner.summon_storage.contains_key(&id)
+        && !inner.known_player_ids.contains(&id)
+        && !inner.nickname_storage.contains_key(&id)
 }
 
 #[cfg(test)]
@@ -92,6 +103,22 @@ mod tests {
         }
         let heals = s.heals_between(0, 150_000);
         assert_eq!(heals[&2000][&(17_010_000, false)].tick_count, 150_000);
+    }
+
+    #[test]
+    fn only_players_and_their_summons_heal() {
+        let s = DataStorage::new();
+        hit(&s, 0);
+        s.append_mob(22809, 2310171);
+        s.append_mob(500, 1);
+        s.append_summon(14409, 500);
+        s.append_nickname_authoritative(14274, "Templar");
+        for (actor, skill) in [(22809, 18_730_003), (500, 16_770_000), (14274, 18_730_003), (14409, 2_011_101)] {
+            s.append_heal(actor, skill, 100, true, 1_000);
+        }
+        let mut healers: Vec<i32> = s.heals_between(0, 2_000).into_keys().collect();
+        healers.sort();
+        assert_eq!(healers, vec![500, 14274, 14409], "the boss is not one");
     }
 
     #[test]
