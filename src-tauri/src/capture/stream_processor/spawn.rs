@@ -370,7 +370,33 @@ impl StreamProcessor {
             }
         }
 
+        // A Sorcerer's lingering ground spell (Cold Storm, Bittercold Wind) also
+        // spawns as `0x1F`, but its buff block names the spell itself. Its caster
+        // follows the spawn position as `07 02 06 <caster u32 LE>`. In the check
+        // kit's captures 82 of 86 storm spawns carried it and 81 named a player
+        // who cast Sorcerer skills; none named the storm or a mob.
+        if kind == 0x1F
+            && let Some(caster) = self.find_effect_caster(packet, offset, real_actor_id)
+        {
+            self.data_storage.note_low_id_entity(caster);
+            self.data_storage
+                .register_confirmed_summon_by_id(real_actor_id, caster);
+            return true;
+        }
+
         false
+    }
+
+    /// The caster of a `0x1F` ground spell: the `u32` after the `07 02 06` that
+    /// follows the spawn position. Never the spell itself or a known mob.
+    fn find_effect_caster(&self, packet: &[u8], start_offset: usize, self_id: i32) -> Option<i32> {
+        const MARKER: [u8; 3] = [0x07, 0x02, 0x06];
+        let end = packet.len().min(start_offset + 240);
+        let at = packet.get(start_offset..end)?.windows(MARKER.len()).position(|w| w == MARKER)?;
+        let i = start_offset + at + MARKER.len();
+        let caster = i32::from_le_bytes(packet.get(i..i + 4)?.try_into().ok()?);
+        ((100..=9_999_999).contains(&caster) && caster != self_id && !self.data_storage.is_mob(caster))
+            .then_some(caster)
     }
 
     /// Find the `parent_key` a `41 36` spawn declares via `mask & 0x0010`.

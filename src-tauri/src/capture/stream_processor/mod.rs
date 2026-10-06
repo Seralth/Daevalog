@@ -530,6 +530,33 @@ mod tests {
     }
 
     #[test]
+    fn a_sorcerers_ground_spell_is_linked_to_its_caster() {
+        let storage = Arc::new(DataStorage::new());
+        let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        // Bittercold Wind entity 18249 from a party run (krao capture, 2026-10-05):
+        // kind 0x1F, buff block naming itself, caster 14143 after `07 02 06`.
+        let storm = |id_varint: &str, caster: &str| {
+            let mut b = hex("4136");
+            b.extend(hex(id_varint));
+            b.extend(hex("1F00004B8E2C004002000CF0C7CFA9D0C70090C04672498542642F01A925A9258E0800008E08000000000000000000000000000010E9010064000000F04902000100000000000000A08601000000000090D00300010101110181969800FFFFFFFFFFFFFFFF8075D52ABB030000"));
+            b.extend(hex(id_varint));
+            b.extend(hex("0102000CF0C7CFA9D0C70090C046070206"));
+            b.extend(hex(caster));
+            b.extend(hex("02CD002800"));
+            b
+        };
+        assert!(p.parse_summon_spawn_at(&storm("C98E01", "3F370000"), 2));
+        assert_eq!(storage.get_summon_data().get(&18249), Some(&14143));
+
+        // A marker naming the spell itself, or a mob, links nothing.
+        assert!(!p.parse_summon_spawn_at(&storm("CA8E01", "4A470000"), 2));
+        storage.append_mob(30000, 1);
+        assert!(!p.parse_summon_spawn_at(&storm("CB8E01", "30750000"), 2));
+        assert!(!storage.is_summon(18250) && !storage.is_summon(18251));
+    }
+
+    #[test]
     fn names_are_one_to_twelve_letters_or_digits_in_any_script() {
         for name in ["A", "é", "あ", "ApexZ", "Amber1", "Zoë", "Ñandú", "さくら", "桜子", "전사", "Abcdefghijkl"] {
             assert_eq!(exact_name(name.as_bytes()).as_deref(), Some(name), "{name}");
