@@ -78,6 +78,7 @@ impl DpsCalculator {
         dps_data.target_mode = self.target_selection_mode.id().to_string();
         self.current_target = tracking_id;
         dps_data.target_id = self.current_target;
+        dps_data.target_mob_code = self.data_storage.mob_code(self.current_target).unwrap_or(0);
         self.data_storage.set_current_target(self.current_target);
 
         // Boss HP bar source: spawn-time max HP of the single boss target. Only

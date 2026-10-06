@@ -11,6 +11,9 @@ pub struct DpsData {
     pub target_name: String,
     pub target_mode: String,
     pub target_id: i32,
+    /// The target's npc code, which names it in every language; 0 when none.
+    #[serde(default)]
+    pub target_mob_code: i32,
     pub battle_time: i64,
     pub local_player_id: Option<i64>,
     /// Max HP of the current single boss target (0 = unknown / multi-target).
@@ -33,6 +36,7 @@ impl DpsData {
             target_name: String::new(),
             target_mode: "bossTargets".to_string(),
             target_id: 0,
+            target_mob_code: 0,
             battle_time: 0,
             local_player_id: None,
             target_max_hp: 0,

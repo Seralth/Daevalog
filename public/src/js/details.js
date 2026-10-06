@@ -228,8 +228,10 @@ const createDetailsUI = ({
     if (!target) return "";
     const targetId = Number(target?.targetId);
     const targetName = typeof target.targetName === "string" ? target.targetName.trim() : "";
-    const localizedName = Number.isFinite(targetId) && targetId > 0
-      ? (i18n?.getNpcName?.(targetId, targetName) ?? targetName)
+    // Names are looked up by mob code; the target id is a per-session entity id.
+    const mobCode = Number(target?.mobCode);
+    const localizedName = Number.isFinite(mobCode) && mobCode > 0
+      ? (i18n?.getNpcName?.(mobCode, targetName) ?? targetName)
       : targetName;
     return localizedName || `Mob #${target.targetId}`;
   };
@@ -2282,7 +2284,7 @@ const createDetailsUI = ({
     fightStartMs = firstTarget
       ? Math.max(0, (Number(firstTarget.lastDamageTime) || 0) - (Number(firstTarget.battleTime) || 0))
       : 0;
-    fightBossName = firstTarget ? getTargetLabel(firstTarget) : (row?.name ?? "");
+    fightBossName = firstTarget ? "" : (row?.name ?? "");
     fightDungeonId = Number(getDungeonId?.()) || 0;
     updateHeaderText();
     detailsPanel.classList.add("open");
@@ -2395,6 +2397,7 @@ const createDetailsUI = ({
     const bossTargetSummary = {
       targetId: record.targetId,
       targetName: record.bossName,
+      mobCode: record.mobCode,
       totalDamage: record.totalDamage,
       battleTime: record.durationMs,
       lastDamageTime: record.startTimeMs + record.durationMs,
@@ -2408,7 +2411,8 @@ const createDetailsUI = ({
     selectedAttackerLabel = labelText("details.history.allPlayers", "All Players");
 
     fightStartMs = Number(record.startTimeMs) || 0;
-    fightBossName = record.bossName || (Number(record.targetId) > 0 ? `Mob #${record.targetId}` : "");
+    // Named from the target each time the title is drawn, so it follows the language.
+    fightBossName = "";
     fightDungeonId = Number(record.dungeonId) || 0;
     updateHeaderText();
     detailsPanel.classList.add("open");
@@ -2423,6 +2427,12 @@ const createDetailsUI = ({
     }
 
     if (seq !== openSeq) return;
+    if (!(await renderHistoryDetails(record, seq))) return;
+    window.gameRecordUI?.show?.(record, { setGameView });
+  };
+
+  // A saved fight's skills, named in the current language.
+  const renderHistoryDetails = async (record, seq) => {
     const fakeRow = { id: null, job: "", name: record.bossName };
     window._historyDetailsOverride = record.details;
     const processedDetails = await getDetails(fakeRow, {
@@ -2430,9 +2440,17 @@ const createDetailsUI = ({
       totalTargetDamage: record.totalDamage,
       showSkillIcons: true,
     });
-    if (seq !== openSeq) return;
+    if (seq !== openSeq) return false;
     if (processedDetails) render(processedDetails, fakeRow);
-    window.gameRecordUI?.show?.(record, { setGameView });
+    return true;
+  };
+
+  // The live view picks up a new language on its next refresh; a saved fight
+  // is drawn once, so it is drawn again (its skill names stayed in the old one).
+  const relabelHistoryFight = async () => {
+    if (!historyRecord || !detailsPanel.classList.contains("open")) return;
+    updateHeaderText();
+    await renderHistoryDetails(historyRecord, ++openSeq);
   };
 
   const refresh = async () => {
@@ -2490,5 +2508,5 @@ const createDetailsUI = ({
   });
   syncModeButtons();
 
-  return { open, close, isOpen, isPinned, render, updateLabels, refresh, updateGridColumns, openHistoryFight, resetDetailsMode };
+  return { open, close, isOpen, isPinned, render, updateLabels, refresh, updateGridColumns, openHistoryFight, relabelHistoryFight, resetDetailsMode };
 };

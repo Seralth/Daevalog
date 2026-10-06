@@ -50,6 +50,9 @@ pub struct DetailsTargetSummary {
     pub target_id: i32,
     #[serde(default)]
     pub target_name: String,
+    /// The npc's code, which names it in every language; 0 when not known.
+    #[serde(default)]
+    pub mob_code: i32,
     #[serde(default)]
     pub max_hp: i32,
     pub battle_time: i64,

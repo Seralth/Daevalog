@@ -127,6 +127,7 @@ class DpsApp {
     this.listSortDirection = "desc";
     this.lastTargetMode = "";
     this.lastTargetName = "";
+    this.lastTargetMobCode = 0;
     this.lastTargetId = 0;
     this._lastRenderedListSignature = "";
     this._lastRenderedTargetLabel = "";
@@ -468,6 +469,7 @@ class DpsApp {
       this.initializeSettingsDropdowns();
       this.detailsUI?.updateLabels?.();
       this.detailsUI?.refresh?.();
+      this.detailsUI?.relabelHistoryFight?.();
       this.historyUI?.relabel?.();
       this.updateDisplayToggleLabel();
       if (this.battleTime?.setAnalysisTextProvider) {
@@ -668,6 +670,7 @@ class DpsApp {
     this.lastJson = null;
     this.lastTargetMode = "";
     this.lastTargetName = "";
+    this.lastTargetMobCode = 0;
     this.lastTargetId = 0;
     this._lastRenderedListSignature = "";
     this._lastRenderedTargetLabel = "";
@@ -965,6 +968,7 @@ class DpsApp {
     const {
       rows,
       targetName,
+      targetMobCode,
       targetMode,
       battleTimeMs,
       targetId,
@@ -1009,6 +1013,7 @@ class DpsApp {
     this._lastBattleTimeMs = battleTimeMs;
     this.lastTargetMode = targetMode;
     this.lastTargetName = targetName;
+    this.lastTargetMobCode = targetMobCode;
     this.lastTargetId = targetId;
 
     if (
@@ -1100,7 +1105,7 @@ class DpsApp {
     }
     // render
     this.lastDungeonId = dungeonId;
-    const nextTargetLabel = this.getTargetLabel({ targetId, targetName, targetMode, dungeonId });
+    const nextTargetLabel = this.getTargetLabel({ targetId, targetName, targetMobCode, targetMode, dungeonId });
     if (this.elBossName) {
       if (this.elBossName.textContent !== nextTargetLabel) {
         this.elBossName.textContent = nextTargetLabel;
@@ -1176,6 +1181,7 @@ class DpsApp {
     return {
       rows,
       targetName,
+      targetMobCode: Math.trunc(Number(payload?.targetMobCode)) || 0,
       targetMode,
       battleTimeMs,
       targetId,
@@ -1430,6 +1436,7 @@ class DpsApp {
   resetTargetTrackingState() {
     this.lastTargetMode = "";
     this.lastTargetName = "";
+    this.lastTargetMobCode = 0;
     this.lastTargetId = 0;
     this._lastRenderedTargetLabel = "";
     this._lastLoggedTargetId = null;
@@ -2065,6 +2072,7 @@ class DpsApp {
     this.lastJson = null;
     this.lastTargetMode = "";
     this.lastTargetName = "";
+    this.lastTargetMobCode = 0;
     this.lastTargetId = 0;
     this._lastRenderedListSignature = "";
     this._lastRenderedTargetLabel = "";
@@ -2653,7 +2661,8 @@ class DpsApp {
     return this.i18n?.t("header.title", "Daevalog DPS Meter") ?? "Daevalog DPS Meter";
   }
 
-  getTargetLabel({ targetId = 0, targetName = "", targetMode = "", dungeonId = 0 } = {}) {
+  // Npc names are looked up by mob code; the target id is a per-session entity id.
+  getTargetLabel({ targetId = 0, targetName = "", targetMobCode = 0, targetMode = "", dungeonId = 0 } = {}) {
     // In a party instance the title is the boss being fought, and the dungeon
     // between pulls. It used to stay on the dungeon throughout, so a whole run
     // read "Urugugu Canyon" past every boss. The modes that track no single
@@ -2666,7 +2675,7 @@ class DpsApp {
       const numericId = Number(targetId);
       if (tracksOne && Number.isFinite(numericId) && numericId > 0) {
         const cleanName = typeof targetName === "string" ? targetName.trim() : "";
-        const bossName = this.i18n?.getNpcName?.(numericId, cleanName) ?? cleanName;
+        const bossName = this.i18n?.getNpcName?.(targetMobCode, cleanName) ?? cleanName;
         if (bossName) return bossName;
       }
       return dungeonLabel;
@@ -2692,7 +2701,7 @@ class DpsApp {
     const numericTargetId = Number(targetId);
     const cleanTargetName = typeof targetName === "string" ? targetName.trim() : "";
     if (Number.isFinite(numericTargetId) && numericTargetId > 0) {
-      const localizedName = this.i18n?.getNpcName?.(numericTargetId, cleanTargetName) ?? cleanTargetName;
+      const localizedName = this.i18n?.getNpcName?.(targetMobCode, cleanTargetName) ?? cleanTargetName;
       return localizedName || `Mob #${numericTargetId}`;
     }
     if (cleanTargetName) {
@@ -2731,6 +2740,7 @@ class DpsApp {
       targetMode: this.lastTargetMode,
       targetId: this.lastTargetId,
       targetName: this.lastTargetName,
+      targetMobCode: this.lastTargetMobCode,
       dungeonId: this.lastDungeonId,
     });
     this.elBossName.classList.toggle("isAllTargets", this.lastTargetMode === "allTargets");

@@ -126,3 +126,12 @@ test("short numbers are whole: a heal rate reads 368, not 368.036", () => {
   assert.equal(app.formatAbbreviatedNumber(368.036), "368");
   assert.equal(app.formatAbbreviatedNumber(40480), "40.48k");
 });
+
+test("the boss label is named by its mob code, in the current language", () => {
+  const { app } = setup();
+  const names = { 2400035: "Nahkampf-Trainingspuppe" };
+  app.i18n = { getNpcName: (code, fallback) => names[code] ?? fallback, getDungeonLabel: () => "", t: (k, f) => f };
+  const label = (targetMobCode) => app.getTargetLabel({ targetId: 26622, targetName: "Melee Training Scarecrow", targetMobCode, targetMode: "bossTargets" });
+  assert.equal(label(2400035), "Nahkampf-Trainingspuppe");
+  assert.equal(label(0), "Melee Training Scarecrow", "no code: the name as sent");
+});

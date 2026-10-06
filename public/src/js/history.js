@@ -58,6 +58,10 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
   const i18n = window.i18n;
   const t = (key, fallback) => i18n?.t?.(key, fallback) ?? fallback;
+  // A fight's boss in the current language: saved fights keep the name as it
+  // was then, the mob code names it in any language.
+  const bossLabel = (f) => (Number(f.mobCode) > 0 ? i18n?.getNpcName?.(Number(f.mobCode), "") : "")
+    || f.bossName || `Boss #${f.targetId}`;
 
   const STORAGE_KEY = "historyShowTraining";
   let showTraining = (() => {
@@ -120,12 +124,14 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     if (!filterBossEl || !filterPlayerEl || !filterDateEl) return;
     const allOption = (label) => `<option value="">${label}</option>`;
 
-    const bossNames = [...new Set(fights.map((f) => f.bossName || "").filter(Boolean))].sort();
+    const bossLabels = new Map();
+    fights.forEach((f) => { if (f.bossName && !bossLabels.has(f.bossName)) bossLabels.set(f.bossName, bossLabel(f)); });
+    const bossNames = [...bossLabels.keys()].sort((a, b) => bossLabels.get(a).localeCompare(bossLabels.get(b)));
     filterBossEl.innerHTML = allOption(t("history.filterBoss", "All bosses"));
     bossNames.forEach((name) => {
       const opt = document.createElement("option");
       opt.value = name;
-      opt.textContent = name;
+      opt.textContent = bossLabels.get(name);
       if (name === filterBoss) opt.selected = true;
       filterBossEl.appendChild(opt);
     });
@@ -362,7 +368,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     // In grouped view the boss name is the section header, so the row leads with its date instead.
     nameEl.textContent = grouped
       ? formatDate(fight.startTimeMs)
-      : (fight.bossName || `Boss #${fight.targetId}`);
+      : bossLabel(fight);
     if (fight.isLive) {
       const lastActivityMs = Number(fight.startTimeMs) + Number(fight.durationMs);
       if (Date.now() - lastActivityMs < 60_000) {
@@ -597,7 +603,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     visible.forEach((f) => {
       // Keyed by what the header says, so two instance ids with the same name
       // and difficulty share one section.
-      const key = byDungeon ? dungeonTitle(f.dungeonId) : (f.bossName || `Boss #${f.targetId}`);
+      const key = byDungeon ? dungeonTitle(f.dungeonId) : bossLabel(f);
       let g = groups.get(key);
       if (!g) {
         g = { name: key, fights: [], rowOptions: byDungeon ? { child: true } : { grouped: true } };

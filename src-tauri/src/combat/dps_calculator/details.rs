@@ -67,15 +67,13 @@ impl DpsCalculator {
                 actor_meta.remove(&id);
             }
 
-            let target_name = if let Some(&code) = mob_data.get(&target_id) {
-                self.npc_lookup.get_npc_name(code)
-            } else {
-                String::new()
-            };
+            let mob_code = mob_data.get(&target_id).copied().unwrap_or(0);
+            let target_name = if mob_code != 0 { self.npc_lookup.get_npc_name(mob_code) } else { String::new() };
 
             targets.push(DetailsTargetSummary {
                 target_id,
                 target_name,
+                mob_code,
                 max_hp: mob_hp_data.get(&target_id).copied().unwrap_or(0),
                 battle_time: (target_data.last_damage_time - target_data.first_damage_time).max(0),
                 last_damage_time: target_data.last_damage_time,
