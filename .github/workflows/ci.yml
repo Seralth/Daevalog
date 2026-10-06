@@ -257,6 +257,12 @@ jobs:
       - name: Check parser core
         working-directory: src-tauri
         run: cargo check --lib --no-default-features --target wasm32-unknown-unknown
+      # The backend without Tauri, for a front end other than the Tauri one.
+      # Built with none of Tauri's system libraries, so a Tauri or GTK
+      # dependency creeping into it fails here.
+      - name: Check backend without Tauri
+        working-directory: src-tauri
+        run: cargo check --no-default-features --features backend
 
 # No `cargo fmt --check` job. The codebase predates one and is currently about
 # 3,700 diff lines away from rustfmt's opinion; adding the check without doing
