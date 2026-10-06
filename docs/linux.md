@@ -144,10 +144,10 @@ Your settings and fights stay in `~/.local/share/com.daevalog.dps-meter`. Delete
 | Feature | On Linux |
 | --- | --- |
 | Damage meter, Details, History | Works |
-| Ping | Works |
+| Ping | Works. It is the game's own ping, timed on the game's connection, so it includes a VPN if you use one and the time the game server takes to answer. A busy server (a crowded world boss) makes it jump while the network itself stays steady |
 | Finding the game | Looks for the running AION2.exe process under Proton |
 | a2tools.app sign-in | Works: kept in KWallet or GNOME Keyring, which may ask to create or unlock a wallet the first time |
-| Updates | By rebuilding from the `Daevalog` folder (see [Update](#update)). The meter never updates itself |
+| Updates | From a package repository, with your normal system update; built yourself, by rebuilding (see [Update](#update)). The meter never updates itself |
 | Class icons | Works |
 | Global hotkeys | The lock hotkey, through the desktop's global shortcuts (the GlobalShortcuts portal), on desktops that offer them |
 | Click-through lock | Works on X11, XWayland and native Wayland. A locked meter always shows its lock button |
