@@ -20,6 +20,9 @@
 //!                                  `hit_flags` and `dot_ticks` lines
 //! A2_REPLAY_TAKEN=1                print the damage players took in the window,
 //!                                  per player and skill (see `replay_taken`)
+//! A2_REPLAY_PLAYERS=1              print every player met, at the end: entity id,
+//!                                  server, class and where it came from, name
+//!                                  (see `replay_players`)
 //! cargo test --lib replay_report -- --ignored --nocapture
 //! ```
 
@@ -113,6 +116,7 @@ pub(crate) struct Options {
     pub dump_op: Option<[u8; 2]>,
     pub timeline: bool,
     pub taken: bool,
+    pub players: bool,
 }
 
 #[test]
@@ -131,6 +135,7 @@ fn replay_report() {
         dump_op: env("A2_REPLAY_DUMP").and_then(|h| decode_hex(&h)).and_then(|v| v.try_into().ok()),
         timeline: env("A2_REPLAY_TIMELINE").is_some(),
         taken: env("A2_REPLAY_TAKEN").is_some(),
+        players: env("A2_REPLAY_PLAYERS").is_some(),
     };
     let _flags = env("A2_REPLAY_FLAGS").map(|_| {
         tracing::subscriber::set_default(
@@ -149,7 +154,7 @@ fn replay_report() {
 
 /// Replay a capture's text and hand each line of the report to `out`.
 pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
-    let Options { target, from, to, show_hits, mut reset_at, dump_op, timeline, taken } = options;
+    let Options { target, from, to, show_hits, mut reset_at, dump_op, timeline, taken, players: list_players } = options;
     let data_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
     let skills = Arc::new(SkillLookup::new());
     let npcs = Arc::new(NpcLookup::new());
@@ -177,6 +182,8 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let _tap = gather.as_ref().map(|g| g.tap.install());
     let mut window_ms = 0i64;
     let mut taken = taken.then(super::replay_taken::Gather::default);
+    let mut met = list_players.then(super::replay_players::Players::default);
+    let mut first_ts = None;
 
     for line in text.lines() {
         if line.is_empty() || line.starts_with('#') {
@@ -219,14 +226,24 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             lines_clean += 1;
         }
         last_ts = ts_ms;
+        first_ts.get_or_insert(ts_ms);
 
-        if (in_window && dump_op.is_some()) || gather.is_some() {
+        if (in_window && dump_op.is_some()) || gather.is_some() || met.is_some() {
             let acc = walks.entry(key.to_string()).or_insert_with(PacketAccumulator::new);
             acc.append(&bytes);
             let consumed = framing::walk(acc.snapshot()).consumed;
             let mut packets = Vec::new();
             frames_of(&acc.snapshot()[..consumed], true, &mut packets, 0);
             acc.discard_bytes(consumed);
+            if let Some(met) = met.as_mut() {
+                for p in &packets {
+                    met.scan_spawns(p, ts_ms);
+                    for bundle in framing::embedded_bundles(p) {
+                        met.scan_spawns(&bundle.data, ts_ms);
+                    }
+                }
+                met.roster_and_self(&storage, ts_ms);
+            }
             for p in packets {
                 if let Some(g) = &mut gather {
                     g.timeline.note(ts_ms, &p);
@@ -262,6 +279,9 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             for id in ids {
                 let d = diff(prev.get(&id), now.get(&id));
                 for (&(actor, skill, dot), &(h, dmg)) in &d {
+                    if let (Some(met), true) = (met.as_mut(), h > 0) {
+                        met.hit(&storage, actor, skill, ts_ms);
+                    }
                     if show_hits {
                         out(format!(
                             "hit {tod} target {id} actor {actor} skill {skill} {}{} x{h} {dmg}",
@@ -336,6 +356,13 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
                 skills.get_skill_name(skill),
                 if dot { " (DoT)" } else { "" }
             ));
+        }
+    }
+
+    if let Some(met) = met {
+        out(String::new());
+        for line in met.lines(&storage, first_ts.unwrap_or(0), last_ts) {
+            out(line);
         }
     }
 

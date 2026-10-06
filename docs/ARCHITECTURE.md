@@ -37,7 +37,7 @@ The user interface asks layer 6 for a snapshot every 500 ms (`app/tasks.rs`, eve
 | Logging | `debug.log` and the optional raw packet log `packets_*.txt`. | `logging/logger.rs` |
 | Bug report copy | A copy of a packet log for a bug report, with every character name blinded the way a slice blinds them. | `share/report_log.rs`, `app/report.rs` |
 | Ping | The ping to the game server, read from the client's own ping frames. | `capture/ping_tracker.rs` |
-| Check tools | Replay a capture through the live parser and storage and report what was counted, or every hit's raw fields (`A2_REPLAY_FLAGS`); set a game Damage Analyzer record beside the replay, skill by skill, and its damage taken beside the meter's; prove the log service's derivation (`a2t-derive`); show what an uploaded slice holds (`a2t-inspect`); decode a capture for packet work (`a2t-probe`). | `checks/replay_report.rs`, `checks/replay_taken.rs`, `checks/record_check.rs`, `tools/` |
+| Check tools | Replay a capture through the live parser and storage and report what was counted, or every hit's raw fields (`A2_REPLAY_FLAGS`), or every player met with server and class (`A2_REPLAY_PLAYERS`); set a game Damage Analyzer record beside the replay, skill by skill, and its damage taken beside the meter's; prove the log service's derivation (`a2t-derive`); show what an uploaded slice holds (`a2t-inspect`); decode a capture for packet work (`a2t-probe`). | `checks/replay_report.rs`, `checks/replay_taken.rs`, `checks/replay_players.rs`, `checks/record_check.rs`, `tools/` |
 
 ## Windows
 

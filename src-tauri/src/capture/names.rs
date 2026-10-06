@@ -9,7 +9,7 @@ pub(super) fn is_placeholder_name(raw: &str) -> bool {
 
 /// Byte lengths a length-prefixed name field can have: 1 to 12 characters of
 /// up to 4 UTF-8 bytes each.
-pub(super) const NAME_FIELD_BYTES: std::ops::RangeInclusive<usize> = 1..=48;
+pub(crate) const NAME_FIELD_BYTES: std::ops::RangeInclusive<usize> = 1..=48;
 
 /// A character name read from a field whose length the packet states.
 ///
@@ -18,7 +18,7 @@ pub(super) const NAME_FIELD_BYTES: std::ops::RangeInclusive<usize> = 1..=48;
 /// field must be the name; anything else means we are not on a name field.
 /// Unlike `sanitize_nickname`, a one-character name is fine here: the stated
 /// length is what guards against picking up junk.
-pub(super) fn exact_name(field: &[u8]) -> Option<String> {
+pub(crate) fn exact_name(field: &[u8]) -> Option<String> {
     let name = std::str::from_utf8(field).ok()?;
     let chars = name.chars().count();
     let valid = (1..=12).contains(&chars)

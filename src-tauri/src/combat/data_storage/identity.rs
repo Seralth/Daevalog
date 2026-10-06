@@ -169,6 +169,12 @@ impl DataStorage {
         }
     }
 
+    /// Every home server a record has stated, by name, for the replay report.
+    #[cfg(test)]
+    pub(crate) fn player_servers(&self) -> HashMap<String, u16> {
+        self.inner.read().player_servers.clone()
+    }
+
     /// Your class and level, as your own self record states them.
     ///
     /// A record whose level did not read (a partial copy, the scan having met
