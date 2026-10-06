@@ -18,7 +18,8 @@
   "600004": {
     "name": "克勞洞穴",
     "type": "party",
-    "tier": 1
+    "tier": 1,
+    "label": "Conquest Tier 1"
   },
   "600011": {
     "name": "烏努庫庫峽谷",
@@ -36,7 +37,8 @@
   "600013": {
     "name": "烏努庫庫峽谷",
     "type": "party",
-    "tier": 2
+    "tier": 2,
+    "label": "Conquest Tier 2"
   },
   "600014": {
     "name": "烏努庫庫峽谷"
@@ -57,7 +59,8 @@
   "600023": {
     "name": "火之神殿",
     "type": "party",
-    "tier": 3
+    "tier": 3,
+    "label": "Conquest Tier 3"
   },
   "600024": {
     "name": "火之神殿"
@@ -78,7 +81,8 @@
   "600033": {
     "name": "德拉烏伯尼爾",
     "type": "party",
-    "tier": 1
+    "tier": 1,
+    "label": "Conquest Tier 1"
   },
   "600034": {
     "name": "德拉烏伯尼爾"
@@ -190,7 +194,8 @@
   "600073": {
     "name": "巴克隆空中島",
     "type": "party",
-    "tier": 2
+    "tier": 2,
+    "label": "Conquest Tier 2"
   },
   "600074": {
     "name": "巴克隆空中島"
@@ -211,7 +216,8 @@
   "600093": {
     "name": "凶猛的角岩窟",
     "type": "party",
-    "tier": 3
+    "tier": 3,
+    "label": "Conquest Tier 3"
   },
   "600121": {
     "name": "無之搖籃",

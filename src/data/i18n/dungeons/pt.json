@@ -673,6 +673,9 @@
     "name": "Bacia de Fafnite",
     "type": "growth"
   },
+  "20": {
+    "name": "Piso Inferior de Reshanta do Caos"
+  },
   "200001": {
     "name": "Encruzilhada dos Sonhos",
     "type": "quest"
@@ -776,6 +779,9 @@
   "210027": {
     "name": "Abismo de Chloris",
     "type": "ascension"
+  },
+  "22": {
+    "name": "Piso Intermediário de Reshanta do Caos"
   },
   "220001": {
     "name": "Câmara de Pedra Subterrânea",
@@ -1944,7 +1950,8 @@
   "600004": {
     "name": "Caverna de Krao",
     "type": "party",
-    "tier": 1
+    "tier": 1,
+    "label": "Conquista T1"
   },
   "600011": {
     "name": "Desfiladeiro de Urugugu",
@@ -1962,7 +1969,8 @@
   "600013": {
     "name": "Desfiladeiro de Urugugu",
     "type": "party",
-    "tier": 2
+    "tier": 2,
+    "label": "Conquista T2"
   },
   "600014": {
     "name": "Urugugu Canyon"
@@ -1983,7 +1991,8 @@
   "600023": {
     "name": "Templo Divino do Fogo",
     "type": "party",
-    "tier": 3
+    "tier": 3,
+    "label": "Conquista T3"
   },
   "600024": {
     "name": "Fire Temple"
@@ -2004,7 +2013,8 @@
   "600033": {
     "name": "Draupnir",
     "type": "party",
-    "tier": 1
+    "tier": 1,
+    "label": "Conquista T1"
   },
   "600034": {
     "name": "Draupnir"
@@ -2116,7 +2126,8 @@
   "600073": {
     "name": "Ilha Aérea de Vakron",
     "type": "party",
-    "tier": 2
+    "tier": 2,
+    "label": "Conquista T2"
   },
   "600074": {
     "name": "Vakron Sky Island"
@@ -2143,7 +2154,8 @@
   "600093": {
     "name": "Gruta do Chifre Feroz",
     "type": "party",
-    "tier": 3
+    "tier": 3,
+    "label": "Conquista T3"
   },
   "600121": {
     "name": "Berço do Vazio",

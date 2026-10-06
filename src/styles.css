@@ -5720,7 +5720,8 @@ body.isHistoryWindow .historyPanel .historyHeader .closeX {
   border: 1px solid color-mix(in srgb, var(--tier) 68%, transparent);
 }
 .difficulty-easy { --tier: #4caf72; }
-.difficulty-normal { --tier: #4a8fe0; }
+.difficulty-normal,
+.difficulty-tier { --tier: #4a8fe0; }
 .difficulty-advanced,
 .difficulty-extreme,
 .difficulty-despair,

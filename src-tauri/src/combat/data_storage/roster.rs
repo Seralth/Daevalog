@@ -78,7 +78,7 @@ impl DataStorage {
         inner.own_records.zone_loaded();
         let kind = if is_open_world_map(map_id) {
             MapKind::OpenWorld
-        } else if is_own_dungeon_map(map_id) {
+        } else if own_dungeon(map_id) != 0 {
             MapKind::Own
         } else {
             MapKind::Instance
@@ -95,7 +95,7 @@ impl DataStorage {
                     inner.current_dungeon_id = 0;
                 }
             }
-            MapKind::Own => inner.current_dungeon_id = map_id,
+            MapKind::Own => inner.current_dungeon_id = own_dungeon(map_id),
             MapKind::Instance | MapKind::Unknown => {
                 let queued = inner.queued_dungeon_id;
                 if queued != 0 && map_of_dungeon(queued) == map_id {
@@ -160,8 +160,9 @@ pub(super) enum MapKind {
     #[default]
     Unknown,
     OpenWorld,
-    /// An instance filed under its own map id: a sealed, quest, daily,
-    /// Ascension or Ascension Trial dungeon, or Nightmare. No party roster.
+    /// An instance filed under its own map: a sealed, quest, daily, Ascension
+    /// or Ascension Trial dungeon, Nightmare, the Abyss or a Daeva Hunter
+    /// recon site. No party roster names it.
     Own,
     Instance,
 }
@@ -175,16 +176,16 @@ fn map_list(json: &str) -> HashSet<i32> {
 }
 
 /// Open-world map ids from the game's Map table: the overworld maps and their
-/// world layers (the overworld itself, split off for quest scenes), and the
-/// Abyss, a large zone with sieges and world bosses.
+/// world layers (the overworld itself, split off for quest scenes).
 static OPEN_WORLD_MAPS: std::sync::LazyLock<HashSet<i32>> =
     std::sync::LazyLock::new(|| map_list(include_str!("../../../../src/data/open_world_maps.json")));
 
 #[derive(Default, serde::Deserialize)]
 struct InstanceMaps {
-    /// Instances filed under their own map id.
+    /// The dungeon of each instance map a fight is filed under without a
+    /// roster. Most share the map's id; the Abyss's do not.
     #[serde(rename = "ownMaps")]
-    own_maps: HashSet<i32>,
+    own_maps: HashMap<i32, i32>,
     /// The map of each dungeon whose id is not its map's.
     #[serde(rename = "dungeonMaps")]
     dungeon_maps: HashMap<i32, i32>,
@@ -194,8 +195,10 @@ static INSTANCE_MAPS: std::sync::LazyLock<InstanceMaps> = std::sync::LazyLock::n
     serde_json::from_str(include_str!("../../../../src/data/instance_maps.json")).unwrap_or_default()
 });
 
-fn is_own_dungeon_map(map_id: i32) -> bool {
-    INSTANCE_MAPS.own_maps.contains(&map_id)
+/// The dungeon a fight on `map_id` is filed under without a roster; 0 for
+/// none.
+fn own_dungeon(map_id: i32) -> i32 {
+    INSTANCE_MAPS.own_maps.get(&map_id).copied().unwrap_or(0)
 }
 
 /// The map a dungeon id is played on: most share the id, a few do not

@@ -254,7 +254,8 @@ const createI18n = ({
   // scripts/game-tables.py takes both from the game's Dungeon table.
   const getDungeonDifficulty = (dungeonId) => {
     const entry = dungeonStrings?.[String(Number(dungeonId) || 0)];
-    return entry?.label ? { key: entry.difficulty, label: entry.label } : null;
+    // A Conquest row may carry only its tier (Krao Cave's Conquest is tier 1).
+    return entry?.label ? { key: entry.difficulty || "tier", label: entry.label } : null;
   };
 
   // "Cradle of Nihility (Conquest [Hard] · Conquest Tier 4)" for an instance,
