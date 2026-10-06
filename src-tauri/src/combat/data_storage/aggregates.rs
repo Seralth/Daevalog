@@ -339,8 +339,8 @@ pub struct TargetCombatData {
     pub last_packet_id: i64,
     /// Per raw-actor aggregated combat data
     pub actors: HashMap<i32, ActorCombatData>,
-    /// You or your party hit it. Decided at the hit: a zone load gives you a
-    /// new id before the fight is saved.
+    /// You or your party hit it, while the meter knew who you are. Decided at
+    /// the hit: a zone load gives you a new id before the fight is saved.
     pub ours: bool,
     /// The instance the segment was fought in, as the party roster last named
     /// it at one of its hits; 0 in the open world.

@@ -606,6 +606,19 @@ mod tests {
         p
     }
 
+    #[test]
+    fn a_fight_is_yours_only_once_the_meter_knows_you() {
+        let s = DataStorage::new();
+        // Before the game names you: a stranger's boss fight nearby.
+        s.append_damage(hit(2000, 900, 0, 100, false));
+        assert!(!s.inner.read().target_combat[&900].ours, "a stranger's fight while blind");
+        s.set_local_player_id(Some(1000));
+        s.append_damage(hit(2000, 901, 1_000, 100, false));
+        assert!(!s.inner.read().target_combat[&901].ours, "a stranger's fight");
+        s.append_damage(hit(1000, 902, 2_000, 100, false));
+        assert!(s.inner.read().target_combat[&902].ours, "your own");
+    }
+
     fn of_class(slot: u8, job: JobClass) -> PartyMember {
         PartyMember { job: Some(job), ..member(slot) }
     }

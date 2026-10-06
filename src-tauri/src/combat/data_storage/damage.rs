@@ -196,7 +196,10 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     let target_data = inner.target_combat.entry(target_id).or_insert_with(|| {
         TargetCombatData::new(target_id, timestamp)
     });
-    target_data.ours |= ours;
+    // Saved fights are yours only. Before the meter knows you, `is_ours` says
+    // yes to everyone (for display); a stranger's world boss was saved and
+    // offered for upload that way (2026-10-05).
+    target_data.ours |= ours && inner.local_player_id.is_some();
     // The roster names the instance only after it arrives, so a hit before it
     // leaves the id for a later hit to fill.
     if dungeon_id != 0 {
