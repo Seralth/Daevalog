@@ -27,11 +27,11 @@ pub(crate) fn write_cached_icon(state: tauri::State<'_, AppState>, key: String, 
 /// The meter's data folder, where debug.log and the packet logs are, so a
 /// player can attach them to an issue without looking for the folder.
 #[tauri::command]
-pub(crate) fn open_data_folder(app: tauri::AppHandle, state: tauri::State<'_, AppState>) {
-    links::open(&app, &state.app_data_dir, &state.app_data_dir.to_string_lossy());
+pub(crate) fn open_data_folder(state: tauri::State<'_, AppState>) {
+    links::open(&state.app_data_dir, &state.app_data_dir.to_string_lossy());
 }
 
 #[tauri::command]
-pub(crate) fn open_url(app: tauri::AppHandle, state: tauri::State<'_, AppState>, url: String) {
-    links::open(&app, &state.app_data_dir, &url);
+pub(crate) fn open_url(state: tauri::State<'_, AppState>, url: String) {
+    links::open(&state.app_data_dir, &url);
 }

@@ -5,6 +5,7 @@ pub mod admin;
 pub mod clock;
 pub mod files;
 pub mod hotkeys;
+pub mod opener;
 pub mod pcap;
 pub mod process;
 pub mod screen;
