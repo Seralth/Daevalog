@@ -54,7 +54,7 @@ test("a dungeon's difficulty is the game's own, and only where the game gives on
   // Sealed and quest dungeons, the Abyss and maps without a dungeon row: a name only.
   for (const [id, name] of [[310051, "Altar of Hope"], [210009, "Zumion Relic Storage"],
     [142007, "Corrupted Forester Ruins Treasure Storage"], [21, "Chaotic Lower Reshanta"],
-    [20, "Chaotic Lower Reshanta"], [600144, "Citadel of the Fallen Daeva"]]) {
+    [600144, "Citadel of the Fallen Daeva"]]) {
     assert.equal(getDungeonLabel(id), name, String(id));
     assert.equal(getDungeonDifficulty(id), null, String(id));
   }

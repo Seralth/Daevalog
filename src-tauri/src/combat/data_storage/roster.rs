@@ -45,7 +45,10 @@ impl DataStorage {
                 members.len()
             );
             inner.party_members.clear();
-            inner.current_dungeon_id = 0;
+            // A sealed or quest dungeon is no party's.
+            if inner.map_kind != MapKind::Solo {
+                inner.current_dungeon_id = 0;
+            }
             inner.queued_dungeon_id = 0;
             drop(inner);
             self.flush_combat_only();
@@ -66,37 +69,49 @@ impl DataStorage {
     /// for the open world, so a load into an open-world map is what ends the
     /// last instance's dungeon id. A teleport inside an instance names the
     /// instance's own map, so it keeps the id. A load into an instance takes
-    /// the one the party queued for, if a roster named one.
+    /// the one the party queued for, if a roster named one. A sealed or quest
+    /// dungeon has no roster: its map id is its dungeon id.
     pub fn note_map_load(&self, map_id: i32) {
         let mut inner = self.inner.write();
         inner.own_records.zone_loaded();
-        inner.in_open_world = is_open_world_map(map_id);
-        if !inner.in_open_world {
-            let queued = std::mem::take(&mut inner.queued_dungeon_id);
-            if queued != 0 {
-                inner.current_dungeon_id = queued;
+        let kind = if is_open_world_map(map_id) {
+            MapKind::OpenWorld
+        } else if is_solo_instance_map(map_id) {
+            MapKind::Solo
+        } else {
+            MapKind::Instance
+        };
+        let was = std::mem::replace(&mut inner.map_kind, kind);
+        match kind {
+            MapKind::OpenWorld => {
+                if inner.current_dungeon_id != 0 {
+                    tracing::debug!(
+                        "Map {map_id} is open world: leaving dungeon {}",
+                        inner.current_dungeon_id
+                    );
+                    inner.current_dungeon_id = 0;
+                }
             }
-            return;
-        }
-        if inner.current_dungeon_id != 0 {
-            tracing::debug!(
-                "Map {map_id} is open world: leaving dungeon {}",
-                inner.current_dungeon_id
-            );
-            inner.current_dungeon_id = 0;
+            MapKind::Solo => inner.current_dungeon_id = map_id,
+            MapKind::Instance | MapKind::Unknown => {
+                let queued = std::mem::take(&mut inner.queued_dungeon_id);
+                if queued != 0 || was == MapKind::Solo {
+                    inner.current_dungeon_id = queued;
+                }
+            }
         }
     }
 
-    /// The instance a party roster names. In the open world that is the one
-    /// the party queued for, named up to minutes before the load into it
-    /// (2026-10-04 captures: 46 seconds and 3 minutes), so it waits for that
-    /// load.
+    /// The instance a party roster names. In the open world, or in a sealed
+    /// or quest dungeon, that is the one the party queued for, named up to
+    /// minutes before the load into it (2026-10-04 captures: 46 seconds and 3
+    /// minutes), so it waits for that load.
     pub fn set_current_dungeon(&self, dungeon_id: i32) {
         if dungeon_id <= 0 {
             return;
         }
         let mut inner = self.inner.write();
-        if inner.in_open_world {
+        if matches!(inner.map_kind, MapKind::OpenWorld | MapKind::Solo) {
             inner.queued_dungeon_id = dungeon_id;
         } else {
             inner.current_dungeon_id = dungeon_id;
@@ -133,17 +148,38 @@ impl DataStorage {
     }
 }
 
-/// Open-world map ids from the game's Map table: the overworld maps and their
-/// world layers (the overworld itself, split off for quest scenes).
-static OPEN_WORLD_MAPS: std::sync::LazyLock<HashSet<i32>> = std::sync::LazyLock::new(|| {
+/// What the last map load entered. Unknown until the first one.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(super) enum MapKind {
+    #[default]
+    Unknown,
+    OpenWorld,
+    /// A sealed or quest dungeon: one player's instance, no party roster.
+    Solo,
+    Instance,
+}
+
+fn map_list(json: &str) -> HashSet<i32> {
     #[derive(serde::Deserialize)]
     struct Table {
         maps: HashSet<i32>,
     }
-    serde_json::from_str::<Table>(include_str!("../../../../src/data/open_world_maps.json"))
-        .map(|t| t.maps)
-        .unwrap_or_default()
-});
+    serde_json::from_str::<Table>(json).map(|t| t.maps).unwrap_or_default()
+}
+
+/// Open-world map ids from the game's Map table: the overworld maps and their
+/// world layers (the overworld itself, split off for quest scenes), and the
+/// Abyss, a large zone with sieges and world bosses.
+static OPEN_WORLD_MAPS: std::sync::LazyLock<HashSet<i32>> =
+    std::sync::LazyLock::new(|| map_list(include_str!("../../../../src/data/open_world_maps.json")));
+
+/// Sealed and quest dungeons, each on a map of its own id.
+static SOLO_INSTANCE_MAPS: std::sync::LazyLock<HashSet<i32>> =
+    std::sync::LazyLock::new(|| map_list(include_str!("../../../../src/data/solo_instance_maps.json")));
+
+fn is_solo_instance_map(map_id: i32) -> bool {
+    SOLO_INSTANCE_MAPS.contains(&map_id)
+}
 
 /// True for a map of the open world. Unknown ids (a map added by a later
 /// patch) count as instances, which keeps the dungeon id as before.

@@ -673,9 +673,6 @@
     "name": "Fafnite Amphitheater",
     "type": "growth"
   },
-  "20": {
-    "name": "Chaotic Lower Reshanta"
-  },
   "200001": {
     "name": "Dream Crossroad",
     "type": "quest"
@@ -779,9 +776,6 @@
   "210027": {
     "name": "Chloris's Abyss",
     "type": "ascension"
-  },
-  "22": {
-    "name": "Chaotic Middle Reshanta"
   },
   "220001": {
     "name": "Crypt",

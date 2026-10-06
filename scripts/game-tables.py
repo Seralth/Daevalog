@@ -18,7 +18,9 @@ Writes, under src/data:
   words.
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
-- open_world_maps.json: overworld maps and their world layers.
+- open_world_maps.json: overworld maps, their world layers and the Abyss.
+- solo_instance_maps.json: sealed and quest dungeons, whose map id is their
+  dungeon id.
 
 zh-Hans and zh-Hant are not in the global client and are left alone.
 """
@@ -98,7 +100,10 @@ def main():
         return name and name != "???"
 
     overworld = {m["ID"]["Value"] for m in maps if m["MapType"] in ("EMapType::General", "EMapType::Starter")}
-    open_world = overworld | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}
+    # The Abyss (Reshanta) is a large zone with sieges and world bosses, not
+    # a dungeon a party enters.
+    abyss = {value(d["MapId"]) for d in dungeons if enum(d["DungeonType"]) == "Abyss"}
+    open_world = overworld | abyss | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}
     map_by_id = {m["ID"]["Value"]: m for m in maps}
     dungeon_ids = {d["ID"]["Value"] for d in dungeons}
 
@@ -235,9 +240,19 @@ def main():
             save(path, table)
 
     (DATA / "open_world_maps.json").write_text(json.dumps({
-        "source": f"{source}: Map table, overworld maps (MapType General/Starter) and their "
-                  "world layers (BaseMapId is an overworld map)",
+        "source": f"{source}: Map table, overworld maps (MapType General/Starter), their "
+                  "world layers (BaseMapId is an overworld map) and the Abyss (Dungeon table, "
+                  "DungeonType Abyss)",
         "maps": sorted(open_world),
+    }) + "\n", encoding="utf-8")
+
+    solo = [d["ID"]["Value"] for d in dungeons
+            if enum(d["DungeonType"]) in ("Seal", "Quest") and value(d["MapId"]) == d["ID"]["Value"]
+            and d["ID"]["Value"] in map_by_id and d["ID"]["Value"] not in open_world]
+    (DATA / "solo_instance_maps.json").write_text(json.dumps({
+        "source": f"{source}: Dungeon table, sealed and quest dungeons (DungeonType Seal/Quest) "
+                  "on a map of the same id",
+        "maps": sorted(solo),
     }) + "\n", encoding="utf-8")
 
 
