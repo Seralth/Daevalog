@@ -173,18 +173,22 @@ mod helper {
             let (pcap, running) = (pcap.clone(), running.clone());
             std::thread::spawn(move || pcap.run(live, &running, i64::MIN, &mut Pipe));
         }
+        // Opened with the rest, and read from now on too: an unread capture
+        // buffer fills in under a second, and the kernel drops what no longer
+        // fits. What arrives before their turn is skipped, as if they had
+        // been opened then.
+        let since = if delay { now_ms() + PHYSICAL_DELAY_MS as i64 } else { i64::MIN };
+        let labels: Vec<String> = physical_devices.iter().map(|live| live.label().to_string()).collect();
         for live in physical_devices {
             let (pcap, running) = (pcap.clone(), running.clone());
+            std::thread::spawn(move || pcap.run(live, &running, since, &mut Pipe));
+        }
+        if delay {
             std::thread::spawn(move || {
-                // Opened with the rest; what arrived before its turn is dropped,
-                // as if it had been opened now.
-                let mut since = i64::MIN;
-                if delay {
-                    std::thread::sleep(std::time::Duration::from_millis(PHYSICAL_DELAY_MS));
-                    say(Level::Info, &format!("Starting capture on physical device: {}", live.label()));
-                    since = now_ms();
+                std::thread::sleep(std::time::Duration::from_millis(PHYSICAL_DELAY_MS));
+                for label in labels {
+                    say(Level::Info, &format!("Starting capture on physical device: {label}"));
                 }
-                pcap.run(live, &running, since, &mut Pipe);
             });
         }
 
