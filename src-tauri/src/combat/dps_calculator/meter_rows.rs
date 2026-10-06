@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use crate::clock::now_ms;
-use crate::combat::data_storage::SecondStats;
+use crate::combat::data_storage::{SecondStats, UNATTRIBUTED_ID};
 use crate::entity::dps_data::DpsData;
 use crate::entity::job_class::JobClass;
 use crate::entity::personal_data::PersonalData;
@@ -225,7 +225,10 @@ impl DpsCalculator {
 
             entry.amount += damage as f64;
 
-            if entry.job.is_empty() {
+            if uid == UNATTRIBUTED_ID {
+                // Many casters of many classes: no class icon.
+                entry.job = "Unknown".to_string();
+            } else if entry.job.is_empty() {
                 if let Some(job) = combined_jobs.get(&actor_id).and_then(|j| *j) {
                     entry.job = job.class_name().to_string();
                     self.cache_job(&nickname, job.class_name());
@@ -233,11 +236,11 @@ impl DpsCalculator {
             }
         }
 
-        // A summon with no owner link stays its own row until a link arrives;
-        // then all it did, before the link too, is its owner's. No guessing by
-        // class or power scalar: both are shared between players, and guesses
-        // put a mob, a party member and the player into other rows
-        // (2026-10-04).
+        // A summon with no owner link is on the unattributed row until a link
+        // arrives; then all it did, before the link too, is its owner's. No
+        // guessing by class or power scalar beyond `entities::party_owner`:
+        // both are shared between players, and guesses put a mob, a party
+        // member and the player into other rows (2026-10-04).
 
         // Filter and compute DPS
         let local_ids = self.resolve_local_ids(&summon_data);

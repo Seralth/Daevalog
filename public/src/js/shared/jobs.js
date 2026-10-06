@@ -21,6 +21,13 @@ const jobColorMap = {
   Fighter: "#E85D5D",
 };
 
+// The one row for summons and effects the meter could tie to no player
+// (UNATTRIBUTED_ID in src-tauri/src/combat/data_storage/entities.rs).
+const UNATTRIBUTED_ACTOR_ID = 80000000;
+const isUnattributedActor = (id) => Number(id) === UNATTRIBUTED_ACTOR_ID;
+const unattributedLabel = () =>
+  window.i18n?.t?.("meter.unattributed", "Unattributed summons and effects") || "Unattributed summons and effects";
+
 // Map from the Korean class name stored in fight records → stable enum key used for i18n
 const JOB_KEY_MAP = {
   "검성": "GLADIATOR",

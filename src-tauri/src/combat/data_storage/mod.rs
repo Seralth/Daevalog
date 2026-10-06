@@ -58,6 +58,7 @@ pub use aggregates::{
     SegmentIdentity, SkillCombatData, TargetCombatData,
 };
 pub use damage::is_player_skill;
+pub use entities::UNATTRIBUTED_ID;
 pub use roster::is_open_world_map;
 
 use encounter::{retire_all, with_carry};
@@ -94,6 +95,8 @@ struct Inner {
     ended_segments: Vec<EndedSegment>,
     /// Job class detected per actor (across all targets, for summon matching)
     actor_jobs: HashMap<i32, JobClass>,
+    /// The class skills each actor used. See `entities::owners`.
+    actor_skills: HashMap<i32, entities::SkillUse>,
 
     nickname_storage: HashMap<i32, String>,
     pending_nicknames: HashMap<i32, String>,
@@ -118,6 +121,9 @@ struct Inner {
     /// entity here that deals class-band damage is a summon / spell-effect
     /// entity — it must not be flagged as a known player.
     summon_spawn_ids: HashSet<i32>,
+    /// Ids a `44/45 36` player record named, with or without a name in it.
+    /// Kept through a reset, which forgets the names.
+    player_spawn_ids: HashSet<i32>,
     /// Entity ids below the usual `>= 100` sanity floor that a spawn or identity
     /// record has proven real. The damage parser uses `>= 100` as a resync gate
     /// while walking varints, which silently discarded every hit from players
@@ -199,6 +205,7 @@ impl DataStorage {
                 idle_retired: false,
                 ended_segments: Vec::new(),
                 actor_jobs: HashMap::new(),
+                actor_skills: HashMap::new(),
                 nickname_storage: HashMap::new(),
                 pending_nicknames: HashMap::new(),
                 permanent_nicknames: HashMap::new(),
@@ -211,6 +218,7 @@ impl DataStorage {
                 authoritative_name_ids: HashSet::new(),
                 confirmed_summon_ids: HashSet::new(),
                 summon_spawn_ids: HashSet::new(),
+                player_spawn_ids: HashSet::new(),
                 low_id_entities: HashSet::new(),
                 party_members: HashMap::new(),
                 party_roster_at_ms: 0,
@@ -358,6 +366,7 @@ impl DataStorage {
         inner.encounter_carry.clear();
         inner.held_dot_ticks.clear();
         inner.actor_jobs.clear();
+        inner.actor_skills.clear();
         inner.known_player_ids.clear();
         inner.hostile_target_ids.clear();
         inner.dead_entity_ids.clear();
@@ -988,7 +997,124 @@ mod tests {
         assert!(!s.is_known_player(502), "still a summon after the reset");
 
         s.forget_summon_links();
-        assert!(s.get_summon_data().is_empty());
+        assert!(s.get_summon_data().is_empty(), "nor is the summon without one an effect of this session");
+    }
+
+    fn owner_of(s: &DataStorage, id: i32) -> Option<i32> {
+        s.get_summon_data().get(&id).copied()
+    }
+
+    /// You (Sorcerer, 100) and a Cleric (101) in a party, both fighting.
+    fn party_of_sorcerer_and_cleric() -> DataStorage {
+        let s = DataStorage::new();
+        s.set_local_player_id(Some(100));
+        s.append_nickname_authoritative(100, "Me");
+        s.append_nickname_authoritative(101, "Heal");
+        s.set_party_roster(
+            vec![("Me".into(), of_class(1, JobClass::Sorcerer)), ("Heal".into(), of_class(2, JobClass::Cleric))],
+            true,
+        );
+        s.append_damage(with_skill(hit(100, 900, 1_000, 500, false), 15_010_000));
+        s.append_damage(with_skill(hit(101, 900, 1_000, 500, false), 17_010_000));
+        s
+    }
+
+    #[test]
+    fn an_effect_goes_to_the_partys_one_member_of_its_class() {
+        let s = party_of_sorcerer_and_cleric();
+        // Never spawned, never linked: only its damage names it.
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(101));
+        assert!(!s.get_summon_data().contains_key(&100) && !s.get_summon_data().contains_key(&101));
+
+        // Another Cleric on another mob says nothing about this one.
+        s.append_nickname_authoritative(202, "Stranger");
+        s.append_damage(with_skill(hit(202, 901, 1_150, 400, false), 17_010_000));
+        assert_eq!(owner_of(&s, 700), Some(101));
+
+        // Skills of another class too: it could be anyone's.
+        s.append_damage(with_skill(hit(700, 900, 1_200, 300, false), 15_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+    }
+
+    #[test]
+    fn an_effect_is_not_guessed_when_another_could_have_cast_it() {
+        // Another Cleric on the same mob, outside the party.
+        let s = party_of_sorcerer_and_cleric();
+        s.append_nickname_authoritative(202, "Stranger");
+        s.append_damage(with_skill(hit(202, 900, 1_050, 400, false), 17_010_000));
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+
+        // A stranger's spirit, linked, puts its owner among the Clerics too.
+        let s = party_of_sorcerer_and_cleric();
+        s.register_confirmed_summon_by_id(600, 303);
+        s.append_damage(with_skill(hit(600, 900, 1_050, 400, false), 17_030_000));
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+
+        // Two Clerics in the party.
+        let s = party_of_sorcerer_and_cleric();
+        s.set_party_roster(
+            vec![
+                ("Me".into(), of_class(1, JobClass::Sorcerer)),
+                ("Heal".into(), of_class(2, JobClass::Cleric)),
+                ("Heal2".into(), of_class(3, JobClass::Cleric)),
+            ],
+            true,
+        );
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+
+        // The party's Cleric not named yet.
+        let s = DataStorage::new();
+        s.set_party_roster(
+            vec![("Me".into(), of_class(1, JobClass::Sorcerer)), ("Heal".into(), of_class(2, JobClass::Cleric))],
+            true,
+        );
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+    }
+
+    #[test]
+    fn a_player_is_no_effect_without_a_name() {
+        let s = DataStorage::new();
+        // Named by a player spawn, and still a player once a reset forgets the name.
+        s.note_player_spawn(201);
+        s.append_nickname_authoritative(201, "Spawned");
+        // A player record with no name in it.
+        s.note_player_record(202);
+        s.append_damage(with_skill(hit(201, 900, 1_000, 100, false), 11_010_000));
+        s.append_damage(with_skill(hit(202, 900, 1_000, 100, false), 11_010_000));
+        // A player's rotation: five distinct skills.
+        for k in 0..5 {
+            s.append_damage(with_skill(hit(203, 900, 1_000, 100, false), 11_010_000 + k * 10_000));
+        }
+        // The owner of a linked summon, with one skill.
+        s.register_confirmed_summon_by_id(600, 204);
+        s.append_damage(with_skill(hit(204, 900, 1_000, 100, false), 16_010_000));
+        // Four skills and nothing else: an effect.
+        for k in 0..4 {
+            s.append_damage(with_skill(hit(700, 900, 1_000, 100, false), 11_010_000 + k * 10_000));
+        }
+        s.reset_nicknames();
+        let owners = s.get_summon_data();
+        for player in [201, 202, 203, 204] {
+            assert_eq!(owners.get(&player), None, "{player} is a player");
+        }
+        assert_eq!(owners.get(&700), Some(&UNATTRIBUTED_ID));
+    }
+
+    #[test]
+    fn an_effects_spawn_after_its_first_hits_leaves_them_for_its_link() {
+        let s = DataStorage::new();
+        s.append_damage(with_skill(hit(700, 900, 1_000, 300, false), 15_020_000));
+        s.note_summon_spawn(700);
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID), "no link yet");
+        s.register_confirmed_summon_by_id(700, 100);
+        s.append_damage(with_skill(hit(700, 900, 1_100, 50, false), 15_020_000));
+        assert_eq!(owner_of(&s, 700), Some(100));
+        assert_eq!(dealt(&s, 900, 700), 350, "all of it is the owner's");
     }
 
     #[test]

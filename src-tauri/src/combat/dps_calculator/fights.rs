@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::combat::data_storage::{SegmentIdentity, TargetCombatData, IDLE_RESET_MS, MIN_SAVED_FIGHT_MS};
+use crate::combat::data_storage::{SegmentIdentity, TargetCombatData, IDLE_RESET_MS, MIN_SAVED_FIGHT_MS, UNATTRIBUTED_ID};
 use crate::entity::details_context::*;
 use crate::entity::fight_record::FightRecord;
 use crate::entity::job_class::JobClass;
@@ -136,7 +136,9 @@ impl DpsCalculator {
         };
 
         let mut record_actors: HashMap<i32, (String, String)> = HashMap::new();
-        for skill in &details.skills {
+        // The record's actors are its players, which an upload counts; the
+        // unattributed row's damage stays in the details.
+        for skill in details.skills.iter().filter(|s| s.actor_id != UNATTRIBUTED_ID) {
             let uid = skill.actor_id;
             record_actors.entry(uid).or_insert_with(|| {
                 let nick = resolve_nickname(uid, &nickname_data, &summon_data_snap);
