@@ -3,10 +3,11 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::Ordering;
 
+use crate::entity::job_class::JobClass;
 use crate::entity::summon_resolver;
 
 use super::damage::purge_friendly_damage;
-use super::{ActorCombatData, DataStorage, Inner};
+use super::{ActorCombatData, DataStorage, Inner, TargetCombatData};
 
 impl DataStorage {
     pub fn append_mob(&self, mid: i32, code: i32) {
@@ -89,12 +90,24 @@ impl DataStorage {
         if !inner.authoritative_name_ids.contains(&id) {
             inner.known_player_ids.remove(&id);
         }
+        inner.player_spawn_ids.remove(&id);
         inner.summon_spawn_ids.insert(id);
     }
 
     /// A `44/45 36` player spawn for `id`: a player, not anyone's summon.
     pub fn note_player_spawn(&self, id: i32) {
-        forget_entity(&mut self.inner.write(), id);
+        let mut inner = self.inner.write();
+        forget_entity(&mut inner, id);
+        inner.player_spawn_ids.insert(id);
+    }
+
+    /// A `44/45 36` record about `id` with no name in it. Still a player: in
+    /// the check kit's captures 103 unnamed actors had one, 92 of them using
+    /// four or more class skills, and none of the 1,022 summons and effects
+    /// linked to an owner did (2026-10-06). Read out of a scan, so it leaves
+    /// the id's links alone.
+    pub fn note_player_record(&self, id: i32) {
+        self.inner.write().player_spawn_ids.insert(id);
     }
 
     pub fn get_summon_spawn_ids(&self) -> HashSet<i32> {
@@ -148,8 +161,10 @@ impl DataStorage {
         inner.summon_storage.insert(summon, summoner);
     }
 
+    /// Who owns each summon, for the views: the links, and the summons and
+    /// effects no link names. See `owners`.
     pub fn get_summon_data(&self) -> HashMap<i32, i32> {
-        self.inner.read().summon_storage.clone()
+        owners(&self.inner.read())
     }
 
     pub fn get_mob_hp_data(&self) -> HashMap<i32, i32> {
@@ -196,7 +211,144 @@ impl DataStorage {
         inner.summon_storage.clear();
         inner.confirmed_summon_ids.clear();
         inner.summon_spawn_ids.clear();
+        inner.player_spawn_ids.clear();
+        inner.actor_skills.clear();
     }
+}
+
+/// The row that summons and effects nobody could be tied to share. Above the
+/// entity ids (they end at 9,999,999) and below the party placeholder rows.
+pub const UNATTRIBUTED_ID: i32 = 80_000_000;
+
+/// Distinct class skills that make an actor a player. Of 1,022 summons and
+/// effects linked to an owner in the check kit's 11 captures, none dealt
+/// damage with more than 4; 82 actors with no name and no player record
+/// used 5 to 19, 59 of them in a world boss crowd (2026-10-06).
+const PLAYER_SKILLS: usize = 5;
+
+/// The class skills an actor used.
+#[derive(Debug, Clone, Default)]
+pub(super) struct SkillUse {
+    classes: Vec<JobClass>,
+    /// The first `PLAYER_SKILLS` distinct ones.
+    skills: Vec<i32>,
+}
+
+impl SkillUse {
+    pub(super) fn add(&mut self, job: JobClass, skill: i32) {
+        if !self.classes.contains(&job) {
+            self.classes.push(job);
+        }
+        if self.skills.len() < PLAYER_SKILLS && !self.skills.contains(&skill) {
+            self.skills.push(skill);
+        }
+    }
+
+    /// The class, while every skill was of one.
+    fn class(&self) -> Option<JobClass> {
+        match self.classes.as_slice() {
+            [job] => Some(*job),
+            _ => None,
+        }
+    }
+}
+
+/// The summon links, plus an owner for every actor that dealt damage with
+/// class skills and is neither linked nor a player. Those are summons and
+/// effects: the server sends no spawn for other players' effects in a crowd,
+/// so the only packets naming them are their own damage records. In the
+/// check kit's world boss capture they dealt 5.7% of the class-skill damage,
+/// each shown as a player of its own named by its id, and a2tools.app
+/// refused a log of that fight as over raid size (2026-10-05).
+///
+/// The owner is your party's one member of the effect's class when no
+/// other player of that class fought where the effect hit (see
+/// `party_owner`); else `UNATTRIBUTED_ID`, one row for them all.
+pub(super) fn owners(inner: &Inner) -> HashMap<i32, i32> {
+    owners_in(inner, inner.target_combat.values().chain(inner.encounter_carry.values()))
+}
+
+/// `owners`, judging who fought where an effect hit by `fights`.
+pub(super) fn owners_in<'a>(inner: &Inner, fights: impl Iterator<Item = &'a TargetCombatData>) -> HashMap<i32, i32> {
+    let mut out = inner.summon_storage.clone();
+    let owners: HashSet<i32> = inner.summon_storage.values().copied().collect();
+    let present = players_beside_effects(inner, &owners, fights);
+    for (&id, used) in &inner.actor_skills {
+        if is_effect(inner, &owners, id, used) {
+            let owner = used
+                .class()
+                .and_then(|job| party_owner(inner, job, present.get(&id).and_then(|p| p.get(&job))))
+                .filter(|&owner| owner != id);
+            out.insert(id, owner.unwrap_or(UNATTRIBUTED_ID));
+        }
+    }
+    out
+}
+
+/// Linked to no one, and no sign of a player: a name, a player record, your
+/// own id, a summon of its own (`owners`), or a player's rotation.
+fn is_effect(inner: &Inner, owners: &HashSet<i32>, id: i32, used: &SkillUse) -> bool {
+    !inner.summon_storage.contains_key(&id)
+        && !inner.nickname_storage.contains_key(&id)
+        && !inner.player_spawn_ids.contains(&id)
+        && inner.local_player_id != Some(id as i64)
+        && used.skills.len() < PLAYER_SKILLS
+        && !owners.contains(&id)
+}
+
+/// The entity of your party's one member of class `job`, when the players of
+/// that class who fought where the effect hit (`present`) are that member
+/// alone. Anyone else of the class could be the caster: two party members
+/// of it, or a stranger nearby. Without that check, 114 summons and effects
+/// linked to strangers in three of the check kit's captures would have gone
+/// to the party's member of their class; with it, none would have, and 105
+/// would have gone to their right owner (2026-10-06).
+fn party_owner(inner: &Inner, job: JobClass, present: Option<&HashSet<i32>>) -> Option<i32> {
+    if inner.party_members.len() < 2 {
+        return None;
+    }
+    let mut of_class = inner.party_members.iter().filter(|(_, m)| m.job == Some(job));
+    let (name, _) = of_class.next()?;
+    if of_class.next().is_some() {
+        return None;
+    }
+    let member = inner.nickname_storage.iter().find(|(_, n)| n.trim() == name.trim()).map(|(&id, _)| id)?;
+    present.is_some_and(|ids| ids.len() == 1 && ids.contains(&member)).then_some(member)
+}
+
+/// For each effect, the players of each class in the fights it hit: players
+/// by their own skills, and the owners of linked summons by theirs.
+fn players_beside_effects<'a>(
+    inner: &Inner,
+    owners: &HashSet<i32>,
+    fights: impl Iterator<Item = &'a TargetCombatData>,
+) -> HashMap<i32, HashMap<JobClass, HashSet<i32>>> {
+    let mut out: HashMap<i32, HashMap<JobClass, HashSet<i32>>> = HashMap::new();
+    for fight in fights {
+        let mut players: HashMap<JobClass, HashSet<i32>> = HashMap::new();
+        let mut effects = Vec::new();
+        for &actor in fight.actors.keys() {
+            let Some(used) = inner.actor_skills.get(&actor) else { continue };
+            let player = if inner.summon_storage.contains_key(&actor) {
+                summon_resolver::resolve(actor, &inner.summon_storage)
+            } else if is_effect(inner, owners, actor, used) {
+                effects.push(actor);
+                continue;
+            } else {
+                actor
+            };
+            for &job in &used.classes {
+                players.entry(job).or_default().insert(player);
+            }
+        }
+        for effect in effects {
+            let present = out.entry(effect).or_default();
+            for (job, ids) in &players {
+                present.entry(*job).or_default().extend(ids);
+            }
+        }
+    }
+    out
 }
 
 /// Skill codes of the records a Spiritmaster's spirit sends its owner (about
@@ -253,6 +405,10 @@ fn forget_entity(inner: &mut Inner, id: i32) {
     inner.actor_jobs.remove(&id);
     inner.hostile_target_ids.remove(&id);
     let Some(owner) = inner.summon_storage.remove(&id) else { return };
+    // Only a linked actor's skills go. A spawn followed an unlinked actor's
+    // first hit by 100 ms in a scarecrow capture (2026-10-05), most likely
+    // the same entity, so the link that follows takes what it did.
+    inner.actor_skills.remove(&id);
     let owner = summon_resolver::resolve(owner, &inner.summon_storage);
     if owner <= 0 || owner == id {
         return;

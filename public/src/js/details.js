@@ -491,7 +491,9 @@ const createDetailsUI = ({
     actors.forEach((actor) => {
       const actorId = Number(actor.actorId);
       const job = actor.job || getActorJob(actorId);
-      const name = detailsActors.get(actorId)?.nickname || resolveActorLabel(actorId);
+      const name = isUnattributedActor(actorId)
+        ? unattributedLabel()
+        : detailsActors.get(actorId)?.nickname || resolveActorLabel(actorId);
       const dmg = Number(actor.totalDmg) || 0;
       const pct = Number(actor.contributionPct) || 0;
       const ratio = topDmg > 0 ? dmg / topDmg : 0;
@@ -1886,6 +1888,7 @@ const createDetailsUI = ({
     );
 
   const resolveActorLabel = (actorId) => {
+    if (isUnattributedActor(actorId)) return unattributedLabel();
     const actor = detailsActors.get(Number(actorId));
     if (actor?.nickname && actor.nickname !== String(actorId)) return actor.nickname;
     return `#${actorId}`;

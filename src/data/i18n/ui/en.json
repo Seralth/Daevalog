@@ -443,6 +443,7 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
+    "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {
       "encDps": "ENC",

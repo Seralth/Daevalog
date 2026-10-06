@@ -69,7 +69,7 @@ pub(super) fn retire_segment(inner: &mut Inner, data: TargetCombatData) {
     let max_hp = inner.mob_hp_data.get(&tid).copied().unwrap_or(0);
     let heals = fight_heals(inner, &data);
     let identity = SegmentIdentity {
-        summons: inner.summon_storage.clone(),
+        summons: super::entities::owners_in(inner, std::iter::once(&data)),
         nicknames: inner.nickname_storage.clone(),
         local_player_id: inner.local_player_id,
         dungeon_id: inner.current_dungeon_id,

@@ -250,6 +250,8 @@ impl StreamProcessor {
         let actor_id = actor_info.value;
         let mask2_idx = offset_after_opcode + actor_info.length as usize + 4;
         if mask2_idx + 1 >= data.len() || data[mask2_idx] & 0x01 == 0 {
+            // A player all the same, which tells their damage from an effect's.
+            self.data_storage.note_player_record(actor_id);
             return;
         }
         let name_len = data[mask2_idx + 1] as usize;
