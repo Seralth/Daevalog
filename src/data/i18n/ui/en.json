@@ -487,14 +487,6 @@
     "CHANTER": "Chanter",
     "FIGHTER": "Brawler"
   },
-  "dungeon": {
-    "difficulty": {
-      "exploration": "Exploration",
-      "normal": "Normal",
-      "hard": "Hard",
-      "level": "Level {n}"
-    }
-  },
   "tray": {
     "toggle": "Show or hide the meter",
     "lock": "Lock or unlock the meter",

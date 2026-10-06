@@ -487,14 +487,6 @@
     "CHANTER": "호법성",
     "FIGHTER": "권성"
   },
-  "dungeon": {
-    "difficulty": {
-      "exploration": "탐험",
-      "normal": "일반",
-      "hard": "매우 어려움",
-      "level": "{n}단계"
-    }
-  },
   "tray": {
     "toggle": "미터 표시/숨기기",
     "lock": "미터 잠금/해제",

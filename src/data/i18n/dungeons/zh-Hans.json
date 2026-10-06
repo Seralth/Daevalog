@@ -1,72 +1,124 @@
 {
   "600001": {
-    "name": "克劳洞穴"
+    "name": "克劳洞穴",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 1,
+    "label": "Conquest · Conquest Tier 1"
   },
   "600002": {
-    "name": "克劳洞穴"
+    "name": "克劳洞穴",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600003": {
     "name": "克劳洞穴"
   },
   "600004": {
-    "name": "克劳洞穴"
+    "name": "克劳洞穴",
+    "type": "party",
+    "tier": 1
   },
   "600011": {
-    "name": "乌努库库峡谷"
+    "name": "乌努库库峡谷",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600012": {
-    "name": "乌努库库峡谷"
+    "name": "乌努库库峡谷",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 2,
+    "label": "Conquest · Conquest Tier 2"
   },
   "600013": {
-    "name": "乌努库库峡谷"
+    "name": "乌努库库峡谷",
+    "type": "party",
+    "tier": 2
   },
   "600014": {
     "name": "乌努库库峡谷"
   },
   "600021": {
-    "name": "火之神殿"
+    "name": "火之神殿",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600022": {
-    "name": "火之神殿"
+    "name": "火之神殿",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 3,
+    "label": "Conquest · Conquest Tier 3"
   },
   "600023": {
-    "name": "火之神殿"
+    "name": "火之神殿",
+    "type": "party",
+    "tier": 3
   },
   "600024": {
     "name": "火之神殿"
   },
   "600031": {
-    "name": "德拉乌伯尼尔"
+    "name": "德拉乌伯尼尔",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600032": {
-    "name": "德拉乌伯尼尔"
+    "name": "德拉乌伯尼尔",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 1,
+    "label": "Conquest · Conquest Tier 1"
   },
   "600033": {
-    "name": "德拉乌伯尼尔"
+    "name": "德拉乌伯尼尔",
+    "type": "party",
+    "tier": 1
   },
   "600034": {
     "name": "德拉乌伯尼尔"
   },
   "600041": {
-    "name": "死亡德拉玛塔巢穴"
+    "name": "死亡德拉玛塔巢穴",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600042": {
-    "name": "死亡德拉玛塔巢穴"
+    "name": "死亡德拉玛塔巢穴",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 4,
+    "label": "Conquest · Conquest Tier 4"
   },
   "600051": {
-    "name": "德乌斯研究基地"
+    "name": "德乌斯研究基地",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600052": {
     "name": "德乌斯研究基地"
   },
   "600053": {
-    "name": "德乌斯研究基地"
+    "name": "德乌斯研究基地",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Transcendence"
   },
   "600054": {
     "name": "德乌斯研究基地"
   },
   "600055": {
-    "name": "德乌斯研究基地"
+    "name": "德乌斯研究基地",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Transcendence"
   },
   "600056": {
     "name": "德乌斯研究基地"
@@ -75,25 +127,37 @@
     "name": "德乌斯研究基地"
   },
   "600058": {
-    "name": "德乌斯研究基地"
+    "name": "德乌斯研究基地",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Transcendence"
   },
   "600059": {
     "name": "德乌斯研究基地"
   },
   "600061": {
-    "name": "破碎的雅尔卡尼斯"
+    "name": "破碎的雅尔卡尼斯",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600062": {
     "name": "破碎的雅尔卡尼斯"
   },
   "600063": {
-    "name": "破碎的雅尔卡尼斯"
+    "name": "破碎的雅尔卡尼斯",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Transcendence"
   },
   "600064": {
     "name": "破碎的雅尔卡尼斯"
   },
   "600065": {
-    "name": "破碎的雅尔卡尼斯"
+    "name": "破碎的雅尔卡尼斯",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Transcendence"
   },
   "600066": {
     "name": "破碎的雅尔卡尼斯"
@@ -102,82 +166,132 @@
     "name": "破碎的雅尔卡尼斯"
   },
   "600068": {
-    "name": "破碎的雅尔卡尼斯"
+    "name": "破碎的雅尔卡尼斯",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Transcendence"
   },
   "600069": {
     "name": "破碎的雅尔卡尼斯"
   },
   "600071": {
-    "name": "巴克隆空中岛"
+    "name": "巴克隆空中岛",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600072": {
-    "name": "巴克隆空中岛"
+    "name": "巴克隆空中岛",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 2,
+    "label": "Conquest · Conquest Tier 2"
   },
   "600073": {
-    "name": "巴克隆空中岛"
+    "name": "巴克隆空中岛",
+    "type": "party",
+    "tier": 2
   },
   "600074": {
     "name": "巴克隆空中岛"
   },
   "600091": {
     "name": "凶猛的角岩窟",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600092": {
     "name": "凶猛的角岩窟",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 3,
+    "label": "Conquest · Conquest Tier 3"
   },
   "600093": {
     "name": "凶猛的角岩窟",
-    "difficulty": "hard"
+    "type": "party",
+    "tier": 3
   },
   "600121": {
     "name": "无之摇篮",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600122": {
     "name": "无之摇篮",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 4,
+    "label": "Conquest · Conquest Tier 4"
   },
   "600123": {
     "name": "无之摇篮",
-    "difficulty": "hard"
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 4,
+    "label": "Conquest [Hard] · Conquest Tier 4"
   },
   "600131": {
     "name": "the Hall of Illusion",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600132": {
     "name": "the Hall of Illusion",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 5,
+    "label": "Conquest · Conquest Tier 5"
   },
   "600133": {
     "name": "the Hall of Illusion",
-    "difficulty": "hard"
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 5,
+    "label": "Conquest [Hard] · Conquest Tier 5"
   },
   "600141": {
     "name": "青息之岛",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600142": {
     "name": "青息之岛",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 5,
+    "label": "Conquest · Conquest Tier 5"
   },
   "600143": {
     "name": "青息之岛",
-    "difficulty": "hard"
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 5,
+    "label": "Conquest [Hard] · Conquest Tier 5"
   },
   "600151": {
     "name": "堕落守护者之城",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploration"
   },
   "600152": {
     "name": "堕落守护者之城",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 6,
+    "label": "Conquest · Conquest Tier 6"
   },
   "600153": {
     "name": "堕落守护者之城",
-    "difficulty": "hard"
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 6,
+    "label": "Conquest [Hard] · Conquest Tier 6"
   },
   "600161": {
     "name": "被蚕食的德乌斯研究基地",

@@ -487,14 +487,6 @@
     "CHANTER": "Aède",
     "FIGHTER": "Pugiliste"
   },
-  "dungeon": {
-    "difficulty": {
-      "exploration": "Exploration",
-      "normal": "Normal",
-      "hard": "Difficile",
-      "level": "Niveau {n}"
-    }
-  },
   "tray": {
     "toggle": "Afficher ou masquer le meter",
     "lock": "Verrouiller ou déverrouiller le meter",

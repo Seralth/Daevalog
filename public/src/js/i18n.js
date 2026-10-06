@@ -248,30 +248,17 @@ const createI18n = ({
     return () => listeners.delete(listener);
   };
 
-  // The instance's tier ({ key: "hard", label: "Hard" }), or null when it is
-  // not known. An instance id's last digit is its tier, as on a2tools.app:
-  // Krao Cave is 600001-600004, Ferocious Horn Den 600091-600093. 1, 2 and 3
-  // are Exploration, Conquest Normal and Conquest Hard; a dungeon with nine
-  // ids (Deus Research Base, Shattered Arkanis) has levels instead; the older
-  // dungeons' fourth id is not named yet.
+  // The instance's difficulty in the game's own words, with its party tier
+  // ({ key: "advanced", label: "Conquest [Hard] · Conquest Tier 4" }), or null
+  // where the game gives none: sealed, quest and Abyss dungeons among others.
+  // scripts/game-tables.py takes both from the game's Dungeon table.
   const getDungeonDifficulty = (dungeonId) => {
-    const id = Number(dungeonId) || 0;
-    const entry = dungeonStrings?.[String(id)];
-    if (!entry) return null;
-    const n = id % 10;
-    const group = id - n;
-    const size = Object.keys(dungeonStrings).filter((k) => Number(k) - (Number(k) % 10) === group).length;
-    if (size >= 9) {
-      const label = format("dungeon.difficulty.level", { n }, "");
-      return label ? { key: "level", label } : null;
-    }
-    const key = entry.difficulty || { 1: "exploration", 2: "normal", 3: "hard" }[n];
-    const label = key ? t(`dungeon.difficulty.${key}`, "") : "";
-    return label ? { key, label } : null;
+    const entry = dungeonStrings?.[String(Number(dungeonId) || 0)];
+    return entry?.label ? { key: entry.difficulty, label: entry.label } : null;
   };
 
-  // "Ferocious Horn Den (Hard)" for the instance the party roster reports, or
-  // the name alone where the tier is not known.
+  // "Cradle of Nihility (Conquest [Hard] · Conquest Tier 4)" for an instance,
+  // or the name alone where the game gives no difficulty.
   const getDungeonLabel = (dungeonId) => {
     const entry = dungeonStrings?.[String(dungeonId)];
     if (!entry || !entry.name) return "";

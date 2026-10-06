@@ -487,14 +487,6 @@
     "CHANTER": "チャンター",
     "FIGHTER": "ファイター"
   },
-  "dungeon": {
-    "difficulty": {
-      "exploration": "探索",
-      "normal": "ノーマル",
-      "hard": "ハード",
-      "level": "レベル{n}"
-    }
-  },
   "tray": {
     "toggle": "メーターの表示/非表示",
     "lock": "メーターのロック/解除",

@@ -5,7 +5,8 @@ import vm from "node:vm";
 
 const source = readFileSync(new URL("../public/src/js/i18n.js", import.meta.url), "utf8");
 
-test("built UI resources support language switching and English dungeon fallback", async () => {
+// i18n.js over the built resources in dist/.
+const builtI18n = () => {
   const window = {};
   const document = {
     baseURI: "http://localhost/",
@@ -25,6 +26,11 @@ test("built UI resources support language switching and English dungeon fallback
     }
   };
   vm.runInNewContext(source, { window, document, fetch, URL, TextDecoder, Uint8Array, XMLHttpRequest: MissingResource });
+  return window;
+};
+
+test("built UI resources support language switching and English dungeon fallback", async () => {
+  const window = builtI18n();
   const ru = JSON.parse(readFileSync(new URL("../src/data/i18n/ui/ru.json", import.meta.url)));
   const en = JSON.parse(readFileSync(new URL("../src/data/i18n/ui/en.json", import.meta.url)));
   await window.i18n.setLanguage("ru", { persist: false });
@@ -33,6 +39,25 @@ test("built UI resources support language switching and English dungeon fallback
   await window.i18n.setLanguage("en", { persist: false });
   assert.equal(window.i18n.t("target.all"), en.target.all);
   assert.match(window.i18n.getDungeonLabel(600001), /^Krao Cave/);
+});
+
+test("a dungeon's difficulty is the game's own, and only where the game gives one", async () => {
+  const window = builtI18n();
+  await window.i18n.setLanguage("en", { persist: false });
+  const { getDungeonLabel, getDungeonDifficulty } = window.i18n;
+  assert.equal(getDungeonLabel(600002), "Krao Cave (Exploration)");
+  assert.equal(getDungeonLabel(600123), "Cradle of Nihility (Conquest [Hard] · Conquest Tier 4)");
+  assert.equal(getDungeonDifficulty(600123).key, "advanced");
+  // A Transcendence run, not "Level 3" from the id's last digit.
+  assert.equal(getDungeonLabel(600053), "Deus Research Base (Transcendence)");
+  assert.equal(getDungeonLabel(620021), "Chalice of Muspel (Hard)");
+  // Sealed and quest dungeons, the Abyss and maps without a dungeon row: a name only.
+  for (const [id, name] of [[310051, "Altar of Hope"], [210009, "Zumion Relic Storage"],
+    [142007, "Corrupted Forester Ruins Treasure Storage"], [21, "Chaotic Lower Reshanta"],
+    [20, "Chaotic Lower Reshanta"], [600144, "Citadel of the Fallen Daeva"]]) {
+    assert.equal(getDungeonLabel(id), name, String(id));
+    assert.equal(getDungeonDifficulty(id), null, String(id));
+  }
 });
 
 const uiDir = new URL("../src/data/i18n/ui/", import.meta.url);
