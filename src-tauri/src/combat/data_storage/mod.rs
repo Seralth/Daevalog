@@ -139,6 +139,11 @@ struct Inner {
     /// Instance id the party is in, from the same packet. Encodes the dungeon and
     /// its difficulty tier; resolved to a name by the frontend's dungeon table.
     current_dungeon_id: i32,
+    /// The last map load was into the open world. False until a load is seen.
+    in_open_world: bool,
+    /// The instance a roster named while the party was in the open world:
+    /// the one it queued for. It applies at the next load into an instance.
+    queued_dungeon_id: i32,
     hostile_target_ids: HashSet<i32>,
     dead_entity_ids: HashSet<i32>,
     /// Boss entity IDs identified from NPC DB boss flags
@@ -212,6 +217,8 @@ impl DataStorage {
                 damage_since_roster_bind: 0,
                 party_placeholders_hidden: false,
                 current_dungeon_id: 0,
+                in_open_world: false,
+                queued_dungeon_id: 0,
                 hostile_target_ids: HashSet::new(),
                 dead_entity_ids: HashSet::new(),
                 boss_entity_ids: HashSet::new(),

@@ -46,6 +46,7 @@ impl DataStorage {
             );
             inner.party_members.clear();
             inner.current_dungeon_id = 0;
+            inner.queued_dungeon_id = 0;
             drop(inner);
             self.flush_combat_only();
             self.combat_reset_requested.store(true, Ordering::Relaxed);
@@ -64,11 +65,17 @@ impl DataStorage {
     /// A zone load named the map it loads (`21 36`). The roster never sends 0
     /// for the open world, so a load into an open-world map is what ends the
     /// last instance's dungeon id. A teleport inside an instance names the
-    /// instance's own map, so it keeps the id.
+    /// instance's own map, so it keeps the id. A load into an instance takes
+    /// the one the party queued for, if a roster named one.
     pub fn note_map_load(&self, map_id: i32) {
         let mut inner = self.inner.write();
         inner.own_records.zone_loaded();
-        if !is_open_world_map(map_id) {
+        inner.in_open_world = is_open_world_map(map_id);
+        if !inner.in_open_world {
+            let queued = std::mem::take(&mut inner.queued_dungeon_id);
+            if queued != 0 {
+                inner.current_dungeon_id = queued;
+            }
             return;
         }
         if inner.current_dungeon_id != 0 {
@@ -80,9 +87,19 @@ impl DataStorage {
         }
     }
 
+    /// The instance a party roster names. In the open world that is the one
+    /// the party queued for, named up to minutes before the load into it
+    /// (2026-10-04 captures: 46 seconds and 3 minutes), so it waits for that
+    /// load.
     pub fn set_current_dungeon(&self, dungeon_id: i32) {
-        if dungeon_id > 0 {
-            self.inner.write().current_dungeon_id = dungeon_id;
+        if dungeon_id <= 0 {
+            return;
+        }
+        let mut inner = self.inner.write();
+        if inner.in_open_world {
+            inner.queued_dungeon_id = dungeon_id;
+        } else {
+            inner.current_dungeon_id = dungeon_id;
         }
     }
 
