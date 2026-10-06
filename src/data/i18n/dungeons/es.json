@@ -1944,7 +1944,8 @@
   "600004": {
     "name": "Cueva de Krao",
     "type": "party",
-    "tier": 1
+    "tier": 1,
+    "label": "Conquista T1"
   },
   "600011": {
     "name": "Cañón de Urugugu",
@@ -1962,7 +1963,8 @@
   "600013": {
     "name": "Cañón de Urugugu",
     "type": "party",
-    "tier": 2
+    "tier": 2,
+    "label": "Conquista T2"
   },
   "600014": {
     "name": "Urugugu Canyon"
@@ -1983,7 +1985,8 @@
   "600023": {
     "name": "Templo de Fuego",
     "type": "party",
-    "tier": 3
+    "tier": 3,
+    "label": "Conquista T3"
   },
   "600024": {
     "name": "Fire Temple"
@@ -2004,7 +2007,8 @@
   "600033": {
     "name": "Draupnir",
     "type": "party",
-    "tier": 1
+    "tier": 1,
+    "label": "Conquista T1"
   },
   "600034": {
     "name": "Draupnir"
@@ -2116,7 +2120,8 @@
   "600073": {
     "name": "Isla Aérea de Vakron",
     "type": "party",
-    "tier": 2
+    "tier": 2,
+    "label": "Conquista T2"
   },
   "600074": {
     "name": "Vakron Sky Island"
@@ -2143,7 +2148,8 @@
   "600093": {
     "name": "Caverna del Cuerno Feroz",
     "type": "party",
-    "tier": 3
+    "tier": 3,
+    "label": "Conquista T3"
   },
   "600121": {
     "name": "Cuna de la Nada",

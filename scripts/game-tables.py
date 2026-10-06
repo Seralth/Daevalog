@@ -87,6 +87,13 @@ OWN_MAP_PREFIX = "DaevaHunter_"
 CONQUEST_HARD_TEXT = "String_UI_PARTYDUNGEON_CONQUER_DIFFICULTY_ADVANCED_body"
 # A name that holds its variant in brackets: "Nightmare Altar (Easy)".
 VARIANT_IN_NAME = re.compile(r"[(\[（【].*[)\]）】]")
+WORD = re.compile(r"\w+")
+
+
+# The words of a name or label, less short Latin ones ("de" in "Grotte de
+# Krao" and "Conquête de rang 1" says nothing twice).
+def words(text):
+    return {w for w in WORD.findall(text.casefold()) if len(w) > 2 or not w.isascii()}
 
 
 def load(path):
@@ -146,11 +153,16 @@ def main():
     # A party tier's words ("Conquest Tier 3") hold the difficulty already,
     # so they stand alone, with the game's Conquest "Hard" for an Advanced
     # row. A name that holds its variant gets no words.
+    #
+    # The Expedition menu's Conquest tab lists Krao Cave, Draupnir, Urugugu
+    # Canyon, Vakron Sky Island, Fire Temple and Ferocious Horn Den with 1, 1,
+    # 2, 2, 3 and 3 stars: their "_Hard" rows, difficulty None and that party
+    # tier (in-game, 2026-10-06). So a tier alone is enough for the words.
     def difficulty_label(dungeon, name, text):
         difficulty = enum(dungeon["DungeonDifficulty"])
-        if difficulty == "None" or not name or VARIANT_IN_NAME.search(name):
-            return None
         tier = re.fullmatch(r"PartyDungeon_(\d+)Tier", enum(dungeon["PartDungeonTier"]))
+        if (difficulty == "None" and not tier) or not name or VARIANT_IN_NAME.search(name):
+            return None
         if tier:
             label = text.get(TIER_TEXT.format(tier.group(1)))
             hard = text.get(CONQUEST_HARD_TEXT)
@@ -159,7 +171,7 @@ def main():
         else:
             key = DIFFICULTY_TEXT.get(enum(dungeon["DungeonSubType"])) or DIFFICULTY_TEXT.get(enum(dungeon["DungeonType"]))
             label = text.get(key.format(difficulty.upper())) if key else None
-        if not named(label) or label.casefold() in name.casefold():
+        if not named(label) or words(label) & words(name):
             return None
         return label
 

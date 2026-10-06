@@ -47,7 +47,10 @@ test("a dungeon's difficulty is the game's own, and only where the game gives on
   const window = builtI18n();
   await window.i18n.setLanguage("en", { persist: false });
   const { getDungeonLabel, getDungeonDifficulty } = window.i18n;
+  // The Expedition menu's two tabs: Exploration, and Conquest with its stars.
   assert.equal(getDungeonLabel(600002), "Krao Cave (Exploration)");
+  assert.equal(getDungeonLabel(600004), "Krao Cave (Conquest Tier 1)");
+  assert.equal(getDungeonDifficulty(600004).key, "tier");
   assert.equal(getDungeonLabel(600022), "Fire Temple (Conquest Tier 3)");
   assert.equal(getDungeonLabel(600123), "Cradle of Nihility (Conquest Tier 4 · Hard)");
   assert.equal(getDungeonDifficulty(600123).key, "advanced");
@@ -65,6 +68,8 @@ test("a dungeon's difficulty is the game's own, and only where the game gives on
   }
   await window.i18n.setLanguage("de", { persist: false });
   assert.equal(getDungeonLabel(600002), "Kraohöhle (Erkundung)");
+  await window.i18n.setLanguage("fr", { persist: false });
+  assert.equal(getDungeonLabel(600004), "Grotte de Krao (Conquête de rang 1)");
 });
 
 test("no dungeon label repeats a word, or a variant its name holds", () => {
@@ -76,6 +81,11 @@ test("no dungeon label repeats a word, or a variant its name holds", () => {
       const words = entry.label.toLowerCase().split(/[\s·()[\]]+/).filter(Boolean);
       assert.equal(new Set(words).size, words.length, `${file} ${id}: ${entry.label}`);
       assert.doesNotMatch(entry.name, /[(\[（【].*[)\]）】]/, `${file} ${id}: ${entry.name}`);
+      // Short Latin words ("de") say nothing twice.
+      const meaningful = (text) => (text.toLowerCase().match(/[\p{L}\p{N}_]+/gu) || [])
+        .filter((w) => w.length > 2 || /[^\x00-\x7f]/.test(w));
+      const named = new Set(meaningful(entry.name));
+      assert.deepEqual(meaningful(entry.label).filter((w) => named.has(w)), [], `${file} ${id}: ${entry.name} / ${entry.label}`);
     }
   }
 });

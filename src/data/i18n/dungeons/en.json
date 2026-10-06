@@ -1944,7 +1944,8 @@
   "600004": {
     "name": "Krao Cave",
     "type": "party",
-    "tier": 1
+    "tier": 1,
+    "label": "Conquest Tier 1"
   },
   "600011": {
     "name": "Urugugu Canyon",
@@ -1962,7 +1963,8 @@
   "600013": {
     "name": "Urugugu Canyon",
     "type": "party",
-    "tier": 2
+    "tier": 2,
+    "label": "Conquest Tier 2"
   },
   "600014": {
     "name": "Urugugu Canyon"
@@ -1983,7 +1985,8 @@
   "600023": {
     "name": "Fire Temple",
     "type": "party",
-    "tier": 3
+    "tier": 3,
+    "label": "Conquest Tier 3"
   },
   "600024": {
     "name": "Fire Temple"
@@ -2004,7 +2007,8 @@
   "600033": {
     "name": "Draupnir",
     "type": "party",
-    "tier": 1
+    "tier": 1,
+    "label": "Conquest Tier 1"
   },
   "600034": {
     "name": "Draupnir"
@@ -2116,7 +2120,8 @@
   "600073": {
     "name": "Vakron Sky Island",
     "type": "party",
-    "tier": 2
+    "tier": 2,
+    "label": "Conquest Tier 2"
   },
   "600074": {
     "name": "Vakron Sky Island"
@@ -2143,7 +2148,8 @@
   "600093": {
     "name": "Ferocious Horn Den",
     "type": "party",
-    "tier": 3
+    "tier": 3,
+    "label": "Conquest Tier 3"
   },
   "600121": {
     "name": "Cradle of Nihility",
