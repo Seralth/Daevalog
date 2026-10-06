@@ -18,10 +18,11 @@ Writes, under src/data:
   zh-Hant keep their names and get the English words.
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
-- open_world_maps.json: overworld maps, their world layers and the Abyss.
+- open_world_maps.json: overworld maps, their world layers (not the Daeva
+  Hunter recon sites) and the Abyss.
 - instance_maps.json: instances filed under their own map id (sealed, quest,
-  daily, Ascension and Ascension Trial dungeons, and Nightmare), and the map
-  of each dungeon whose id is not its map's.
+  daily, Ascension and Ascension Trial dungeons, Nightmare and the Daeva
+  Hunter recon sites), and the map of each dungeon whose id is not its map's.
 
 zh-Hans and zh-Hant are not in the global client and are left alone.
 """
@@ -78,6 +79,11 @@ TIER_TEXT = "String_UI_CONTENTS_UNLOCK_PARTYDUNGEON{}TIER_body"
 # Instances a fight is filed under by their map id: sealed, quest, daily,
 # Ascension and Ascension Trial (Awaken) dungeons, and Nightmare.
 OWN_MAP_TYPES = ("Seal", "Quest", "Daily", "Ascension", "Awaken", "BossChallenge")
+# Daeva Hunter recon sites ("Watcher Krache's Recon Site"): boss arenas from
+# Duty quest scrolls. The table types them InstanceLayer on an overworld
+# base map, but each is an instance of its own, left for home (ExitType Home,
+# which no other layer has).
+OWN_MAP_PREFIX = "DaevaHunter_"
 CONQUEST_HARD_TEXT = "String_UI_PARTYDUNGEON_CONQUER_DIFFICULTY_ADVANCED_body"
 # A name that holds its variant in brackets: "Nightmare Altar (Easy)".
 VARIANT_IN_NAME = re.compile(r"[(\[（【].*[)\]）】]")
@@ -119,7 +125,8 @@ def main():
     # The Abyss (Reshanta) is a large zone with sieges and world bosses, not
     # a dungeon a party enters.
     abyss = {value(d["MapId"]) for d in dungeons if enum(d["DungeonType"]) == "Abyss"}
-    open_world = overworld | abyss | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}
+    recon_sites = {d["ID"]["Value"] for d in dungeons if d["Name"].startswith(OWN_MAP_PREFIX)}
+    open_world = (overworld | abyss | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}) - recon_sites
     map_by_id = {m["ID"]["Value"]: m for m in maps}
     dungeon_ids = {d["ID"]["Value"] for d in dungeons}
 
@@ -283,15 +290,16 @@ def main():
     # These are entered without a party roster to name them: the dungeon row
     # of the map's own id is the content.
     own = [d["ID"]["Value"] for d in dungeons
-           if enum(d["DungeonType"]) in OWN_MAP_TYPES and value(d["MapId"]) == d["ID"]["Value"]
+           if (enum(d["DungeonType"]) in OWN_MAP_TYPES or d["Name"].startswith(OWN_MAP_PREFIX))
+           and value(d["MapId"]) == d["ID"]["Value"]
            and d["ID"]["Value"] in map_by_id and d["ID"]["Value"] not in open_world]
     # A party's queue applies at the load into its dungeon's map.
     dungeon_maps = {str(d["ID"]["Value"]): value(d["MapId"]) for d in dungeons
                     if value(d["MapId"]) != d["ID"]["Value"]}
     (DATA / "instance_maps.json").write_text(json.dumps({
         "source": f"{source}: Dungeon table. ownMaps: instances on a map of their own id "
-                  f"(DungeonType {', '.join(OWN_MAP_TYPES)}). dungeonMaps: the MapId of each "
-                  "dungeon whose id differs",
+                  f"(DungeonType {', '.join(OWN_MAP_TYPES)}, and the {OWN_MAP_PREFIX}* recon "
+                  "sites). dungeonMaps: the MapId of each dungeon whose id differs",
         "ownMaps": sorted(own),
         "dungeonMaps": dict(sorted(dungeon_maps.items(), key=lambda kv: int(kv[0]))),
     }) + "\n", encoding="utf-8")
