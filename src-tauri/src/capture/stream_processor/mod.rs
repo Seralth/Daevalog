@@ -535,6 +535,21 @@ mod tests {
         assert_eq!(storage.current_dungeon_id(), 0);
     }
 
+    /// A Daeva Hunter recon site is a boss arena of its own, though the Map
+    /// table puts it on World_L_A as a layer. A live capture (2026-10-06):
+    /// into Watcher Krache's Recon Site (151010), then back to World_L_A.
+    #[test]
+    fn a_recon_site_is_filed_under_its_map() {
+        let storage = Arc::new(DataStorage::new());
+        let p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let load = |s: &str| p.parse_map_load_packet(&hex(s));
+        load("34213602000000e24d0200f1eb330000000000d7e3e747d178404710d50947832c1c430c00000000000000000000410000");
+        assert_eq!(storage.current_dungeon_id(), 151010);
+        load("34213603000000f2030000bac7350000000000ba53dd47c1ef414700ed0947cc6f33430200000000000000000000000000");
+        assert_eq!(storage.current_dungeon_id(), 0);
+    }
+
     #[test]
     fn another_players_spirit_is_linked_at_spawn_by_its_caster() {
         let storage = Arc::new(DataStorage::new());
