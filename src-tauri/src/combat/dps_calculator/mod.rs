@@ -361,10 +361,10 @@ mod tests {
     }
 
     #[test]
-    fn world_layers_and_the_abyss_are_open_world_and_seals_are_not() {
+    fn world_layers_are_open_world_and_seals_and_the_abyss_are_not() {
         assert!(crate::combat::data_storage::is_open_world_map(1010), "World_L_A");
         assert!(crate::combat::data_storage::is_open_world_map(101021), "a layer of World_L_A");
-        assert!(crate::combat::data_storage::is_open_world_map(20), "Chaotic Lower Reshanta");
+        assert!(!crate::combat::data_storage::is_open_world_map(20), "Chaotic Lower Reshanta");
         assert!(!crate::combat::data_storage::is_open_world_map(310051), "Seal_Verteron_051");
         assert!(!crate::combat::data_storage::is_open_world_map(600021), "Fire_Temple_Easy");
         assert!(!crate::combat::data_storage::is_open_world_map(999_999_999), "unknown map");
@@ -375,10 +375,16 @@ mod tests {
         assert_eq!(s.current_dungeon_id(), 310051, "a seal is its own dungeon");
         s.note_map_load(101021);
         assert_eq!(s.current_dungeon_id(), 0, "a world layer ends it");
+        // The Abyss's three zones are dungeons 21, 23 and 24 on maps 20, 22
+        // and 23, entered from the open world or a party dungeon.
         s.note_map_load(600021);
         s.set_current_dungeon(600021);
-        s.note_map_load(20);
-        assert_eq!(s.current_dungeon_id(), 0, "so does the Abyss");
+        for (map, dungeon) in [(20, 21), (22, 23), (23, 24)] {
+            s.note_map_load(map);
+            assert_eq!(s.current_dungeon_id(), dungeon, "Abyss map {map}");
+            s.note_map_load(1010);
+            assert_eq!(s.current_dungeon_id(), 0);
+        }
     }
 
     #[test]

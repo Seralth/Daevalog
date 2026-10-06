@@ -673,6 +673,9 @@
     "name": "Bacia de Fafnite",
     "type": "growth"
   },
+  "20": {
+    "name": "Piso Inferior de Reshanta do Caos"
+  },
   "200001": {
     "name": "Encruzilhada dos Sonhos",
     "type": "quest"
@@ -776,6 +779,9 @@
   "210027": {
     "name": "Abismo de Chloris",
     "type": "ascension"
+  },
+  "22": {
+    "name": "Piso Intermediário de Reshanta do Caos"
   },
   "220001": {
     "name": "Câmara de Pedra Subterrânea",

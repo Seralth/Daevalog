@@ -673,6 +673,9 @@
     "name": "Bassin de Fafnite",
     "type": "growth"
   },
+  "20": {
+    "name": "Reshanta Inférieur du Chaos"
+  },
   "200001": {
     "name": "Croisée des Rêves",
     "type": "quest"
@@ -776,6 +779,9 @@
   "210027": {
     "name": "Abîme de Chloris",
     "type": "ascension"
+  },
+  "22": {
+    "name": "Reshanta Intermédiaire du Chaos"
   },
   "220001": {
     "name": "Crypte",

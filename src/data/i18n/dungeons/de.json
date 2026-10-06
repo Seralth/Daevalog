@@ -673,6 +673,9 @@
     "name": "Fafnitkessel",
     "type": "growth"
   },
+  "20": {
+    "name": "Chaotische Untere Ebene von Reshanta"
+  },
   "200001": {
     "name": "Trivium der Träume",
     "type": "quest"
@@ -776,6 +779,9 @@
   "210027": {
     "name": "Chloris’ Abgrund",
     "type": "ascension"
+  },
+  "22": {
+    "name": "Chaotische Mittlere Ebene von Reshanta"
   },
   "220001": {
     "name": "Gruft",

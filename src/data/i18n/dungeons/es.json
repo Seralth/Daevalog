@@ -673,6 +673,9 @@
     "name": "Cuenca de Fafnite",
     "type": "growth"
   },
+  "20": {
+    "name": "Reshanta Inferior del Caos"
+  },
   "200001": {
     "name": "Encrucijada Onírica",
     "type": "quest"
@@ -776,6 +779,9 @@
   "210027": {
     "name": "Abismo de Chloris",
     "type": "ascension"
+  },
+  "22": {
+    "name": "Reshanta Intermedia del Caos"
   },
   "220001": {
     "name": "Cripta",

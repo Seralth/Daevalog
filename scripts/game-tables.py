@@ -18,11 +18,12 @@ Writes, under src/data:
   zh-Hant keep their names and get the English words.
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
-- open_world_maps.json: overworld maps, their world layers (not the Daeva
-  Hunter recon sites) and the Abyss.
-- instance_maps.json: instances filed under their own map id (sealed, quest,
-  daily, Ascension and Ascension Trial dungeons, Nightmare and the Daeva
-  Hunter recon sites), and the map of each dungeon whose id is not its map's.
+- open_world_maps.json: overworld maps and their world layers (not the Daeva
+  Hunter recon sites).
+- instance_maps.json: the dungeon of each instance map a fight is filed under
+  without a party roster (sealed, quest, daily, Ascension and Ascension Trial
+  dungeons, Nightmare, the Abyss and the Daeva Hunter recon sites), and the
+  map of each dungeon whose id is not its map's.
 
 zh-Hans and zh-Hant are not in the global client and are left alone.
 """
@@ -76,9 +77,10 @@ DIFFICULTY_TEXT = {
     "Suppression": "String_UI_SUPPRESSION_{}_body",
 }
 TIER_TEXT = "String_UI_CONTENTS_UNLOCK_PARTYDUNGEON{}TIER_body"
-# Instances a fight is filed under by their map id: sealed, quest, daily,
-# Ascension and Ascension Trial (Awaken) dungeons, and Nightmare.
-OWN_MAP_TYPES = ("Seal", "Quest", "Daily", "Ascension", "Awaken", "BossChallenge")
+# Instances a fight is filed under by their map: sealed, quest, daily,
+# Ascension and Ascension Trial (Awaken) dungeons, Nightmare, and the Abyss
+# (Reshanta, entered from its menu for a timed stay).
+OWN_MAP_TYPES = ("Seal", "Quest", "Daily", "Ascension", "Awaken", "BossChallenge", "Abyss")
 # Daeva Hunter recon sites ("Watcher Krache's Recon Site"): boss arenas from
 # Duty quest scrolls. The table types them InstanceLayer on an overworld
 # base map, but each is an instance of its own, left for home (ExitType Home,
@@ -129,11 +131,8 @@ def main():
         return name and name != "???"
 
     overworld = {m["ID"]["Value"] for m in maps if m["MapType"] in ("EMapType::General", "EMapType::Starter")}
-    # The Abyss (Reshanta) is a large zone with sieges and world bosses, not
-    # a dungeon a party enters.
-    abyss = {value(d["MapId"]) for d in dungeons if enum(d["DungeonType"]) == "Abyss"}
     recon_sites = {d["ID"]["Value"] for d in dungeons if d["Name"].startswith(OWN_MAP_PREFIX)}
-    open_world = (overworld | abyss | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}) - recon_sites
+    open_world = (overworld | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}) - recon_sites
     map_by_id = {m["ID"]["Value"]: m for m in maps}
     dungeon_ids = {d["ID"]["Value"] for d in dungeons}
 
@@ -293,26 +292,28 @@ def main():
             save(path, table)
 
     (DATA / "open_world_maps.json").write_text(json.dumps({
-        "source": f"{source}: Map table, overworld maps (MapType General/Starter), their "
-                  "world layers (BaseMapId is an overworld map) and the Abyss (Dungeon table, "
-                  "DungeonType Abyss)",
+        "source": f"{source}: Map table, overworld maps (MapType General/Starter) and their "
+                  "world layers (BaseMapId is an overworld map), less the Daeva Hunter recon sites",
         "maps": sorted(open_world),
     }) + "\n", encoding="utf-8")
 
     # These are entered without a party roster to name them: the dungeon row
-    # of the map's own id is the content.
-    own = [d["ID"]["Value"] for d in dungeons
-           if (enum(d["DungeonType"]) in OWN_MAP_TYPES or d["Name"].startswith(OWN_MAP_PREFIX))
-           and value(d["MapId"]) == d["ID"]["Value"]
-           and d["ID"]["Value"] in map_by_id and d["ID"]["Value"] not in open_world]
+    # on the map is the content. Most share the map's id; the Abyss rows do
+    # not (Chaotic Lower Reshanta is dungeon 21 on map 20).
+    own = {}
+    for d in dungeons:
+        if ((enum(d["DungeonType"]) in OWN_MAP_TYPES or d["Name"].startswith(OWN_MAP_PREFIX))
+                and value(d["MapId"]) in map_by_id and value(d["MapId"]) not in open_world):
+            if own.setdefault(str(value(d["MapId"])), d["ID"]["Value"]) != d["ID"]["Value"]:
+                sys.exit(f"map {value(d['MapId'])} holds two dungeons a fight could be filed under")
     # A party's queue applies at the load into its dungeon's map.
     dungeon_maps = {str(d["ID"]["Value"]): value(d["MapId"]) for d in dungeons
                     if value(d["MapId"]) != d["ID"]["Value"]}
     (DATA / "instance_maps.json").write_text(json.dumps({
-        "source": f"{source}: Dungeon table. ownMaps: instances on a map of their own id "
-                  f"(DungeonType {', '.join(OWN_MAP_TYPES)}, and the {OWN_MAP_PREFIX}* recon "
-                  "sites). dungeonMaps: the MapId of each dungeon whose id differs",
-        "ownMaps": sorted(own),
+        "source": f"{source}: Dungeon table. ownMaps: the dungeon on each map of DungeonType "
+                  f"{', '.join(OWN_MAP_TYPES)}, or of the {OWN_MAP_PREFIX}* recon sites. "
+                  "dungeonMaps: the MapId of each dungeon whose id differs",
+        "ownMaps": dict(sorted(own.items(), key=lambda kv: int(kv[0]))),
         "dungeonMaps": dict(sorted(dungeon_maps.items(), key=lambda kv: int(kv[0]))),
     }) + "\n", encoding="utf-8")
 
