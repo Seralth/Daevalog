@@ -99,6 +99,47 @@ impl DataStorage {
         true
     }
 
+    /// The server sent one of the records it sends about the local player
+    /// only (`OWN_RECORDS`), naming `entity_id`.
+    ///
+    /// The self record comes with zone loads and a loot record after a kill,
+    /// so a meter restarted mid-zone can go minutes with neither: eight at a
+    /// world boss (2026-10-05). These come within seconds. Until the self
+    /// record or the loot records speak, you are the id they named most since
+    /// the last zone load, once it has two and leads outright; a tie means not
+    /// knowing. An id the player or a name match put in force is kept.
+    /// Returns whether the local player changed.
+    pub fn note_own_record(&self, entity_id: i32) -> bool {
+        if !(1..=9_999_999).contains(&entity_id) {
+            return false;
+        }
+        let mut inner = self.inner.write();
+        if inner.local_identity_from_game {
+            return false;
+        }
+        let own = &mut inner.own_records;
+        if own.counts.len() < 64 || own.counts.contains_key(&entity_id) {
+            *own.counts.entry(entity_id).or_default() += 1;
+        }
+        let mut ranked: Vec<(i32, u32)> = own.counts.iter().map(|(&id, &n)| (id, n)).collect();
+        ranked.sort_by(|a, b| b.1.cmp(&a.1));
+        let next = match ranked.as_slice() {
+            [(_, top), (_, second), ..] if top == second => None,
+            [(id, top), ..] if *top >= 2 => Some(*id as i64),
+            _ => return false, // one record so far: not yet
+        };
+        let bound = own.bound;
+        if inner.local_player_id.is_some() && inner.local_player_id != bound {
+            return false;
+        }
+        inner.own_records.bound = next;
+        if inner.local_player_id == next {
+            return false;
+        }
+        inner.local_player_id = next;
+        true
+    }
+
     /// The server sent a `06 38` record about `entity_id`.
     ///
     /// Measured on every capture at hand: in the Global ones it names the
@@ -228,6 +269,23 @@ pub(super) struct LootIdentity {
     /// The local identity currently in force came from them, not from the
     /// self record.
     applied: bool,
+}
+
+/// What the records about you alone have said since the last zone load. See
+/// `note_own_record`.
+#[derive(Default)]
+pub(super) struct OwnRecords {
+    /// How many each id got. Entity ids are handed out per zone load, so a
+    /// zone load starts this over.
+    counts: HashMap<i32, u32>,
+    /// The local player these records put in force.
+    bound: Option<i64>,
+}
+
+impl OwnRecords {
+    pub(super) fn zone_loaded(&mut self) {
+        self.counts.clear();
+    }
 }
 
 fn set_game_identity(inner: &mut Inner, id: i64, name: Option<String>) {

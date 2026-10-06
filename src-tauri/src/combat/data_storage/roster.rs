@@ -66,10 +66,11 @@ impl DataStorage {
     /// last instance's dungeon id. A teleport inside an instance names the
     /// instance's own map, so it keeps the id.
     pub fn note_map_load(&self, map_id: i32) {
+        let mut inner = self.inner.write();
+        inner.own_records.zone_loaded();
         if !is_open_world_map(map_id) {
             return;
         }
-        let mut inner = self.inner.write();
         if inner.current_dungeon_id != 0 {
             tracing::debug!(
                 "Map {map_id} is open world: leaving dungeon {}",

@@ -231,6 +231,7 @@ impl StreamProcessor {
             || self.parsing_nickname(packet);
         let parsed_hp = self.parse_hp_mp_update_packet(packet);
         self.parse_party_scope_packet(packet);
+        self.parse_own_record(packet);
         self.parse_death_packet(packet);
         self.parse_zone_change_packet(packet);
         self.parse_map_load_packet(packet);
@@ -607,6 +608,29 @@ mod tests {
         assert_eq!(me.name.as_deref(), Some("Naicha"));
         assert_eq!(storage.local_player_id(), Some(14957));
         assert_eq!((me.server_id, me.class, me.level), (1304, Some(crate::entity::job_class::JobClass::Cleric), Some(28)));
+    }
+
+    /// Shapes from the captures of 2026-10-05: `03 8d <id> 00 00 00 00` and
+    /// `42 37 <id>`, entity 4321 (`e1 21`) here.
+    #[test]
+    fn records_about_you_alone_name_you_mid_zone() {
+        let frame = |body: &[u8]| {
+            let mut out = vec![crate::capture::framing::length_value(body.len()) as u8];
+            out.extend_from_slice(body);
+            out
+        };
+        let (storage, mut p) = processor();
+        p.consume_stream(&frame(&[0x03, 0x8D, 0xE1, 0x21, 0, 0, 0, 0]));
+        assert_eq!(storage.local_player_id(), None);
+        p.consume_stream(&frame(&[0x42, 0x37, 0xE1, 0x21]));
+        assert_eq!(storage.local_player_id(), Some(4321));
+
+        // A record one byte longer than its kind is something else.
+        let (storage, mut p) = processor();
+        for _ in 0..3 {
+            p.consume_stream(&frame(&[0x03, 0x8D, 0xE1, 0x21, 0, 0, 0, 0, 0]));
+        }
+        assert_eq!(storage.local_player_id(), None);
     }
 
     /// A Sorcerer on Ventus (server 1305) killing a mob, from a player's log

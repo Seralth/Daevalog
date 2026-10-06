@@ -61,7 +61,7 @@ pub use damage::is_player_skill;
 pub use roster::is_open_world_map;
 
 use encounter::{retire_all, with_carry};
-use identity::LootIdentity;
+use identity::{LootIdentity, OwnRecords};
 
 // ───── Main storage ─────
 
@@ -171,6 +171,9 @@ struct Inner {
     /// Who the loot records (`04 8d` after a kill) say owns the drops, and
     /// what that has been used for. See `note_loot_owner`.
     loot_identity: LootIdentity,
+    /// Who the records the server sends about you alone say you are. See
+    /// `note_own_record`.
+    own_records: OwnRecords,
     encounter: Option<Encounter>,
     /// What a boss pull cleared of the open encounter's enemies: the
     /// encounter still counts it. Dropped when the encounter ends.
@@ -220,6 +223,7 @@ impl DataStorage {
                 local_character_name: None,
                 local_identity_from_game: false,
                 loot_identity: LootIdentity::default(),
+                own_records: OwnRecords::default(),
                 encounter: None,
                 encounter_carry: HashMap::new(),
                 player_servers: HashMap::new(),
@@ -533,6 +537,67 @@ mod tests {
             assert!(!s.note_loot_owner(mob, 892, "Dandelion"));
         }
         assert_eq!(who(&s), (Some(14957), Some("Naicha".into()), true));
+    }
+
+    #[test]
+    fn records_about_you_alone_name_you_until_the_self_record_speaks() {
+        let s = DataStorage::new();
+        s.set_local_character_name(Some("Testchar".into()));
+        assert!(!s.note_own_record(4321), "one record is not enough");
+        assert_eq!(s.local_player_id(), None);
+        assert!(s.note_own_record(4321));
+        assert_eq!(who(&s), (Some(4321), Some("Testchar".into()), false));
+        assert!(!s.local_identity_from_self_record());
+
+        s.set_local_identity_from_game(5678, Some("Testchar".into()));
+        for _ in 0..5 {
+            assert!(!s.note_own_record(4321));
+        }
+        assert_eq!(s.local_player_id(), Some(5678), "the self record wins");
+    }
+
+    #[test]
+    fn records_naming_two_ids_equally_mean_not_knowing() {
+        let s = DataStorage::new();
+        s.note_own_record(4321);
+        s.note_own_record(4321);
+        s.note_own_record(8765);
+        assert_eq!(s.local_player_id(), Some(4321), "still leads");
+        assert!(s.note_own_record(8765), "a tie withdraws it");
+        assert_eq!(s.local_player_id(), None);
+        assert!(s.note_own_record(8765));
+        assert_eq!(s.local_player_id(), Some(8765));
+    }
+
+    #[test]
+    fn records_about_you_start_over_at_a_zone_load() {
+        let s = DataStorage::new();
+        for _ in 0..5 {
+            s.note_own_record(4321);
+        }
+        s.note_map_load(1010);
+        s.note_own_record(8765);
+        assert_eq!(s.local_player_id(), Some(4321), "kept until the new id has two");
+        s.note_own_record(8765);
+        assert_eq!(s.local_player_id(), Some(8765));
+    }
+
+    #[test]
+    fn records_about_you_leave_an_id_set_elsewhere_alone() {
+        let s = DataStorage::new();
+        s.set_local_player_id(Some(1111));
+        for _ in 0..3 {
+            assert!(!s.note_own_record(4321));
+        }
+        assert_eq!(s.local_player_id(), Some(1111));
+
+        // The loot records still speak over them, as before.
+        let s = DataStorage::new();
+        s.note_own_record(4321);
+        s.note_own_record(4321);
+        s.note_party_scope(4321);
+        assert!(s.note_loot_owner(900, 4321, "Testchar"));
+        assert_eq!(who(&s), (Some(4321), Some("Testchar".into()), true));
     }
 
     #[test]

@@ -3,7 +3,7 @@
 use std::collections::HashSet;
 
 use super::StreamProcessor;
-use crate::capture::opcodes::{PLAYER_SPAWN, PLAYER_SPAWN_OLD, SELF_IDENTITY, SPAWN, SPAWN_OLD};
+use crate::capture::opcodes::{OWN_RECORDS, PLAYER_SPAWN, PLAYER_SPAWN_OLD, SELF_IDENTITY, SPAWN, SPAWN_OLD};
 use crate::capture::names::{
     exact_name, is_placeholder_name, sanitize_nickname, unicode_script, UnicodeScript, NAME_FIELD_BYTES,
 };
@@ -196,6 +196,36 @@ impl StreamProcessor {
                 tracing::debug!("player record: '{}' -> entity {}", sanitized, id.value);
             }
             i = mask2_idx + 2 + name_len;
+        }
+    }
+
+    /// `<len> <opcode> <entity_id varint> ...` for an opcode in `OWN_RECORDS`.
+    ///
+    /// Counted over 19 captures (2026-10-04 to 10-06): in the 80 zone loads
+    /// whose self record named you, 4,848 of these named you, in every one of
+    /// those zones, and none named anyone else: not party members, players
+    /// nearby or mobs. The other 46 were `4a 36` naming your next id in the
+    /// second before a zone load. A meter restarted mid-zone knew you from
+    /// them after 13 s at the median, and the loot records after 45 s.
+    pub(super) fn parse_own_record(&self, packet: &[u8]) {
+        let len = read_varint(packet, 0);
+        if len.length <= 0 {
+            return;
+        }
+        let o = len.length as usize;
+        let Some(op) = packet.get(o..o + 2) else { return };
+        let Some(&(_, tail)) = OWN_RECORDS.iter().find(|(code, _)| code == op) else { return };
+        let id = read_varint(packet, o + 2);
+        if id.length <= 0 {
+            return;
+        }
+        // Where the length is fixed, a record of any other length is not one.
+        let end = o + 2 + id.length as usize;
+        if tail.is_some_and(|t| end + t != packet.len()) {
+            return;
+        }
+        if self.data_storage.note_own_record(id.value) {
+            tracing::info!("own records: local player -> entity {}", id.value);
         }
     }
 

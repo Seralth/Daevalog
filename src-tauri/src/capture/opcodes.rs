@@ -18,6 +18,10 @@ pub const MAP_LOAD: [u8; 2] = [0x21, 0x36];
 pub const SELF_IDENTITY: [u8; 2] = [0x33, 0x36];
 /// Party roster.
 pub const PARTY_ROSTER: [u8; 2] = [0x02, 0x97];
+/// Records about the local player only, led by their entity id, with how many
+/// bytes follow it (`None`: it varies). What they carry is not decoded.
+pub const OWN_RECORDS: [([u8; 2], Option<usize>); 4] =
+    [([0x4A, 0x36], None), ([0x03, 0x8D], Some(4)), ([0x41, 0x37], Some(2)), ([0x42, 0x37], Some(0))];
 
 // The June 2026 update shifted the 0x36 spawn/death family by +1. The parser
 // accepts both, so `41 36` is a spawn now and was a death before.
