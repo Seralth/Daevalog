@@ -103,3 +103,27 @@ test("a language picked in one window reaches the other windows", async () => {
   const ko = JSON.parse(readFileSync(new URL("../src/data/i18n/ui/ko.json", import.meta.url)));
   assert.equal(history.t("target.all"), ko.target.all);
 });
+
+test("a slow language load does not undo a newer choice", async () => {
+  const window = {};
+  const document = { baseURI: "http://localhost/", documentElement: { setAttribute() {} }, querySelectorAll: () => [] };
+  let releaseSlow;
+  const slow = new Promise((resolve) => { releaseSlow = resolve; });
+  const fetch = async (url) => {
+    const path = new URL(url).pathname;
+    if (path.endsWith("/de.json")) await slow;
+    try {
+      const file = readFileSync(new URL(`../dist${path}`, import.meta.url));
+      return { ok: true, arrayBuffer: async () => Uint8Array.from(file).buffer };
+    } catch {
+      return { ok: false, status: 404 };
+    }
+  };
+  vm.runInNewContext(source, { window, document, fetch, URL, TextDecoder, Uint8Array });
+  const first = window.i18n.setLanguage("de", { persist: false });
+  await window.i18n.setLanguage("ko", { persist: false });
+  releaseSlow();
+  await first;
+  const ko = JSON.parse(readFileSync(new URL("../src/data/i18n/ui/ko.json", import.meta.url)));
+  assert.equal(window.i18n.t("target.all"), ko.target.all);
+});

@@ -200,8 +200,10 @@ const createI18n = ({
 
   const LANGUAGE_EVENT = "language-changed";
 
+  let languageSeq = 0;
   const setLanguage = async (lang, { persist = true } = {}) => {
     const next = normalizeLanguage(lang || defaultLanguage);
+    const seq = ++languageSeq;
     currentLanguage = next;
 
     if (persist) {
@@ -218,6 +220,8 @@ const createI18n = ({
     const [ui, skills, npcs, dungeons] = await Promise.all([
       localized("ui"), localized("skills"), localized("npcs"), localized("dungeons"),
     ]);
+    // A newer choice started while these loaded: it wins, whichever loads last.
+    if (seq !== languageSeq) return;
 
     uiStrings = ui || {};
     skillStrings = skills || {};
