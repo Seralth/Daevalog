@@ -21,11 +21,15 @@ Daevalog needs a 64-bit (x86_64) system with WebKitGTK 4.1: Ubuntu 22.04, Debian
 
 ## Install
 
-To read the game's network traffic, Daevalog needs the Linux permission `cap_net_raw` (the right to capture packets). Only the small helper program `daevalog-capture` gets it; the meter itself runs with no extra permission. The Arch package grants it when it installs. A build from source needs one `setcap` command, shown in its step 3.
+To read the game's network traffic, Daevalog needs the Linux permission `cap_net_raw` (the right to capture packets). Only the small helper program `daevalog-capture` gets it; the meter itself runs with no extra permission. The packages grant it when they install. A build from source needs one `setcap` command, shown in its step 3.
+
+Signed packages for Arch, Debian 13, Linux Mint, Pop!_OS, Fedora, Bazzite and openSUSE Tumbleweed are at **https://packages.seralth.com**, with the steps to add the repository on each. Once it is added, the meter updates with the rest of the system.
 
 ### CachyOS, Arch, Manjaro, EndeavourOS
 
-The repository holds an Arch package recipe (`packaging/arch/PKGBUILD`). `makepkg` builds the package `daevalog-dps-meter` from it and installs it. The first build takes 10–15 minutes.
+Use the pacman repository from https://packages.seralth.com.
+
+To build the package yourself instead: the repository holds an Arch package recipe (`packaging/arch/PKGBUILD`). `makepkg` builds the package `daevalog-dps-meter` from it and installs it. The first build takes 10–15 minutes.
 
 ```bash
 sudo pacman -S --needed git base-devel
@@ -41,7 +45,9 @@ makepkg -si
 
 ### Steam Deck, Bazzite and other read-only systems
 
-SteamOS replaces its read-only system with every update, so anything installed into it directly is wiped. Bazzite and the other image-based Fedoras keep the system read-only too. Instead, Daevalog goes in a **distrobox**: a container with its own Arch Linux inside, which SteamOS 3.5 and later and Bazzite include. It must be created with `--root`: an ordinary (rootless) container cannot read the game's network traffic.
+Bazzite and the other image-based Fedoras: use the rpm repository from https://packages.seralth.com (`rpm-ostree install`, then a restart). No distrobox is needed.
+
+SteamOS replaces its read-only system with every update, so anything installed into it directly is wiped. Instead, Daevalog goes in a **distrobox**: a container with its own Arch Linux inside, which SteamOS 3.5 and later include. It must be created with `--root`: an ordinary (rootless) container cannot read the game's network traffic.
 
 The overlay only works in **Desktop Mode**. In Game Mode, nothing can draw over the game.
 
@@ -76,11 +82,13 @@ The overlay only works in **Desktop Mode**. In Game Mode, nothing can draw over 
     distrobox enter --root daevalog -- daevalog-dps-meter
     ```
 
-System updates leave the box alone, so the meter survives them. This route is new and not yet confirmed on a real Steam Deck or Bazzite: please tell us how it goes.
+System updates leave the box alone, so the meter survives them. This route is new and not yet confirmed on a real Steam Deck: please tell us how it goes.
 
 ### Other distributions
 
-Ubuntu, Debian, Linux Mint, Pop!_OS, Fedora, openSUSE and others: follow [Build from source](#build-from-source-other-distributions).
+Debian 13, Linux Mint, Pop!_OS, Fedora and openSUSE Tumbleweed: use the repository for your system from https://packages.seralth.com.
+
+Others: follow [Build from source](#build-from-source-other-distributions).
 
 ### Coming from A2Tools DPS Meter
 
@@ -92,12 +100,13 @@ Ubuntu, Debian, Linux Mint, Pop!_OS, Fedora, openSUSE and others: follow [Build 
 
 ### How to update
 
-Daevalog never updates itself and never checks for updates. You update it by building the newest version from the `Daevalog` folder.
+Daevalog never updates itself and never checks for updates. Installed from a package repository, it updates with the rest of the system. Built yourself, you update it by building the newest version from the `Daevalog` folder.
 
-| Installed on | Update with |
+| Installed with | Update with |
 | --- | --- |
-| Arch, CachyOS, Manjaro, EndeavourOS | `cd Daevalog && git pull && cd packaging/arch && makepkg -si` |
-| Steam Deck, Bazzite (distrobox) | `distrobox enter --root daevalog -- sh -c 'cd ~/Daevalog && git pull && cd packaging/arch && makepkg -si --noconfirm'` |
+| A package repository | Your normal system update: `sudo pacman -Syu`, `sudo apt upgrade`, `sudo dnf upgrade`, `rpm-ostree upgrade`, `sudo zypper dup` |
+| makepkg (Arch, CachyOS, Manjaro, EndeavourOS) | `cd Daevalog && git pull && cd packaging/arch && makepkg -si` |
+| Steam Deck (distrobox) | `distrobox enter --root daevalog -- sh -c 'cd ~/Daevalog && git pull && cd packaging/arch && makepkg -si --noconfirm'` |
 | Built from source | `git pull`, then the build lines and the `setcap` line again, as [Build from source](#build-from-source-other-distributions) says |
 
 Your settings and fight history stay as they are.

@@ -30,12 +30,13 @@ Daevalog is not affiliated with, endorsed by or connected to NCSOFT, AION 2, or 
 
 ## Install
 
-Daevalog is made for Linux, with AION 2 running under Proton. No ready-made packages are published yet: you build Daevalog yourself from this repository.
+Daevalog is made for Linux, with AION 2 running under Proton.
 
-- Arch, CachyOS, Manjaro, EndeavourOS: `cd packaging/arch && makepkg -si`. This builds the package `daevalog-dps-meter` and installs it.
+- Arch and Arch-based, Debian 13, Linux Mint, Pop!_OS, Fedora, Bazzite and openSUSE Tumbleweed: add the signed package repository from **https://packages.seralth.com**, which has the steps for each. The meter then updates with the rest of the system.
+- Steam Deck: through distrobox, as the [Linux guide](docs/linux.md#steam-deck-bazzite-and-other-read-only-systems) describes.
 - Other distributions: follow [Build from source](docs/linux.md#build-from-source-other-distributions) in the Linux guide.
 
-To read the game's traffic, Daevalog needs the Linux permission `cap_net_raw` (the right to capture network packets). Only a small helper program, `daevalog-capture`, gets it. The meter itself runs with no extra permission. The Arch package sets this up for you.
+To read the game's traffic, Daevalog needs the Linux permission `cap_net_raw` (the right to capture network packets). Only a small helper program, `daevalog-capture`, gets it. The meter itself runs with no extra permission. The packages set this up for you.
 
 Your settings, saved fights and sign-in are kept in `~/.local/share/com.daevalog.dps-meter`.
 
