@@ -140,7 +140,7 @@ mod helper {
         let mut virtual_devices = Vec::new();
         let mut physical_devices = Vec::new();
         for device in &devices {
-            match pcap.open(device) {
+            match pcap.open(device, Some(linux::BUFFER_BYTES)) {
                 Ok(live) if device.is_virtual() => virtual_devices.push(live),
                 Ok(live) => physical_devices.push(live),
                 Err(e) => say(Level::Warn, &format!("Failed to open capture on {}: {}", device.label(), e)),
