@@ -610,6 +610,20 @@ mod tests {
         assert_eq!((me.server_id, me.class, me.level), (1304, Some(crate::entity::job_class::JobClass::Cleric), Some(28)));
     }
 
+    /// Four `1d 37` records from a capture (2026-10-05 17:42:14). The second
+    /// ends `33 36 33 36`; its last `33 36`, then the third record's length
+    /// byte and bytes, read as a self record for entity 16 with a two-letter
+    /// name, and the meter took entity 16 for you.
+    #[test]
+    fn a_self_record_needs_your_server_and_class() {
+        let (storage, mut p) = processor();
+        p.consume_stream(&hex(
+            "101d37f5282703ab13e776e776111d37fc792f031557ff33363336101d37a3132703c6b679be97bc111d37ab262f032250d8722f722f",
+        ));
+        assert_eq!(storage.local_player_id(), None);
+        assert_eq!(storage.get_nickname(16), None);
+    }
+
     /// Shapes from the captures of 2026-10-05: `03 8d <id> 00 00 00 00` and
     /// `42 37 <id>`, entity 4321 (`e1 21`) here.
     #[test]
