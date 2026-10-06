@@ -31,7 +31,9 @@ fn open(target: &OsStr) -> Result<(), String> {
 
 /// Start `command` in a session of its own, through a fork that exits at
 /// once, so the app is not the meter's child and outlives it. Returns that
-/// fork's pid, already reaped.
+/// fork's pid, already reaped. The double fork is the one in the `open` crate
+/// (MIT or Apache-2.0), which took it from Alacritty (Apache-2.0); the wait
+/// is what this adds.
 fn spawn_detached(mut command: Command) -> io::Result<u32> {
     command.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
     // SAFETY: only fork, _exit and setsid run between fork and exec.
