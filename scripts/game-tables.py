@@ -20,7 +20,8 @@ Writes, under src/data:
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
 - open_world_maps.json: overworld maps, their world layers and the Abyss.
 - instance_maps.json: instances filed under their own map id (sealed, quest,
-  daily, Ascension and Ascension Trial dungeons, and Nightmare).
+  daily, Ascension and Ascension Trial dungeons, and Nightmare), and the map
+  of each dungeon whose id is not its map's.
 
 zh-Hans and zh-Hant are not in the global client and are left alone.
 """
@@ -284,10 +285,15 @@ def main():
     own = [d["ID"]["Value"] for d in dungeons
            if enum(d["DungeonType"]) in OWN_MAP_TYPES and value(d["MapId"]) == d["ID"]["Value"]
            and d["ID"]["Value"] in map_by_id and d["ID"]["Value"] not in open_world]
+    # A party's queue applies at the load into its dungeon's map.
+    dungeon_maps = {str(d["ID"]["Value"]): value(d["MapId"]) for d in dungeons
+                    if value(d["MapId"]) != d["ID"]["Value"]}
     (DATA / "instance_maps.json").write_text(json.dumps({
         "source": f"{source}: Dungeon table. ownMaps: instances on a map of their own id "
-                  f"(DungeonType {', '.join(OWN_MAP_TYPES)})",
+                  f"(DungeonType {', '.join(OWN_MAP_TYPES)}). dungeonMaps: the MapId of each "
+                  "dungeon whose id differs",
         "ownMaps": sorted(own),
+        "dungeonMaps": dict(sorted(dungeon_maps.items(), key=lambda kv: int(kv[0]))),
     }) + "\n", encoding="utf-8")
 
 

@@ -140,8 +140,9 @@ struct Inner {
     /// Instance id the party is in, from the same packet. Encodes the dungeon and
     /// its difficulty tier; resolved to a name by the frontend's dungeon table.
     current_dungeon_id: i32,
-    /// What the last map load entered.
+    /// What the last map load entered, and its map id.
     map_kind: MapKind,
+    map_id: i32,
     /// The instance a roster named while the party was in the open world:
     /// the one it queued for. It applies at the next load into an instance.
     queued_dungeon_id: i32,
@@ -219,6 +220,7 @@ impl DataStorage {
                 party_placeholders_hidden: false,
                 current_dungeon_id: 0,
                 map_kind: MapKind::Unknown,
+                map_id: 0,
                 queued_dungeon_id: 0,
                 hostile_target_ids: HashSet::new(),
                 dead_entity_ids: HashSet::new(),

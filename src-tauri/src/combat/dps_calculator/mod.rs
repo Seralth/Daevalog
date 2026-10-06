@@ -405,6 +405,28 @@ mod tests {
     }
 
     #[test]
+    fn a_queued_dungeon_waits_through_an_arena() {
+        let s = DataStorage::new();
+        s.note_map_load(1010);
+        s.set_current_dungeon(600002);
+        s.note_map_load(61);
+        assert_eq!(s.current_dungeon_id(), 0, "Impetusium Arena is not Krao Cave");
+        s.set_current_dungeon(600002);
+        assert_eq!(s.current_dungeon_id(), 0, "nor when the roster comes again there");
+        s.note_map_load(1010);
+        s.note_map_load(600002);
+        assert_eq!(s.current_dungeon_id(), 600002);
+        // A dungeon on a map of another id.
+        s.note_map_load(1010);
+        s.set_current_dungeon(600151);
+        s.note_map_load(600144);
+        assert_eq!(s.current_dungeon_id(), 600151, "Citadel of the Fallen Daeva");
+        s.note_map_load(600144);
+        s.set_current_dungeon(600151);
+        assert_eq!(s.current_dungeon_id(), 600151, "a teleport inside it");
+    }
+
+    #[test]
     fn every_instance_entered_without_a_roster_is_filed_under_its_map() {
         let s = DataStorage::new();
         // Daily, Ascension, Ascension Trial (Awaken) and Nightmare (BossChallenge).
