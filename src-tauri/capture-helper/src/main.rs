@@ -26,7 +26,7 @@ mod helper {
     use std::sync::atomic::AtomicBool;
     use std::sync::{Arc, Mutex, OnceLock};
 
-    use daevalog_capture::owner::{Owners, Proc};
+    use daevalog_capture::owner::{Gate, Proc};
     use daevalog_capture::pcap::{self, linux, PcapLib, Sink};
     use daevalog_capture::wire::{read_frame, Control, Report, Status};
     use daevalog_capture::{Level, Segment};
@@ -42,7 +42,7 @@ mod helper {
 
     /// The sockets of the user who started the helper. Only their packets
     /// go to the meter.
-    static OWNERS: OnceLock<Mutex<Owners>> = OnceLock::new();
+    static GATE: OnceLock<Gate> = OnceLock::new();
 
     /// How often packets left out as other users' are logged.
     const STATS_SECS: u64 = 60;
@@ -65,23 +65,29 @@ mod helper {
 
     impl Sink for Pipe {
         fn packet(&mut self, segment: Segment) {
-            let Some(owners) = OWNERS.get() else { return };
-            let ours = owners.lock().unwrap_or_else(|e| e.into_inner()).admit(&segment, &mut Proc);
-            if ours {
+            let Some(gate) = GATE.get() else { return };
+            if let Some(segment) = gate.packet(segment, now_ms()) {
                 send(&Report::Packet(segment));
             }
         }
     }
 
     fn log_left_out() {
-        let mut logged = 0;
+        let (mut logged, mut logged_overflow) = (0, 0);
         loop {
             std::thread::sleep(std::time::Duration::from_secs(STATS_SECS));
-            let Some(owners) = OWNERS.get() else { continue };
-            let total = owners.lock().unwrap_or_else(|e| e.into_inner()).left_out;
+            let Some(gate) = GATE.get() else { continue };
+            let (total, overflow) = gate.counts();
             if total > logged {
                 say(Level::Info, &format!("Left out {} packets of other users' connections in the last minute", total - logged));
                 logged = total;
+            }
+            if overflow > logged_overflow {
+                say(
+                    Level::Warn,
+                    &format!("Dropped {} packets in the last minute: too many were waiting for a socket lookup", overflow - logged_overflow),
+                );
+                logged_overflow = overflow;
             }
         }
     }
@@ -106,7 +112,7 @@ mod helper {
         // The real uid: the user who ran the helper. It has file
         // capabilities, not setuid, so this is never someone else.
         // SAFETY: getuid cannot fail.
-        let _ = OWNERS.set(Mutex::new(Owners::new(unsafe { libc::getuid() })));
+        let _ = GATE.set(Gate::new(unsafe { libc::getuid() }));
 
         let capable = capabilities().is_some_and(|(effective, _)| effective & (1 << CAP_NET_RAW) != 0);
         let fail = |message: &str| -> ! {
@@ -134,7 +140,7 @@ mod helper {
         let mut virtual_devices = Vec::new();
         let mut physical_devices = Vec::new();
         for device in &devices {
-            match pcap.open(device) {
+            match pcap.open(device, Some(linux::BUFFER_BYTES)) {
                 Ok(live) if device.is_virtual() => virtual_devices.push(live),
                 Ok(live) => physical_devices.push(live),
                 Err(e) => say(Level::Warn, &format!("Failed to open capture on {}: {}", device.label(), e)),
@@ -156,24 +162,33 @@ mod helper {
         let running = Arc::new(AtomicBool::new(true));
         pcap::start_filter_watcher(pcap.clone(), running.clone());
         std::thread::spawn(log_left_out);
+        std::thread::spawn(|| {
+            if let Some(gate) = GATE.get() {
+                gate.look_up(&mut Proc, |segment| send(&Report::Packet(segment)));
+            }
+        });
 
         let delay = !virtual_devices.is_empty();
         for live in virtual_devices {
             let (pcap, running) = (pcap.clone(), running.clone());
             std::thread::spawn(move || pcap.run(live, &running, i64::MIN, &mut Pipe));
         }
+        // Opened with the rest, and read from now on too: an unread capture
+        // buffer fills in under a second, and the kernel drops what no longer
+        // fits. What arrives before their turn is skipped, as if they had
+        // been opened then.
+        let since = if delay { now_ms() + PHYSICAL_DELAY_MS as i64 } else { i64::MIN };
+        let labels: Vec<String> = physical_devices.iter().map(|live| live.label().to_string()).collect();
         for live in physical_devices {
             let (pcap, running) = (pcap.clone(), running.clone());
+            std::thread::spawn(move || pcap.run(live, &running, since, &mut Pipe));
+        }
+        if delay {
             std::thread::spawn(move || {
-                // Opened with the rest; what arrived before its turn is dropped,
-                // as if it had been opened now.
-                let mut since = i64::MIN;
-                if delay {
-                    std::thread::sleep(std::time::Duration::from_millis(PHYSICAL_DELAY_MS));
-                    say(Level::Info, &format!("Starting capture on physical device: {}", live.label()));
-                    since = now_ms();
+                std::thread::sleep(std::time::Duration::from_millis(PHYSICAL_DELAY_MS));
+                for label in labels {
+                    say(Level::Info, &format!("Starting capture on physical device: {label}"));
                 }
-                pcap.run(live, &running, since, &mut Pipe);
             });
         }
 

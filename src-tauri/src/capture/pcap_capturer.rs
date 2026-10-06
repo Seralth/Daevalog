@@ -221,7 +221,7 @@ fn start_capture_thread(
     let label = device.label().to_string();
 
     std::thread::spawn(move || {
-        let live = match pcap.open(&device) {
+        let live = match pcap.open(&device, None) {
             Ok(live) => live,
             Err(e) => {
                 warn!("Failed to open capture on {}: {}", label, e);
