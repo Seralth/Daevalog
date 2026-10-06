@@ -194,7 +194,7 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     // Get or create target combat data
     let ours = is_ours(inner, actor_id);
     let dungeon_id = inner.current_dungeon_id;
-    let open_world = inner.in_open_world;
+    let open_world = inner.map_kind == super::MapKind::OpenWorld;
     let target_data = inner.target_combat.entry(target_id).or_insert_with(|| {
         TargetCombatData::new(target_id, timestamp)
     });

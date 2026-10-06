@@ -361,9 +361,10 @@ mod tests {
     }
 
     #[test]
-    fn world_layers_are_open_world_and_seals_are_not() {
+    fn world_layers_and_the_abyss_are_open_world_and_seals_are_not() {
         assert!(crate::combat::data_storage::is_open_world_map(1010), "World_L_A");
         assert!(crate::combat::data_storage::is_open_world_map(101021), "a layer of World_L_A");
+        assert!(crate::combat::data_storage::is_open_world_map(20), "Chaotic Lower Reshanta");
         assert!(!crate::combat::data_storage::is_open_world_map(310051), "Seal_Verteron_051");
         assert!(!crate::combat::data_storage::is_open_world_map(600021), "Fire_Temple_Easy");
         assert!(!crate::combat::data_storage::is_open_world_map(999_999_999), "unknown map");
@@ -371,9 +372,74 @@ mod tests {
         let s = DataStorage::new();
         s.set_current_dungeon(600021);
         s.note_map_load(310051);
-        assert_eq!(s.current_dungeon_id(), 600021, "a seal does not end it");
+        assert_eq!(s.current_dungeon_id(), 310051, "a seal is its own dungeon");
         s.note_map_load(101021);
-        assert_eq!(s.current_dungeon_id(), 0, "a world layer does");
+        assert_eq!(s.current_dungeon_id(), 0, "a world layer ends it");
+        s.note_map_load(600021);
+        s.set_current_dungeon(600021);
+        s.note_map_load(20);
+        assert_eq!(s.current_dungeon_id(), 0, "so does the Abyss");
+    }
+
+    #[test]
+    fn a_fight_in_a_sealed_dungeon_is_filed_under_it() {
+        // 2026-10-04 capture: boss 2701096, fought in Seal_Verteron_051 with
+        // no party roster, was saved as open world.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        s.note_map_load(1010);
+        s.note_map_load(310051);
+        assert_eq!(s.current_dungeon_id(), 310051);
+        s.set_current_dungeon(600021);
+        assert_eq!(s.current_dungeon_id(), 310051, "the party's queue is not the seal");
+        hits(&s, 2259, 800, 1_000, 8_000);
+        crate::clock::set_override(Some(12_000));
+        s.note_map_load(1010);
+        assert_eq!(s.current_dungeon_id(), 0);
+        assert!(s.note_zone_change());
+        assert_eq!(dungeon_of(&snapshot_at(&mut calc, 12_000), "auto_800_1000"), 310051);
+        s.note_map_load(600021);
+        assert_eq!(s.current_dungeon_id(), 600021, "the queue, at the load into it");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_queued_dungeon_waits_through_an_arena() {
+        let s = DataStorage::new();
+        s.note_map_load(1010);
+        s.set_current_dungeon(600002);
+        s.note_map_load(61);
+        assert_eq!(s.current_dungeon_id(), 0, "Impetusium Arena is not Krao Cave");
+        s.set_current_dungeon(600002);
+        assert_eq!(s.current_dungeon_id(), 0, "nor when the roster comes again there");
+        s.note_map_load(1010);
+        s.note_map_load(600002);
+        assert_eq!(s.current_dungeon_id(), 600002);
+        // A dungeon on a map of another id.
+        s.note_map_load(1010);
+        s.set_current_dungeon(600151);
+        s.note_map_load(600144);
+        assert_eq!(s.current_dungeon_id(), 600151, "Citadel of the Fallen Daeva");
+        s.note_map_load(600144);
+        s.set_current_dungeon(600151);
+        assert_eq!(s.current_dungeon_id(), 600151, "a teleport inside it");
+    }
+
+    #[test]
+    fn every_instance_entered_without_a_roster_is_filed_under_its_map() {
+        let s = DataStorage::new();
+        // Daily, Ascension, Ascension Trial (Awaken) and Nightmare (BossChallenge).
+        for map in [900001, 200002, 910011, 200003] {
+            s.note_map_load(1010);
+            s.note_map_load(map);
+            assert_eq!(s.current_dungeon_id(), map);
+        }
+        // A party's Subjugation map is named by its roster, not its map.
+        s.note_map_load(1010);
+        s.note_map_load(156000);
+        assert_eq!(s.current_dungeon_id(), 0);
     }
 
     #[test]

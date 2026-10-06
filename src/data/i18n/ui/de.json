@@ -488,14 +488,6 @@
     "CHANTER": "Kantor",
     "FIGHTER": "Faustkämpfer"
   },
-  "dungeon": {
-    "difficulty": {
-      "exploration": "Erkundung",
-      "normal": "Normal",
-      "hard": "Schwer",
-      "level": "Stufe {n}"
-    }
-  },
   "tray": {
     "toggle": "Meter zeigen oder verbergen",
     "lock": "Meter sperren oder entsperren",

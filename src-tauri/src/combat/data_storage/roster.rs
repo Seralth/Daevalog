@@ -45,7 +45,10 @@ impl DataStorage {
                 members.len()
             );
             inner.party_members.clear();
-            inner.current_dungeon_id = 0;
+            // An instance under its own map is no party's.
+            if inner.map_kind != MapKind::Own {
+                inner.current_dungeon_id = 0;
+            }
             inner.queued_dungeon_id = 0;
             drop(inner);
             self.flush_combat_only();
@@ -65,41 +68,59 @@ impl DataStorage {
     /// A zone load named the map it loads (`21 36`). The roster never sends 0
     /// for the open world, so a load into an open-world map is what ends the
     /// last instance's dungeon id. A teleport inside an instance names the
-    /// instance's own map, so it keeps the id. A load into an instance takes
-    /// the one the party queued for, if a roster named one.
+    /// instance's own map, so it keeps the id. A load into the map of the
+    /// dungeon the party queued for takes that dungeon; any other instance,
+    /// an arena say, does not. An instance entered without a roster (sealed,
+    /// quest, daily, Ascension and Ascension Trial dungeons, Nightmare) is
+    /// filed under its map id.
     pub fn note_map_load(&self, map_id: i32) {
         let mut inner = self.inner.write();
         inner.own_records.zone_loaded();
-        inner.in_open_world = is_open_world_map(map_id);
-        if !inner.in_open_world {
-            let queued = std::mem::take(&mut inner.queued_dungeon_id);
-            if queued != 0 {
-                inner.current_dungeon_id = queued;
+        let kind = if is_open_world_map(map_id) {
+            MapKind::OpenWorld
+        } else if is_own_dungeon_map(map_id) {
+            MapKind::Own
+        } else {
+            MapKind::Instance
+        };
+        inner.map_kind = kind;
+        inner.map_id = map_id;
+        match kind {
+            MapKind::OpenWorld => {
+                if inner.current_dungeon_id != 0 {
+                    tracing::debug!(
+                        "Map {map_id} is open world: leaving dungeon {}",
+                        inner.current_dungeon_id
+                    );
+                    inner.current_dungeon_id = 0;
+                }
             }
-            return;
-        }
-        if inner.current_dungeon_id != 0 {
-            tracing::debug!(
-                "Map {map_id} is open world: leaving dungeon {}",
-                inner.current_dungeon_id
-            );
-            inner.current_dungeon_id = 0;
+            MapKind::Own => inner.current_dungeon_id = map_id,
+            MapKind::Instance | MapKind::Unknown => {
+                let queued = inner.queued_dungeon_id;
+                if queued != 0 && map_of_dungeon(queued) == map_id {
+                    inner.current_dungeon_id = queued;
+                    inner.queued_dungeon_id = 0;
+                } else if map_of_dungeon(inner.current_dungeon_id) != map_id {
+                    inner.current_dungeon_id = 0;
+                }
+            }
         }
     }
 
-    /// The instance a party roster names. In the open world that is the one
-    /// the party queued for, named up to minutes before the load into it
-    /// (2026-10-04 captures: 46 seconds and 3 minutes), so it waits for that
-    /// load.
+    /// The instance a party roster names. Anywhere but that instance's own
+    /// map it is the one the party queued for, named up to minutes before the
+    /// load into it (2026-10-04 captures: 46 seconds and 3 minutes), so it
+    /// waits for that load. Before the first load the map is not known.
     pub fn set_current_dungeon(&self, dungeon_id: i32) {
         if dungeon_id <= 0 {
             return;
         }
         let mut inner = self.inner.write();
-        if inner.in_open_world {
-            inner.queued_dungeon_id = dungeon_id;
-        } else {
+        if inner.map_kind == MapKind::Unknown || map_of_dungeon(dungeon_id) == inner.map_id {
             inner.current_dungeon_id = dungeon_id;
+        } else {
+            inner.queued_dungeon_id = dungeon_id;
         }
     }
 
@@ -133,17 +154,55 @@ impl DataStorage {
     }
 }
 
-/// Open-world map ids from the game's Map table: the overworld maps and their
-/// world layers (the overworld itself, split off for quest scenes).
-static OPEN_WORLD_MAPS: std::sync::LazyLock<HashSet<i32>> = std::sync::LazyLock::new(|| {
+/// What the last map load entered. Unknown until the first one.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(super) enum MapKind {
+    #[default]
+    Unknown,
+    OpenWorld,
+    /// An instance filed under its own map id: a sealed, quest, daily,
+    /// Ascension or Ascension Trial dungeon, or Nightmare. No party roster.
+    Own,
+    Instance,
+}
+
+fn map_list(json: &str) -> HashSet<i32> {
     #[derive(serde::Deserialize)]
     struct Table {
         maps: HashSet<i32>,
     }
-    serde_json::from_str::<Table>(include_str!("../../../../src/data/open_world_maps.json"))
-        .map(|t| t.maps)
-        .unwrap_or_default()
+    serde_json::from_str::<Table>(json).map(|t| t.maps).unwrap_or_default()
+}
+
+/// Open-world map ids from the game's Map table: the overworld maps and their
+/// world layers (the overworld itself, split off for quest scenes), and the
+/// Abyss, a large zone with sieges and world bosses.
+static OPEN_WORLD_MAPS: std::sync::LazyLock<HashSet<i32>> =
+    std::sync::LazyLock::new(|| map_list(include_str!("../../../../src/data/open_world_maps.json")));
+
+#[derive(Default, serde::Deserialize)]
+struct InstanceMaps {
+    /// Instances filed under their own map id.
+    #[serde(rename = "ownMaps")]
+    own_maps: HashSet<i32>,
+    /// The map of each dungeon whose id is not its map's.
+    #[serde(rename = "dungeonMaps")]
+    dungeon_maps: HashMap<i32, i32>,
+}
+
+static INSTANCE_MAPS: std::sync::LazyLock<InstanceMaps> = std::sync::LazyLock::new(|| {
+    serde_json::from_str(include_str!("../../../../src/data/instance_maps.json")).unwrap_or_default()
 });
+
+fn is_own_dungeon_map(map_id: i32) -> bool {
+    INSTANCE_MAPS.own_maps.contains(&map_id)
+}
+
+/// The map a dungeon id is played on: most share the id, a few do not
+/// (Citadel of the Fallen Daeva 600151 is map 600144).
+fn map_of_dungeon(dungeon_id: i32) -> i32 {
+    INSTANCE_MAPS.dungeon_maps.get(&dungeon_id).copied().unwrap_or(dungeon_id)
+}
 
 /// True for a map of the open world. Unknown ids (a map added by a later
 /// patch) count as instances, which keeps the dungeon id as before.

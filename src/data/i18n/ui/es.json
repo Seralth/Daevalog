@@ -488,14 +488,6 @@
     "CHANTER": "Conjurador",
     "FIGHTER": "Luchador"
   },
-  "dungeon": {
-    "difficulty": {
-      "exploration": "Exploración",
-      "normal": "Normal",
-      "hard": "Difícil",
-      "level": "Nivel {n}"
-    }
-  },
   "tray": {
     "toggle": "Mostrar u ocultar el medidor",
     "lock": "Bloquear o desbloquear el medidor",

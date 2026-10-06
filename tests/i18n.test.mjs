@@ -5,7 +5,8 @@ import vm from "node:vm";
 
 const source = readFileSync(new URL("../public/src/js/i18n.js", import.meta.url), "utf8");
 
-test("built UI resources support language switching and English dungeon fallback", async () => {
+// i18n.js over the built resources in dist/.
+const builtI18n = () => {
   const window = {};
   const document = {
     baseURI: "http://localhost/",
@@ -25,14 +26,58 @@ test("built UI resources support language switching and English dungeon fallback
     }
   };
   vm.runInNewContext(source, { window, document, fetch, URL, TextDecoder, Uint8Array, XMLHttpRequest: MissingResource });
+  return window;
+};
+
+test("built UI resources support language switching, dungeons included", async () => {
+  const window = builtI18n();
   const ru = JSON.parse(readFileSync(new URL("../src/data/i18n/ui/ru.json", import.meta.url)));
   const en = JSON.parse(readFileSync(new URL("../src/data/i18n/ui/en.json", import.meta.url)));
   await window.i18n.setLanguage("ru", { persist: false });
   assert.equal(window.i18n.t("target.all"), ru.target.all);
-  assert.match(window.i18n.getDungeonLabel(600001), /^Krao Cave/);
+  assert.match(window.i18n.getDungeonLabel(600001), /^Пещера крао/);
+  // An id the game no longer has keeps its English name.
+  assert.equal(window.i18n.getDungeonLabel(600161), "Consumed Deus Research Base");
   await window.i18n.setLanguage("en", { persist: false });
   assert.equal(window.i18n.t("target.all"), en.target.all);
   assert.match(window.i18n.getDungeonLabel(600001), /^Krao Cave/);
+});
+
+test("a dungeon's difficulty is the game's own, and only where the game gives one", async () => {
+  const window = builtI18n();
+  await window.i18n.setLanguage("en", { persist: false });
+  const { getDungeonLabel, getDungeonDifficulty } = window.i18n;
+  assert.equal(getDungeonLabel(600002), "Krao Cave (Exploration)");
+  assert.equal(getDungeonLabel(600022), "Fire Temple (Conquest Tier 3)");
+  assert.equal(getDungeonLabel(600123), "Cradle of Nihility (Conquest Tier 4 · Hard)");
+  assert.equal(getDungeonDifficulty(600123).key, "advanced");
+  // A Transcendence run, not "Level 3" from the id's last digit.
+  assert.equal(getDungeonLabel(600053), "Deus Research Base (Transcendence)");
+  assert.equal(getDungeonLabel(620021), "Chalice of Muspel (Hard)");
+  assert.equal(getDungeonLabel(690035), "Orcus's Grave (Insane)");
+  // Sealed and quest dungeons, the Abyss, maps without a dungeon row and
+  // names that hold their variant: a name only.
+  for (const [id, name] of [[310051, "Altar of Hope"], [210009, "Zumion Relic Storage"],
+    [142007, "Corrupted Forester Ruins Treasure Storage"], [21, "Chaotic Lower Reshanta"],
+    [600144, "Citadel of the Fallen Daeva"], [910011, "Nightmare Altar (Easy)"]]) {
+    assert.equal(getDungeonLabel(id), name, String(id));
+    assert.equal(getDungeonDifficulty(id), null, String(id));
+  }
+  await window.i18n.setLanguage("de", { persist: false });
+  assert.equal(getDungeonLabel(600002), "Kraohöhle (Erkundung)");
+});
+
+test("no dungeon label repeats a word, or a variant its name holds", () => {
+  const dir = new URL("../src/data/i18n/dungeons/", import.meta.url);
+  for (const file of readdirSync(dir)) {
+    const table = JSON.parse(readFileSync(new URL(file, dir), "utf8"));
+    for (const [id, entry] of Object.entries(table)) {
+      if (!entry.label) continue;
+      const words = entry.label.toLowerCase().split(/[\s·()[\]]+/).filter(Boolean);
+      assert.equal(new Set(words).size, words.length, `${file} ${id}: ${entry.label}`);
+      assert.doesNotMatch(entry.name, /[(\[（【].*[)\]）】]/, `${file} ${id}: ${entry.name}`);
+    }
+  }
 });
 
 const uiDir = new URL("../src/data/i18n/ui/", import.meta.url);

@@ -127,6 +127,8 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - Packets are framed by the real length rule: payload plus 4.
 - Each connection to the game server is read on its own. A TLS connection is left out whole.
 - A fight keeps the dungeon it was fought in. A map load into the open world ends the dungeon. The dungeon a party queues for begins with the load into it, not when the party roster names it.
+- A fight in a sealed, quest, daily, Ascension or Ascension Trial dungeon, or in Nightmare, is filed under that dungeon. The Abyss counts as open world. A party's queued dungeon applies only at the load into it.
+- A dungeon's difficulty is shown in the game's own words and language, taken from the game's dungeon table, only where the game gives one, and never repeating the name.
 - Spirits are linked to their owners by the game's link records and the spawn caster field. Owners are not guessed by power scalar or class.
 - Fight slices keep skill ids that look like short text. They are no longer blanked out as names.
 

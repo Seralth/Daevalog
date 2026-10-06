@@ -488,14 +488,6 @@
     "CHANTER": "护法圣",
     "FIGHTER": "拳圣"
   },
-  "dungeon": {
-    "difficulty": {
-      "exploration": "探索",
-      "normal": "普通",
-      "hard": "困难",
-      "level": "第 {n} 阶"
-    }
-  },
   "tray": {
     "toggle": "显示或隐藏计量器",
     "lock": "锁定或解锁计量器",

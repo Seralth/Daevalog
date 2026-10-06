@@ -12,10 +12,16 @@ Writes, under src/data:
   no longer has are kept as they are.
 - i18n/skills/<lang>.json: the name of every skill the game names, and of
   the heals that come from no skill (NO_SKILL_HEALS).
-- i18n/dungeons/<lang>.json: dungeon names, for the languages already there.
+- i18n/dungeons/<lang>.json: each dungeon's name, kind, difficulty and party
+  tier, and the game's words for that difficulty. Instance maps without a
+  dungeon row of their own get their map title as the name. zh-Hans and
+  zh-Hant keep their names and get the English words.
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
-- open_world_maps.json: overworld maps and their world layers.
+- open_world_maps.json: overworld maps, their world layers and the Abyss.
+- instance_maps.json: instances filed under their own map id (sealed, quest,
+  daily, Ascension and Ascension Trial dungeons, and Nightmare), and the map
+  of each dungeon whose id is not its map's.
 
 zh-Hans and zh-Hant are not in the global client and are left alone.
 """
@@ -55,6 +61,28 @@ def value(v):
     return v.get("Value") if isinstance(v, dict) else v
 
 
+def enum(v):
+    return v.split("::")[-1]
+
+
+# Where each kind of dungeon finds the words for its difficulty, by its
+# sub-type or else its type. Other kinds have no difficulty.
+DIFFICULTY_TEXT = {
+    "Party": "String_STR_DUNGEONDIFFICULTY_{}_body",
+    "Raid": "String_UI_PARTYDUNGEON_RAID_DIFFICULTY_{}_body",
+    "Awaken": "String_UI_AWAKEN_DIFFICULTY_{}_body",
+    # Subjugation, the Matching rows with Easy to Hell.
+    "Suppression": "String_UI_SUPPRESSION_{}_body",
+}
+TIER_TEXT = "String_UI_CONTENTS_UNLOCK_PARTYDUNGEON{}TIER_body"
+# Instances a fight is filed under by their map id: sealed, quest, daily,
+# Ascension and Ascension Trial (Awaken) dungeons, and Nightmare.
+OWN_MAP_TYPES = ("Seal", "Quest", "Daily", "Ascension", "Awaken", "BossChallenge")
+CONQUEST_HARD_TEXT = "String_UI_PARTYDUNGEON_CONQUER_DIFFICULTY_ADVANCED_body"
+# A name that holds its variant in brackets: "Nightmare Altar (Easy)".
+VARIANT_IN_NAME = re.compile(r"[(\[（【].*[)\]）】]")
+
+
 def load(path):
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
@@ -87,6 +115,56 @@ def main():
     def named(name):
         return name and name != "???"
 
+    overworld = {m["ID"]["Value"] for m in maps if m["MapType"] in ("EMapType::General", "EMapType::Starter")}
+    # The Abyss (Reshanta) is a large zone with sieges and world bosses, not
+    # a dungeon a party enters.
+    abyss = {value(d["MapId"]) for d in dungeons if enum(d["DungeonType"]) == "Abyss"}
+    open_world = overworld | abyss | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}
+    map_by_id = {m["ID"]["Value"]: m for m in maps}
+    dungeon_ids = {d["ID"]["Value"] for d in dungeons}
+
+    # A dungeon's kind, difficulty and party tier, as the game's own fields
+    # say; "None" leaves a field out.
+    def dungeon_fields(dungeon):
+        fields = {"type": enum(dungeon["DungeonType"]).lower()}
+        difficulty = enum(dungeon["DungeonDifficulty"])
+        if difficulty != "None":
+            fields["difficulty"] = difficulty.lower()
+        tier = re.fullmatch(r"PartyDungeon_(\d+)Tier", enum(dungeon["PartDungeonTier"]))
+        if tier:
+            fields["tier"] = int(tier.group(1))
+        return fields
+
+    # The game's words for a dungeon's difficulty, never repeating a word.
+    # A party tier's words ("Conquest Tier 3") hold the difficulty already,
+    # so they stand alone, with the game's Conquest "Hard" for an Advanced
+    # row. A name that holds its variant gets no words.
+    def difficulty_label(dungeon, name, text):
+        difficulty = enum(dungeon["DungeonDifficulty"])
+        if difficulty == "None" or not name or VARIANT_IN_NAME.search(name):
+            return None
+        tier = re.fullmatch(r"PartyDungeon_(\d+)Tier", enum(dungeon["PartDungeonTier"]))
+        if tier:
+            label = text.get(TIER_TEXT.format(tier.group(1)))
+            hard = text.get(CONQUEST_HARD_TEXT)
+            if difficulty == "Advanced" and named(label) and named(hard):
+                label = f"{label} · {hard}"
+        else:
+            key = DIFFICULTY_TEXT.get(enum(dungeon["DungeonSubType"])) or DIFFICULTY_TEXT.get(enum(dungeon["DungeonType"]))
+            label = text.get(key.format(difficulty.upper())) if key else None
+        if not named(label) or label.casefold() in name.casefold():
+            return None
+        return label
+
+    def set_dungeon(table, dungeon, text):
+        entry = table.setdefault(str(dungeon["ID"]["Value"]), {})
+        for field in ("type", "difficulty", "tier", "label"):
+            entry.pop(field, None)
+        entry.update(dungeon_fields(dungeon))
+        label = difficulty_label(dungeon, entry.get("name"), text)
+        if label:
+            entry["label"] = label
+
     # A dummy players train on (by its English name) counts as a boss, so
     # BOSS mode shows it; test sandbags are dummies only.
     def dummy_kind(npc):
@@ -95,6 +173,7 @@ def main():
             return "player"
         return "test" if DUMMY_INTERNAL.search(npc["Name"]) else None
 
+    english_dungeons = load(DATA / "i18n/dungeons/en.json")
     for culture, lang in LANGS.items():
         text = english if lang == "en" else strings(export, culture)
 
@@ -134,14 +213,28 @@ def main():
                 table[str(code)] = name
         save(path, table)
 
+        # Every id a fight can be filed under gets a name: a dungeon's title,
+        # or its map's where it has none, and the title of an instance map
+        # without a dungeon row of its own.
         path = DATA / "i18n/dungeons" / f"{lang}.json"
-        if path.exists():
-            table = load(path)
-            for dungeon in dungeons:
-                name = text.get(f"String_{dungeon['Title']['Key']}_body")
-                if named(name):
-                    table.setdefault(str(dungeon["ID"]["Value"]), {})["name"] = name
-            save(path, table)
+        table = load(path)
+        for dungeon in dungeons:
+            name = text.get(f"String_{dungeon['Title']['Key']}_body")
+            own_map = map_by_id.get(dungeon["ID"]["Value"])
+            if not named(name) and own_map and value(dungeon["MapId"]) == dungeon["ID"]["Value"]:
+                name = text.get(f"String_{own_map['Desc']['Key']}_body")
+            if named(name):
+                table.setdefault(str(dungeon["ID"]["Value"]), {})["name"] = name
+            if str(dungeon["ID"]["Value"]) in table:
+                set_dungeon(table, dungeon, text)
+        for m in maps:
+            name = text.get(f"String_{m['Desc']['Key']}_body")
+            if m["ID"]["Value"] not in open_world | dungeon_ids and named(name):
+                table.setdefault(str(m["ID"]["Value"]), {})["name"] = name
+        # Ids the game no longer has, or has no name for here, keep the English.
+        for key, entry in english_dungeons.items():
+            table.setdefault(key, dict(entry))
+        save(path, table)
 
     groups = {str(s["ID"]["Value"]): value(s["DamageAnalyzerSkillIdOverride"]) for s in skills
               if value(s["DamageAnalyzerSkillIdOverride"]) not in (0, None, s["ID"]["Value"])}
@@ -170,12 +263,37 @@ def main():
         "skills": sorted(restores),
     }) + "\n", encoding="utf-8")
 
-    overworld = {m["ID"]["Value"] for m in maps if m["MapType"] in ("EMapType::General", "EMapType::Starter")}
-    open_world = overworld | {m["ID"]["Value"] for m in maps if value(m["BaseMapId"]) in overworld}
+    # Not in the global client: their names stay, the rest is the English.
+    for lang in ("zh-Hans", "zh-Hant"):
+        path = DATA / "i18n/dungeons" / f"{lang}.json"
+        if path.exists():
+            table = load(path)
+            for dungeon in dungeons:
+                if str(dungeon["ID"]["Value"]) in table:
+                    set_dungeon(table, dungeon, english)
+            save(path, table)
+
     (DATA / "open_world_maps.json").write_text(json.dumps({
-        "source": f"{source}: Map table, overworld maps (MapType General/Starter) and their "
-                  "world layers (BaseMapId is an overworld map)",
+        "source": f"{source}: Map table, overworld maps (MapType General/Starter), their "
+                  "world layers (BaseMapId is an overworld map) and the Abyss (Dungeon table, "
+                  "DungeonType Abyss)",
         "maps": sorted(open_world),
+    }) + "\n", encoding="utf-8")
+
+    # These are entered without a party roster to name them: the dungeon row
+    # of the map's own id is the content.
+    own = [d["ID"]["Value"] for d in dungeons
+           if enum(d["DungeonType"]) in OWN_MAP_TYPES and value(d["MapId"]) == d["ID"]["Value"]
+           and d["ID"]["Value"] in map_by_id and d["ID"]["Value"] not in open_world]
+    # A party's queue applies at the load into its dungeon's map.
+    dungeon_maps = {str(d["ID"]["Value"]): value(d["MapId"]) for d in dungeons
+                    if value(d["MapId"]) != d["ID"]["Value"]}
+    (DATA / "instance_maps.json").write_text(json.dumps({
+        "source": f"{source}: Dungeon table. ownMaps: instances on a map of their own id "
+                  f"(DungeonType {', '.join(OWN_MAP_TYPES)}). dungeonMaps: the MapId of each "
+                  "dungeon whose id differs",
+        "ownMaps": sorted(own),
+        "dungeonMaps": dict(sorted(dungeon_maps.items(), key=lambda kv: int(kv[0]))),
     }) + "\n", encoding="utf-8")
 
 

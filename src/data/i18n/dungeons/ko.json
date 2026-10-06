@@ -1,1443 +1,2050 @@
 {
   "10": {
-    "name": "오드 샤드의 요람"
+    "name": "오드 샤드의 요람",
+    "type": "matching"
   },
   "100001": {
-    "name": "포에타"
+    "name": "포에타",
+    "type": "instancelayer"
   },
   "100002": {
-    "name": "포에타"
+    "name": "포에타",
+    "type": "instancelayer"
   },
   "101041": {
-    "name": "드라나 재배지"
+    "name": "드라나 재배지",
+    "type": "instancelayer"
   },
   "101042": {
-    "name": "순례자의 쉼터"
+    "name": "순례자의 쉼터",
+    "type": "instancelayer"
   },
   "103": {
-    "name": "무니헬르 숲"
+    "name": "무니헬르 숲",
+    "type": "instancelayer"
   },
   "104": {
-    "name": "안투른 절벽"
+    "name": "안투른 절벽",
+    "type": "instancelayer"
   },
   "105": {
-    "name": "아즈라쿤 군단 창고"
+    "name": "아즈라쿤 군단 창고",
+    "type": "instancelayer"
   },
   "106": {
-    "name": "보급소 내부 거점"
+    "name": "보급소 내부 거점",
+    "type": "instancelayer"
   },
   "108": {
-    "name": "톨바스 숲 북부"
+    "name": "톨바스 숲 북부",
+    "type": "instancelayer"
   },
   "109": {
-    "name": "새벽의 레기온 임시 초소"
+    "name": "새벽의 레기온 임시 초소",
+    "type": "instancelayer"
   },
   "110": {
-    "name": "산들바람 상회 본부"
+    "name": "산들바람 상회 본부",
+    "type": "instancelayer"
   },
   "110001": {
-    "name": "이스할겐"
+    "name": "이스할겐",
+    "type": "instancelayer"
   },
   "110005": {
-    "name": "아즈라쿤 군단 수용소"
+    "name": "아즈라쿤 군단 수용소",
+    "type": "instancelayer"
   },
   "110006": {
-    "name": "밤의 알데르 마을"
+    "name": "밤의 알데르 마을",
+    "type": "instancelayer"
   },
   "110007": {
-    "name": "투나프레 호수"
+    "name": "투나프레 호수",
+    "type": "instancelayer"
   },
   "110008": {
-    "name": "아즈라쿤 군단 수용소 앞"
+    "name": "아즈라쿤 군단 수용소 앞",
+    "type": "instancelayer"
   },
   "111": {
-    "name": "추방자의 숲"
+    "name": "추방자의 숲",
+    "type": "instancelayer"
   },
   "111011": {
-    "name": "루벤의 은신처"
+    "name": "루벤의 은신처",
+    "type": "instancelayer"
+  },
+  "111012": {
+    "name": "버려진 폐허",
+    "type": "instancelayer"
   },
   "111017": {
-    "name": "무역단 야적장"
+    "name": "무역단 야적장",
+    "type": "instancelayer"
   },
   "111025": {
-    "name": "드라카나 웅덩이"
+    "name": "드라카나 웅덩이",
+    "type": "instancelayer"
   },
   "111026": {
-    "name": "협곡 파견지"
+    "name": "협곡 파견지",
+    "type": "instancelayer"
+  },
+  "111027": {
+    "name": "콰이링 야영지",
+    "type": "instancelayer"
+  },
+  "111028": {
+    "name": "이름없는 묘지",
+    "type": "instancelayer"
   },
   "111029": {
-    "name": "은신 동굴"
+    "name": "은신 동굴",
+    "type": "instancelayer"
+  },
+  "111030": {
+    "name": "모슬란 숲",
+    "type": "instancelayer"
   },
   "111031": {
-    "name": "북부 제단"
+    "name": "북부 제단",
+    "type": "instancelayer"
   },
   "111032": {
-    "name": "동부 제단"
+    "name": "동부 제단",
+    "type": "instancelayer"
   },
   "111033": {
-    "name": "땅의 제단"
+    "name": "땅의 제단",
+    "type": "instancelayer"
   },
   "111034": {
-    "name": "칼날단 막사"
+    "name": "칼날단 막사",
+    "type": "instancelayer"
   },
   "111035": {
-    "name": "봉쇄된 작업장"
+    "name": "봉쇄된 작업장",
+    "type": "instancelayer"
   },
   "111036": {
-    "name": "칼날단 보급 창고"
+    "name": "칼날단 보급 창고",
+    "type": "instancelayer"
   },
   "111037": {
-    "name": "죄수 굴"
+    "name": "죄수 굴",
+    "type": "instancelayer"
   },
   "111038": {
-    "name": "무카카의 막사"
+    "name": "무카카의 막사",
+    "type": "instancelayer"
   },
   "111039": {
-    "name": "라그타 파프나이트 창고"
+    "name": "라그타 파프나이트 창고",
+    "type": "instancelayer"
   },
   "111040": {
-    "name": "검은발톱 부락"
+    "name": "검은발톱 부락",
+    "type": "instancelayer"
   },
   "112": {
-    "name": "아울라우 부락"
+    "name": "아울라우 부락",
+    "type": "instancelayer"
   },
   "113": {
-    "name": "협곡 야영지"
+    "name": "협곡 야영지",
+    "type": "instancelayer"
   },
   "12": {
-    "name": "폭풍이 잠든 설원"
+    "name": "폭풍이 잠든 설원",
+    "type": "matching"
   },
   "14": {
-    "name": "모래바람 사원"
+    "name": "모래바람 사원",
+    "type": "matching"
   },
   "141000": {
-    "name": "탐색자 수드카의 정찰지"
+    "name": "탐색자 수드카의 정찰지",
+    "type": "instancelayer"
   },
   "141001": {
-    "name": "잔인한 즈라쉬의 정찰지"
+    "name": "잔인한 즈라쉬의 정찰지",
+    "type": "instancelayer"
   },
   "141002": {
-    "name": "잔혹한 로다르의 정찰지"
+    "name": "잔혹한 로다르의 정찰지",
+    "type": "instancelayer"
   },
   "141003": {
-    "name": "수행자 코라그의 정찰지"
+    "name": "수행자 코라그의 정찰지",
+    "type": "instancelayer"
   },
   "141004": {
-    "name": "보좌관 다르크의 정찰지"
+    "name": "보좌관 다르크의 정찰지",
+    "type": "instancelayer"
   },
   "141005": {
-    "name": "감시자 브론스의 정찰지"
+    "name": "감시자 브론스의 정찰지",
+    "type": "instancelayer"
   },
   "141006": {
-    "name": "절멸자 카르돈의 정찰지"
+    "name": "절멸자 카르돈의 정찰지",
+    "type": "instancelayer"
   },
   "141007": {
-    "name": "광기의 루칸트의 정찰지"
+    "name": "광기의 루칸트의 정찰지",
+    "type": "instancelayer"
   },
   "141008": {
-    "name": "포식자 즈라크의 정찰지"
+    "name": "포식자 즈라크의 정찰지",
+    "type": "instancelayer"
   },
   "141009": {
-    "name": "파멸자 크로반의 정찰지"
+    "name": "파멸자 크로반의 정찰지",
+    "type": "instancelayer"
   },
   "141010": {
-    "name": "전율의 로칸드의 정찰지"
+    "name": "전율의 로칸드의 정찰지",
+    "type": "instancelayer"
   },
   "141011": {
-    "name": "불멸자 가르몬의 정찰지"
+    "name": "불멸자 가르몬의 정찰지",
+    "type": "instancelayer"
   },
   "141012": {
-    "name": "파괴자 크로쉬의 정찰지"
+    "name": "파괴자 크로쉬의 정찰지",
+    "type": "instancelayer"
   },
   "141013": {
-    "name": "고문자 트레곤의 정찰지"
+    "name": "고문자 트레곤의 정찰지",
+    "type": "instancelayer"
   },
   "141014": {
-    "name": "도살자 크룸스의 정찰지"
+    "name": "도살자 크룸스의 정찰지",
+    "type": "instancelayer"
   },
   "141015": {
-    "name": "탈취자 칼라한타의 정찰지"
+    "name": "탈취자 칼라한타의 정찰지",
+    "type": "instancelayer"
   },
   "141016": {
-    "name": "종결자 안타카라의 정찰지"
+    "name": "종결자 안타카라의 정찰지",
+    "type": "instancelayer"
   },
   "141017": {
-    "name": "파쇄자 바즈라단트의 정찰지"
+    "name": "파쇄자 바즈라단트의 정찰지",
+    "type": "instancelayer"
   },
   "141018": {
-    "name": "재앙의 파탈라자의 정찰지"
+    "name": "재앙의 파탈라자의 정찰지",
+    "type": "instancelayer"
   },
   "141019": {
-    "name": "기록관 바루나크샤의 정찰지"
+    "name": "기록관 바루나크샤의 정찰지",
+    "type": "instancelayer"
   },
   "141020": {
-    "name": "중재관 메가나드의 정찰지"
+    "name": "중재관 메가나드의 정찰지",
+    "type": "instancelayer"
   },
   "141021": {
-    "name": "단절의 우그라바후의 정찰지"
+    "name": "단절의 우그라바후의 정찰지",
+    "type": "instancelayer"
   },
   "142000": {
-    "name": "묘지 도굴꾼 소굴"
+    "name": "묘지 도굴꾼 소굴",
+    "type": "instancelayer"
   },
   "142001": {
-    "name": "성소 외곽 감시대"
+    "name": "성소 외곽 감시대",
+    "type": "instancelayer"
   },
   "142002": {
-    "name": "루베크 도적단 점거지"
+    "name": "루베크 도적단 점거지",
+    "type": "instancelayer"
   },
   "142003": {
-    "name": "타락한 숲지기 폐허"
+    "name": "타락한 숲지기 폐허",
+    "type": "instancelayer"
   },
   "142004": {
-    "name": "칼날단 임시 초소"
+    "name": "칼날단 임시 초소",
+    "type": "instancelayer"
   },
   "142005": {
-    "name": "벌목꾼 쉼터 폐허"
+    "name": "벌목꾼 쉼터 폐허",
+    "type": "instancelayer"
   },
   "142006": {
-    "name": "숲 약탈꾼 야영지"
+    "name": "숲 약탈꾼 야영지",
+    "type": "instancelayer"
+  },
+  "142007": {
+    "name": "타락한 숲지기 폐허 보물창고",
+    "type": "quest"
+  },
+  "142008": {
+    "name": "칼날단 임시 초소 보물창고",
+    "type": "quest"
+  },
+  "142009": {
+    "name": "벌목꾼 쉼터 폐허 보물창고",
+    "type": "quest"
   },
   "142010": {
-    "name": "묘지 도굴꾼 소굴 보물창고"
+    "name": "묘지 도굴꾼 소굴 보물창고",
+    "type": "quest"
   },
   "142011": {
-    "name": "성소 외곽 감시대 보물창고"
+    "name": "성소 외곽 감시대 보물창고",
+    "type": "quest"
   },
   "142012": {
-    "name": "루베크 도적단 점거지 보물창고"
+    "name": "루베크 도적단 점거지 보물창고",
+    "type": "quest"
+  },
+  "142013": {
+    "name": "숲 약탈꾼 야영지 보물창고",
+    "type": "quest"
   },
   "142014": {
-    "name": "레기온 기지 폐허"
+    "name": "레기온 기지 폐허",
+    "type": "instancelayer"
   },
   "142015": {
-    "name": "플라크 레기온 초소"
+    "name": "플라크 레기온 초소",
+    "type": "instancelayer"
   },
   "142016": {
-    "name": "데틀레프 도적단 야영지"
+    "name": "데틀레프 도적단 야영지",
+    "type": "instancelayer"
   },
   "142017": {
-    "name": "라트리마 감시초소"
+    "name": "라트리마 감시초소",
+    "type": "instancelayer"
   },
   "142018": {
-    "name": "그라나흐의 은신처"
+    "name": "그라나흐의 은신처",
+    "type": "instancelayer"
   },
   "142019": {
-    "name": "바라타 척결부대 초소"
+    "name": "바라타 척결부대 초소",
+    "type": "instancelayer"
   },
   "142020": {
-    "name": "아무라타 감시기지"
+    "name": "아무라타 감시기지",
+    "type": "instancelayer"
   },
   "142021": {
-    "name": "안드샤 전초기지"
+    "name": "안드샤 전초기지",
+    "type": "instancelayer"
   },
   "143000": {
-    "name": "얼음 협곡 야영지"
+    "name": "얼음 협곡 야영지",
+    "type": "instancelayer"
   },
   "143001": {
-    "name": "잿가루 야영지"
+    "name": "잿가루 야영지",
+    "type": "instancelayer"
   },
   "143004": {
-    "name": "저주받은 설원 은신처"
+    "name": "저주받은 설원 은신처",
+    "type": "instancelayer"
   },
   "143005": {
-    "name": "추락한 신전 폐허"
+    "name": "추락한 신전 폐허",
+    "type": "instancelayer"
   },
   "143008": {
-    "name": "다르바타 감시 기지"
+    "name": "다르바타 감시 기지",
+    "type": "instancelayer"
   },
   "143011": {
-    "name": "디나크라 공중 초소"
+    "name": "디나크라 공중 초소",
+    "type": "instancelayer"
   },
   "151001": {
-    "name": "숭배자 드키쉬의 정찰지"
+    "name": "숭배자 드키쉬의 정찰지",
+    "type": "instancelayer"
   },
   "151002": {
-    "name": "탐색꾼 사하르의 정찰지"
+    "name": "탐색꾼 사하르의 정찰지",
+    "type": "instancelayer"
   },
   "151003": {
-    "name": "파괴자 타르카의 정찰지"
+    "name": "파괴자 타르카의 정찰지",
+    "type": "instancelayer"
   },
   "151004": {
-    "name": "감시자 산드하의 정찰지"
+    "name": "감시자 산드하의 정찰지",
+    "type": "instancelayer"
   },
   "151005": {
-    "name": "친위대 이리마의 정찰지"
+    "name": "친위대 이리마의 정찰지",
+    "type": "instancelayer"
   },
   "151006": {
-    "name": "냉혹한 칸다크의 정찰지"
+    "name": "냉혹한 칸다크의 정찰지",
+    "type": "instancelayer"
   },
   "151007": {
-    "name": "사냥꾼 다나한의 정찰지"
+    "name": "사냥꾼 다나한의 정찰지",
+    "type": "instancelayer"
   },
   "151008": {
-    "name": "무정한 모잔트의 정찰지"
+    "name": "무정한 모잔트의 정찰지",
+    "type": "instancelayer"
   },
   "151009": {
-    "name": "분노한 카르샤의 정찰지"
+    "name": "분노한 카르샤의 정찰지",
+    "type": "instancelayer"
   },
   "151010": {
-    "name": "파수꾼 크라체의 정찰지"
+    "name": "파수꾼 크라체의 정찰지",
+    "type": "instancelayer"
   },
   "151011": {
-    "name": "처형자 네모크의 정찰지"
+    "name": "처형자 네모크의 정찰지",
+    "type": "instancelayer"
   },
   "151012": {
-    "name": "보좌관 바르하의 정찰지"
+    "name": "보좌관 바르하의 정찰지",
+    "type": "instancelayer"
   },
   "151013": {
-    "name": "교활한 드마크의 정찰지"
+    "name": "교활한 드마크의 정찰지",
+    "type": "instancelayer"
   },
   "151014": {
-    "name": "수색대 바그쉬의 정찰지"
+    "name": "수색대 바그쉬의 정찰지",
+    "type": "instancelayer"
   },
   "151015": {
-    "name": "추적자 다즈란의 정찰지"
+    "name": "추적자 다즈란의 정찰지",
+    "type": "instancelayer"
   },
   "151016": {
-    "name": "광신자 드반의 정찰지"
+    "name": "광신자 드반의 정찰지",
+    "type": "instancelayer"
   },
   "151017": {
-    "name": "수도자 나라트의 정찰지"
+    "name": "수도자 나라트의 정찰지",
+    "type": "instancelayer"
   },
   "151018": {
-    "name": "구도자 타니체의 정찰지"
+    "name": "구도자 타니체의 정찰지",
+    "type": "instancelayer"
   },
   "151019": {
-    "name": "학살자 바르카쉬의 정찰지"
+    "name": "학살자 바르카쉬의 정찰지",
+    "type": "instancelayer"
   },
   "151020": {
-    "name": "섬뜩한 모라티아의 정찰지"
+    "name": "섬뜩한 모라티아의 정찰지",
+    "type": "instancelayer"
   },
   "151021": {
-    "name": "불굴의 바타곤의 정찰지"
+    "name": "불굴의 바타곤의 정찰지",
+    "type": "instancelayer"
   },
   "151022": {
-    "name": "재빠른 사나그의 정찰지"
+    "name": "재빠른 사나그의 정찰지",
+    "type": "instancelayer"
   },
   "152000": {
-    "name": "탈영병 숙영지"
+    "name": "탈영병 숙영지",
+    "type": "instancelayer"
   },
   "152001": {
-    "name": "로믈론의 은신처"
+    "name": "로믈론의 은신처",
+    "type": "instancelayer"
   },
   "152002": {
-    "name": "숲 그늘 처형터"
+    "name": "숲 그늘 처형터",
+    "type": "instancelayer"
   },
   "152003": {
-    "name": "변절자의 은신처"
+    "name": "변절자의 은신처",
+    "type": "instancelayer"
   },
   "152005": {
-    "name": "고원 언덕 기지"
+    "name": "고원 언덕 기지",
+    "type": "instancelayer"
   },
   "152006": {
-    "name": "탈영병 숙영지 보물창고"
+    "name": "탈영병 숙영지 보물창고",
+    "type": "quest"
   },
   "152007": {
-    "name": "로믈론의 은신처 보물창고"
+    "name": "로믈론의 은신처 보물창고",
+    "type": "quest"
   },
   "152008": {
-    "name": "숲 그늘 처형터 보물창고"
+    "name": "숲 그늘 처형터 보물창고",
+    "type": "quest"
   },
   "152009": {
-    "name": "변절자의 은신처 보물창고"
+    "name": "변절자의 은신처 보물창고",
+    "type": "quest"
   },
   "152010": {
-    "name": "고원 언덕 기지 보물창고"
+    "name": "고원 언덕 기지 보물창고",
+    "type": "quest"
   },
   "152011": {
-    "name": "수상한 유적지"
+    "name": "수상한 유적지",
+    "type": "instancelayer"
   },
   "153001": {
-    "name": "우가로스 도적단 야영지"
+    "name": "우가로스 도적단 야영지",
+    "type": "instancelayer"
+  },
+  "153002": {
+    "name": "미로스의 초소",
+    "type": "instancelayer"
   },
   "153003": {
-    "name": "밀렵꾼 거점"
+    "name": "밀렵꾼 거점",
+    "type": "instancelayer"
   },
   "153004": {
-    "name": "가르고스 도적단 야영지"
+    "name": "가르고스 도적단 야영지",
+    "type": "instancelayer"
   },
   "153005": {
-    "name": "협곡 도둑 소굴"
+    "name": "협곡 도둑 소굴",
+    "type": "instancelayer"
   },
   "153006": {
-    "name": "우가로스 도적단 야영지 보물창고"
+    "name": "우가로스 도적단 야영지 보물창고",
+    "type": "quest"
   },
   "153007": {
-    "name": "미로스의 초소 보물창고"
+    "name": "미로스의 초소 보물창고",
+    "type": "quest"
   },
   "153008": {
-    "name": "밀렵꾼 거점 보물창고"
+    "name": "밀렵꾼 거점 보물창고",
+    "type": "quest"
   },
   "153009": {
-    "name": "가르고스 도적단 야영지 보물창고"
+    "name": "가르고스 도적단 야영지 보물창고",
+    "type": "quest"
   },
   "153010": {
-    "name": "협곡 도둑 소굴 보물창고"
+    "name": "협곡 도둑 소굴 보물창고",
+    "type": "quest"
   },
   "153011": {
-    "name": "헤르논 도적단 소굴"
+    "name": "헤르논 도적단 소굴",
+    "type": "instancelayer"
   },
   "153012": {
-    "name": "황금가지 주둔지 폐허"
+    "name": "황금가지 주둔지 폐허",
+    "type": "instancelayer"
   },
   "153013": {
-    "name": "불한당의 공중요새"
+    "name": "불한당의 공중요새",
+    "type": "instancelayer"
   },
   "154001": {
-    "name": "코흐타 감시초소"
+    "name": "코흐타 감시초소",
+    "type": "instancelayer"
   },
   "154002": {
-    "name": "만타쉬 순찰대 거점"
+    "name": "만타쉬 순찰대 거점",
+    "type": "instancelayer"
   },
   "154003": {
-    "name": "세흐나 감시초소"
+    "name": "세흐나 감시초소",
+    "type": "instancelayer"
   },
   "154004": {
-    "name": "사브가 용족 야영지"
+    "name": "사브가 용족 야영지",
+    "type": "instancelayer"
   },
   "154005": {
-    "name": "마크타샤 감시초소"
+    "name": "마크타샤 감시초소",
+    "type": "instancelayer"
   },
   "154006": {
-    "name": "코흐타 감시초소 보물창고"
+    "name": "코흐타 감시초소 보물창고",
+    "type": "quest"
   },
   "154007": {
-    "name": "만타쉬 순찰대 보물창고"
+    "name": "만타쉬 순찰대 보물창고",
+    "type": "quest"
   },
   "154008": {
-    "name": "세흐나 감시초소 보물창고"
+    "name": "세흐나 감시초소 보물창고",
+    "type": "quest"
   },
   "154009": {
-    "name": "사브가 용족 야영지 보물창고"
+    "name": "사브가 용족 야영지 보물창고",
+    "type": "quest"
   },
   "154010": {
-    "name": "마크타샤 감시초소 보물창고"
+    "name": "마크타샤 감시초소 보물창고",
+    "type": "quest"
   },
   "154011": {
-    "name": "디그나가 전초 기지"
+    "name": "디그나가 전초 기지",
+    "type": "instancelayer"
   },
   "154012": {
-    "name": "숨겨진 광맥 초소"
+    "name": "숨겨진 광맥 초소",
+    "type": "instancelayer"
+  },
+  "156000": {
+    "name": "토벌전 종료"
+  },
+  "156001": {
+    "name": "토벌전 종료"
+  },
+  "156002": {
+    "name": "토벌전 종료"
+  },
+  "156010": {
+    "name": "브리트라 군단 요새"
+  },
+  "156011": {
+    "name": "브리트라 군단 요새"
+  },
+  "156012": {
+    "name": "브리트라 군단 요새"
+  },
+  "156030": {
+    "name": "오르쿠스의 무덤"
+  },
+  "156031": {
+    "name": "오르쿠스의 무덤"
+  },
+  "156032": {
+    "name": "오르쿠스의 무덤"
+  },
+  "156033": {
+    "name": "오르쿠스의 무덤"
+  },
+  "156034": {
+    "name": "오르쿠스의 무덤"
+  },
+  "156035": {
+    "name": "오르쿠스의 무덤"
+  },
+  "156040": {
+    "name": "파프나이트 제련소"
+  },
+  "156041": {
+    "name": "파프나이트 제련소"
+  },
+  "156042": {
+    "name": "파프나이트 제련소"
+  },
+  "156043": {
+    "name": "파프나이트 제련소"
+  },
+  "156044": {
+    "name": "파프나이트 제련소"
+  },
+  "156045": {
+    "name": "파프나이트 제련소"
   },
   "160000": {
-    "name": "침묵의 묘역"
+    "name": "침묵의 묘역",
+    "type": "growth"
   },
   "160001": {
-    "name": "파프나이트 분지"
+    "name": "파프나이트 분지",
+    "type": "growth"
   },
   "160002": {
-    "name": "침묵의 묘역"
+    "name": "침묵의 묘역",
+    "type": "growth"
   },
   "160003": {
-    "name": "침묵의 묘역"
+    "name": "침묵의 묘역",
+    "type": "growth"
   },
   "160004": {
-    "name": "파프나이트 분지"
+    "name": "파프나이트 분지",
+    "type": "growth"
   },
   "160005": {
-    "name": "파프나이트 분지"
+    "name": "파프나이트 분지",
+    "type": "growth"
   },
   "200001": {
-    "name": "꿈의 갈림길"
+    "name": "꿈의 갈림길",
+    "type": "quest"
   },
   "200002": {
-    "name": "고통의 꿈"
+    "name": "고통의 꿈",
+    "type": "ascension"
   },
   "200003": {
-    "name": "악몽"
+    "name": "악몽",
+    "type": "bosschallenge"
   },
   "200004": {
-    "name": "나룬의 꿈"
+    "name": "나룬의 꿈",
+    "type": "ascension"
   },
   "200005": {
-    "name": "각성의 아공간"
+    "name": "각성의 아공간",
+    "type": "ascension"
   },
   "200006": {
-    "name": "부서진 파편의 꿈"
+    "name": "부서진 파편의 꿈",
+    "type": "ascension"
   },
   "21": {
-    "name": "혼돈의 에레슈란타 하층"
+    "name": "혼돈의 에레슈란타 하층",
+    "type": "abyss"
   },
   "210001": {
-    "name": "해안 동굴"
+    "name": "해안 동굴",
+    "type": "quest"
   },
   "210002": {
-    "name": "에테리아 균열"
+    "name": "에테리아 균열",
+    "type": "quest"
   },
   "210003": {
-    "name": "꿈의 잔해"
+    "name": "꿈의 잔해",
+    "type": "ascension"
   },
   "210004": {
-    "name": "환영의 성소"
+    "name": "환영의 성소",
+    "type": "quest"
   },
   "210006": {
-    "name": "뿌리 저장고"
+    "name": "뿌리 저장고",
+    "type": "quest"
   },
   "210007": {
-    "name": "아울라우 제단"
+    "name": "아울라우 제단",
+    "type": "quest"
   },
   "210008": {
-    "name": "환영의 은신처"
+    "name": "환영의 은신처",
+    "type": "quest"
   },
   "210009": {
-    "name": "주미온 유물 보관소"
+    "name": "주미온 유물 보관소",
+    "type": "quest"
   },
   "210010": {
-    "name": "나히드 폐기물 처리장"
+    "name": "나히드 폐기물 처리장",
+    "type": "quest"
   },
   "210011": {
-    "name": "엘데스 신전"
+    "name": "엘데스 신전",
+    "type": "quest"
   },
   "210012": {
-    "name": "밀거래 접선지"
+    "name": "밀거래 접선지",
+    "type": "quest"
   },
   "210013": {
-    "name": "잊혀진 싸움터"
+    "name": "잊혀진 싸움터",
+    "type": "ascension"
   },
   "210014": {
-    "name": "무너진 지켈의 병영"
+    "name": "무너진 지켈의 병영",
+    "type": "ascension"
   },
   "210015": {
-    "name": "일그러진 지켈의 꿈"
+    "name": "일그러진 지켈의 꿈",
+    "type": "ascension"
   },
   "210016": {
-    "name": "클리오네 호수 동굴"
+    "name": "클리오네 호수 동굴",
+    "type": "quest"
   },
   "210017": {
-    "name": "생명의 샘"
+    "name": "생명의 샘",
+    "type": "quest"
   },
   "210018": {
-    "name": "빛의 추락지"
+    "name": "빛의 추락지",
+    "type": "quest"
   },
   "210019": {
-    "name": "레파르단 연구소"
+    "name": "레파르단 연구소",
+    "type": "quest"
   },
   "210027": {
-    "name": "클로리스의 심연"
+    "name": "클로리스의 심연",
+    "type": "ascension"
   },
   "220001": {
-    "name": "지하 석실"
+    "name": "지하 석실",
+    "type": "quest"
   },
   "220002": {
-    "name": "지켈의 성소"
+    "name": "지켈의 성소",
+    "type": "quest"
   },
   "220003": {
-    "name": "꿈의 잔해"
+    "name": "꿈의 잔해",
+    "type": "ascension"
   },
   "220006": {
-    "name": "무너진 신탁소"
+    "name": "무너진 신탁소",
+    "type": "quest"
   },
   "220007": {
-    "name": "성수의 뿌리"
+    "name": "성수의 뿌리",
+    "type": "quest"
   },
   "220008": {
-    "name": "드라낙투스 지하감옥"
+    "name": "드라낙투스 지하감옥",
+    "type": "quest"
   },
   "220009": {
-    "name": "파괴의 아칸 지하요새"
+    "name": "파괴의 아칸 지하요새",
+    "type": "quest"
   },
   "220010": {
-    "name": "칼날단 은신처"
+    "name": "칼날단 은신처",
+    "type": "quest"
   },
   "220011": {
-    "name": "임페투시움"
+    "name": "임페투시움",
+    "type": "quest"
   },
   "220012": {
-    "name": "에테리아 균열"
+    "name": "에테리아 균열",
+    "type": "quest"
   },
   "220013": {
-    "name": "잊혀진 싸움터"
+    "name": "잊혀진 싸움터",
+    "type": "ascension"
   },
   "220014": {
-    "name": "무너진 카이시넬의 성소"
+    "name": "무너진 카이시넬의 성소",
+    "type": "ascension"
   },
   "220015": {
-    "name": "일그러진 카이시넬의 꿈"
+    "name": "일그러진 카이시넬의 꿈",
+    "type": "ascension"
   },
   "220016": {
-    "name": "그늘진 동굴"
+    "name": "그늘진 동굴",
+    "type": "quest"
   },
   "220017": {
-    "name": "의문의 바위굴"
+    "name": "의문의 바위굴",
+    "type": "quest"
   },
   "220018": {
-    "name": "투나프레 호수 동굴"
+    "name": "투나프레 호수 동굴",
+    "type": "quest"
   },
   "220019": {
-    "name": "칼날단 비밀창고"
+    "name": "칼날단 비밀창고",
+    "type": "quest"
   },
   "220020": {
-    "name": "처형자의 탑"
+    "name": "처형자의 탑",
+    "type": "quest"
   },
   "220021": {
-    "name": "아르카니스 공중신전"
+    "name": "아르카니스 공중신전",
+    "type": "quest"
   },
   "220022": {
-    "name": "불의 신전"
+    "name": "불의 신전",
+    "type": "quest"
   },
   "220026": {
-    "name": "잠든 얼음 호수 동굴"
+    "name": "잠든 얼음 호수 동굴",
+    "type": "quest"
   },
   "220027": {
-    "name": "시게베르트의 심연"
+    "name": "시게베르트의 심연",
+    "type": "ascension"
   },
   "23": {
-    "name": "혼돈의 에레슈란타 중층"
+    "name": "혼돈의 에레슈란타 중층",
+    "type": "abyss"
   },
   "24": {
-    "name": "혼돈의 에레슈란타 표층"
+    "name": "혼돈의 에레슈란타 표층",
+    "type": "abyss"
   },
   "310001": {
-    "name": "밀렵꾼 소굴"
+    "name": "밀렵꾼 소굴",
+    "type": "seal"
   },
   "310002": {
-    "name": "정령의 꽃 동굴"
+    "name": "정령의 꽃 동굴",
+    "type": "seal"
   },
   "310003": {
-    "name": "저주받은 은신처"
+    "name": "저주받은 은신처",
+    "type": "seal"
   },
   "310004": {
-    "name": "신비한 버섯 동굴"
+    "name": "신비한 버섯 동굴",
+    "type": "seal"
   },
   "310005": {
-    "name": "패잔병의 동굴"
+    "name": "패잔병의 동굴",
+    "type": "seal"
   },
   "310006": {
-    "name": "오물 구덩이"
+    "name": "오물 구덩이",
+    "type": "seal"
   },
   "310007": {
-    "name": "환영의 폐허"
+    "name": "환영의 폐허",
+    "type": "seal"
   },
   "310008": {
-    "name": "데히논의 은신처"
+    "name": "데히논의 은신처",
+    "type": "seal"
   },
   "310009": {
-    "name": "가디언의 무기고"
+    "name": "가디언의 무기고",
+    "type": "seal"
   },
   "310010": {
-    "name": "절망한 자의 동굴"
+    "name": "절망한 자의 동굴",
+    "type": "seal"
   },
   "310011": {
-    "name": "숨겨진 골짜기"
+    "name": "숨겨진 골짜기",
+    "type": "seal"
   },
   "310012": {
-    "name": "일그러진 동굴"
+    "name": "일그러진 동굴",
+    "type": "seal"
   },
   "310013": {
-    "name": "타락한 정령성의 거처"
+    "name": "타락한 정령성의 거처",
+    "type": "seal"
   },
   "310014": {
-    "name": "카라트의 둥지"
+    "name": "카라트의 둥지",
+    "type": "seal"
   },
   "310015": {
-    "name": "키우스의 거처"
+    "name": "키우스의 거처",
+    "type": "seal"
   },
   "310016": {
-    "name": "루필리니 서식지"
+    "name": "루필리니 서식지",
+    "type": "seal"
   },
   "310017": {
-    "name": "빼앗긴 저장고"
+    "name": "빼앗긴 저장고",
+    "type": "seal"
   },
   "310018": {
-    "name": "버려진 오디움 굴"
+    "name": "버려진 오디움 굴",
+    "type": "seal"
   },
   "310019": {
-    "name": "쓸쓸한 바위 무덤"
+    "name": "쓸쓸한 바위 무덤",
+    "type": "seal"
   },
   "310020": {
-    "name": "납치와 감금의 방"
+    "name": "납치와 감금의 방",
+    "type": "seal"
   },
   "310021": {
-    "name": "늪지의 서고"
+    "name": "늪지의 서고",
+    "type": "seal"
   },
   "310022": {
-    "name": "크랄 병영"
+    "name": "크랄 병영",
+    "type": "seal"
   },
   "310023": {
-    "name": "협곡의 서고"
+    "name": "협곡의 서고",
+    "type": "seal"
   },
   "310024": {
-    "name": "서늘한 은신처"
+    "name": "서늘한 은신처",
+    "type": "seal"
   },
   "310025": {
-    "name": "동굴 창고"
+    "name": "동굴 창고",
+    "type": "seal"
   },
   "310026": {
-    "name": "분노한 망자의 무덤"
+    "name": "분노한 망자의 무덤",
+    "type": "seal"
   },
   "310027": {
-    "name": "아킬로 도적단 소굴"
+    "name": "아킬로 도적단 소굴",
+    "type": "seal"
   },
   "310028": {
-    "name": "맹독의 소굴"
+    "name": "맹독의 소굴",
+    "type": "seal"
   },
   "310029": {
-    "name": "약초 동굴"
+    "name": "약초 동굴",
+    "type": "seal"
   },
   "310030": {
-    "name": "빼앗긴 순례자의 쉼터"
+    "name": "빼앗긴 순례자의 쉼터",
+    "type": "seal"
   },
   "310031": {
-    "name": "타르고스의 굴"
+    "name": "타르고스의 굴",
+    "type": "seal"
   },
   "310032": {
-    "name": "부서진 지식의 전당"
+    "name": "부서진 지식의 전당",
+    "type": "seal"
   },
   "310033": {
-    "name": "깊은 지하 동굴"
+    "name": "깊은 지하 동굴",
+    "type": "seal"
   },
   "310034": {
-    "name": "요새 감옥"
+    "name": "요새 감옥",
+    "type": "seal"
   },
   "310035": {
-    "name": "필사자의 방"
+    "name": "필사자의 방",
+    "type": "seal"
   },
   "310036": {
-    "name": "붉은 용의 제단"
+    "name": "붉은 용의 제단",
+    "type": "seal"
   },
   "310037": {
-    "name": "야생 비로타 서식지"
+    "name": "야생 비로타 서식지",
+    "type": "seal"
   },
   "310038": {
-    "name": "틈새 동굴"
+    "name": "틈새 동굴",
+    "type": "seal"
   },
   "310039": {
-    "name": "변절자의 거점"
+    "name": "변절자의 거점",
+    "type": "seal"
   },
   "310040": {
-    "name": "뉴트 소굴"
+    "name": "뉴트 소굴",
+    "type": "seal"
   },
   "310041": {
-    "name": "균열의 동굴"
+    "name": "균열의 동굴",
+    "type": "seal"
   },
   "310042": {
-    "name": "깊고 어두운 구덩이"
+    "name": "깊고 어두운 구덩이",
+    "type": "seal"
   },
   "310043": {
-    "name": "야생 쿠루 서식지"
+    "name": "야생 쿠루 서식지",
+    "type": "seal"
   },
   "310044": {
-    "name": "요새의 무덤"
+    "name": "요새의 무덤",
+    "type": "seal"
   },
   "310045": {
-    "name": "비탄의 은신처"
+    "name": "비탄의 은신처",
+    "type": "seal"
   },
   "310046": {
-    "name": "아울라우의 기도실"
+    "name": "아울라우의 기도실",
+    "type": "seal"
   },
   "310047": {
-    "name": "추방자의 감옥"
+    "name": "추방자의 감옥",
+    "type": "seal"
   },
   "310048": {
-    "name": "쿠라카의 제단"
+    "name": "쿠라카의 제단",
+    "type": "seal"
   },
   "310049": {
-    "name": "드라토나 초소"
+    "name": "드라토나 초소",
+    "type": "seal"
   },
   "310050": {
-    "name": "용족 정찰대 야영지"
+    "name": "용족 정찰대 야영지",
+    "type": "seal"
   },
   "310051": {
-    "name": "희망의 제단"
+    "name": "희망의 제단",
+    "type": "seal"
   },
   "310052": {
-    "name": "실험체 수용소"
+    "name": "실험체 수용소",
+    "type": "seal"
   },
   "310053": {
-    "name": "용족 감시 초소"
+    "name": "용족 감시 초소",
+    "type": "seal"
   },
   "310054": {
-    "name": "숨겨진 폐허 제단"
+    "name": "숨겨진 폐허 제단",
+    "type": "seal"
   },
   "310055": {
-    "name": "노역꾼 훈련소"
+    "name": "노역꾼 훈련소",
+    "type": "seal"
   },
   "310056": {
-    "name": "코누티의 동굴"
+    "name": "코누티의 동굴",
+    "type": "seal"
   },
   "310057": {
-    "name": "재배지 창고"
+    "name": "재배지 창고",
+    "type": "seal"
   },
   "310058": {
-    "name": "독서가의 묘지"
+    "name": "독서가의 묘지",
+    "type": "seal"
   },
   "310059": {
-    "name": "숲의 서고"
+    "name": "숲의 서고",
+    "type": "seal"
   },
   "310060": {
-    "name": "무너진 요새 지하실"
+    "name": "무너진 요새 지하실",
+    "type": "seal"
   },
   "310061": {
-    "name": "숨겨진 레파르단 연구소"
+    "name": "숨겨진 레파르단 연구소",
+    "type": "seal"
   },
   "310062": {
-    "name": "버려진 생명의 은신처"
+    "name": "버려진 생명의 은신처",
+    "type": "seal"
   },
   "310063": {
-    "name": "생명의 각성처"
+    "name": "생명의 각성처",
+    "type": "seal"
   },
   "310064": {
-    "name": "가라앉은 고대의 유산"
+    "name": "가라앉은 고대의 유산",
+    "type": "seal"
   },
   "310065": {
-    "name": "이슈타르 병참기지"
+    "name": "이슈타르 병참기지",
+    "type": "seal"
   },
   "310066": {
-    "name": "무법자 드락의 소굴"
+    "name": "무법자 드락의 소굴",
+    "type": "seal"
   },
   "310067": {
-    "name": "지저분한 동굴"
+    "name": "지저분한 동굴",
+    "type": "seal"
   },
   "310068": {
-    "name": "실패한 크레이온의 실험실"
+    "name": "실패한 크레이온의 실험실",
+    "type": "seal"
   },
   "310069": {
-    "name": "스러진 안식처"
+    "name": "스러진 안식처",
+    "type": "seal"
   },
   "310070": {
-    "name": "생명의 데바 서고"
+    "name": "생명의 데바 서고",
+    "type": "seal"
   },
   "310071": {
-    "name": "레파르단 특무부대 연구소"
+    "name": "레파르단 특무부대 연구소",
+    "type": "seal"
   },
   "310072": {
-    "name": "쥐잡이 본거지"
+    "name": "쥐잡이 본거지",
+    "type": "seal"
   },
   "310073": {
-    "name": "그라바락스 연구소"
+    "name": "그라바락스 연구소",
+    "type": "seal"
   },
   "310074": {
-    "name": "만두리 서식지"
+    "name": "만두리 서식지",
+    "type": "seal"
   },
   "310075": {
-    "name": "변이 드라나 재배지"
+    "name": "변이 드라나 재배지",
+    "type": "seal"
   },
   "310076": {
-    "name": "물에 잠긴 사원"
+    "name": "물에 잠긴 사원",
+    "type": "seal"
   },
   "310077": {
-    "name": "결계탑 요새 금고"
+    "name": "결계탑 요새 금고",
+    "type": "seal"
   },
   "310078": {
-    "name": "잊혀진 샘"
+    "name": "잊혀진 샘",
+    "type": "seal"
   },
   "310079": {
-    "name": "탈주자의 은닉처"
+    "name": "탈주자의 은닉처",
+    "type": "seal"
   },
   "310080": {
-    "name": "이아고쉬의 비밀 창고"
+    "name": "이아고쉬의 비밀 창고",
+    "type": "seal"
   },
   "320001": {
-    "name": "버려진 추모실"
+    "name": "버려진 추모실",
+    "type": "seal"
   },
   "320002": {
-    "name": "협잡꾼 소굴"
+    "name": "협잡꾼 소굴",
+    "type": "seal"
   },
   "320003": {
-    "name": "버림받은 자의 무덤"
+    "name": "버림받은 자의 무덤",
+    "type": "seal"
   },
   "320004": {
-    "name": "드라토나 동굴"
+    "name": "드라토나 동굴",
+    "type": "seal"
   },
   "320005": {
-    "name": "포식자의 거처"
+    "name": "포식자의 거처",
+    "type": "seal"
   },
   "320006": {
-    "name": "황혼의 구덩이"
+    "name": "황혼의 구덩이",
+    "type": "seal"
   },
   "320007": {
-    "name": "사라진 유적"
+    "name": "사라진 유적",
+    "type": "seal"
   },
   "320008": {
-    "name": "독초 서식지"
+    "name": "독초 서식지",
+    "type": "seal"
   },
   "320009": {
-    "name": "발카의 둥지"
+    "name": "발카의 둥지",
+    "type": "seal"
   },
   "320010": {
-    "name": "오래된 공동묘"
+    "name": "오래된 공동묘",
+    "type": "seal"
   },
   "320011": {
-    "name": "보물사냥꾼 거처"
+    "name": "보물사냥꾼 거처",
+    "type": "seal"
   },
   "320012": {
-    "name": "버려진 아칸의 감옥"
+    "name": "버려진 아칸의 감옥",
+    "type": "seal"
   },
   "320013": {
-    "name": "파프나이트 저장실"
+    "name": "파프나이트 저장실",
+    "type": "seal"
   },
   "320014": {
-    "name": "벌레 땅굴"
+    "name": "벌레 땅굴",
+    "type": "seal"
   },
   "320015": {
-    "name": "피에 젖은 회개실"
+    "name": "피에 젖은 회개실",
+    "type": "seal"
   },
   "320016": {
-    "name": "망각의 감옥"
+    "name": "망각의 감옥",
+    "type": "seal"
   },
   "320017": {
-    "name": "감시자 임시초소"
+    "name": "감시자 임시초소",
+    "type": "seal"
   },
   "320018": {
-    "name": "푸른 용의 덫"
+    "name": "푸른 용의 덫",
+    "type": "seal"
   },
   "320019": {
-    "name": "숨겨진 광맥 동굴"
+    "name": "숨겨진 광맥 동굴",
+    "type": "seal"
   },
   "320020": {
-    "name": "점술가의 무덤"
+    "name": "점술가의 무덤",
+    "type": "seal"
   },
   "320021": {
-    "name": "울부짖는 소굴"
+    "name": "울부짖는 소굴",
+    "type": "seal"
   },
   "320022": {
-    "name": "귀족의 납골묘"
+    "name": "귀족의 납골묘",
+    "type": "seal"
   },
   "320023": {
-    "name": "밀수꾼의 동굴"
+    "name": "밀수꾼의 동굴",
+    "type": "seal"
   },
   "320024": {
-    "name": "호미쉬의 수용소"
+    "name": "호미쉬의 수용소",
+    "type": "seal"
   },
   "320025": {
-    "name": "쿰바훔의 동굴"
+    "name": "쿰바훔의 동굴",
+    "type": "seal"
   },
   "320026": {
-    "name": "희생자의 동굴"
+    "name": "희생자의 동굴",
+    "type": "seal"
   },
   "320027": {
-    "name": "드라나 보관소"
+    "name": "드라나 보관소",
+    "type": "seal"
   },
   "320028": {
-    "name": "대신관의 유적지"
+    "name": "대신관의 유적지",
+    "type": "seal"
   },
   "320029": {
-    "name": "폐쇄된 은신처"
+    "name": "폐쇄된 은신처",
+    "type": "seal"
   },
   "320030": {
-    "name": "만병통치의 동굴"
+    "name": "만병통치의 동굴",
+    "type": "seal"
   },
   "320031": {
-    "name": "펑기 서식지"
+    "name": "펑기 서식지",
+    "type": "seal"
   },
   "320032": {
-    "name": "지혜의 서고"
+    "name": "지혜의 서고",
+    "type": "seal"
   },
   "320033": {
-    "name": "파괴된 기록실"
+    "name": "파괴된 기록실",
+    "type": "seal"
   },
   "320034": {
-    "name": "어두운 뿌리굴"
+    "name": "어두운 뿌리굴",
+    "type": "seal"
   },
   "320035": {
-    "name": "불안정한 동굴"
+    "name": "불안정한 동굴",
+    "type": "seal"
   },
   "320036": {
-    "name": "라므나흐 거점"
+    "name": "라므나흐 거점",
+    "type": "seal"
   },
   "320037": {
-    "name": "비틀린 구덩이"
+    "name": "비틀린 구덩이",
+    "type": "seal"
   },
   "320038": {
-    "name": "균열의 틈새"
+    "name": "균열의 틈새",
+    "type": "seal"
   },
   "320039": {
-    "name": "비늘의 제단"
+    "name": "비늘의 제단",
+    "type": "seal"
   },
   "320040": {
-    "name": "예지의 서고"
+    "name": "예지의 서고",
+    "type": "seal"
   },
   "320041": {
-    "name": "무글 노역꾼 소굴"
+    "name": "무글 노역꾼 소굴",
+    "type": "seal"
   },
   "320042": {
-    "name": "드라토나 집결장"
+    "name": "드라토나 집결장",
+    "type": "seal"
   },
   "320043": {
-    "name": "안식의 터"
+    "name": "안식의 터",
+    "type": "seal"
   },
   "320044": {
-    "name": "마지막 안식처"
+    "name": "마지막 안식처",
+    "type": "seal"
   },
   "320045": {
-    "name": "숭배자의 지하 동굴"
+    "name": "숭배자의 지하 동굴",
+    "type": "seal"
   },
   "320046": {
-    "name": "광신도 소굴"
+    "name": "광신도 소굴",
+    "type": "seal"
   },
   "320047": {
-    "name": "거미 동굴"
+    "name": "거미 동굴",
+    "type": "seal"
   },
   "320048": {
-    "name": "텅 빈 동굴"
+    "name": "텅 빈 동굴",
+    "type": "seal"
   },
   "320049": {
-    "name": "쓸쓸한 바위틈"
+    "name": "쓸쓸한 바위틈",
+    "type": "seal"
   },
   "320050": {
-    "name": "바위 동굴"
+    "name": "바위 동굴",
+    "type": "seal"
   },
   "320051": {
-    "name": "추방자의 소굴"
+    "name": "추방자의 소굴",
+    "type": "seal"
   },
   "320052": {
-    "name": "해적의 보물창고"
+    "name": "해적의 보물창고",
+    "type": "seal"
   },
   "320053": {
-    "name": "슈라크 굴"
+    "name": "슈라크 굴",
+    "type": "seal"
   },
   "320054": {
-    "name": "파괴의 아칸 무기고"
+    "name": "파괴의 아칸 무기고",
+    "type": "seal"
   },
   "320055": {
-    "name": "고행자의 동굴"
+    "name": "고행자의 동굴",
+    "type": "seal"
   },
   "320056": {
-    "name": "라그타 파프나이트 창고"
+    "name": "라그타 파프나이트 창고",
+    "type": "seal"
   },
   "320057": {
-    "name": "전사의 쉼터"
+    "name": "전사의 쉼터",
+    "type": "seal"
   },
   "320058": {
-    "name": "류크록 사육장"
+    "name": "류크록 사육장",
+    "type": "seal"
   },
   "320059": {
-    "name": "인내의 서고"
+    "name": "인내의 서고",
+    "type": "seal"
   },
   "320060": {
-    "name": "오디움 약탈자 소굴"
+    "name": "오디움 약탈자 소굴",
+    "type": "seal"
   },
   "320061": {
-    "name": "잊힌 불의 제단"
+    "name": "잊힌 불의 제단",
+    "type": "seal"
   },
   "320062": {
-    "name": "버려진 크로메데의 거점"
+    "name": "버려진 크로메데의 거점",
+    "type": "seal"
   },
   "320063": {
-    "name": "베르단디의 기도실"
+    "name": "베르단디의 기도실",
+    "type": "seal"
   },
   "320064": {
-    "name": "칼날단 비밀 저장고"
+    "name": "칼날단 비밀 저장고",
+    "type": "seal"
   },
   "320065": {
-    "name": "얼어붙은 운명의 땅"
+    "name": "얼어붙은 운명의 땅",
+    "type": "seal"
   },
   "320066": {
-    "name": "분노한 화염 정령의 땅"
+    "name": "분노한 화염 정령의 땅",
+    "type": "seal"
   },
   "320067": {
-    "name": "순수의 샘"
+    "name": "순수의 샘",
+    "type": "seal"
   },
   "320068": {
-    "name": "포식자의 둥지"
+    "name": "포식자의 둥지",
+    "type": "seal"
   },
   "320069": {
-    "name": "돌아가지 못한 자의 동굴"
+    "name": "돌아가지 못한 자의 동굴",
+    "type": "seal"
   },
   "320070": {
-    "name": "쫓겨난 자들의 굴"
+    "name": "쫓겨난 자들의 굴",
+    "type": "seal"
   },
   "320071": {
-    "name": "칼날단 거점"
+    "name": "칼날단 거점",
+    "type": "seal"
   },
   "320072": {
-    "name": "파타모르 약탈꾼 거점"
+    "name": "파타모르 약탈꾼 거점",
+    "type": "seal"
   },
   "320073": {
-    "name": "쿠르팍 별동대 거점"
+    "name": "쿠르팍 별동대 거점",
+    "type": "seal"
   },
   "320074": {
-    "name": "위장한 운명의 아칸 기지"
+    "name": "위장한 운명의 아칸 기지",
+    "type": "seal"
   },
   "320075": {
-    "name": "화염의 동굴"
+    "name": "화염의 동굴",
+    "type": "seal"
   },
   "320076": {
-    "name": "운명의 신전"
+    "name": "운명의 신전",
+    "type": "seal"
   },
   "320077": {
-    "name": "인드나흐의 비밀 기지"
+    "name": "인드나흐의 비밀 기지",
+    "type": "seal"
   },
   "320078": {
-    "name": "수호상들의 동굴"
+    "name": "수호상들의 동굴",
+    "type": "seal"
   },
   "320079": {
-    "name": "이랄시그 나가 동굴"
+    "name": "이랄시그 나가 동굴",
+    "type": "seal"
   },
   "320080": {
-    "name": "파타모르 수중 굴"
+    "name": "파타모르 수중 굴",
+    "type": "seal"
   },
   "39": {
-    "name": "새벽의 레기온 기지"
+    "name": "새벽의 레기온 기지",
+    "type": "instancelayer"
   },
   "400001": {
-    "name": "고대 도시 루의 폐허"
+    "name": "고대 도시 루의 폐허",
+    "type": "seal"
   },
   "400002": {
-    "name": "고대 도시 루의 폐허"
+    "name": "고대 도시 루의 폐허",
+    "type": "seal"
   },
   "46": {
-    "name": "병영 창고"
+    "name": "병영 창고",
+    "type": "instancelayer"
   },
   "47": {
-    "name": "성소 폐기장"
+    "name": "성소 폐기장",
+    "type": "instancelayer"
   },
   "48": {
-    "name": "감시탑 막사"
+    "name": "감시탑 막사",
+    "type": "instancelayer"
   },
   "49": {
-    "name": "포로 수용실"
+    "name": "포로 수용실",
+    "type": "instancelayer"
   },
   "50": {
-    "name": "만신전"
+    "name": "만신전",
+    "type": "personalagit"
   },
   "500001": {
-    "name": "브리트라 공습"
+    "name": "브리트라 공습",
+    "type": "fieldevent"
   },
   "500002": {
-    "name": "저주받은 검"
+    "name": "저주받은 검",
+    "type": "fieldevent"
   },
   "500003": {
-    "name": "오드 방울 수집"
+    "name": "오드 방울 수집",
+    "type": "fieldevent"
   },
   "500004": {
-    "name": "골드린의 보물 창고"
+    "name": "골드린의 보물 창고",
+    "type": "fieldevent"
   },
   "500005": {
-    "name": "정령의 습격"
+    "name": "정령의 습격",
+    "type": "fieldevent"
   },
   "500006": {
-    "name": "정령의 습격"
+    "name": "정령의 습격",
+    "type": "fieldevent"
   },
   "500007": {
-    "name": "슈고 상인 보호"
+    "name": "슈고 상인 보호",
+    "type": "fieldevent"
   },
   "500008": {
-    "name": "골드린의 보물"
+    "name": "골드린의 보물",
+    "type": "fieldevent"
   },
   "500009": {
-    "name": "오드 방울 수집"
+    "name": "오드 방울 수집",
+    "type": "fieldevent"
   },
   "500010": {
-    "name": "망령 회피"
+    "name": "망령 회피",
+    "type": "fieldevent"
   },
   "500011": {
-    "name": "점프점프"
+    "name": "점프점프",
+    "type": "fieldevent"
   },
   "500012": {
-    "name": "히든루기"
+    "name": "히든루기",
+    "type": "fieldevent"
   },
   "500013": {
-    "name": "신비로운 트랙"
+    "name": "신비로운 트랙",
+    "type": "fieldevent"
   },
   "500015": {
-    "name": "이 타일 아닌가요?"
+    "name": "이 타일 아닌가요?",
+    "type": "fieldevent"
   },
   "500016": {
-    "name": "높이높이"
+    "name": "높이높이",
+    "type": "fieldevent"
   },
   "500017": {
-    "name": "브리트라 공습"
+    "name": "브리트라 공습",
+    "type": "fieldevent"
   },
   "500018": {
-    "name": "브리트라 공습"
+    "name": "브리트라 공습",
+    "type": "fieldevent"
   },
   "500019": {
-    "name": "저주받은 검"
+    "name": "저주받은 검",
+    "type": "fieldevent"
   },
   "500020": {
-    "name": "저주받은 검"
+    "name": "저주받은 검",
+    "type": "fieldevent"
   },
   "500021": {
-    "name": "정령의 습격"
+    "name": "정령의 습격",
+    "type": "fieldevent"
   },
   "500022": {
-    "name": "신비로운 트랙"
+    "name": "신비로운 트랙",
+    "type": "fieldevent"
   },
   "500023": {
-    "name": "높이높이"
+    "name": "높이높이",
+    "type": "fieldevent"
   },
   "500024": {
-    "name": "점프점프"
+    "name": "점프점프",
+    "type": "fieldevent"
   },
   "500025": {
-    "name": "망령 회피"
+    "name": "망령 회피",
+    "type": "fieldevent"
   },
   "500026": {
-    "name": "슈고 상인 보호"
+    "name": "슈고 상인 보호",
+    "type": "fieldevent"
   },
   "500027": {
-    "name": "골드린의 보물"
+    "name": "골드린의 보물",
+    "type": "fieldevent"
   },
   "500028": {
-    "name": "히든루기"
+    "name": "히든루기",
+    "type": "fieldevent"
   },
   "500029": {
-    "name": "이 타일 아닌가요?"
+    "name": "이 타일 아닌가요?",
+    "type": "fieldevent"
   },
   "500030": {
-    "name": "팡팡팡"
+    "name": "팡팡팡",
+    "type": "fieldevent"
   },
   "500031": {
-    "name": "저주받은 검"
+    "name": "저주받은 검",
+    "type": "fieldevent"
   },
   "500032": {
-    "name": "브리트라 공습"
+    "name": "브리트라 공습",
+    "type": "fieldevent"
   },
   "500033": {
-    "name": "정령의 습격"
+    "name": "정령의 습격",
+    "type": "fieldevent"
   },
   "500034": {
-    "name": "슈고의 딜레마"
+    "name": "슈고의 딜레마",
+    "type": "fieldevent"
   },
   "500035": {
-    "name": "높이높이"
+    "name": "높이높이",
+    "type": "fieldevent"
   },
   "500036": {
-    "name": "이 타일 아닌가요?"
+    "name": "이 타일 아닌가요?",
+    "type": "fieldevent"
+  },
+  "500037": {
+    "name": "점프점프",
+    "type": "fieldevent"
   },
   "500038": {
-    "name": "히든루기"
+    "name": "히든루기",
+    "type": "fieldevent"
   },
   "500039": {
-    "name": "신비로운 트랙"
+    "name": "신비로운 트랙",
+    "type": "fieldevent"
   },
   "500040": {
-    "name": "망령 회피"
+    "name": "망령 회피",
+    "type": "fieldevent"
   },
   "500041": {
-    "name": "골드린의 보물"
+    "name": "골드린의 보물",
+    "type": "fieldevent"
   },
   "500042": {
-    "name": "오드 방울 수집"
+    "name": "오드 방울 수집",
+    "type": "fieldevent"
   },
   "500043": {
-    "name": "슈고 상인 보호"
+    "name": "슈고 상인 보호",
+    "type": "fieldevent"
   },
   "502001": {
-    "name": "저주받은 검"
+    "name": "저주받은 검",
+    "type": "fieldevent"
   },
   "503001": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "503002": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "503003": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "503004": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "503005": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "503006": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "504001": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "504002": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "504003": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "504004": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "504005": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "504006": {
-    "name": "어비스 회랑"
+    "name": "어비스 회랑",
+    "type": "abyssartifact"
   },
   "51": {
-    "name": "새벽의 레기온 지휘소"
+    "name": "새벽의 레기온 지휘소",
+    "type": "instancelayer"
   },
   "510001": {
-    "name": "오드 방울 수집"
+    "name": "오드 방울 수집",
+    "type": "fieldevent"
   },
   "510002": {
-    "name": "브리트라 공습"
+    "name": "브리트라 공습",
+    "type": "fieldevent"
   },
   "510003": {
-    "name": "점프점프"
+    "name": "점프점프",
+    "type": "fieldevent"
   },
   "510004": {
-    "name": "히든루기"
+    "name": "히든루기",
+    "type": "fieldevent"
   },
   "510005": {
-    "name": "망령 회피"
+    "name": "망령 회피",
+    "type": "fieldevent"
   },
   "510006": {
-    "name": "신비로운 트랙"
+    "name": "신비로운 트랙",
+    "type": "fieldevent"
   },
   "510007": {
-    "name": "골드린의 보물"
+    "name": "골드린의 보물",
+    "type": "fieldevent"
   },
   "510008": {
-    "name": "브리트라 공습"
+    "name": "브리트라 공습",
+    "type": "fieldevent"
   },
   "510009": {
-    "name": "브리트라 공습"
+    "name": "브리트라 공습",
+    "type": "fieldevent"
   },
   "510010": {
-    "name": "높이높이"
+    "name": "높이높이",
+    "type": "fieldevent"
   },
   "510011": {
-    "name": "스티커 슈터"
+    "name": "스티커 슈터",
+    "type": "fieldevent"
   },
   "510012": {
-    "name": "이 타일 아닌가요?"
+    "name": "이 타일 아닌가요?",
+    "type": "fieldevent"
   },
   "510013": {
-    "name": "저주받은 검"
+    "name": "저주받은 검",
+    "type": "fieldevent"
   },
   "510014": {
-    "name": "저주받은 검"
+    "name": "저주받은 검",
+    "type": "fieldevent"
   },
   "510015": {
-    "name": "정령의 습격"
+    "name": "정령의 습격",
+    "type": "fieldevent"
   },
   "510016": {
-    "name": "오드 방울 수집"
+    "name": "오드 방울 수집",
+    "type": "fieldevent"
   },
   "510017": {
-    "name": "망령 회피"
+    "name": "망령 회피",
+    "type": "fieldevent"
   },
   "510018": {
-    "name": "높이높이"
+    "name": "높이높이",
+    "type": "fieldevent"
   },
   "510019": {
-    "name": "신비로운 트랙"
+    "name": "신비로운 트랙",
+    "type": "fieldevent"
   },
   "510020": {
-    "name": "점프점프"
+    "name": "점프점프",
+    "type": "fieldevent"
   },
   "510021": {
-    "name": "슈고 상인 보호"
+    "name": "슈고 상인 보호",
+    "type": "fieldevent"
   },
   "510022": {
-    "name": "골드린의 보물"
+    "name": "골드린의 보물",
+    "type": "fieldevent"
   },
   "510023": {
-    "name": "히든루기"
+    "name": "히든루기",
+    "type": "fieldevent"
   },
   "510024": {
-    "name": "이 타일 아닌가요?"
+    "name": "이 타일 아닌가요?",
+    "type": "fieldevent"
   },
   "510025": {
-    "name": "팡팡팡"
+    "name": "팡팡팡",
+    "type": "fieldevent"
   },
   "510026": {
-    "name": "저주받은 검"
+    "name": "저주받은 검",
+    "type": "fieldevent"
   },
   "510027": {
-    "name": "브리트라 공습"
+    "name": "브리트라 공습",
+    "type": "fieldevent"
   },
   "510028": {
-    "name": "정령의 습격"
+    "name": "정령의 습격",
+    "type": "fieldevent"
   },
   "510029": {
-    "name": "슈고의 딜레마"
+    "name": "슈고의 딜레마",
+    "type": "fieldevent"
   },
   "510030": {
-    "name": "높이높이"
+    "name": "높이높이",
+    "type": "fieldevent"
   },
   "510031": {
-    "name": "이 타일 아닌가요?"
+    "name": "이 타일 아닌가요?",
+    "type": "fieldevent"
+  },
+  "510032": {
+    "name": "점프점프",
+    "type": "fieldevent"
   },
   "510033": {
-    "name": "히든루기"
+    "name": "히든루기",
+    "type": "fieldevent"
   },
   "510034": {
-    "name": "신비로운 트랙"
+    "name": "신비로운 트랙",
+    "type": "fieldevent"
   },
   "510035": {
-    "name": "망령 회피"
+    "name": "망령 회피",
+    "type": "fieldevent"
   },
   "510036": {
-    "name": "골드린의 보물"
+    "name": "골드린의 보물",
+    "type": "fieldevent"
   },
   "510037": {
-    "name": "오드 방울 수집"
+    "name": "오드 방울 수집",
+    "type": "fieldevent"
   },
   "510038": {
-    "name": "슈고 상인 보호"
+    "name": "슈고 상인 보호",
+    "type": "fieldevent"
   },
   "52": {
-    "name": "환영의 기도실"
+    "name": "환영의 기도실",
+    "type": "instancelayer"
   },
   "600001": {
-    "name": "크라오 동굴"
+    "name": "크라오 동굴",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 1,
+    "label": "정복 1티어"
   },
   "600002": {
-    "name": "크라오 동굴"
+    "name": "크라오 동굴",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600003": {
     "name": "크라오 동굴"
   },
   "600004": {
-    "name": "크라오 동굴"
+    "name": "크라오 동굴",
+    "type": "party",
+    "tier": 1
   },
   "600011": {
-    "name": "우루구구 협곡"
+    "name": "우루구구 협곡",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600012": {
-    "name": "우루구구 협곡"
+    "name": "우루구구 협곡",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 2,
+    "label": "정복 2티어"
   },
   "600013": {
-    "name": "우루구구 협곡"
+    "name": "우루구구 협곡",
+    "type": "party",
+    "tier": 2
   },
   "600014": {
     "name": "우루구구 협곡"
   },
   "600021": {
-    "name": "불의 신전"
+    "name": "불의 신전",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600022": {
-    "name": "불의 신전"
+    "name": "불의 신전",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 3,
+    "label": "정복 3티어"
   },
   "600023": {
-    "name": "불의 신전"
+    "name": "불의 신전",
+    "type": "party",
+    "tier": 3
   },
   "600024": {
     "name": "불의 신전"
   },
   "600031": {
-    "name": "드라웁니르"
+    "name": "드라웁니르",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600032": {
-    "name": "드라웁니르"
+    "name": "드라웁니르",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 1,
+    "label": "정복 1티어"
   },
   "600033": {
-    "name": "드라웁니르"
+    "name": "드라웁니르",
+    "type": "party",
+    "tier": 1
   },
   "600034": {
     "name": "드라웁니르"
   },
   "600041": {
-    "name": "죽은 드라마타의 둥지"
+    "name": "죽은 드라마타의 둥지",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600042": {
-    "name": "죽은 드라마타의 둥지"
+    "name": "죽은 드라마타의 둥지",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 4,
+    "label": "정복 4티어"
   },
   "600051": {
-    "name": "데우스 연구기지"
+    "name": "데우스 연구기지",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600052": {
     "name": "데우스 연구기지"
   },
   "600053": {
-    "name": "데우스 연구기지"
+    "name": "데우스 연구기지",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
   },
   "600054": {
     "name": "데우스 연구기지"
   },
   "600055": {
-    "name": "데우스 연구기지"
+    "name": "데우스 연구기지",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
   },
   "600056": {
     "name": "데우스 연구기지"
@@ -1446,25 +2053,37 @@
     "name": "데우스 연구기지"
   },
   "600058": {
-    "name": "데우스 연구기지"
+    "name": "데우스 연구기지",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
   },
   "600059": {
     "name": "데우스 연구기지"
   },
   "600061": {
-    "name": "조각난 아르카니스"
+    "name": "조각난 아르카니스",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600062": {
     "name": "조각난 아르카니스"
   },
   "600063": {
-    "name": "조각난 아르카니스"
+    "name": "조각난 아르카니스",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
   },
   "600064": {
     "name": "조각난 아르카니스"
   },
   "600065": {
-    "name": "조각난 아르카니스"
+    "name": "조각난 아르카니스",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
   },
   "600066": {
     "name": "조각난 아르카니스"
@@ -1473,85 +2092,147 @@
     "name": "조각난 아르카니스"
   },
   "600068": {
-    "name": "조각난 아르카니스"
+    "name": "조각난 아르카니스",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
   },
   "600069": {
     "name": "조각난 아르카니스"
   },
   "600071": {
-    "name": "바크론의 공중섬"
+    "name": "바크론의 공중섬",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600072": {
-    "name": "바크론의 공중섬"
+    "name": "바크론의 공중섬",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 2,
+    "label": "정복 2티어"
   },
   "600073": {
-    "name": "바크론의 공중섬"
+    "name": "바크론의 공중섬",
+    "type": "party",
+    "tier": 2
   },
   "600074": {
     "name": "바크론의 공중섬"
   },
   "600082": {
-    "name": "심연의 재련 : 루드라"
+    "name": "심연의 재련 : 루드라",
+    "type": "raid",
+    "difficulty": "normal",
+    "label": "보통"
   },
   "600091": {
     "name": "사나운 뿔 암굴",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600092": {
     "name": "사나운 뿔 암굴",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 3,
+    "label": "정복 3티어"
   },
   "600093": {
     "name": "사나운 뿔 암굴",
-    "difficulty": "hard"
+    "type": "party",
+    "tier": 3
   },
   "600121": {
     "name": "무의 요람",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600122": {
     "name": "무의 요람",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 4,
+    "label": "정복 4티어"
   },
   "600123": {
     "name": "무의 요람",
-    "difficulty": "hard"
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 4,
+    "label": "정복 4티어 · 어려움"
   },
   "600131": {
     "name": "환영의 회랑",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600132": {
     "name": "환영의 회랑",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 5,
+    "label": "정복 5티어"
   },
   "600133": {
     "name": "환영의 회랑",
-    "difficulty": "hard"
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 5,
+    "label": "정복 5티어 · 어려움"
   },
   "600141": {
     "name": "푸른 숨의 섬",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600142": {
     "name": "푸른 숨의 섬",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 5,
+    "label": "정복 5티어"
   },
   "600143": {
     "name": "푸른 숨의 섬",
-    "difficulty": "hard"
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 5,
+    "label": "정복 5티어 · 어려움"
+  },
+  "600144": {
+    "name": "타락한 데바의 성"
+  },
+  "600145": {
+    "name": "타락한 데바의 성"
+  },
+  "600146": {
+    "name": "타락한 데바의 성"
   },
   "600151": {
     "name": "타락한 데바의 성",
-    "difficulty": "exploration"
+    "type": "party",
+    "difficulty": "easy",
+    "label": "탐험"
   },
   "600152": {
     "name": "타락한 데바의 성",
-    "difficulty": "normal"
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 6,
+    "label": "정복 6티어"
   },
   "600153": {
     "name": "타락한 데바의 성",
-    "difficulty": "hard"
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 6,
+    "label": "정복 6티어 · 어려움"
   },
   "600161": {
     "name": "잠식된 데우스 연구기지",
@@ -1565,634 +2246,950 @@
     "name": "잠식된 데우스 연구기지",
     "difficulty": "hard"
   },
-  "610010": {
-    "name": "가라앉은 생명의 신전"
-  },
-  "610011": {
-    "name": "가라앉은 생명의 신전"
-  },
-  "610012": {
-    "name": "가라앉은 생명의 신전"
-  },
-  "610013": {
-    "name": "가라앉은 생명의 신전"
-  },
-  "610020": {
-    "name": "붉은 연심의 거울"
-  },
-  "610021": {
-    "name": "붉은 연심의 거울"
-  },
-  "610022": {
-    "name": "붉은 연심의 거울"
-  },
-  "610023": {
-    "name": "붉은 연심의 거울"
-  },
-  "610044": {
-    "name": "죽은 드라마타의 둥지"
-  },
-  "610052": {
-    "name": "데우스 연구기지"
-  },
-  "610062": {
-    "name": "조각난 아르카니스"
-  },
-  "610070": {
-    "name": "심연의 뿔 암굴"
-  },
-  "610071": {
-    "name": "심연의 뿔 암굴"
-  },
-  "610072": {
-    "name": "심연의 뿔 암굴"
-  },
-  "610073": {
-    "name": "심연의 뿔 암굴"
-  },
-  "620011": {
-    "name": "침식의 정화소"
-  },
-  "620021": {
-    "name": "무스펠의 성배"
-  },
-  "620022": {
-    "name": "무스펠의 성배"
-  },
-  "690001": {
-    "name": "토벌전 종료"
-  },
-  "690002": {
-    "name": "토벌전 종료"
-  },
-  "690003": {
-    "name": "토벌전 종료"
-  },
-  "690011": {
-    "name": "브리트라 군단 요새"
-  },
-  "690012": {
-    "name": "브리트라 군단 요새"
-  },
-  "690013": {
-    "name": "브리트라 군단 요새"
-  },
-  "690031": {
-    "name": "오르쿠스의 무덤"
-  },
-  "690032": {
-    "name": "오르쿠스의 무덤"
-  },
-  "690033": {
-    "name": "오르쿠스의 무덤"
-  },
-  "690034": {
-    "name": "오르쿠스의 무덤"
-  },
-  "690035": {
-    "name": "오르쿠스의 무덤"
-  },
-  "690036": {
-    "name": "오르쿠스의 무덤"
-  },
-  "690041": {
-    "name": "파프나이트 제련소"
-  },
-  "690042": {
-    "name": "파프나이트 제련소"
-  },
-  "690043": {
-    "name": "파프나이트 제련소"
-  },
-  "690044": {
-    "name": "파프나이트 제련소"
-  },
-  "690045": {
-    "name": "파프나이트 제련소"
-  },
-  "690046": {
-    "name": "파프나이트 제련소"
-  },
-  "7": {
-    "name": "불의 신전 투기장"
-  },
-  "76": {
-    "name": "정령의 습격"
-  },
-  "77": {
-    "name": "정령의 습격"
-  },
-  "78": {
-    "name": "알트가르드 필드이벤트 보호"
-  },
-  "8": {
+  "61": {
     "name": "임페투시움 투기장"
   },
+  "610010": {
+    "name": "가라앉은 생명의 신전",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610011": {
+    "name": "가라앉은 생명의 신전",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610012": {
+    "name": "가라앉은 생명의 신전",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610013": {
+    "name": "가라앉은 생명의 신전",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610020": {
+    "name": "붉은 연심의 거울",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610021": {
+    "name": "붉은 연심의 거울",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610022": {
+    "name": "붉은 연심의 거울",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610023": {
+    "name": "붉은 연심의 거울",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610044": {
+    "name": "죽은 드라마타의 둥지",
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 4,
+    "label": "정복 4티어 · 어려움"
+  },
+  "610052": {
+    "name": "데우스 연구기지",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610062": {
+    "name": "조각난 아르카니스",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610070": {
+    "name": "심연의 뿔 암굴",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610071": {
+    "name": "심연의 뿔 암굴",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610072": {
+    "name": "심연의 뿔 암굴",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "610073": {
+    "name": "심연의 뿔 암굴",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "초월"
+  },
+  "62": {
+    "name": "오드 샤드의 요람"
+  },
+  "620011": {
+    "name": "침식의 정화소",
+    "type": "raid",
+    "difficulty": "normal",
+    "label": "보통"
+  },
+  "620021": {
+    "name": "무스펠의 성배",
+    "type": "raid",
+    "difficulty": "advanced",
+    "label": "어려움"
+  },
+  "620022": {
+    "name": "무스펠의 성배",
+    "type": "raid",
+    "difficulty": "normal",
+    "label": "보통"
+  },
+  "64": {
+    "name": "모래바람 사원"
+  },
+  "690001": {
+    "name": "토벌전 종료",
+    "type": "matching",
+    "difficulty": "easy",
+    "label": "쉬움"
+  },
+  "690002": {
+    "name": "토벌전 종료",
+    "type": "matching",
+    "difficulty": "normal",
+    "label": "보통"
+  },
+  "690003": {
+    "name": "토벌전 종료",
+    "type": "matching",
+    "difficulty": "hard",
+    "label": "어려움"
+  },
+  "690011": {
+    "name": "브리트라 군단 요새",
+    "type": "matching",
+    "difficulty": "easy",
+    "label": "쉬움"
+  },
+  "690012": {
+    "name": "브리트라 군단 요새",
+    "type": "matching",
+    "difficulty": "normal",
+    "label": "보통"
+  },
+  "690013": {
+    "name": "브리트라 군단 요새",
+    "type": "matching",
+    "difficulty": "hard",
+    "label": "어려움"
+  },
+  "690031": {
+    "name": "오르쿠스의 무덤",
+    "type": "matching",
+    "difficulty": "easy",
+    "label": "쉬움"
+  },
+  "690032": {
+    "name": "오르쿠스의 무덤",
+    "type": "matching",
+    "difficulty": "normal",
+    "label": "보통"
+  },
+  "690033": {
+    "name": "오르쿠스의 무덤",
+    "type": "matching",
+    "difficulty": "hard",
+    "label": "어려움"
+  },
+  "690034": {
+    "name": "오르쿠스의 무덤",
+    "type": "matching",
+    "difficulty": "extreme",
+    "label": "극한"
+  },
+  "690035": {
+    "name": "오르쿠스의 무덤",
+    "type": "matching",
+    "difficulty": "despair",
+    "label": "절망"
+  },
+  "690036": {
+    "name": "오르쿠스의 무덤",
+    "type": "matching",
+    "difficulty": "hell",
+    "label": "지옥"
+  },
+  "690041": {
+    "name": "파프나이트 제련소",
+    "type": "matching",
+    "difficulty": "easy",
+    "label": "쉬움"
+  },
+  "690042": {
+    "name": "파프나이트 제련소",
+    "type": "matching",
+    "difficulty": "normal",
+    "label": "보통"
+  },
+  "690043": {
+    "name": "파프나이트 제련소",
+    "type": "matching",
+    "difficulty": "hard",
+    "label": "어려움"
+  },
+  "690044": {
+    "name": "파프나이트 제련소",
+    "type": "matching",
+    "difficulty": "extreme",
+    "label": "극한"
+  },
+  "690045": {
+    "name": "파프나이트 제련소",
+    "type": "matching",
+    "difficulty": "despair",
+    "label": "절망"
+  },
+  "690046": {
+    "name": "파프나이트 제련소",
+    "type": "matching",
+    "difficulty": "hell",
+    "label": "지옥"
+  },
+  "7": {
+    "name": "불의 신전 투기장",
+    "type": "matching"
+  },
+  "76": {
+    "name": "정령의 습격",
+    "type": "fieldevent"
+  },
+  "77": {
+    "name": "정령의 습격",
+    "type": "fieldevent"
+  },
+  "78": {
+    "name": "알트가르드 필드이벤트 보호",
+    "type": "fieldevent"
+  },
+  "8": {
+    "name": "임페투시움 투기장",
+    "type": "matching"
+  },
   "800002": {
-    "name": "포사가 도망간 곳"
+    "name": "포사가 도망간 곳",
+    "type": "instancelayer"
   },
   "800003": {
-    "name": "오드 채집 추천 장소"
+    "name": "오드 채집 추천 장소",
+    "type": "instancelayer"
   },
   "800004": {
-    "name": "크레이온의 실험 장소"
+    "name": "크레이온의 실험 장소",
+    "type": "instancelayer"
   },
   "800007": {
-    "name": "포사 목격지"
+    "name": "포사 목격지",
+    "type": "instancelayer"
   },
   "800008": {
-    "name": "파괴된 어비스 관문"
+    "name": "파괴된 어비스 관문",
+    "type": "instancelayer"
   },
   "800009": {
-    "name": "아스틴의 비밀 은신처"
+    "name": "아스틴의 비밀 은신처",
+    "type": "instancelayer"
   },
   "800010": {
-    "name": "환영이 보이는 동굴"
+    "name": "환영이 보이는 동굴",
+    "type": "instancelayer"
   },
   "800011": {
-    "name": "베르테론 요새 폐허 남쪽"
+    "name": "베르테론 요새 폐허 남쪽",
+    "type": "instancelayer"
   },
   "800012": {
-    "name": "버려진 옛 상회 본부 자리"
+    "name": "버려진 옛 상회 본부 자리",
+    "type": "instancelayer"
   },
   "800013": {
-    "name": "드라칸 연구소"
+    "name": "드라칸 연구소",
+    "type": "instancelayer"
   },
   "800014": {
-    "name": "희생의 쉼터"
+    "name": "희생의 쉼터",
+    "type": "instancelayer"
   },
   "800015": {
-    "name": "아울라우 장례섬"
+    "name": "아울라우 장례섬",
+    "type": "instancelayer"
   },
   "800016": {
-    "name": "달이 보이는 공중섬"
+    "name": "달이 보이는 공중섬",
+    "type": "instancelayer"
   },
   "800017": {
-    "name": "노토스 레기온 치료소"
+    "name": "노토스 레기온 치료소",
+    "type": "instancelayer"
   },
   "800018": {
-    "name": "오래된 빈집"
+    "name": "오래된 빈집",
+    "type": "instancelayer"
   },
   "800019": {
-    "name": "데오바르의 집"
+    "name": "데오바르의 집",
+    "type": "instancelayer"
   },
   "800020": {
-    "name": "버려진 은신처"
+    "name": "버려진 은신처",
+    "type": "instancelayer"
   },
   "800021": {
-    "name": "오염된 슬라임 정화 실험장소"
+    "name": "오염된 슬라임 정화 실험장소",
+    "type": "instancelayer"
   },
   "800022": {
-    "name": "세드릭의 묘비"
+    "name": "세드릭의 묘비",
+    "type": "instancelayer"
   },
   "800023": {
-    "name": "잊혀진 장소"
+    "name": "잊혀진 장소",
+    "type": "instancelayer"
   },
   "800024": {
-    "name": "온정의 전당"
+    "name": "온정의 전당",
+    "type": "instancelayer"
   },
   "81": {
-    "name": "축복의 방"
+    "name": "축복의 방",
+    "type": "instancelayer"
   },
   "82": {
-    "name": "정화의 제단"
+    "name": "정화의 제단",
+    "type": "instancelayer"
   },
   "820001": {
-    "name": "파괴된 야영지"
+    "name": "파괴된 야영지",
+    "type": "instancelayer"
   },
   "820002": {
-    "name": "힐스로터 약탈단 분소"
+    "name": "힐스로터 약탈단 분소",
+    "type": "instancelayer"
   },
   "820003": {
-    "name": "힐스로터 약탈단 창고"
+    "name": "힐스로터 약탈단 창고",
+    "type": "instancelayer"
   },
   "820004": {
-    "name": "오염된 샘"
+    "name": "오염된 샘",
+    "type": "instancelayer"
   },
   "820010": {
-    "name": "의문의 감시 막사"
+    "name": "의문의 감시 막사",
+    "type": "instancelayer"
   },
   "820020": {
-    "name": "추락의 흔적"
+    "name": "추락의 흔적",
+    "type": "instancelayer"
   },
   "820021": {
-    "name": "버려진 천문대"
+    "name": "버려진 천문대",
+    "type": "instancelayer"
   },
   "820022": {
-    "name": "메마른 바위 굴"
+    "name": "메마른 바위 굴",
+    "type": "instancelayer"
   },
   "820030": {
-    "name": "악취나는 틈새"
+    "name": "악취나는 틈새",
+    "type": "instancelayer"
   },
   "820031": {
-    "name": "레파르단 은신처"
+    "name": "레파르단 은신처",
+    "type": "instancelayer"
   },
   "820032": {
-    "name": "미확인 작업장"
+    "name": "미확인 작업장",
+    "type": "instancelayer"
   },
   "820040": {
-    "name": "클로리스의 처소"
+    "name": "클로리스의 처소",
+    "type": "instancelayer"
   },
   "820050": {
-    "name": "클로리스의 비밀 거점"
+    "name": "클로리스의 비밀 거점",
+    "type": "instancelayer"
   },
   "820051": {
-    "name": "레파르단 연구소 별관"
+    "name": "레파르단 연구소 별관",
+    "type": "instancelayer"
   },
   "820052": {
-    "name": "지하 배수로"
+    "name": "지하 배수로",
+    "type": "instancelayer"
   },
   "83": {
-    "name": "노르니르 제단"
+    "name": "노르니르 제단",
+    "type": "instancelayer"
   },
   "840001": {
-    "name": "수상한 동굴"
+    "name": "수상한 동굴",
+    "type": "quest"
   },
   "840002": {
-    "name": "에테리아 균열"
+    "name": "에테리아 균열",
+    "type": "quest"
   },
   "840003": {
-    "name": "산적 소굴"
+    "name": "산적 소굴",
+    "type": "quest"
   },
   "840004": {
-    "name": "버려진 드라칸 감옥시설"
+    "name": "버려진 드라칸 감옥시설",
+    "type": "quest"
   },
   "840005": {
-    "name": "콰이링 상단 임시 창고"
+    "name": "콰이링 상단 임시 창고",
+    "type": "quest"
   },
   "840007": {
-    "name": "도도링의 장물창고"
+    "name": "도도링의 장물창고",
+    "type": "quest"
   },
   "840008": {
-    "name": "망자의 소굴"
+    "name": "망자의 소굴",
+    "type": "quest"
   },
   "840009": {
-    "name": "오래된 은신처"
+    "name": "오래된 은신처",
+    "type": "quest"
   },
   "840010": {
-    "name": "스칼로투스 실험 장소"
+    "name": "스칼로투스 실험 장소",
+    "type": "quest"
   },
   "840011": {
-    "name": "첫 번째 무대"
+    "name": "첫 번째 무대",
+    "type": "quest"
   },
   "840012": {
-    "name": "두 번째 무대"
+    "name": "두 번째 무대",
+    "type": "quest"
   },
   "840013": {
-    "name": "타르젤 보관소"
+    "name": "타르젤 보관소",
+    "type": "quest"
   },
   "840014": {
-    "name": "숨겨진 비밀 창고"
+    "name": "숨겨진 비밀 창고",
+    "type": "quest"
   },
   "840015": {
-    "name": "정령의 사원"
+    "name": "정령의 사원",
+    "type": "quest"
   },
   "840016": {
-    "name": "유물 보관소"
+    "name": "유물 보관소",
+    "type": "quest"
   },
   "840017": {
-    "name": "과거의 유적지"
+    "name": "과거의 유적지",
+    "type": "quest"
   },
   "840018": {
-    "name": "피의 안식처"
+    "name": "피의 안식처",
+    "type": "quest"
   },
   "840019": {
-    "name": "함락된 유물고"
+    "name": "함락된 유물고",
+    "type": "quest"
   },
   "840020": {
-    "name": "변절 데바 은신처"
+    "name": "변절 데바 은신처",
+    "type": "quest"
   },
   "840021": {
-    "name": "라그타 지하 감금소"
+    "name": "라그타 지하 감금소",
+    "type": "quest"
   },
   "840022": {
-    "name": "의문의 유적지"
+    "name": "의문의 유적지",
+    "type": "quest"
   },
   "840023": {
-    "name": "주미온 시련장"
+    "name": "주미온 시련장",
+    "type": "quest"
   },
   "840024": {
-    "name": "파괴의 아칸 서고"
+    "name": "파괴의 아칸 서고",
+    "type": "quest"
   },
   "840025": {
-    "name": "참회의 제단"
+    "name": "참회의 제단",
+    "type": "quest"
   },
   "840026": {
-    "name": "수라나 정제소"
+    "name": "수라나 정제소",
+    "type": "quest"
   },
   "840027": {
-    "name": "숨겨진 예배당"
+    "name": "숨겨진 예배당",
+    "type": "quest"
   },
   "840028": {
-    "name": "잠든 얼음 호수 동굴"
+    "name": "잠든 얼음 호수 동굴",
+    "type": "quest"
   },
   "840029": {
-    "name": "챈가룽 상단 비밀 서고"
+    "name": "챈가룽 상단 비밀 서고",
+    "type": "quest"
   },
   "840030": {
-    "name": "거짓된 운명의 집회장"
+    "name": "거짓된 운명의 집회장",
+    "type": "quest"
   },
   "840031": {
-    "name": "힐스로터 약탈품 보관소"
+    "name": "힐스로터 약탈품 보관소",
+    "type": "quest"
   },
   "840032": {
-    "name": "(미사용)"
+    "name": "(미사용)",
+    "type": "quest"
   },
   "840033": {
-    "name": "모래언덕 은신처"
+    "name": "모래언덕 은신처",
+    "type": "quest"
   },
   "840034": {
-    "name": "배신자의 임시 상회"
+    "name": "배신자의 임시 상회",
+    "type": "quest"
   },
   "840035": {
-    "name": "오염된 지하실"
+    "name": "오염된 지하실",
+    "type": "quest"
   },
   "840036": {
-    "name": "챈가룽 상단 물자 창고"
+    "name": "챈가룽 상단 물자 창고",
+    "type": "quest"
   },
   "840037": {
-    "name": "빛바랜 맥동의 서고"
+    "name": "빛바랜 맥동의 서고",
+    "type": "quest"
   },
   "840038": {
-    "name": "해안 동굴의 숨겨진 장소"
+    "name": "해안 동굴의 숨겨진 장소",
+    "type": "quest"
   },
   "840039": {
-    "name": "버려진 창고"
+    "name": "버려진 창고",
+    "type": "quest"
   },
   "840040": {
-    "name": "숨겨진 설원 동굴"
+    "name": "숨겨진 설원 동굴",
+    "type": "quest"
   },
   "840041": {
-    "name": "버려진 굴"
+    "name": "버려진 굴",
+    "type": "quest"
   },
   "840042": {
-    "name": "레파르단 실험장"
+    "name": "레파르단 실험장",
+    "type": "quest"
   },
   "840043": {
-    "name": "인적이 드문 창고"
+    "name": "인적이 드문 창고",
+    "type": "quest"
   },
   "840044": {
-    "name": "인적이 드문 창고"
+    "name": "인적이 드문 창고",
+    "type": "quest"
   },
   "840045": {
-    "name": "레파르단 연구실"
+    "name": "레파르단 연구실",
+    "type": "quest"
   },
   "840046": {
-    "name": "클로리스단 옛 거점"
+    "name": "클로리스단 옛 거점",
+    "type": "quest"
   },
   "840047": {
-    "name": "밀로라의 은신처"
+    "name": "밀로라의 은신처",
+    "type": "quest"
   },
   "840048": {
-    "name": "의문의 장소"
+    "name": "의문의 장소",
+    "type": "quest"
   },
   "840049": {
-    "name": "용암 협곡 동굴"
+    "name": "용암 협곡 동굴",
+    "type": "quest"
   },
   "850000": {
-    "name": "옛 용병단 주둔지"
+    "name": "옛 용병단 주둔지",
+    "type": "instancelayer"
   },
   "850001": {
-    "name": "드레드기온 추락지 절벽 아래"
+    "name": "드레드기온 추락지 절벽 아래",
+    "type": "instancelayer"
   },
   "850002": {
-    "name": "드라카나 응축지"
+    "name": "드라카나 응축지",
+    "type": "instancelayer"
   },
   "850003": {
-    "name": "오드젤리 창고"
+    "name": "오드젤리 창고",
+    "type": "instancelayer"
   },
   "850004": {
-    "name": "오래된 석실"
+    "name": "오래된 석실",
+    "type": "quest"
   },
   "850005": {
-    "name": "성소 감시초소"
+    "name": "성소 감시초소",
+    "type": "instancelayer"
   },
   "850006": {
-    "name": "추락지 동굴"
+    "name": "추락지 동굴",
+    "type": "instancelayer"
   },
   "850007": {
-    "name": "그리실라의 은거지"
+    "name": "그리실라의 은거지",
+    "type": "instancelayer"
   },
   "850008": {
-    "name": "은둔자의 동굴"
+    "name": "은둔자의 동굴",
+    "type": "instancelayer"
   },
   "850009": {
-    "name": "구릉지 동굴"
+    "name": "구릉지 동굴",
+    "type": "instancelayer"
   },
   "850010": {
-    "name": "검은발톱 지하 창고"
+    "name": "검은발톱 지하 창고",
+    "type": "instancelayer"
   },
   "850011": {
-    "name": "오래된 집"
+    "name": "오래된 집",
+    "type": "instancelayer"
   },
   "850012": {
-    "name": "임시 치료소"
+    "name": "임시 치료소",
+    "type": "instancelayer"
   },
   "850013": {
-    "name": "결혼식장"
+    "name": "결혼식장",
+    "type": "instancelayer"
   },
   "850014": {
-    "name": "작은 집"
+    "name": "작은 집",
+    "type": "instancelayer"
   },
   "86": {
-    "name": "오래된 정화의 제단"
+    "name": "오래된 정화의 제단",
+    "type": "instancelayer"
   },
   "87": {
-    "name": "노토스 레기온 집무실"
+    "name": "노토스 레기온 집무실",
+    "type": "instancelayer"
   },
   "870001": {
-    "name": "파타모르 평원 외곽"
+    "name": "파타모르 평원 외곽",
+    "type": "instancelayer"
   },
   "870002": {
-    "name": "파타모르 평원 중심부"
+    "name": "파타모르 평원 중심부",
+    "type": "instancelayer"
   },
   "870003": {
-    "name": "사냥꾼의 은신처"
+    "name": "사냥꾼의 은신처",
+    "type": "instancelayer"
   },
   "870004": {
-    "name": "결계석이 숨겨진 섬"
+    "name": "결계석이 숨겨진 섬",
+    "type": "instancelayer"
   },
   "870005": {
-    "name": "파타모르 마을 창고"
+    "name": "파타모르 마을 창고",
+    "type": "instancelayer"
   },
   "870006": {
-    "name": "베르단디의 제단"
+    "name": "베르단디의 제단",
+    "type": "instancelayer"
   },
   "870010": {
-    "name": "파편 탐사지"
+    "name": "파편 탐사지",
+    "type": "instancelayer"
   },
   "870011": {
-    "name": "칼세크의 둥지"
+    "name": "칼세크의 둥지",
+    "type": "instancelayer"
   },
   "870012": {
-    "name": "처형장"
+    "name": "처형장",
+    "type": "instancelayer"
   },
   "870013": {
-    "name": "버려진 서리피난처"
+    "name": "버려진 서리피난처",
+    "type": "instancelayer"
   },
   "870014": {
-    "name": "눈그늘 은신처"
+    "name": "눈그늘 은신처",
+    "type": "instancelayer"
   },
   "870020": {
-    "name": "숨겨진 해안 동굴"
+    "name": "숨겨진 해안 동굴",
+    "type": "instancelayer"
   },
   "870021": {
-    "name": "불타버린 마을터"
+    "name": "불타버린 마을터",
+    "type": "instancelayer"
   },
   "870030": {
-    "name": "두 번째 파편의 동굴"
+    "name": "두 번째 파편의 동굴",
+    "type": "instancelayer"
   },
   "870031": {
-    "name": "첫 번째 파편의 동굴"
+    "name": "첫 번째 파편의 동굴",
+    "type": "instancelayer"
   },
   "870032": {
-    "name": "과거 파편의 동굴"
+    "name": "과거 파편의 동굴",
+    "type": "instancelayer"
   },
   "870040": {
-    "name": "크로메데의 섬"
+    "name": "크로메데의 섬",
+    "type": "instancelayer"
   },
   "900001": {
-    "name": "데바 생체 연구기지"
+    "name": "데바 생체 연구기지",
+    "type": "daily"
   },
   "900002": {
-    "name": "오디움 저장소"
+    "name": "오디움 저장소",
+    "type": "daily"
   },
   "900003": {
-    "name": "크로파킨의 비밀 보관소"
+    "name": "크로파킨의 비밀 보관소",
+    "type": "daily"
   },
   "901": {
-    "name": "알트가르드 레기온 비공정"
+    "name": "알트가르드 레기온 비공정",
+    "type": "guild"
   },
   "902": {
-    "name": "베르테론 레기온 비공정"
+    "name": "베르테론 레기온 비공정",
+    "type": "guild"
   },
   "904": {
-    "name": "엘테넨 레기온 비공정"
+    "name": "엘테넨 레기온 비공정",
+    "type": "guild"
   },
   "905": {
-    "name": "모르헤임 레기온 비공정"
+    "name": "모르헤임 레기온 비공정",
+    "type": "guild"
   },
   "910011": {
-    "name": "악몽의 제단(쉬움)"
+    "name": "악몽의 제단(쉬움)",
+    "type": "awaken",
+    "difficulty": "easy"
   },
   "910012": {
-    "name": "악몽의 제단(보통)"
+    "name": "악몽의 제단(보통)",
+    "type": "awaken",
+    "difficulty": "normal"
   },
   "910013": {
-    "name": "악몽의 제단(어려움)"
+    "name": "악몽의 제단(어려움)",
+    "type": "awaken",
+    "difficulty": "hard"
   },
   "910014": {
-    "name": "악몽의 제단(극한)"
+    "name": "악몽의 제단(극한)",
+    "type": "awaken",
+    "difficulty": "extreme"
   },
   "910015": {
-    "name": "악몽의 제단(절망)"
+    "name": "악몽의 제단(절망)",
+    "type": "awaken"
   },
   "910016": {
-    "name": "악몽의 제단(지옥)"
+    "name": "악몽의 제단(지옥)",
+    "type": "awaken"
   },
   "910021": {
-    "name": "폭군의 은신처(쉬움)"
+    "name": "폭군의 은신처(쉬움)",
+    "type": "awaken",
+    "difficulty": "easy"
   },
   "910022": {
-    "name": "폭군의 은신처(보통)"
+    "name": "폭군의 은신처(보통)",
+    "type": "awaken",
+    "difficulty": "normal"
   },
   "910023": {
-    "name": "폭군의 은신처(어려움)"
+    "name": "폭군의 은신처(어려움)",
+    "type": "awaken",
+    "difficulty": "hard"
   },
   "910024": {
-    "name": "폭군의 은신처(극한)"
+    "name": "폭군의 은신처(극한)",
+    "type": "awaken",
+    "difficulty": "extreme"
   },
   "910025": {
-    "name": "폭군의 은신처(절망)"
+    "name": "폭군의 은신처(절망)",
+    "type": "awaken"
   },
   "910026": {
-    "name": "폭군의 은신처(지옥)"
+    "name": "폭군의 은신처(지옥)",
+    "type": "awaken"
   },
   "910031": {
-    "name": "증오의 성소(쉬움)"
+    "name": "증오의 성소(쉬움)",
+    "type": "awaken",
+    "difficulty": "easy"
   },
   "910032": {
-    "name": "증오의 성소(보통)"
+    "name": "증오의 성소(보통)",
+    "type": "awaken",
+    "difficulty": "normal"
   },
   "910033": {
-    "name": "증오의 성소(어려움)"
+    "name": "증오의 성소(어려움)",
+    "type": "awaken",
+    "difficulty": "hard"
   },
   "910034": {
-    "name": "증오의 성소(극한)"
+    "name": "증오의 성소(극한)",
+    "type": "awaken",
+    "difficulty": "extreme"
   },
   "910035": {
-    "name": "증오의 성소(절망)"
+    "name": "증오의 성소(절망)",
+    "type": "awaken"
   },
   "910036": {
-    "name": "증오의 성소(지옥)"
+    "name": "증오의 성소(지옥)",
+    "type": "awaken"
   },
   "910041": {
-    "name": "궤적 보관소(쉬움)"
+    "name": "궤적 보관소(쉬움)",
+    "type": "awaken",
+    "difficulty": "easy"
   },
   "910042": {
-    "name": "궤적 보관소(보통)"
+    "name": "궤적 보관소(보통)",
+    "type": "awaken",
+    "difficulty": "normal"
   },
   "910043": {
-    "name": "궤적 보관소(어려움)"
+    "name": "궤적 보관소(어려움)",
+    "type": "awaken",
+    "difficulty": "hard"
   },
   "910044": {
-    "name": "궤적 보관소(극한)"
+    "name": "궤적 보관소(극한)",
+    "type": "awaken",
+    "difficulty": "extreme"
   },
   "910045": {
-    "name": "궤적 보관소(절망)"
+    "name": "궤적 보관소(절망)",
+    "type": "awaken"
   },
   "910046": {
-    "name": "궤적 보관소(지옥)"
+    "name": "궤적 보관소(지옥)",
+    "type": "awaken"
   },
   "910051": {
-    "name": "잊힌 저장소(쉬움)"
+    "name": "잊힌 저장소(쉬움)",
+    "type": "awaken",
+    "difficulty": "easy"
   },
   "910052": {
-    "name": "잊힌 저장소(보통)"
+    "name": "잊힌 저장소(보통)",
+    "type": "awaken",
+    "difficulty": "normal"
   },
   "910053": {
-    "name": "잊힌 저장소(어려움)"
+    "name": "잊힌 저장소(어려움)",
+    "type": "awaken",
+    "difficulty": "hard"
   },
   "910054": {
-    "name": "잊힌 저장소(극한)"
+    "name": "잊힌 저장소(극한)",
+    "type": "awaken",
+    "difficulty": "extreme"
   },
   "910055": {
-    "name": "잊힌 저장소(절망)"
+    "name": "잊힌 저장소(절망)",
+    "type": "awaken"
   },
   "910056": {
-    "name": "잊힌 저장소(지옥)"
+    "name": "잊힌 저장소(지옥)",
+    "type": "awaken"
   },
   "910057": {
-    "name": "잊힌 저장소(파멸)"
+    "name": "잊힌 저장소(파멸)",
+    "type": "awaken"
   },
   "910061": {
-    "name": "죽은 자의 침실(쉬움)"
+    "name": "죽은 자의 침실(쉬움)",
+    "type": "awaken",
+    "difficulty": "easy"
   },
   "910062": {
-    "name": "죽은 자의 침실(보통)"
+    "name": "죽은 자의 침실(보통)",
+    "type": "awaken",
+    "difficulty": "normal"
   },
   "910063": {
-    "name": "죽은 자의 침실(어려움)"
+    "name": "죽은 자의 침실(어려움)",
+    "type": "awaken",
+    "difficulty": "hard"
   },
   "910064": {
-    "name": "죽은 자의 침실(극한)"
+    "name": "죽은 자의 침실(극한)",
+    "type": "awaken",
+    "difficulty": "extreme"
   },
   "910065": {
-    "name": "죽은 자의 침실(절망)"
+    "name": "죽은 자의 침실(절망)",
+    "type": "awaken"
   },
   "910066": {
-    "name": "죽은 자의 침실(지옥)"
+    "name": "죽은 자의 침실(지옥)",
+    "type": "awaken"
   },
   "910067": {
-    "name": "죽은 자의 침실(파멸)"
+    "name": "죽은 자의 침실(파멸)",
+    "type": "awaken"
   },
   "94": {
-    "name": "해안 절벽 근처"
+    "name": "해안 절벽 근처",
+    "type": "instancelayer"
   },
   "96": {
-    "name": "다미누 숲"
+    "name": "다미누 숲",
+    "type": "instancelayer"
   },
   "98": {
-    "name": "보급소 앞 거점"
+    "name": "보급소 앞 거점",
+    "type": "instancelayer"
   }
 }
