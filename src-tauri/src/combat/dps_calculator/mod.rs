@@ -397,6 +397,24 @@ mod tests {
     }
 
     #[test]
+    fn an_open_world_fight_ended_by_the_load_into_an_instance_has_no_dungeon() {
+        // A field boss killed as the queue pops: the load into the instance
+        // ends the fight, after the instance's id is known.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        s.note_map_load(1010);
+        hits(&s, 2259, 800, 1_000, 8_000);
+        s.set_current_dungeon(600002);
+        crate::clock::set_override(Some(20_000));
+        s.note_map_load(600002);
+        assert!(s.note_zone_change(), "the load ends the fight");
+        assert_eq!(dungeon_of(&snapshot_at(&mut calc, 20_000), "auto_800_1000"), 0);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn an_encounter_ends_after_the_timeout_unless_a_live_boss_holds_it() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));

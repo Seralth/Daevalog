@@ -193,6 +193,7 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     // Get or create target combat data
     let ours = is_ours(inner, actor_id);
     let dungeon_id = inner.current_dungeon_id;
+    let open_world = inner.in_open_world;
     let target_data = inner.target_combat.entry(target_id).or_insert_with(|| {
         TargetCombatData::new(target_id, timestamp)
     });
@@ -205,6 +206,7 @@ fn apply_damage(inner: &mut Inner, pdp: &ParsedDamagePacket) {
     if dungeon_id != 0 {
         target_data.dungeon_id = dungeon_id;
     }
+    target_data.open_world |= open_world;
 
     // Update target timing
     if timestamp < target_data.first_damage_time {

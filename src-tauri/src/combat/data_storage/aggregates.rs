@@ -345,6 +345,8 @@ pub struct TargetCombatData {
     /// The instance the segment was fought in, as the party roster last named
     /// it at one of its hits; 0 in the open world.
     pub dungeon_id: i32,
+    /// Hit while the last map load was into the open world.
+    pub open_world: bool,
 }
 
 impl TargetCombatData {
@@ -358,6 +360,7 @@ impl TargetCombatData {
             m.first_damage_time = m.first_damage_time.min(td.first_damage_time);
             m.last_damage_time = m.last_damage_time.max(td.last_damage_time);
             m.ours |= td.ours;
+            m.open_world |= td.open_world;
             if td.dungeon_id != 0 {
                 m.dungeon_id = td.dungeon_id;
             }
@@ -378,6 +381,7 @@ impl TargetCombatData {
             actors: HashMap::new(),
             ours: false,
             dungeon_id: 0,
+            open_world: false,
         }
     }
 }

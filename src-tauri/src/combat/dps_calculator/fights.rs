@@ -124,8 +124,16 @@ impl DpsCalculator {
                 0,
             ),
         };
-        // Where the fight happened, not where the player is now.
-        let dungeon_id = if target_data.dungeon_id != 0 { target_data.dungeon_id } else { identity_dungeon };
+        // Where the fight happened, not where the player is now. An open-world
+        // fight takes nothing from the end of its segment: the load into an
+        // instance ends it, after that instance is known.
+        let dungeon_id = if target_data.dungeon_id != 0 {
+            target_data.dungeon_id
+        } else if target_data.open_world {
+            0
+        } else {
+            identity_dungeon
+        };
 
         let mut record_actors: HashMap<i32, (String, String)> = HashMap::new();
         for skill in &details.skills {

@@ -424,6 +424,7 @@ fn light_clone(td: &TargetCombatData) -> TargetCombatData {
         actors,
         ours: td.ours,
         dungeon_id: td.dungeon_id,
+        open_world: td.open_world,
     }
 }
 
