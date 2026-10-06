@@ -5699,8 +5699,8 @@ body.isHistoryWindow .historyPanel .historyHeader .closeX {
   border: 1px solid color-mix(in srgb, var(--error-fill) 68%, transparent);
 }
 /* Dungeon difficulty, in History rows and the Details title: green
-   Exploration, blue Conquest, red Conquest [Hard] and Extreme, violet
-   Transcendence. */
+   Exploration, blue Conquest, red Conquest [Hard] and the hardest
+   Subjugation and Ascension Trial ones, violet Transcendence. */
 .difficultyBadge {
   --tier: #8a94a6;
   display: inline-block;
@@ -5722,7 +5722,9 @@ body.isHistoryWindow .historyPanel .historyHeader .closeX {
 .difficulty-easy { --tier: #4caf72; }
 .difficulty-normal { --tier: #4a8fe0; }
 .difficulty-advanced,
-.difficulty-extreme { --tier: #e0524a; }
+.difficulty-extreme,
+.difficulty-despair,
+.difficulty-hell { --tier: #e0524a; }
 .difficulty-hard { --tier: #a07ae0; }
 
 /* ---------- scrollbars: hairline, not hardware ---------- */

@@ -58,12 +58,14 @@ def enum(v):
     return v.split("::")[-1]
 
 
-# Where each kind of dungeon finds the words for its difficulty. Other kinds
-# have none in the game's strings (Matching: Easy to Hell) and get no label.
+# Where each kind of dungeon finds the words for its difficulty, by its
+# sub-type or else its type. Other kinds have no difficulty.
 DIFFICULTY_TEXT = {
     "Party": "String_STR_DUNGEONDIFFICULTY_{}_body",
     "Raid": "String_UI_PARTYDUNGEON_RAID_DIFFICULTY_{}_body",
     "Awaken": "String_UI_AWAKEN_DIFFICULTY_{}_body",
+    # Subjugation, the Matching rows with Easy to Hell.
+    "Suppression": "String_UI_SUPPRESSION_{}_body",
 }
 TIER_TEXT = "String_UI_CONTENTS_UNLOCK_PARTYDUNGEON{}TIER_body"
 
@@ -121,7 +123,7 @@ def main():
 
     # The game's words for a dungeon's difficulty, and its party tier with it.
     def difficulty_label(dungeon, text):
-        key = DIFFICULTY_TEXT.get(enum(dungeon["DungeonType"]))
+        key = DIFFICULTY_TEXT.get(enum(dungeon["DungeonSubType"])) or DIFFICULTY_TEXT.get(enum(dungeon["DungeonType"]))
         difficulty = enum(dungeon["DungeonDifficulty"])
         label = text.get(key.format(difficulty.upper())) if key and difficulty != "None" else None
         if not named(label):

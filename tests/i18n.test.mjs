@@ -51,6 +51,7 @@ test("a dungeon's difficulty is the game's own, and only where the game gives on
   // A Transcendence run, not "Level 3" from the id's last digit.
   assert.equal(getDungeonLabel(600053), "Deus Research Base (Transcendence)");
   assert.equal(getDungeonLabel(620021), "Chalice of Muspel (Hard)");
+  assert.equal(getDungeonLabel(690035), "Orcus's Grave (Insane)");
   // Sealed and quest dungeons, the Abyss and maps without a dungeon row: a name only.
   for (const [id, name] of [[310051, "Altar of Hope"], [210009, "Zumion Relic Storage"],
     [142007, "Corrupted Forester Ruins Treasure Storage"], [21, "Chaotic Lower Reshanta"],

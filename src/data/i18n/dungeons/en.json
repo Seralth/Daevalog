@@ -2367,92 +2367,110 @@
   "690001": {
     "name": "Subjugation Closed",
     "type": "matching",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "label": "Easy"
   },
   "690002": {
     "name": "Subjugation Closed",
     "type": "matching",
-    "difficulty": "normal"
+    "difficulty": "normal",
+    "label": "Normal"
   },
   "690003": {
     "name": "Subjugation Closed",
     "type": "matching",
-    "difficulty": "hard"
+    "difficulty": "hard",
+    "label": "Hard"
   },
   "690011": {
     "name": "Beritra Brigade Fortress",
     "type": "matching",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "label": "Easy"
   },
   "690012": {
     "name": "Beritra Brigade Fortress",
     "type": "matching",
-    "difficulty": "normal"
+    "difficulty": "normal",
+    "label": "Normal"
   },
   "690013": {
     "name": "Beritra Brigade Fortress",
     "type": "matching",
-    "difficulty": "hard"
+    "difficulty": "hard",
+    "label": "Hard"
   },
   "690031": {
     "name": "Orcus's Grave",
     "type": "matching",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "label": "Easy"
   },
   "690032": {
     "name": "Orcus's Grave",
     "type": "matching",
-    "difficulty": "normal"
+    "difficulty": "normal",
+    "label": "Normal"
   },
   "690033": {
     "name": "Orcus's Grave",
     "type": "matching",
-    "difficulty": "hard"
+    "difficulty": "hard",
+    "label": "Hard"
   },
   "690034": {
     "name": "Orcus's Grave",
     "type": "matching",
-    "difficulty": "extreme"
+    "difficulty": "extreme",
+    "label": "Extreme"
   },
   "690035": {
     "name": "Orcus's Grave",
     "type": "matching",
-    "difficulty": "despair"
+    "difficulty": "despair",
+    "label": "Insane"
   },
   "690036": {
     "name": "Orcus's Grave",
     "type": "matching",
-    "difficulty": "hell"
+    "difficulty": "hell",
+    "label": "Hell"
   },
   "690041": {
     "name": "Fafnite Forge",
     "type": "matching",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "label": "Easy"
   },
   "690042": {
     "name": "Fafnite Forge",
     "type": "matching",
-    "difficulty": "normal"
+    "difficulty": "normal",
+    "label": "Normal"
   },
   "690043": {
     "name": "Fafnite Forge",
     "type": "matching",
-    "difficulty": "hard"
+    "difficulty": "hard",
+    "label": "Hard"
   },
   "690044": {
     "name": "Fafnite Forge",
     "type": "matching",
-    "difficulty": "extreme"
+    "difficulty": "extreme",
+    "label": "Extreme"
   },
   "690045": {
     "name": "Fafnite Forge",
     "type": "matching",
-    "difficulty": "despair"
+    "difficulty": "despair",
+    "label": "Insane"
   },
   "690046": {
     "name": "Fafnite Forge",
     "type": "matching",
-    "difficulty": "hell"
+    "difficulty": "hell",
+    "label": "Hell"
   },
   "7": {
     "name": "Fire Temple Arena",

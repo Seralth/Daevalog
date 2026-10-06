@@ -2367,92 +2367,110 @@
   "690001": {
     "name": "토벌전 종료",
     "type": "matching",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "label": "쉬움"
   },
   "690002": {
     "name": "토벌전 종료",
     "type": "matching",
-    "difficulty": "normal"
+    "difficulty": "normal",
+    "label": "보통"
   },
   "690003": {
     "name": "토벌전 종료",
     "type": "matching",
-    "difficulty": "hard"
+    "difficulty": "hard",
+    "label": "어려움"
   },
   "690011": {
     "name": "브리트라 군단 요새",
     "type": "matching",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "label": "쉬움"
   },
   "690012": {
     "name": "브리트라 군단 요새",
     "type": "matching",
-    "difficulty": "normal"
+    "difficulty": "normal",
+    "label": "보통"
   },
   "690013": {
     "name": "브리트라 군단 요새",
     "type": "matching",
-    "difficulty": "hard"
+    "difficulty": "hard",
+    "label": "어려움"
   },
   "690031": {
     "name": "오르쿠스의 무덤",
     "type": "matching",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "label": "쉬움"
   },
   "690032": {
     "name": "오르쿠스의 무덤",
     "type": "matching",
-    "difficulty": "normal"
+    "difficulty": "normal",
+    "label": "보통"
   },
   "690033": {
     "name": "오르쿠스의 무덤",
     "type": "matching",
-    "difficulty": "hard"
+    "difficulty": "hard",
+    "label": "어려움"
   },
   "690034": {
     "name": "오르쿠스의 무덤",
     "type": "matching",
-    "difficulty": "extreme"
+    "difficulty": "extreme",
+    "label": "극한"
   },
   "690035": {
     "name": "오르쿠스의 무덤",
     "type": "matching",
-    "difficulty": "despair"
+    "difficulty": "despair",
+    "label": "절망"
   },
   "690036": {
     "name": "오르쿠스의 무덤",
     "type": "matching",
-    "difficulty": "hell"
+    "difficulty": "hell",
+    "label": "지옥"
   },
   "690041": {
     "name": "파프나이트 제련소",
     "type": "matching",
-    "difficulty": "easy"
+    "difficulty": "easy",
+    "label": "쉬움"
   },
   "690042": {
     "name": "파프나이트 제련소",
     "type": "matching",
-    "difficulty": "normal"
+    "difficulty": "normal",
+    "label": "보통"
   },
   "690043": {
     "name": "파프나이트 제련소",
     "type": "matching",
-    "difficulty": "hard"
+    "difficulty": "hard",
+    "label": "어려움"
   },
   "690044": {
     "name": "파프나이트 제련소",
     "type": "matching",
-    "difficulty": "extreme"
+    "difficulty": "extreme",
+    "label": "극한"
   },
   "690045": {
     "name": "파프나이트 제련소",
     "type": "matching",
-    "difficulty": "despair"
+    "difficulty": "despair",
+    "label": "절망"
   },
   "690046": {
     "name": "파프나이트 제련소",
     "type": "matching",
-    "difficulty": "hell"
+    "difficulty": "hell",
+    "label": "지옥"
   },
   "7": {
     "name": "불의 신전 투기장",
