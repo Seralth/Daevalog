@@ -106,6 +106,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - **Details, History and the hover tooltip never wait on the meter,** and settings are saved in the background (from mazixs's upstream PR #29). Closing the meter window quits the app, even with Settings open, and saves your fights first.
 - **Every UI string in all 10 languages.**
 - DoT rows sit under their skill in Details in every language: they are matched by skill code, not by name.
+- Skill, boss and dungeon names change with the language in every open window, without reopening it.
 - Damage and healing, per skill and in total, no longer stop or wrap around at about 2.1 billion.
 - Targets you stopped fighting more than 30 seconds ago leave the meter's memory, unless the current mode still shows them. ALL without a time window keeps everything since the zone change.
 - When packet capture cannot start on Linux, the meter says so in its own window, instead of the Windows prompt to download Npcap.
@@ -134,6 +135,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - A fight cleared by a zone change keeps the ids, names and spirit links it had.
 - A fight's healing is the healing done during that fight, in live Details and in the saved fight alike.
 - MP and other resource restores are not counted as healing or damage. A mob healing itself is not counted as healing.
+- A fight's healing counts only the people in it: you, your party and whoever hit its target. Players healing nearby are not counted.
 - A fight saved when the meter closes is never overwritten by an older auto-save.
 
 ### Privacy
