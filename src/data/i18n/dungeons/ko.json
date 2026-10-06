@@ -1930,7 +1930,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 1,
-    "label": "정복 · 정복 1티어"
+    "label": "정복 1티어"
   },
   "600002": {
     "name": "크라오 동굴",
@@ -1957,7 +1957,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 2,
-    "label": "정복 · 정복 2티어"
+    "label": "정복 2티어"
   },
   "600013": {
     "name": "우루구구 협곡",
@@ -1978,7 +1978,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 3,
-    "label": "정복 · 정복 3티어"
+    "label": "정복 3티어"
   },
   "600023": {
     "name": "불의 신전",
@@ -1999,7 +1999,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 1,
-    "label": "정복 · 정복 1티어"
+    "label": "정복 1티어"
   },
   "600033": {
     "name": "드라웁니르",
@@ -2020,7 +2020,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 4,
-    "label": "정복 · 정복 4티어"
+    "label": "정복 4티어"
   },
   "600051": {
     "name": "데우스 연구기지",
@@ -2111,7 +2111,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 2,
-    "label": "정복 · 정복 2티어"
+    "label": "정복 2티어"
   },
   "600073": {
     "name": "바크론의 공중섬",
@@ -2138,7 +2138,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 3,
-    "label": "정복 · 정복 3티어"
+    "label": "정복 3티어"
   },
   "600093": {
     "name": "사나운 뿔 암굴",
@@ -2156,14 +2156,14 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 4,
-    "label": "정복 · 정복 4티어"
+    "label": "정복 4티어"
   },
   "600123": {
     "name": "무의 요람",
     "type": "party",
     "difficulty": "advanced",
     "tier": 4,
-    "label": "정복[어려움] · 정복 4티어"
+    "label": "정복 4티어 · 어려움"
   },
   "600131": {
     "name": "환영의 회랑",
@@ -2176,14 +2176,14 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 5,
-    "label": "정복 · 정복 5티어"
+    "label": "정복 5티어"
   },
   "600133": {
     "name": "환영의 회랑",
     "type": "party",
     "difficulty": "advanced",
     "tier": 5,
-    "label": "정복[어려움] · 정복 5티어"
+    "label": "정복 5티어 · 어려움"
   },
   "600141": {
     "name": "푸른 숨의 섬",
@@ -2196,14 +2196,14 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 5,
-    "label": "정복 · 정복 5티어"
+    "label": "정복 5티어"
   },
   "600143": {
     "name": "푸른 숨의 섬",
     "type": "party",
     "difficulty": "advanced",
     "tier": 5,
-    "label": "정복[어려움] · 정복 5티어"
+    "label": "정복 5티어 · 어려움"
   },
   "600144": {
     "name": "타락한 데바의 성"
@@ -2225,14 +2225,14 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 6,
-    "label": "정복 · 정복 6티어"
+    "label": "정복 6티어"
   },
   "600153": {
     "name": "타락한 데바의 성",
     "type": "party",
     "difficulty": "advanced",
     "tier": 6,
-    "label": "정복[어려움] · 정복 6티어"
+    "label": "정복 6티어 · 어려움"
   },
   "600161": {
     "name": "잠식된 데우스 연구기지",
@@ -2302,7 +2302,7 @@
     "type": "party",
     "difficulty": "advanced",
     "tier": 4,
-    "label": "정복[어려움] · 정복 4티어"
+    "label": "정복 4티어 · 어려움"
   },
   "610052": {
     "name": "데우스 연구기지",
@@ -3007,26 +3007,22 @@
   "910011": {
     "name": "악몽의 제단(쉬움)",
     "type": "awaken",
-    "difficulty": "easy",
-    "label": "쉬움"
+    "difficulty": "easy"
   },
   "910012": {
     "name": "악몽의 제단(보통)",
     "type": "awaken",
-    "difficulty": "normal",
-    "label": "보통"
+    "difficulty": "normal"
   },
   "910013": {
     "name": "악몽의 제단(어려움)",
     "type": "awaken",
-    "difficulty": "hard",
-    "label": "어려움"
+    "difficulty": "hard"
   },
   "910014": {
     "name": "악몽의 제단(극한)",
     "type": "awaken",
-    "difficulty": "extreme",
-    "label": "극한"
+    "difficulty": "extreme"
   },
   "910015": {
     "name": "악몽의 제단(절망)",
@@ -3039,26 +3035,22 @@
   "910021": {
     "name": "폭군의 은신처(쉬움)",
     "type": "awaken",
-    "difficulty": "easy",
-    "label": "쉬움"
+    "difficulty": "easy"
   },
   "910022": {
     "name": "폭군의 은신처(보통)",
     "type": "awaken",
-    "difficulty": "normal",
-    "label": "보통"
+    "difficulty": "normal"
   },
   "910023": {
     "name": "폭군의 은신처(어려움)",
     "type": "awaken",
-    "difficulty": "hard",
-    "label": "어려움"
+    "difficulty": "hard"
   },
   "910024": {
     "name": "폭군의 은신처(극한)",
     "type": "awaken",
-    "difficulty": "extreme",
-    "label": "극한"
+    "difficulty": "extreme"
   },
   "910025": {
     "name": "폭군의 은신처(절망)",
@@ -3071,26 +3063,22 @@
   "910031": {
     "name": "증오의 성소(쉬움)",
     "type": "awaken",
-    "difficulty": "easy",
-    "label": "쉬움"
+    "difficulty": "easy"
   },
   "910032": {
     "name": "증오의 성소(보통)",
     "type": "awaken",
-    "difficulty": "normal",
-    "label": "보통"
+    "difficulty": "normal"
   },
   "910033": {
     "name": "증오의 성소(어려움)",
     "type": "awaken",
-    "difficulty": "hard",
-    "label": "어려움"
+    "difficulty": "hard"
   },
   "910034": {
     "name": "증오의 성소(극한)",
     "type": "awaken",
-    "difficulty": "extreme",
-    "label": "극한"
+    "difficulty": "extreme"
   },
   "910035": {
     "name": "증오의 성소(절망)",
@@ -3103,26 +3091,22 @@
   "910041": {
     "name": "궤적 보관소(쉬움)",
     "type": "awaken",
-    "difficulty": "easy",
-    "label": "쉬움"
+    "difficulty": "easy"
   },
   "910042": {
     "name": "궤적 보관소(보통)",
     "type": "awaken",
-    "difficulty": "normal",
-    "label": "보통"
+    "difficulty": "normal"
   },
   "910043": {
     "name": "궤적 보관소(어려움)",
     "type": "awaken",
-    "difficulty": "hard",
-    "label": "어려움"
+    "difficulty": "hard"
   },
   "910044": {
     "name": "궤적 보관소(극한)",
     "type": "awaken",
-    "difficulty": "extreme",
-    "label": "극한"
+    "difficulty": "extreme"
   },
   "910045": {
     "name": "궤적 보관소(절망)",
@@ -3135,26 +3119,22 @@
   "910051": {
     "name": "잊힌 저장소(쉬움)",
     "type": "awaken",
-    "difficulty": "easy",
-    "label": "쉬움"
+    "difficulty": "easy"
   },
   "910052": {
     "name": "잊힌 저장소(보통)",
     "type": "awaken",
-    "difficulty": "normal",
-    "label": "보통"
+    "difficulty": "normal"
   },
   "910053": {
     "name": "잊힌 저장소(어려움)",
     "type": "awaken",
-    "difficulty": "hard",
-    "label": "어려움"
+    "difficulty": "hard"
   },
   "910054": {
     "name": "잊힌 저장소(극한)",
     "type": "awaken",
-    "difficulty": "extreme",
-    "label": "극한"
+    "difficulty": "extreme"
   },
   "910055": {
     "name": "잊힌 저장소(절망)",
@@ -3171,26 +3151,22 @@
   "910061": {
     "name": "죽은 자의 침실(쉬움)",
     "type": "awaken",
-    "difficulty": "easy",
-    "label": "쉬움"
+    "difficulty": "easy"
   },
   "910062": {
     "name": "죽은 자의 침실(보통)",
     "type": "awaken",
-    "difficulty": "normal",
-    "label": "보통"
+    "difficulty": "normal"
   },
   "910063": {
     "name": "죽은 자의 침실(어려움)",
     "type": "awaken",
-    "difficulty": "hard",
-    "label": "어려움"
+    "difficulty": "hard"
   },
   "910064": {
     "name": "죽은 자의 침실(극한)",
     "type": "awaken",
-    "difficulty": "extreme",
-    "label": "극한"
+    "difficulty": "extreme"
   },
   "910065": {
     "name": "죽은 자의 침실(절망)",

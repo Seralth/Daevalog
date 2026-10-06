@@ -1,1966 +1,1966 @@
 {
   "10": {
-    "name": "Odyle Shard Cradle",
+    "name": "オード シャードの揺りかご",
     "type": "matching"
   },
   "100001": {
-    "name": "Poeta",
+    "name": "ポエタ",
     "type": "instancelayer"
   },
   "100002": {
-    "name": "Poeta",
+    "name": "ポエタ",
     "type": "instancelayer"
   },
   "101041": {
-    "name": "Drana Plantation",
+    "name": "ドラナ栽培地",
     "type": "instancelayer"
   },
   "101042": {
-    "name": "Pilgrim's Rest",
+    "name": "巡礼者の休憩所",
     "type": "instancelayer"
   },
   "103": {
-    "name": "Munihelle Forest",
+    "name": "ムニヘルの森",
     "type": "instancelayer"
   },
   "104": {
-    "name": "Anturn Cliff",
+    "name": "アントロン絶壁",
     "type": "instancelayer"
   },
   "105": {
-    "name": "Azrakar Brigade Storage",
+    "name": "アズラクーン軍団の倉庫",
     "type": "instancelayer"
   },
   "106": {
-    "name": "Supply Depot Interior Base",
+    "name": "補給所の内部拠点",
     "type": "instancelayer"
   },
   "108": {
-    "name": "Northern Tolbas Forest",
+    "name": "トールバスの森北部",
     "type": "instancelayer"
   },
   "109": {
-    "name": "Dawn Legion Temporary Outpost",
+    "name": "暁のレギオンの臨時哨所",
     "type": "instancelayer"
   },
   "110": {
-    "name": "Wind Breeze Merchants HQ",
+    "name": "そよ風商会本部",
     "type": "instancelayer"
   },
   "110001": {
-    "name": "Ishalgen",
+    "name": "イスハルゲン",
     "type": "instancelayer"
   },
   "110005": {
-    "name": "Azrakar Brigade Prison Compound",
+    "name": "アズラクーン軍団の収容所",
     "type": "instancelayer"
   },
   "110006": {
-    "name": "Nighttime Aldelle Village",
+    "name": "夜のアルデール村",
     "type": "instancelayer"
   },
   "110007": {
-    "name": "Tunapre Lake",
+    "name": "トゥナプレー湖",
     "type": "instancelayer"
   },
   "110008": {
-    "name": "In Front of Azrakar Brigade Prison Compound",
+    "name": "アズラクーン軍団の収容所前",
     "type": "instancelayer"
   },
   "111": {
-    "name": "Forest of Exiles",
+    "name": "追放者の森",
     "type": "instancelayer"
   },
   "111011": {
-    "name": "Reuben's Hideout",
+    "name": "ルベンの隠れ家",
     "type": "instancelayer"
   },
   "111012": {
-    "name": "Abandoned Ruins",
+    "name": "捨てられた廃墟",
     "type": "instancelayer"
   },
   "111017": {
-    "name": "Merchant's Yard",
+    "name": "貿易団の野積場",
     "type": "instancelayer"
   },
   "111025": {
-    "name": "Drakana Pool",
+    "name": "ドラカナ溜まり",
     "type": "instancelayer"
   },
   "111026": {
-    "name": "Canyon Dispatch Area",
+    "name": "峡谷の派遣地",
     "type": "instancelayer"
   },
   "111027": {
-    "name": "Quai Campsite",
+    "name": "クァイリンの野営地",
     "type": "instancelayer"
   },
   "111028": {
-    "name": "Nameless Cemetery",
+    "name": "名もなき墓地",
     "type": "instancelayer"
   },
   "111029": {
-    "name": "Hidden Cave",
+    "name": "隠れ洞窟",
     "type": "instancelayer"
   },
   "111030": {
-    "name": "Moslan Forest",
+    "name": "モスランの森",
     "type": "instancelayer"
   },
   "111031": {
-    "name": "Northern Altar",
+    "name": "北部祭壇",
     "type": "instancelayer"
   },
   "111032": {
-    "name": "Eastern Altar",
+    "name": "東部祭壇",
     "type": "instancelayer"
   },
   "111033": {
-    "name": "Earth Altar",
+    "name": "地の祭壇",
     "type": "instancelayer"
   },
   "111034": {
-    "name": "Blades Camp",
+    "name": "ブレイド団の幕舎",
     "type": "instancelayer"
   },
   "111035": {
-    "name": "Shuttered Workstation",
+    "name": "封鎖された作業場",
     "type": "instancelayer"
   },
   "111036": {
-    "name": "Blades Supply Storage",
+    "name": "ブレイド団の補給倉庫",
     "type": "instancelayer"
   },
   "111037": {
-    "name": "Prisoners Grotto",
+    "name": "囚人の洞窟",
     "type": "instancelayer"
   },
   "111038": {
-    "name": "Muqaka's Quarters",
+    "name": "ムカカの幕舎",
     "type": "instancelayer"
   },
   "111039": {
-    "name": "Lagta Fafnite Storage",
+    "name": "ラグタ ファフナイト倉庫",
     "type": "instancelayer"
   },
   "111040": {
-    "name": "Black Claw Village",
+    "name": "黒爪族の集落",
     "type": "instancelayer"
   },
   "112": {
-    "name": "Aullaeu Village",
+    "name": "アウルラウの集落",
     "type": "instancelayer"
   },
   "113": {
-    "name": "Canyon Campsite",
+    "name": "峡谷の野営地",
     "type": "instancelayer"
   },
   "12": {
-    "name": "Stormslumber Snowfield",
+    "name": "暴風が眠る雪原",
     "type": "matching"
   },
   "14": {
-    "name": "Sandstorm Temple",
+    "name": "砂嵐の寺院",
     "type": "matching"
   },
   "141000": {
-    "name": "Searcher Sudka's Recon Site",
+    "name": "探索者スドゥカの偵察地",
     "type": "instancelayer"
   },
   "141001": {
-    "name": "Brutal Zrash's Recon Site",
+    "name": "残忍なジュラシュの偵察地",
     "type": "instancelayer"
   },
   "141002": {
-    "name": "Cruel Rodar's Recon Site",
+    "name": "残酷なロダルの偵察地",
     "type": "instancelayer"
   },
   "141003": {
-    "name": "Disciplinant Corag's Recon Site",
+    "name": "修行者コラグの偵察地",
     "type": "instancelayer"
   },
   "141004": {
-    "name": "Officer Darc's Recon Site",
+    "name": "補佐官ダルクの偵察地",
     "type": "instancelayer"
   },
   "141005": {
-    "name": "Watcher Brons' Recon Site",
+    "name": "監視者ブロンスの偵察地",
     "type": "instancelayer"
   },
   "141006": {
-    "name": "Annihilator Kardon's Recon Site",
+    "name": "絶滅者カルドンの偵察地",
     "type": "instancelayer"
   },
   "141007": {
-    "name": "Mad Lucant's Recon Site",
+    "name": "狂気のルカントの偵察地",
     "type": "instancelayer"
   },
   "141008": {
-    "name": "Predator Zrak's Recon Site",
+    "name": "捕食者ズラックの偵察地",
     "type": "instancelayer"
   },
   "141009": {
-    "name": "Ravager Krovan's Recon Site",
+    "name": "破滅者クロバンの偵察地",
     "type": "instancelayer"
   },
   "141010": {
-    "name": "Bonechilling Rokand's Recon Site",
+    "name": "戦慄のロカンドの偵察地",
     "type": "instancelayer"
   },
   "141011": {
-    "name": "Immortal Garmon's Recon Site",
+    "name": "不滅者ガルモの偵察地",
     "type": "instancelayer"
   },
   "141012": {
-    "name": "Destoryer Krovan's Recon Site",
+    "name": "破壊者クロシの偵察地",
     "type": "instancelayer"
   },
   "141013": {
-    "name": "Torturer Tregon's Recon Site",
+    "name": "拷問者トレゴンの偵察地",
     "type": "instancelayer"
   },
   "141014": {
-    "name": "Slayer Kroms' Recon Site",
+    "name": "駆逐者クルムスの偵察地",
     "type": "instancelayer"
   },
   "141015": {
-    "name": "Captor Kalahanta's Recon Site",
+    "name": "奪取者カラハンタの偵察地",
     "type": "instancelayer"
   },
   "141016": {
-    "name": "Terminator Antakhara's Recon Site",
+    "name": "終結者アンタカラの偵察地",
     "type": "instancelayer"
   },
   "141017": {
-    "name": "Crusher Vajradant's Recon Site",
+    "name": "破砕者バズラダントの偵察地",
     "type": "instancelayer"
   },
   "141018": {
-    "name": "Patalajya the Scourged Recon Site",
+    "name": "災厄のパタラジャの偵察地",
     "type": "instancelayer"
   },
   "141019": {
-    "name": "Archivist Varnaksha's Recon Site",
+    "name": "記録官バルナクシャの偵察地",
     "type": "instancelayer"
   },
   "141020": {
-    "name": "Arbiter Meganodh's Recon Site",
+    "name": "仲裁官メガナドの偵察地",
     "type": "instancelayer"
   },
   "141021": {
-    "name": "Sunderer Ugravahu's Recon Site",
+    "name": "断絶のウグラバフの偵察地",
     "type": "instancelayer"
   },
   "142000": {
-    "name": "Graverobber Den",
+    "name": "墓地の盗掘屋の巣窟",
     "type": "instancelayer"
   },
   "142001": {
-    "name": "Sanctum Outskirts Watch",
+    "name": "聖所外郭の監視隊",
     "type": "instancelayer"
   },
   "142002": {
-    "name": "Rubek Thieves' Occupied Territory",
+    "name": "ルベック盗賊団の占拠地",
     "type": "instancelayer"
   },
   "142003": {
-    "name": "Corrupted Forester Ruins",
+    "name": "堕落した森の守り人の廃墟",
     "type": "instancelayer"
   },
   "142004": {
-    "name": "Blades Temporary Outpost",
+    "name": "ブレイド団の臨時哨所",
     "type": "instancelayer"
   },
   "142005": {
-    "name": "Logger's Rest Ruins",
+    "name": "木こりの休憩所の廃墟",
     "type": "instancelayer"
   },
   "142006": {
-    "name": "Forest Marauder Campsite",
+    "name": "森の略奪者の野営地",
     "type": "instancelayer"
   },
   "142007": {
-    "name": "Corrupted Forester Ruins Treasure Storage",
+    "name": "堕落した森の守り人の廃墟の宝物庫",
     "type": "quest"
   },
   "142008": {
-    "name": "Blades Temporary Outpost Treasure Storage",
+    "name": "ブレイド団の臨時哨所の宝物庫",
     "type": "quest"
   },
   "142009": {
-    "name": "Logger's Rest Ruins Treasure Storage",
+    "name": "木こりの休憩所の廃墟の宝物庫",
     "type": "quest"
   },
   "142010": {
-    "name": "Graverobber Den Treasure Storage",
+    "name": "墓地の盗掘屋の巣窟の宝物庫",
     "type": "quest"
   },
   "142011": {
-    "name": "Sanctum Outskirts Watch Treasure Storage",
+    "name": "聖所外郭の監視隊の宝物庫",
     "type": "quest"
   },
   "142012": {
-    "name": "Rubek Thieves' Occupied Territory Treasure Storage",
+    "name": "ルベック盗賊団の占拠地の宝物庫",
     "type": "quest"
   },
   "142013": {
-    "name": "Forest Marauder Campsite Treasure Storage",
+    "name": "森の略奪者の野営地の宝物庫",
     "type": "quest"
   },
   "142014": {
-    "name": "Legion Base Ruins",
+    "name": "レギオン基地の廃墟",
     "type": "instancelayer"
   },
   "142015": {
-    "name": "Flauke Legion Outpost",
+    "name": "プラーク レギオン哨所",
     "type": "instancelayer"
   },
   "142016": {
-    "name": "Detlef Thieves Camp",
+    "name": "デトレフ盗賊団の野営地",
     "type": "instancelayer"
   },
   "142017": {
-    "name": "Latrima Outpost",
+    "name": "ラトリマの監視所",
     "type": "instancelayer"
   },
   "142018": {
-    "name": "Granach's Hideout",
+    "name": "クラナフの隠れ家",
     "type": "instancelayer"
   },
   "142019": {
-    "name": "Barahta Extermination Unit Outpost",
+    "name": "バラタの摘発部隊哨所",
     "type": "instancelayer"
   },
   "142020": {
-    "name": "Amurahta Surveillance Base",
+    "name": "アムラタ監視基地",
     "type": "instancelayer"
   },
   "142021": {
-    "name": "Andsha Forward Base",
+    "name": "アンドシャ前哨基地",
     "type": "instancelayer"
   },
   "143000": {
-    "name": "Ice Canyon Campsite",
+    "name": "氷の峡谷の野営地",
     "type": "instancelayer"
   },
   "143001": {
-    "name": "Ashen Campsite",
+    "name": "灰の野営地",
     "type": "instancelayer"
   },
   "143004": {
-    "name": "Cursed Snowfield Hideout",
+    "name": "呪われた雪原隠れ家",
     "type": "instancelayer"
   },
   "143005": {
-    "name": "Fallen Temple Ruins",
+    "name": "墜落した神殿廃墟",
     "type": "instancelayer"
   },
   "143008": {
-    "name": "Dharvata Surveillance Base",
+    "name": "ダルバタ監視基地",
     "type": "instancelayer"
   },
   "143011": {
-    "name": "Dinakra Sky Outpost",
+    "name": "ディナクラ空中哨所",
     "type": "instancelayer"
   },
   "151001": {
-    "name": "Worshiper Dekish's Recon Site",
+    "name": "崇拝者ドキシュの偵察地",
     "type": "instancelayer"
   },
   "151002": {
-    "name": "Scout Sahar's Recon Site",
+    "name": "探索者サハールの偵察地",
     "type": "instancelayer"
   },
   "151003": {
-    "name": "Destroyer Tarka's Recon Site",
+    "name": "破壊者タルカの偵察地",
     "type": "instancelayer"
   },
   "151004": {
-    "name": "Watcher Sandha's Recon Site",
+    "name": "監視者サンドハの偵察地",
     "type": "instancelayer"
   },
   "151005": {
-    "name": "Praetorian Irima's Recon Site",
+    "name": "親衛隊イラマの偵察地",
     "type": "instancelayer"
   },
   "151006": {
-    "name": "Cold-Hearted Kandak's Recon Site",
+    "name": "冷酷なカンダークの偵察地",
     "type": "instancelayer"
   },
   "151007": {
-    "name": "Hunter Danahan's Recon Site",
+    "name": "ハンター ダナハンの偵察地",
     "type": "instancelayer"
   },
   "151008": {
-    "name": "Heartless Mozant's Recon Site",
+    "name": "無情なモザントの偵察地",
     "type": "instancelayer"
   },
   "151009": {
-    "name": "Enraged Karsha's Recon Site",
+    "name": "怒りのカルシャの偵察地",
     "type": "instancelayer"
   },
   "151010": {
-    "name": "Watcher Krache's Recon Site",
+    "name": "番人クラーチェの偵察地",
     "type": "instancelayer"
   },
   "151011": {
-    "name": "Executioner Nemok's Recon Site",
+    "name": "処刑者ネモークの偵察地",
     "type": "instancelayer"
   },
   "151012": {
-    "name": "Officer Barha's Recon Site",
+    "name": "補佐官バルハの偵察地",
     "type": "instancelayer"
   },
   "151013": {
-    "name": "Cunning Dmark's Recon Site",
+    "name": "狡猾なドーマクの偵察地",
     "type": "instancelayer"
   },
   "151014": {
-    "name": "Scout Bagsh's Recon Site",
+    "name": "捜索隊バグシュの偵察地",
     "type": "instancelayer"
   },
   "151015": {
-    "name": "Tracker Dazran's Recon Site",
+    "name": "追跡者タズランの偵察地",
     "type": "instancelayer"
   },
   "151016": {
-    "name": "Fanatic Dvahn's Recon Site",
+    "name": "狂信者ドヴァンの偵察地",
     "type": "instancelayer"
   },
   "151017": {
-    "name": "Ascetic Narat's Recon Site",
+    "name": "修道士ナラトの偵察地",
     "type": "instancelayer"
   },
   "151018": {
-    "name": "Truthseeker Taneetch's Recon Site",
+    "name": "求道者タニチェの偵察地",
     "type": "instancelayer"
   },
   "151019": {
-    "name": "Executioner Varkash's Recon Site",
+    "name": "虐殺者バルカシュの偵察地",
     "type": "instancelayer"
   },
   "151020": {
-    "name": "Gruesome Moratya's Recon Site",
+    "name": "不気味なモラティアの偵察地",
     "type": "instancelayer"
   },
   "151021": {
-    "name": "Unyielding Batagon's Recon Site",
+    "name": "不屈のバタゴンの偵察地",
     "type": "instancelayer"
   },
   "151022": {
-    "name": "Swift Xanag's Recon Site",
+    "name": "素早いサナグの偵察地",
     "type": "instancelayer"
   },
   "152000": {
-    "name": "Deserter Encampment",
+    "name": "脱走兵の宿営地",
     "type": "instancelayer"
   },
   "152001": {
-    "name": "Romlon's Hideout",
+    "name": "ロムロンの隠れ家",
     "type": "instancelayer"
   },
   "152002": {
-    "name": "Forest Shade Execution Site",
+    "name": "森の影処刑場",
     "type": "instancelayer"
   },
   "152003": {
-    "name": "Renegade Hideout",
+    "name": "裏切り者の隠れ家",
     "type": "instancelayer"
   },
   "152005": {
-    "name": "Plateau Hill Base",
+    "name": "高原の丘基地",
     "type": "instancelayer"
   },
   "152006": {
-    "name": "Deserter Encampment Treasure Storage",
+    "name": "脱走兵の宿営地の宝物庫",
     "type": "quest"
   },
   "152007": {
-    "name": "Romlon's Hideout Treasure Storage",
+    "name": "ロムロンの隠れ家の宝物庫",
     "type": "quest"
   },
   "152008": {
-    "name": "Forest Shade Execution Site Treasure Storage",
+    "name": "森の影処刑場の宝物庫",
     "type": "quest"
   },
   "152009": {
-    "name": "Renegade Hideout Treasure Storage",
+    "name": "裏切り者の隠れ家の宝物庫",
     "type": "quest"
   },
   "152010": {
-    "name": "Plateau Hill Base Treasure Storage",
+    "name": "高原の丘基地の宝物庫",
     "type": "quest"
   },
   "152011": {
-    "name": "Suspicious Ruins",
+    "name": "怪しい遺跡地",
     "type": "instancelayer"
   },
   "153001": {
-    "name": "Ugaros Thieves Campsite",
+    "name": "ウガロス盗賊団の野営地",
     "type": "instancelayer"
   },
   "153002": {
-    "name": "Miros Post",
+    "name": "ミロスの哨所",
     "type": "instancelayer"
   },
   "153003": {
-    "name": "Poacher's Base",
+    "name": "密猟者の拠点",
     "type": "instancelayer"
   },
   "153004": {
-    "name": "Gargos Thieves Campsite",
+    "name": "カルゴス盗賊団の野営地",
     "type": "instancelayer"
   },
   "153005": {
-    "name": "Canyon Thieves Den",
+    "name": "峡谷の盗賊巣窟",
     "type": "instancelayer"
   },
   "153006": {
-    "name": "Ugaros Thieves Campsite Treasure Storage",
+    "name": "ウガロス盗賊団の野営地の宝物庫",
     "type": "quest"
   },
   "153007": {
-    "name": "Miros Post Treasure Storage",
+    "name": "ミロスの哨所の宝物庫",
     "type": "quest"
   },
   "153008": {
-    "name": "Poacher's Base Treasure Storage",
+    "name": "密猟者の拠点の宝物庫",
     "type": "quest"
   },
   "153009": {
-    "name": "Gargos Thieves Campsite Treasure Storage",
+    "name": "カルゴス盗賊団の野営地の宝物庫",
     "type": "quest"
   },
   "153010": {
-    "name": "Canyon Thieves Den Treasure Storage",
+    "name": "峡谷の盗賊巣窟の宝物庫",
     "type": "quest"
   },
   "153011": {
-    "name": "Hernon Thieves Den",
+    "name": "ヘルノン盗賊団の巣窟",
     "type": "instancelayer"
   },
   "153012": {
-    "name": "Golden Branch Stronghold Ruins",
+    "name": "黄金の枝駐屯地の廃墟",
     "type": "instancelayer"
   },
   "153013": {
-    "name": "Rogue Sky Fortress",
+    "name": "無法者の空中要塞",
     "type": "instancelayer"
   },
   "154001": {
-    "name": "Cohta Outpost",
+    "name": "コフタの監視所",
     "type": "instancelayer"
   },
   "154002": {
-    "name": "Mantasch Patrol Base",
+    "name": "マンタッシュ巡察隊の拠点",
     "type": "instancelayer"
   },
   "154003": {
-    "name": "Sehna Outpost",
+    "name": "セフナの監視所",
     "type": "instancelayer"
   },
   "154004": {
-    "name": "Sabga Balaur Campsite",
+    "name": "サーブガ龍族の野営地",
     "type": "instancelayer"
   },
   "154005": {
-    "name": "Maktashan Outpost",
+    "name": "マクターシャの監視所",
     "type": "instancelayer"
   },
   "154006": {
-    "name": "Cohta Outpost Treasure Storage",
+    "name": "コフタの監視所の宝物庫",
     "type": "quest"
   },
   "154007": {
-    "name": "Mantasch Patrol Treasure Storage",
+    "name": "マンタッシュ巡察隊の宝物庫",
     "type": "quest"
   },
   "154008": {
-    "name": "Sehna Outpost Treasure Storage",
+    "name": "セフナの監視所の宝物庫",
     "type": "quest"
   },
   "154009": {
-    "name": "Sabga Balaur Campsite Treasure Storage",
+    "name": "サーブガ龍族の野営地の宝物庫",
     "type": "quest"
   },
   "154010": {
-    "name": "Maktashan Outpost Treasure Storage",
+    "name": "マクターシャの監視所の宝物庫",
     "type": "quest"
   },
   "154011": {
-    "name": "Digunaka Forward Base",
+    "name": "ディグナーガ前哨基地",
     "type": "instancelayer"
   },
   "154012": {
-    "name": "Hidden Vein Outpost",
+    "name": "隠された鉱脈哨所",
     "type": "instancelayer"
   },
   "156000": {
-    "name": "Subjugation Closed"
+    "name": "討伐戦終了"
   },
   "156001": {
-    "name": "Subjugation Closed"
+    "name": "討伐戦終了"
   },
   "156002": {
-    "name": "Subjugation Closed"
+    "name": "討伐戦終了"
   },
   "156010": {
-    "name": "Beritra Brigade Fortress"
+    "name": "ベリトラ軍団要塞"
   },
   "156011": {
-    "name": "Beritra Brigade Fortress"
+    "name": "ベリトラ軍団要塞"
   },
   "156012": {
-    "name": "Beritra Brigade Fortress"
+    "name": "ベリトラ軍団要塞"
   },
   "156030": {
-    "name": "Orcus's Grave"
+    "name": "オルクスの墓"
   },
   "156031": {
-    "name": "Orcus's Grave"
+    "name": "オルクスの墓"
   },
   "156032": {
-    "name": "Orcus's Grave"
+    "name": "オルクスの墓"
   },
   "156033": {
-    "name": "Orcus's Grave"
+    "name": "オルクスの墓"
   },
   "156034": {
-    "name": "Orcus's Grave"
+    "name": "オルクスの墓"
   },
   "156035": {
-    "name": "Orcus's Grave"
+    "name": "オルクスの墓"
   },
   "156040": {
-    "name": "Fafnite Forge"
+    "name": "ファフナイト精錬所"
   },
   "156041": {
-    "name": "Fafnite Forge"
+    "name": "ファフナイト精錬所"
   },
   "156042": {
-    "name": "Fafnite Forge"
+    "name": "ファフナイト精錬所"
   },
   "156043": {
-    "name": "Fafnite Forge"
+    "name": "ファフナイト精錬所"
   },
   "156044": {
-    "name": "Fafnite Forge"
+    "name": "ファフナイト精錬所"
   },
   "156045": {
-    "name": "Fafnite Forge"
+    "name": "ファフナイト精錬所"
   },
   "160000": {
-    "name": "Silent Graveyard",
+    "name": "沈黙の墓域",
     "type": "growth"
   },
   "160001": {
-    "name": "Fafnite Amphitheater",
+    "name": "ファフナイト盆地",
     "type": "growth"
   },
   "160002": {
-    "name": "Silent Graveyard",
+    "name": "沈黙の墓域",
     "type": "growth"
   },
   "160003": {
-    "name": "Silent Graveyard",
+    "name": "沈黙の墓域",
     "type": "growth"
   },
   "160004": {
-    "name": "Fafnite Amphitheater",
+    "name": "ファフナイト盆地",
     "type": "growth"
   },
   "160005": {
-    "name": "Fafnite Amphitheater",
+    "name": "ファフナイト盆地",
     "type": "growth"
   },
   "200001": {
-    "name": "Dream Crossroad",
+    "name": "夢の分かれ道",
     "type": "quest"
   },
   "200002": {
-    "name": "Dream of Torment",
+    "name": "苦痛の夢",
     "type": "ascension"
   },
   "200003": {
-    "name": "Nightmare",
+    "name": "悪夢",
     "type": "bosschallenge"
   },
   "200004": {
-    "name": "Narun's Dream",
+    "name": "ナルンの夢",
     "type": "ascension"
   },
   "200005": {
-    "name": "Subspace of Ascension",
+    "name": "覚醒の亜空間",
     "type": "ascension"
   },
   "200006": {
-    "name": "Dream of Shattered Fragments",
+    "name": "壊れた破片の夢",
     "type": "ascension"
   },
   "21": {
-    "name": "Chaotic Lower Reshanta",
+    "name": "混沌のエレシュランタ下層",
     "type": "abyss"
   },
   "210001": {
-    "name": "Coastal Cave",
+    "name": "海岸洞窟",
     "type": "quest"
   },
   "210002": {
-    "name": "Etheria Rift",
+    "name": "エテリア亀裂",
     "type": "quest"
   },
   "210003": {
-    "name": "Dream Remnants",
+    "name": "夢の残骸",
     "type": "ascension"
   },
   "210004": {
-    "name": "Illusion Sanctum",
+    "name": "幻影の聖所",
     "type": "quest"
   },
   "210006": {
-    "name": "Root Cellar",
+    "name": "根の貯蔵庫",
     "type": "quest"
   },
   "210007": {
-    "name": "Aullaeu Altar",
+    "name": "アウルラウ祭壇",
     "type": "quest"
   },
   "210008": {
-    "name": "Illusion Hideout",
+    "name": "幻影の隠れ家",
     "type": "quest"
   },
   "210009": {
-    "name": "Zumion Relic Storage",
+    "name": "ズミオン遺物保管所",
     "type": "quest"
   },
   "210010": {
-    "name": "Nahid Disposal Plant",
+    "name": "ナヒード廃棄物処理場",
     "type": "quest"
   },
   "210011": {
-    "name": "Ardus Shrine",
+    "name": "エルデス神殿",
     "type": "quest"
   },
   "210012": {
-    "name": "Illicit Trade Spot",
+    "name": "闇取引の接触地",
     "type": "quest"
   },
   "210013": {
-    "name": "Forgotten Battlefield",
+    "name": "忘れられた戦場",
     "type": "ascension"
   },
   "210014": {
-    "name": "Zikel's Collapsed Barracks",
+    "name": "崩れたジケルの兵営",
     "type": "ascension"
   },
   "210015": {
-    "name": "Zikel's Distorted Dream",
+    "name": "歪んだジケルの夢",
     "type": "ascension"
   },
   "210016": {
-    "name": "Clione Lake Cave",
+    "name": "クリオネ湖洞窟",
     "type": "quest"
   },
   "210017": {
-    "name": "Fountain of Life",
+    "name": "生命の泉",
     "type": "quest"
   },
   "210018": {
-    "name": "Light Crash Site",
+    "name": "光の墜落地",
     "type": "quest"
   },
   "210019": {
-    "name": "Lepharist Research Center",
+    "name": "レパル団研究所",
     "type": "quest"
   },
   "210027": {
-    "name": "Chloris's Abyss",
+    "name": "クロリスの深淵",
     "type": "ascension"
   },
   "220001": {
-    "name": "Crypt",
+    "name": "地下の石室",
     "type": "quest"
   },
   "220002": {
-    "name": "Zikel's Sanctum",
+    "name": "ジケルの聖所",
     "type": "quest"
   },
   "220003": {
-    "name": "Dream Remnants",
+    "name": "夢の残骸",
     "type": "ascension"
   },
   "220006": {
-    "name": "Collapsed Oracle",
+    "name": "崩れた神託所",
     "type": "quest"
   },
   "220007": {
-    "name": "Root of the Sacred Tree",
+    "name": "聖樹の根",
     "type": "quest"
   },
   "220008": {
-    "name": "Dranactus Underkeep",
+    "name": "ドラナクタスの地下牢獄",
     "type": "quest"
   },
   "220009": {
-    "name": "Destruction Archon Underground Fortress",
+    "name": "破壊のアルコンの地下要塞",
     "type": "quest"
   },
   "220010": {
-    "name": "Blades Hideout",
+    "name": "ブレイド団の隠れ家",
     "type": "quest"
   },
   "220011": {
-    "name": "Impetusium",
+    "name": "インペトシウム",
     "type": "quest"
   },
   "220012": {
-    "name": "Etheria Rift",
+    "name": "エテリア亀裂",
     "type": "quest"
   },
   "220013": {
-    "name": "Forgotten Battlefield",
+    "name": "忘れられた戦場",
     "type": "ascension"
   },
   "220014": {
-    "name": "Kaisinel's Collapsed Sanctum",
+    "name": "崩れたカイジネルの聖所",
     "type": "ascension"
   },
   "220015": {
-    "name": "Kaisinel's Distorted Dream",
+    "name": "歪んだカイジネルの夢",
     "type": "ascension"
   },
   "220016": {
-    "name": "Shaded Cave",
+    "name": "影の洞窟",
     "type": "quest"
   },
   "220017": {
-    "name": "Mysterious Grotto",
+    "name": "謎の岩窟",
     "type": "quest"
   },
   "220018": {
-    "name": "Tunapre Lake Cave",
+    "name": "トゥナプレー湖洞窟",
     "type": "quest"
   },
   "220019": {
-    "name": "Blades Secret Storage",
+    "name": "ブレイド団の秘密倉庫",
     "type": "quest"
   },
   "220020": {
-    "name": "Executioner's Tower",
+    "name": "処刑者の塔",
     "type": "quest"
   },
   "220021": {
-    "name": "Floating Temple of Arkanis",
+    "name": "アルカニス空中神殿",
     "type": "quest"
   },
   "220022": {
-    "name": "Fire Temple",
+    "name": "炎の神殿",
     "type": "quest"
   },
   "220026": {
-    "name": "Slumbering Frozen Lake Cave",
+    "name": "眠れる氷の湖洞窟",
     "type": "quest"
   },
   "220027": {
-    "name": "Sigebert's Abyss",
+    "name": "シゲヴェルトの深淵",
     "type": "ascension"
   },
   "23": {
-    "name": "Chaotic Middle Reshanta",
+    "name": "混沌のエレシュランタ中層",
     "type": "abyss"
   },
   "24": {
-    "name": "Chaotic Upper Reshanta",
+    "name": "混沌のエレシュランタ表層",
     "type": "abyss"
   },
   "310001": {
-    "name": "Poacher's Den",
+    "name": "密猟者の巣窟",
     "type": "seal"
   },
   "310002": {
-    "name": "Spirit Flower Cave",
+    "name": "精霊の花の洞窟",
     "type": "seal"
   },
   "310003": {
-    "name": "Cursed Hideout",
+    "name": "呪われた隠れ家",
     "type": "seal"
   },
   "310004": {
-    "name": "Mysterious Mushroom Cave",
+    "name": "神秘的なキノコ洞窟",
     "type": "seal"
   },
   "310005": {
-    "name": "Cave of the Defeated",
+    "name": "敗残兵の洞窟",
     "type": "seal"
   },
   "310006": {
-    "name": "Filth Pit",
+    "name": "汚物穴",
     "type": "seal"
   },
   "310007": {
-    "name": "Illusionary Ruins",
+    "name": "幻影の廃墟",
     "type": "seal"
   },
   "310008": {
-    "name": "Dehinon's Hideout",
+    "name": "デヒノンの隠れ家",
     "type": "seal"
   },
   "310009": {
-    "name": "Guardian's Armory",
+    "name": "ガーディアンの武器庫",
     "type": "seal"
   },
   "310010": {
-    "name": "Cave of the Desperate",
+    "name": "絶望した者の洞窟",
     "type": "seal"
   },
   "310011": {
-    "name": "Hidden Valley",
+    "name": "隠された谷",
     "type": "seal"
   },
   "310012": {
-    "name": "Distorted Cave",
+    "name": "歪んだ洞窟",
     "type": "seal"
   },
   "310013": {
-    "name": "Corrupted Spiritmaster's Residence",
+    "name": "堕落したスピリットマスターの住処",
     "type": "seal"
   },
   "310014": {
-    "name": "Karat's Nest",
+    "name": "カラットの巣",
     "type": "seal"
   },
   "310015": {
-    "name": "Kius' Residence",
+    "name": "キウスの住処",
     "type": "seal"
   },
   "310016": {
-    "name": "Lupyllini Habitat",
+    "name": "ルフィーリニ棲息地",
     "type": "seal"
   },
   "310017": {
-    "name": "Looted Repository",
+    "name": "奪われた貯蔵庫",
     "type": "seal"
   },
   "310018": {
-    "name": "Abandoned Odylium Cave",
+    "name": "捨てられたオディウム洞窟",
     "type": "seal"
   },
   "310019": {
-    "name": "Solitary Rock Tomb",
+    "name": "寂しい岩の墓",
     "type": "seal"
   },
   "310020": {
-    "name": "Kidnapper's Hold",
+    "name": "誘拐と監禁の部屋",
     "type": "seal"
   },
   "310021": {
-    "name": "Marsh Library",
+    "name": "沼地の書庫",
     "type": "seal"
   },
   "310022": {
-    "name": "Krall Barracks",
+    "name": "クラル兵営",
     "type": "seal"
   },
   "310023": {
-    "name": "Canyon Library",
+    "name": "峡谷の書庫",
     "type": "seal"
   },
   "310024": {
-    "name": "Chilly Hideout",
+    "name": "冷涼の隠れ家",
     "type": "seal"
   },
   "310025": {
-    "name": "Cave Storage",
+    "name": "洞窟倉庫",
     "type": "seal"
   },
   "310026": {
-    "name": "Grave of the Wrathful Dead",
+    "name": "怒りの亡者の墓",
     "type": "seal"
   },
   "310027": {
-    "name": "Akilo Thieves Den",
+    "name": "アキロ盗賊団の巣窟",
     "type": "seal"
   },
   "310028": {
-    "name": "Deadly Poison Den",
+    "name": "猛毒の巣窟",
     "type": "seal"
   },
   "310029": {
-    "name": "Herb Cave",
+    "name": "薬草洞窟",
     "type": "seal"
   },
   "310030": {
-    "name": "Looted Pilgrim's Rest",
+    "name": "奪われた巡礼者の休憩所",
     "type": "seal"
   },
   "310031": {
-    "name": "Targoth's Cave",
+    "name": "タルゴスの洞窟",
     "type": "seal"
   },
   "310032": {
-    "name": "Broken Hall of Knowledge",
+    "name": "崩れた知識の殿堂",
     "type": "seal"
   },
   "310033": {
-    "name": "Deep Underground Cave",
+    "name": "深い地下洞窟",
     "type": "seal"
   },
   "310034": {
-    "name": "Fortress Jail",
+    "name": "要塞の牢獄",
     "type": "seal"
   },
   "310035": {
-    "name": "Scribe's Room",
+    "name": "筆写者の部屋",
     "type": "seal"
   },
   "310036": {
-    "name": "Red Dragon Altar",
+    "name": "赤い龍の祭壇",
     "type": "seal"
   },
   "310037": {
-    "name": "Wild Biruta Habitat",
+    "name": "野生のビロータ棲息地",
     "type": "seal"
   },
   "310038": {
-    "name": "Fissure Cave",
+    "name": "隙間の洞窟",
     "type": "seal"
   },
   "310039": {
-    "name": "Renegade Base",
+    "name": "裏切り者の拠点",
     "type": "seal"
   },
   "310040": {
-    "name": "Klaw Den",
+    "name": "ニュートの巣窟",
     "type": "seal"
   },
   "310041": {
-    "name": "Rift Cave",
+    "name": "亀裂の洞窟",
     "type": "seal"
   },
   "310042": {
-    "name": "Deep and Dark Pit",
+    "name": "深くて真っ暗な穴",
     "type": "seal"
   },
   "310043": {
-    "name": "Wild Kuru Habitat",
+    "name": "野生のクル棲息地",
     "type": "seal"
   },
   "310044": {
-    "name": "Fortress Grave",
+    "name": "要塞の墓",
     "type": "seal"
   },
   "310045": {
-    "name": "Anguish Hideout",
+    "name": "嘆きの隠れ家",
     "type": "seal"
   },
   "310046": {
-    "name": "Aullaeu Oratory",
+    "name": "アウルラウの祈祷室",
     "type": "seal"
   },
   "310047": {
-    "name": "Prison of Exiles",
+    "name": "追放者の牢獄",
     "type": "seal"
   },
   "310048": {
-    "name": "Kraka's Altar",
+    "name": "クラカの祭壇",
     "type": "seal"
   },
   "310049": {
-    "name": "Dratona Outpost",
+    "name": "ドゥラトナ哨所",
     "type": "seal"
   },
   "310050": {
-    "name": "Balaur Scouts Campsite",
+    "name": "龍族偵察隊の野営地",
     "type": "seal"
   },
   "310051": {
-    "name": "Altar of Hope",
+    "name": "希望の祭壇",
     "type": "seal"
   },
   "310052": {
-    "name": "Experimental Prison Compound",
+    "name": "実験体収容所",
     "type": "seal"
   },
   "310053": {
-    "name": "Balaur Scouts Outpost",
+    "name": "龍族の監視所",
     "type": "seal"
   },
   "310054": {
-    "name": "Hidden Ruins Altar",
+    "name": "隠された廃墟の祭壇",
     "type": "seal"
   },
   "310055": {
-    "name": "Laborers Training Ground",
+    "name": "労働者の訓練所",
     "type": "seal"
   },
   "310056": {
-    "name": "Konutin's Cave",
+    "name": "コヌティの洞窟",
     "type": "seal"
   },
   "310057": {
-    "name": "Plantation Storage",
+    "name": "栽培地の倉庫",
     "type": "seal"
   },
   "310058": {
-    "name": "Bibliophile's Grave",
+    "name": "読書家の墓地",
     "type": "seal"
   },
   "310059": {
-    "name": "Forest Library",
+    "name": "森の書庫",
     "type": "seal"
   },
   "310060": {
-    "name": "Collapsed Fortress Basement",
+    "name": "崩れた要塞の地下室",
     "type": "seal"
   },
   "310061": {
-    "name": "Hidden Lepharist Research Center",
+    "name": "隠されたレパル団研究所",
     "type": "seal"
   },
   "310062": {
-    "name": "Abandoned Life Hideout",
+    "name": "捨てられた生命の隠れ家",
     "type": "seal"
   },
   "310063": {
-    "name": "Life Awakening Site",
+    "name": "生命の覚醒所",
     "type": "seal"
   },
   "310064": {
-    "name": "Sunken Ancient Legacy",
+    "name": "沈んだ古代の遺産",
     "type": "seal"
   },
   "310065": {
-    "name": "Ishtar Logistics Base",
+    "name": "イシュタルの兵站基地",
     "type": "seal"
   },
   "310066": {
-    "name": "Drok the Outlaw's Den",
+    "name": "無法者ドラックの巣窟",
     "type": "seal"
   },
   "310067": {
-    "name": "Filthy Cave",
+    "name": "汚い洞窟",
     "type": "seal"
   },
   "310068": {
-    "name": "Defunct Creion Laboratory",
+    "name": "失敗したクレイオンの実験室",
     "type": "seal"
   },
   "310069": {
-    "name": "Fallen Haven",
+    "name": "荒廃した安息所",
     "type": "seal"
   },
   "310070": {
-    "name": "Life Daeva Library",
+    "name": "生命のディーヴァの書庫",
     "type": "seal"
   },
   "310071": {
-    "name": "Lepharist Special Operations Research Center",
+    "name": "レパル団特務部隊研究所",
     "type": "seal"
   },
   "310072": {
-    "name": "Ratcatchers Base",
+    "name": "ネズミ捕り本拠地",
     "type": "seal"
   },
   "310073": {
-    "name": "Gravarax Research Center",
+    "name": "グラバラックス研究所",
     "type": "seal"
   },
   "310074": {
-    "name": "Manduri Habitat",
+    "name": "マンドリー棲息地",
     "type": "seal"
   },
   "310075": {
-    "name": "Mutated Drana Plantation",
+    "name": "変異ドラナ栽培地",
     "type": "seal"
   },
   "310076": {
-    "name": "Sunken Temple",
+    "name": "水没した寺院",
     "type": "seal"
   },
   "310077": {
-    "name": "Barrier Tower Fortress Vault",
+    "name": "結界塔要塞の金庫",
     "type": "seal"
   },
   "310078": {
-    "name": "Forgotten Spring",
+    "name": "忘れられた泉",
     "type": "seal"
   },
   "310079": {
-    "name": "Fugitive Hideout",
+    "name": "脱走者の隠れ家",
     "type": "seal"
   },
   "310080": {
-    "name": "Iagosh's Secret Storage",
+    "name": "イアゴシュの秘密倉庫",
     "type": "seal"
   },
   "320001": {
-    "name": "Abandoned Memorial Room",
+    "name": "捨てられた追悼室",
     "type": "seal"
   },
   "320002": {
-    "name": "Trickster's Den",
+    "name": "詐欺師の巣窟",
     "type": "seal"
   },
   "320003": {
-    "name": "Abandoned One's Grave",
+    "name": "捨てられた者の墓",
     "type": "seal"
   },
   "320004": {
-    "name": "Dratona Cave",
+    "name": "ドゥラトナ洞窟",
     "type": "seal"
   },
   "320005": {
-    "name": "Predator's Lair",
+    "name": "捕食者の住処",
     "type": "seal"
   },
   "320006": {
-    "name": "Dusk Pit",
+    "name": "黄昏の穴",
     "type": "seal"
   },
   "320007": {
-    "name": "Lost Ruins",
+    "name": "消えた遺跡",
     "type": "seal"
   },
   "320008": {
-    "name": "Poisonous Plant Habitat",
+    "name": "毒草棲息地",
     "type": "seal"
   },
   "320009": {
-    "name": "Valka's Nest",
+    "name": "バルカの巣",
     "type": "seal"
   },
   "320010": {
-    "name": "Old Graveyard",
+    "name": "古い共同墓",
     "type": "seal"
   },
   "320011": {
-    "name": "Treasure Hunter's Residence",
+    "name": "トレジャー ハンターの住処",
     "type": "seal"
   },
   "320012": {
-    "name": "Abandoned Archon Jail",
+    "name": "捨てられたアルコンの牢獄",
     "type": "seal"
   },
   "320013": {
-    "name": "Fafnite Storage Room",
+    "name": "ファフナイト貯蔵室",
     "type": "seal"
   },
   "320014": {
-    "name": "Insectoid Tunnel",
+    "name": "虫洞窟",
     "type": "seal"
   },
   "320015": {
-    "name": "Bloodsoaked Confessional",
+    "name": "血塗られた懺悔室",
     "type": "seal"
   },
   "320016": {
-    "name": "Prison of Oblivion",
+    "name": "忘却の牢獄",
     "type": "seal"
   },
   "320017": {
-    "name": "Watcher's Temporary Outpost",
+    "name": "監視者の臨時哨所",
     "type": "seal"
   },
   "320018": {
-    "name": "Blue Dragon's Trap",
+    "name": "青い龍の罠",
     "type": "seal"
   },
   "320019": {
-    "name": "Hidden Vein Cave",
+    "name": "隠された鉱脈洞窟",
     "type": "seal"
   },
   "320020": {
-    "name": "Fortuneteller's Grave",
+    "name": "占い師の墓",
     "type": "seal"
   },
   "320021": {
-    "name": "Howling Den",
+    "name": "唸る巣窟",
     "type": "seal"
   },
   "320022": {
-    "name": "Ossuary of the Noble",
+    "name": "貴族の納骨堂",
     "type": "seal"
   },
   "320023": {
-    "name": "Smuggler's Cave",
+    "name": "密輸者の洞窟",
     "type": "seal"
   },
   "320024": {
-    "name": "Homish's Prison Compound",
+    "name": "ホーミッシュの収容所",
     "type": "seal"
   },
   "320025": {
-    "name": "Kumbahum's Cave",
+    "name": "クンバフムの洞窟",
     "type": "seal"
   },
   "320026": {
-    "name": "Victims' Cave",
+    "name": "犠牲者の洞窟",
     "type": "seal"
   },
   "320027": {
-    "name": "Drana Depository",
+    "name": "ドラナ保管所",
     "type": "seal"
   },
   "320028": {
-    "name": "High Priest's Ruins",
+    "name": "大神官の遺跡地",
     "type": "seal"
   },
   "320029": {
-    "name": "Closed Hideout",
+    "name": "閉鎖された隠れ家",
     "type": "seal"
   },
   "320030": {
-    "name": "All-Curing Cave",
+    "name": "万能の洞窟",
     "type": "seal"
   },
   "320031": {
-    "name": "Fungie Habitat",
+    "name": "ファンギ棲息地",
     "type": "seal"
   },
   "320032": {
-    "name": "Library of Wisdom",
+    "name": "知恵の書庫",
     "type": "seal"
   },
   "320033": {
-    "name": "Destroyed Scriptorium",
+    "name": "破壊された記録室",
     "type": "seal"
   },
   "320034": {
-    "name": "Dark Root Cave",
+    "name": "暗い根の洞窟",
     "type": "seal"
   },
   "320035": {
-    "name": "Unstable Cave",
+    "name": "不安定な洞窟",
     "type": "seal"
   },
   "320036": {
-    "name": "Lamnah Base",
+    "name": "ラムナッハ拠点",
     "type": "seal"
   },
   "320037": {
-    "name": "Twisted Pit",
+    "name": "歪んだ穴",
     "type": "seal"
   },
   "320038": {
-    "name": "Rift Fissure",
+    "name": "亀裂の隙間",
     "type": "seal"
   },
   "320039": {
-    "name": "Scale Altar",
+    "name": "鱗の祭壇",
     "type": "seal"
   },
   "320040": {
-    "name": "Library of Foresight",
+    "name": "予知の書庫",
     "type": "seal"
   },
   "320041": {
-    "name": "Skurv Laborer Den",
+    "name": "ムーグル労働者の巣窟",
     "type": "seal"
   },
   "320042": {
-    "name": "Dratona Assembly Area",
+    "name": "ドゥラトナ集結場",
     "type": "seal"
   },
   "320043": {
-    "name": "Place of Rest",
+    "name": "安息の地",
     "type": "seal"
   },
   "320044": {
-    "name": "Final Haven",
+    "name": "最後の安息所",
     "type": "seal"
   },
   "320045": {
-    "name": "Worshiper's Underground Cave",
+    "name": "崇拝者の地下洞窟",
     "type": "seal"
   },
   "320046": {
-    "name": "Fanatics' Den",
+    "name": "狂信徒の巣窟",
     "type": "seal"
   },
   "320047": {
-    "name": "Spider Cave",
+    "name": "蜘蛛の洞窟",
     "type": "seal"
   },
   "320048": {
-    "name": "Empty Cave",
+    "name": "空の洞窟",
     "type": "seal"
   },
   "320049": {
-    "name": "Lonely Rock Chasm",
+    "name": "寂しい岩の隙間",
     "type": "seal"
   },
   "320050": {
-    "name": "Rock Cave",
+    "name": "岩の洞窟",
     "type": "seal"
   },
   "320051": {
-    "name": "Den of Exiles",
+    "name": "追放者の巣窟",
     "type": "seal"
   },
   "320052": {
-    "name": "Pirate's Treasure Storage",
+    "name": "海賊の宝物庫",
     "type": "seal"
   },
   "320053": {
-    "name": "Shulak Cave",
+    "name": "シュラクの洞窟",
     "type": "seal"
   },
   "320054": {
-    "name": "Destruction Archons Armory",
+    "name": "破壊のアルコンの武器庫",
     "type": "seal"
   },
   "320055": {
-    "name": "Ascetic's Cave",
+    "name": "苦行者の洞窟",
     "type": "seal"
   },
   "320056": {
-    "name": "Lagta Fafnite Storage",
+    "name": "ラグタ ファフナイト倉庫",
     "type": "seal"
   },
   "320057": {
-    "name": "Warriors' Rest",
+    "name": "戦士の休憩所",
     "type": "seal"
   },
   "320058": {
-    "name": "Tayga Breeding Ground",
+    "name": "リュクロックの飼育場",
     "type": "seal"
   },
   "320059": {
-    "name": "Library of Patience",
+    "name": "忍耐の書庫",
     "type": "seal"
   },
   "320060": {
-    "name": "Odylium Marauder Den",
+    "name": "オディウム略奪者の巣窟",
     "type": "seal"
   },
   "320061": {
-    "name": "Forgotten Fire Altar",
+    "name": "忘れられた火の祭壇",
     "type": "seal"
   },
   "320062": {
-    "name": "Abandoned Kromede Base",
+    "name": "捨てられたクロメデの拠点",
     "type": "seal"
   },
   "320063": {
-    "name": "Verdandi's Oratory",
+    "name": "ベルダンディの祈祷室",
     "type": "seal"
   },
   "320064": {
-    "name": "Blades Secret Repository",
+    "name": "ブレイド団の秘密貯蔵庫",
     "type": "seal"
   },
   "320065": {
-    "name": "Frozen Land of Fate",
+    "name": "凍りついた運命の地",
     "type": "seal"
   },
   "320066": {
-    "name": "Land of Raging Flame",
+    "name": "怒りの火炎の精霊の地",
     "type": "seal"
   },
   "320067": {
-    "name": "Pure Spring",
+    "name": "純粋の泉",
     "type": "seal"
   },
   "320068": {
-    "name": "Predator's Nest",
+    "name": "捕食者の巣",
     "type": "seal"
   },
   "320069": {
-    "name": "Cave of the Stranded",
+    "name": "帰れぬ者の洞窟",
     "type": "seal"
   },
   "320070": {
-    "name": "Cave of the Exiled Ones",
+    "name": "追放された者たちの洞窟",
     "type": "seal"
   },
   "320071": {
-    "name": "Blades Base",
+    "name": "ブレイド団の拠点",
     "type": "seal"
   },
   "320072": {
-    "name": "Patamor Marauder Base",
+    "name": "パタモール略奪者の拠点",
     "type": "seal"
   },
   "320073": {
-    "name": "Kurpak Special Operations Unit Base",
+    "name": "クルパク別動隊拠点",
     "type": "seal"
   },
   "320074": {
-    "name": "Camouflaged Fate Archon Base",
+    "name": "偽装された運命のアルコン基地",
     "type": "seal"
   },
   "320075": {
-    "name": "Fire Cave",
+    "name": "火炎の洞窟",
     "type": "seal"
   },
   "320076": {
-    "name": "Fate Temple",
+    "name": "運命の神殿",
     "type": "seal"
   },
   "320077": {
-    "name": "Indnath Secret Base",
+    "name": "インドナフの秘密基地",
     "type": "seal"
   },
   "320078": {
-    "name": "Guardian Statues' Cave",
+    "name": "守護像たちの洞窟",
     "type": "seal"
   },
   "320079": {
-    "name": "Iralcig Naga Cave",
+    "name": "イラルシグ ナーガ洞窟",
     "type": "seal"
   },
   "320080": {
-    "name": "Patamor Underwater Cave",
+    "name": "パタモールの水中洞窟",
     "type": "seal"
   },
   "39": {
-    "name": "Dawn Legion Base",
+    "name": "暁のレギオン基地",
     "type": "instancelayer"
   },
   "400001": {
-    "name": "Ruins of the Ancient City of Ru",
+    "name": "古代都市ルーの廃墟",
     "type": "seal"
   },
   "400002": {
-    "name": "Ruins of the Ancient City of Ru",
+    "name": "古代都市ルーの廃墟",
     "type": "seal"
   },
   "46": {
-    "name": "Barracks Storage",
+    "name": "兵営倉庫",
     "type": "instancelayer"
   },
   "47": {
-    "name": "Sanctum Dumpsite",
+    "name": "聖所廃棄場",
     "type": "instancelayer"
   },
   "48": {
-    "name": "Watchtower Camp",
+    "name": "監視塔の幕舎",
     "type": "instancelayer"
   },
   "49": {
-    "name": "Prison Cell",
+    "name": "捕虜収容室",
     "type": "instancelayer"
   },
   "50": {
-    "name": "Pantheon",
+    "name": "万神殿",
     "type": "personalagit"
   },
   "500001": {
-    "name": "Beritra Air Raid",
+    "name": "ベリトラ空襲",
     "type": "fieldevent"
   },
   "500002": {
-    "name": "Accursed Sword",
+    "name": "呪われた剣",
     "type": "fieldevent"
   },
   "500003": {
-    "name": "Odyle Flight Frenzy",
+    "name": "オードの雫を収集",
     "type": "fieldevent"
   },
   "500004": {
-    "name": "Goldrin's Treasure Trove",
+    "name": "ゴールドリンの宝物庫",
     "type": "fieldevent"
   },
   "500005": {
-    "name": "Incursion of the Spirits",
+    "name": "精霊の襲撃",
     "type": "fieldevent"
   },
   "500006": {
-    "name": "Incursion of the Spirits",
+    "name": "精霊の襲撃",
     "type": "fieldevent"
   },
   "500007": {
-    "name": "Defend Shugo Merchants",
+    "name": "シューゴ商人の保護",
     "type": "fieldevent"
   },
   "500008": {
-    "name": "Goldrin's Treasure",
+    "name": "ゴールドリンの宝物",
     "type": "fieldevent"
   },
   "500009": {
-    "name": "Odyle Flight Frenzy",
+    "name": "オードの雫を収集",
     "type": "fieldevent"
   },
   "500010": {
-    "name": "Wraith Evasion",
+    "name": "亡霊回避",
     "type": "fieldevent"
   },
   "500011": {
-    "name": "Jump Jump",
+    "name": "ジャンプ！ジャンプ！",
     "type": "fieldevent"
   },
   "500012": {
-    "name": "Hidden Lugi",
+    "name": "ヒドゥン ルギ",
     "type": "fieldevent"
   },
   "500013": {
-    "name": "Mysterious Track",
+    "name": "神秘的なトラック",
     "type": "fieldevent"
   },
   "500015": {
-    "name": "Not This Tile?",
+    "name": "このタイルじゃない？",
     "type": "fieldevent"
   },
   "500016": {
-    "name": "Up! Up! Up!",
+    "name": "高く高く",
     "type": "fieldevent"
   },
   "500017": {
-    "name": "Beritra Air Raid",
+    "name": "ベリトラ空襲",
     "type": "fieldevent"
   },
   "500018": {
-    "name": "Beritra Air Raid",
+    "name": "ベリトラ空襲",
     "type": "fieldevent"
   },
   "500019": {
-    "name": "Accursed Sword",
+    "name": "呪われた剣",
     "type": "fieldevent"
   },
   "500020": {
-    "name": "Accursed Sword",
+    "name": "呪われた剣",
     "type": "fieldevent"
   },
   "500021": {
-    "name": "Incursion of the Spirits",
+    "name": "精霊の襲撃",
     "type": "fieldevent"
   },
   "500022": {
-    "name": "Mysterious Track",
+    "name": "神秘的なトラック",
     "type": "fieldevent"
   },
   "500023": {
-    "name": "Up! Up! Up!",
+    "name": "高く高く",
     "type": "fieldevent"
   },
   "500024": {
-    "name": "Jump Jump",
+    "name": "ジャンプ！ジャンプ！",
     "type": "fieldevent"
   },
   "500025": {
-    "name": "Wraith Evasion",
+    "name": "亡霊回避",
     "type": "fieldevent"
   },
   "500026": {
-    "name": "Defend Shugo Merchants",
+    "name": "シューゴ商人の保護",
     "type": "fieldevent"
   },
   "500027": {
-    "name": "Goldrin's Treasure",
+    "name": "ゴールドリンの宝物",
     "type": "fieldevent"
   },
   "500028": {
-    "name": "Hidden Lugi",
+    "name": "ヒドゥン ルギ",
     "type": "fieldevent"
   },
   "500029": {
-    "name": "Not This Tile?",
+    "name": "このタイルじゃない？",
     "type": "fieldevent"
   },
   "500030": {
-    "name": "Nyerk Shooter",
+    "name": "パンパンパン",
     "type": "fieldevent"
   },
   "500031": {
-    "name": "Accursed Sword",
+    "name": "呪われた剣",
     "type": "fieldevent"
   },
   "500032": {
-    "name": "Beritra Air Raid",
+    "name": "ベリトラ空襲",
     "type": "fieldevent"
   },
   "500033": {
-    "name": "Incursion of the Spirits",
+    "name": "精霊の襲撃",
     "type": "fieldevent"
   },
   "500034": {
-    "name": "Shugo's Dilemma",
+    "name": "シューゴのジレンマ",
     "type": "fieldevent"
   },
   "500035": {
-    "name": "Up! Up! Up!",
+    "name": "高く高く",
     "type": "fieldevent"
   },
   "500036": {
-    "name": "Not This Tile?",
+    "name": "このタイルじゃない？",
     "type": "fieldevent"
   },
   "500037": {
-    "name": "Jump Jump",
+    "name": "ジャンプ！ジャンプ！",
     "type": "fieldevent"
   },
   "500038": {
-    "name": "Hidden Lugi",
+    "name": "ヒドゥン ルギ",
     "type": "fieldevent"
   },
   "500039": {
-    "name": "Mysterious Track",
+    "name": "神秘的なトラック",
     "type": "fieldevent"
   },
   "500040": {
-    "name": "Wraith Evasion",
+    "name": "亡霊回避",
     "type": "fieldevent"
   },
   "500041": {
-    "name": "Goldrin's Treasure",
+    "name": "ゴールドリンの宝物",
     "type": "fieldevent"
   },
   "500042": {
-    "name": "Odyle Flight Frenzy",
+    "name": "オードの雫を収集",
     "type": "fieldevent"
   },
   "500043": {
-    "name": "Defend Shugo Merchants",
+    "name": "シューゴ商人の保護",
     "type": "fieldevent"
   },
   "502001": {
-    "name": "Accursed Sword",
+    "name": "呪われた剣",
     "type": "fieldevent"
   },
   "503001": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "503002": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "503003": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "503004": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "503005": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "503006": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "504001": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "504002": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "504003": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "504004": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "504005": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "504006": {
-    "name": "Abyss Corridor",
+    "name": "アビス回廊",
     "type": "abyssartifact"
   },
   "51": {
-    "name": "Dawn Legion Command Post",
+    "name": "暁のレギオン指揮所",
     "type": "instancelayer"
   },
   "510001": {
-    "name": "Odyle Flight Frenzy",
+    "name": "オードの雫を収集",
     "type": "fieldevent"
   },
   "510002": {
-    "name": "Beritra Air Raid",
+    "name": "ベリトラ空襲",
     "type": "fieldevent"
   },
   "510003": {
-    "name": "Jump Jump",
+    "name": "ジャンプ！ジャンプ！",
     "type": "fieldevent"
   },
   "510004": {
-    "name": "Hidden Lugi",
+    "name": "ヒドゥン ルギ",
     "type": "fieldevent"
   },
   "510005": {
-    "name": "Wraith Evasion",
+    "name": "亡霊回避",
     "type": "fieldevent"
   },
   "510006": {
-    "name": "Mysterious Track",
+    "name": "神秘的なトラック",
     "type": "fieldevent"
   },
   "510007": {
-    "name": "Goldrin's Treasure",
+    "name": "ゴールドリンの宝物",
     "type": "fieldevent"
   },
   "510008": {
-    "name": "Beritra Air Raid",
+    "name": "ベリトラ空襲",
     "type": "fieldevent"
   },
   "510009": {
-    "name": "Beritra Air Raid",
+    "name": "ベリトラ空襲",
     "type": "fieldevent"
   },
   "510010": {
-    "name": "Up! Up! Up!",
+    "name": "高く高く",
     "type": "fieldevent"
   },
   "510011": {
-    "name": "Sticker Shooter",
+    "name": "ステッカーシューター",
     "type": "fieldevent"
   },
   "510012": {
-    "name": "Not This Tile?",
+    "name": "このタイルじゃない？",
     "type": "fieldevent"
   },
   "510013": {
-    "name": "Accursed Sword",
+    "name": "呪われた剣",
     "type": "fieldevent"
   },
   "510014": {
-    "name": "Accursed Sword",
+    "name": "呪われた剣",
     "type": "fieldevent"
   },
   "510015": {
-    "name": "Incursion of the Spirits",
+    "name": "精霊の襲撃",
     "type": "fieldevent"
   },
   "510016": {
-    "name": "Odyle Flight Frenzy",
+    "name": "オードの雫を収集",
     "type": "fieldevent"
   },
   "510017": {
-    "name": "Wraith Evasion",
+    "name": "亡霊回避",
     "type": "fieldevent"
   },
   "510018": {
-    "name": "Up! Up! Up!",
+    "name": "高く高く",
     "type": "fieldevent"
   },
   "510019": {
-    "name": "Mysterious Track",
+    "name": "神秘的なトラック",
     "type": "fieldevent"
   },
   "510020": {
-    "name": "Jump Jump",
+    "name": "ジャンプ！ジャンプ！",
     "type": "fieldevent"
   },
   "510021": {
-    "name": "Defend Shugo Merchants",
+    "name": "シューゴ商人の保護",
     "type": "fieldevent"
   },
   "510022": {
-    "name": "Goldrin's Treasure",
+    "name": "ゴールドリンの宝物",
     "type": "fieldevent"
   },
   "510023": {
-    "name": "Hidden Lugi",
+    "name": "ヒドゥン ルギ",
     "type": "fieldevent"
   },
   "510024": {
-    "name": "Not This Tile?",
+    "name": "このタイルじゃない？",
     "type": "fieldevent"
   },
   "510025": {
-    "name": "Nyerk Shooter",
+    "name": "パンパンパン",
     "type": "fieldevent"
   },
   "510026": {
-    "name": "Accursed Sword",
+    "name": "呪われた剣",
     "type": "fieldevent"
   },
   "510027": {
-    "name": "Beritra Air Raid",
+    "name": "ベリトラ空襲",
     "type": "fieldevent"
   },
   "510028": {
-    "name": "Incursion of the Spirits",
+    "name": "精霊の襲撃",
     "type": "fieldevent"
   },
   "510029": {
-    "name": "Shugo's Dilemma",
+    "name": "シューゴのジレンマ",
     "type": "fieldevent"
   },
   "510030": {
-    "name": "Up! Up! Up!",
+    "name": "高く高く",
     "type": "fieldevent"
   },
   "510031": {
-    "name": "Not This Tile?",
+    "name": "このタイルじゃない？",
     "type": "fieldevent"
   },
   "510032": {
-    "name": "Jump Jump",
+    "name": "ジャンプ！ジャンプ！",
     "type": "fieldevent"
   },
   "510033": {
-    "name": "Hidden Lugi",
+    "name": "ヒドゥン ルギ",
     "type": "fieldevent"
   },
   "510034": {
-    "name": "Mysterious Track",
+    "name": "神秘的なトラック",
     "type": "fieldevent"
   },
   "510035": {
-    "name": "Wraith Evasion",
+    "name": "亡霊回避",
     "type": "fieldevent"
   },
   "510036": {
-    "name": "Goldrin's Treasure",
+    "name": "ゴールドリンの宝物",
     "type": "fieldevent"
   },
   "510037": {
-    "name": "Odyle Flight Frenzy",
+    "name": "オードの雫を収集",
     "type": "fieldevent"
   },
   "510038": {
-    "name": "Defend Shugo Merchants",
+    "name": "シューゴ商人の保護",
     "type": "fieldevent"
   },
   "52": {
-    "name": "Illusion Oratory",
+    "name": "幻影の祈祷室",
     "type": "instancelayer"
   },
   "600001": {
-    "name": "Krao Cave",
+    "name": "クラオ洞窟",
     "type": "party",
     "difficulty": "normal",
     "tier": 1,
-    "label": "Conquest Tier 1"
+    "label": "征服1ティア"
   },
   "600002": {
-    "name": "Krao Cave",
+    "name": "クラオ洞窟",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600003": {
     "name": "Krao Cave"
   },
   "600004": {
-    "name": "Krao Cave",
+    "name": "クラオ洞窟",
     "type": "party",
     "tier": 1
   },
   "600011": {
-    "name": "Urugugu Canyon",
+    "name": "ウルググ峡谷",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600012": {
-    "name": "Urugugu Canyon",
+    "name": "ウルググ峡谷",
     "type": "party",
     "difficulty": "normal",
     "tier": 2,
-    "label": "Conquest Tier 2"
+    "label": "征服2ティア"
   },
   "600013": {
-    "name": "Urugugu Canyon",
+    "name": "ウルググ峡谷",
     "type": "party",
     "tier": 2
   },
@@ -1968,20 +1968,20 @@
     "name": "Urugugu Canyon"
   },
   "600021": {
-    "name": "Fire Temple",
+    "name": "炎の神殿",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600022": {
-    "name": "Fire Temple",
+    "name": "炎の神殿",
     "type": "party",
     "difficulty": "normal",
     "tier": 3,
-    "label": "Conquest Tier 3"
+    "label": "征服3ティア"
   },
   "600023": {
-    "name": "Fire Temple",
+    "name": "炎の神殿",
     "type": "party",
     "tier": 3
   },
@@ -1989,20 +1989,20 @@
     "name": "Fire Temple"
   },
   "600031": {
-    "name": "Draupnir",
+    "name": "ドラウプニル",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600032": {
-    "name": "Draupnir",
+    "name": "ドラウプニル",
     "type": "party",
     "difficulty": "normal",
     "tier": 1,
-    "label": "Conquest Tier 1"
+    "label": "征服1ティア"
   },
   "600033": {
-    "name": "Draupnir",
+    "name": "ドラウプニル",
     "type": "party",
     "tier": 1
   },
@@ -2010,41 +2010,41 @@
     "name": "Draupnir"
   },
   "600041": {
-    "name": "Dying Dramata's Nest",
+    "name": "死んだドラマタの巣",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600042": {
-    "name": "Dying Dramata's Nest",
+    "name": "死んだドラマタの巣",
     "type": "party",
     "difficulty": "normal",
     "tier": 4,
-    "label": "Conquest Tier 4"
+    "label": "征服4ティア"
   },
   "600051": {
-    "name": "Deus Research Base",
+    "name": "デウス研究基地",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600052": {
     "name": "Deus Research Base"
   },
   "600053": {
-    "name": "Deus Research Base",
+    "name": "デウス研究基地",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "600054": {
     "name": "Deus Research Base"
   },
   "600055": {
-    "name": "Deus Research Base",
+    "name": "デウス研究基地",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "600056": {
     "name": "Deus Research Base"
@@ -2053,37 +2053,37 @@
     "name": "Deus Research Base"
   },
   "600058": {
-    "name": "Deus Research Base",
+    "name": "デウス研究基地",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "600059": {
     "name": "Deus Research Base"
   },
   "600061": {
-    "name": "Shattered Arkanis",
+    "name": "砕けたアルカニス",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600062": {
     "name": "Shattered Arkanis"
   },
   "600063": {
-    "name": "Shattered Arkanis",
+    "name": "砕けたアルカニス",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "600064": {
     "name": "Shattered Arkanis"
   },
   "600065": {
-    "name": "Shattered Arkanis",
+    "name": "砕けたアルカニス",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "600066": {
     "name": "Shattered Arkanis"
@@ -2092,29 +2092,29 @@
     "name": "Shattered Arkanis"
   },
   "600068": {
-    "name": "Shattered Arkanis",
+    "name": "砕けたアルカニス",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "600069": {
     "name": "Shattered Arkanis"
   },
   "600071": {
-    "name": "Vakron Sky Island",
+    "name": "バクロンの空中島",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600072": {
-    "name": "Vakron Sky Island",
+    "name": "バクロンの空中島",
     "type": "party",
     "difficulty": "normal",
     "tier": 2,
-    "label": "Conquest Tier 2"
+    "label": "征服2ティア"
   },
   "600073": {
-    "name": "Vakron Sky Island",
+    "name": "バクロンの空中島",
     "type": "party",
     "tier": 2
   },
@@ -2122,117 +2122,117 @@
     "name": "Vakron Sky Island"
   },
   "600082": {
-    "name": "Abyssal Forge: Ludra",
+    "name": "深淵の再錬：ルドラ",
     "type": "raid",
     "difficulty": "normal",
-    "label": "Normal"
+    "label": "普通"
   },
   "600091": {
-    "name": "Ferocious Horn Den",
+    "name": "獰猛な角岩窟",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600092": {
-    "name": "Ferocious Horn Den",
+    "name": "獰猛な角岩窟",
     "type": "party",
     "difficulty": "normal",
     "tier": 3,
-    "label": "Conquest Tier 3"
+    "label": "征服3ティア"
   },
   "600093": {
-    "name": "Ferocious Horn Den",
+    "name": "獰猛な角岩窟",
     "type": "party",
     "tier": 3
   },
   "600121": {
-    "name": "Cradle of Nihility",
+    "name": "武の揺りかご",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600122": {
-    "name": "Cradle of Nihility",
+    "name": "武の揺りかご",
     "type": "party",
     "difficulty": "normal",
     "tier": 4,
-    "label": "Conquest Tier 4"
+    "label": "征服4ティア"
   },
   "600123": {
-    "name": "Cradle of Nihility",
+    "name": "武の揺りかご",
     "type": "party",
     "difficulty": "advanced",
     "tier": 4,
-    "label": "Conquest Tier 4 · Hard"
+    "label": "征服4ティア · 難しい"
   },
   "600131": {
-    "name": "Hall of Illusion",
+    "name": "幻影の回廊",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600132": {
-    "name": "Hall of Illusion",
+    "name": "幻影の回廊",
     "type": "party",
     "difficulty": "normal",
     "tier": 5,
-    "label": "Conquest Tier 5"
+    "label": "征服5ティア"
   },
   "600133": {
-    "name": "Hall of Illusion",
+    "name": "幻影の回廊",
     "type": "party",
     "difficulty": "advanced",
     "tier": 5,
-    "label": "Conquest Tier 5 · Hard"
+    "label": "征服5ティア · 難しい"
   },
   "600141": {
-    "name": "Azure Breath Island",
+    "name": "青い息の島",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600142": {
-    "name": "Azure Breath Island",
+    "name": "青い息の島",
     "type": "party",
     "difficulty": "normal",
     "tier": 5,
-    "label": "Conquest Tier 5"
+    "label": "征服5ティア"
   },
   "600143": {
-    "name": "Azure Breath Island",
+    "name": "青い息の島",
     "type": "party",
     "difficulty": "advanced",
     "tier": 5,
-    "label": "Conquest Tier 5 · Hard"
+    "label": "征服5ティア · 難しい"
   },
   "600144": {
-    "name": "Citadel of the Fallen Daeva"
+    "name": "堕落したディーヴァの城"
   },
   "600145": {
-    "name": "Citadel of the Fallen Daeva"
+    "name": "堕落したディーヴァの城"
   },
   "600146": {
-    "name": "Citadel of the Fallen Daeva"
+    "name": "堕落したディーヴァの城"
   },
   "600151": {
-    "name": "Citadel of the Fallen Daeva",
+    "name": "堕落したディーヴァの城",
     "type": "party",
     "difficulty": "easy",
-    "label": "Exploration"
+    "label": "探険"
   },
   "600152": {
-    "name": "Citadel of the Fallen Daeva",
+    "name": "堕落したディーヴァの城",
     "type": "party",
     "difficulty": "normal",
     "tier": 6,
-    "label": "Conquest Tier 6"
+    "label": "征服6ティア"
   },
   "600153": {
-    "name": "Citadel of the Fallen Daeva",
+    "name": "堕落したディーヴァの城",
     "type": "party",
     "difficulty": "advanced",
     "tier": 6,
-    "label": "Conquest Tier 6 · Hard"
+    "label": "征服6ティア · 難しい"
   },
   "600161": {
     "name": "Consumed Deus Research Base",
@@ -2247,949 +2247,949 @@
     "difficulty": "hard"
   },
   "61": {
-    "name": "Impetusium Arena"
+    "name": "インペトシウム闘技場"
   },
   "610010": {
-    "name": "Submerged Life Temple",
+    "name": "沈んだ生命の神殿",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610011": {
-    "name": "Submerged Life Temple",
+    "name": "沈んだ生命の神殿",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610012": {
-    "name": "Submerged Life Temple",
+    "name": "沈んだ生命の神殿",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610013": {
-    "name": "Submerged Life Temple",
+    "name": "沈んだ生命の神殿",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610020": {
-    "name": "Mirror of Scarlet Desire",
+    "name": "赤い恋心の鏡",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610021": {
-    "name": "Mirror of Scarlet Desire",
+    "name": "赤い恋心の鏡",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610022": {
-    "name": "Mirror of Scarlet Desire",
+    "name": "赤い恋心の鏡",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610023": {
-    "name": "Mirror of Scarlet Desire",
+    "name": "赤い恋心の鏡",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610044": {
-    "name": "Dying Dramata's Nest",
+    "name": "死んだドラマタの巣",
     "type": "party",
     "difficulty": "advanced",
     "tier": 4,
-    "label": "Conquest Tier 4 · Hard"
+    "label": "征服4ティア · 難しい"
   },
   "610052": {
-    "name": "Deus Research Base",
+    "name": "デウス研究基地",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610062": {
-    "name": "Shattered Arkanis",
+    "name": "砕けたアルカニス",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610070": {
-    "name": "Abyssal Horn Den",
+    "name": "深淵の角岩窟",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610071": {
-    "name": "Abyssal Horn Den",
+    "name": "深淵の角岩窟",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610072": {
-    "name": "Abyssal Horn Den",
+    "name": "深淵の角岩窟",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "610073": {
-    "name": "Abyssal Horn Den",
+    "name": "深淵の角岩窟",
     "type": "party",
     "difficulty": "hard",
-    "label": "Transcendence"
+    "label": "超越"
   },
   "62": {
-    "name": "Odyle Shard Cradle"
+    "name": "オード シャードの揺りかご"
   },
   "620011": {
-    "name": "Corroded Decontamination Facility",
+    "name": "侵食の浄化所",
     "type": "raid",
     "difficulty": "normal",
-    "label": "Normal"
+    "label": "普通"
   },
   "620021": {
-    "name": "Chalice of Muspel",
+    "name": "ムスフェルの聖杯",
     "type": "raid",
     "difficulty": "advanced",
-    "label": "Hard"
+    "label": "難しい"
   },
   "620022": {
-    "name": "Chalice of Muspel",
+    "name": "ムスフェルの聖杯",
     "type": "raid",
     "difficulty": "normal",
-    "label": "Normal"
+    "label": "普通"
   },
   "64": {
-    "name": "Sandstorm Temple"
+    "name": "砂嵐の寺院"
   },
   "690001": {
-    "name": "Subjugation Closed",
+    "name": "討伐戦終了",
     "type": "matching",
     "difficulty": "easy",
-    "label": "Easy"
+    "label": "簡単"
   },
   "690002": {
-    "name": "Subjugation Closed",
+    "name": "討伐戦終了",
     "type": "matching",
     "difficulty": "normal",
-    "label": "Normal"
+    "label": "普通"
   },
   "690003": {
-    "name": "Subjugation Closed",
+    "name": "討伐戦終了",
     "type": "matching",
     "difficulty": "hard",
-    "label": "Hard"
+    "label": "難しい"
   },
   "690011": {
-    "name": "Beritra Brigade Fortress",
+    "name": "ベリトラ軍団要塞",
     "type": "matching",
     "difficulty": "easy",
-    "label": "Easy"
+    "label": "簡単"
   },
   "690012": {
-    "name": "Beritra Brigade Fortress",
+    "name": "ベリトラ軍団要塞",
     "type": "matching",
     "difficulty": "normal",
-    "label": "Normal"
+    "label": "普通"
   },
   "690013": {
-    "name": "Beritra Brigade Fortress",
+    "name": "ベリトラ軍団要塞",
     "type": "matching",
     "difficulty": "hard",
-    "label": "Hard"
+    "label": "難しい"
   },
   "690031": {
-    "name": "Orcus's Grave",
+    "name": "オルクスの墓",
     "type": "matching",
     "difficulty": "easy",
-    "label": "Easy"
+    "label": "簡単"
   },
   "690032": {
-    "name": "Orcus's Grave",
+    "name": "オルクスの墓",
     "type": "matching",
     "difficulty": "normal",
-    "label": "Normal"
+    "label": "普通"
   },
   "690033": {
-    "name": "Orcus's Grave",
+    "name": "オルクスの墓",
     "type": "matching",
     "difficulty": "hard",
-    "label": "Hard"
+    "label": "難しい"
   },
   "690034": {
-    "name": "Orcus's Grave",
+    "name": "オルクスの墓",
     "type": "matching",
     "difficulty": "extreme",
-    "label": "Extreme"
+    "label": "極限"
   },
   "690035": {
-    "name": "Orcus's Grave",
+    "name": "オルクスの墓",
     "type": "matching",
     "difficulty": "despair",
-    "label": "Insane"
+    "label": "絶望"
   },
   "690036": {
-    "name": "Orcus's Grave",
+    "name": "オルクスの墓",
     "type": "matching",
     "difficulty": "hell",
-    "label": "Hell"
+    "label": "地獄"
   },
   "690041": {
-    "name": "Fafnite Forge",
+    "name": "ファフナイト精錬所",
     "type": "matching",
     "difficulty": "easy",
-    "label": "Easy"
+    "label": "簡単"
   },
   "690042": {
-    "name": "Fafnite Forge",
+    "name": "ファフナイト精錬所",
     "type": "matching",
     "difficulty": "normal",
-    "label": "Normal"
+    "label": "普通"
   },
   "690043": {
-    "name": "Fafnite Forge",
+    "name": "ファフナイト精錬所",
     "type": "matching",
     "difficulty": "hard",
-    "label": "Hard"
+    "label": "難しい"
   },
   "690044": {
-    "name": "Fafnite Forge",
+    "name": "ファフナイト精錬所",
     "type": "matching",
     "difficulty": "extreme",
-    "label": "Extreme"
+    "label": "極限"
   },
   "690045": {
-    "name": "Fafnite Forge",
+    "name": "ファフナイト精錬所",
     "type": "matching",
     "difficulty": "despair",
-    "label": "Insane"
+    "label": "絶望"
   },
   "690046": {
-    "name": "Fafnite Forge",
+    "name": "ファフナイト精錬所",
     "type": "matching",
     "difficulty": "hell",
-    "label": "Hell"
+    "label": "地獄"
   },
   "7": {
-    "name": "Fire Temple Arena",
+    "name": "炎の神殿の闘技場",
     "type": "matching"
   },
   "76": {
-    "name": "Incursion of the Spirits",
+    "name": "精霊の襲撃",
     "type": "fieldevent"
   },
   "77": {
-    "name": "Incursion of the Spirits",
+    "name": "精霊の襲撃",
     "type": "fieldevent"
   },
   "78": {
-    "name": "Altgard Shugo Fesetival Protection",
+    "name": "アルトガルド フィールド イベントの保護",
     "type": "fieldevent"
   },
   "8": {
-    "name": "Impetusium Arena",
+    "name": "インペトシウム闘技場",
     "type": "matching"
   },
   "800002": {
-    "name": "Where Fossa Escaped",
+    "name": "ポサが逃げ込んだ場所",
     "type": "instancelayer"
   },
   "800003": {
-    "name": "Recommended Odyle Gathering Site",
+    "name": "オード採集地おすすめ",
     "type": "instancelayer"
   },
   "800004": {
-    "name": "Creion's Experiment Site",
+    "name": "クレイオンの実験場所",
     "type": "instancelayer"
   },
   "800007": {
-    "name": "Fossa Sighting Location",
+    "name": "ポサ目撃地",
     "type": "instancelayer"
   },
   "800008": {
-    "name": "Destroyed Abyss Gate",
+    "name": "破壊されたアビス関門",
     "type": "instancelayer"
   },
   "800009": {
-    "name": "Astin's Secret Hideout",
+    "name": "アスティンの秘密隠れ家",
     "type": "instancelayer"
   },
   "800010": {
-    "name": "Illusion-Seeped Cave",
+    "name": "幻影が見える洞窟",
     "type": "instancelayer"
   },
   "800011": {
-    "name": "South of Verteron Fortress Ruins",
+    "name": "ベルテロン要塞の廃墟南側",
     "type": "instancelayer"
   },
   "800012": {
-    "name": "Abandoned Old Merchant HQ Site",
+    "name": "捨てられた旧商会本部跡地",
     "type": "instancelayer"
   },
   "800013": {
-    "name": "Drakan Laboratory",
+    "name": "ドラカン研究所",
     "type": "instancelayer"
   },
   "800014": {
-    "name": "Sacrifice's Rest",
+    "name": "犠牲の休憩所",
     "type": "instancelayer"
   },
   "800015": {
-    "name": "Aullaeu Funeral Island",
+    "name": "アウルラウの葬儀島",
     "type": "instancelayer"
   },
   "800016": {
-    "name": "Moonwatcher Sky Island",
+    "name": "月が見える空中島",
     "type": "instancelayer"
   },
   "800017": {
-    "name": "Notos Legion Clinic",
+    "name": "ノートス レギオン治療所",
     "type": "instancelayer"
   },
   "800018": {
-    "name": "Old Empty House",
+    "name": "古い空き家",
     "type": "instancelayer"
   },
   "800019": {
-    "name": "Deovar's House",
+    "name": "デオバルの家",
     "type": "instancelayer"
   },
   "800020": {
-    "name": "Abandoned Hideout",
+    "name": "捨てられた隠れ家",
     "type": "instancelayer"
   },
   "800021": {
-    "name": "Contaminated Slime Purification Experiment Site",
+    "name": "汚染されたスライムの浄化実験場所",
     "type": "instancelayer"
   },
   "800022": {
-    "name": "Cedric's Tombstone",
+    "name": "セドリックの墓石",
     "type": "instancelayer"
   },
   "800023": {
-    "name": "Forgotten Site",
+    "name": "忘れられた場所",
     "type": "instancelayer"
   },
   "800024": {
-    "name": "Hall of Compassion",
+    "name": "温情の殿堂",
     "type": "instancelayer"
   },
   "81": {
-    "name": "Blessing Room",
+    "name": "祝福の部屋",
     "type": "instancelayer"
   },
   "82": {
-    "name": "Purifying Altar",
+    "name": "浄化の祭壇",
     "type": "instancelayer"
   },
   "820001": {
-    "name": "Destroyed Campsite",
+    "name": "破壊された野営地",
     "type": "instancelayer"
   },
   "820002": {
-    "name": "Hilsrother Marauders Station",
+    "name": "ヒルスローター略奪団分所",
     "type": "instancelayer"
   },
   "820003": {
-    "name": "Hilsrother Marauders Storage",
+    "name": "ヒルスローター略奪団倉庫",
     "type": "instancelayer"
   },
   "820004": {
-    "name": "Contaminated Spring",
+    "name": "汚染された泉",
     "type": "instancelayer"
   },
   "820010": {
-    "name": "Mysterious Watchtower Camp",
+    "name": "謎の監視幕舎",
     "type": "instancelayer"
   },
   "820020": {
-    "name": "Crash Site Debris",
+    "name": "墜落の痕跡",
     "type": "instancelayer"
   },
   "820021": {
-    "name": "Abandoned Observatory",
+    "name": "捨てられた天文台",
     "type": "instancelayer"
   },
   "820022": {
-    "name": "Parched Rock Cave",
+    "name": "乾いた岩窟",
     "type": "instancelayer"
   },
   "820030": {
-    "name": "Foul Fissure",
+    "name": "悪臭漂う隙間",
     "type": "instancelayer"
   },
   "820031": {
-    "name": "Lepharist Hideout",
+    "name": "レパル団隠れ家",
     "type": "instancelayer"
   },
   "820032": {
-    "name": "Unidentified Workshop",
+    "name": "未確認の作業場",
     "type": "instancelayer"
   },
   "820040": {
-    "name": "Chloris's Dwelling",
+    "name": "クロリスの住処",
     "type": "instancelayer"
   },
   "820050": {
-    "name": "Chloris's Secret Base",
+    "name": "クロリスの秘密拠点",
     "type": "instancelayer"
   },
   "820051": {
-    "name": "Lepharist Research Center Annex",
+    "name": "レパル団研究所別館",
     "type": "instancelayer"
   },
   "820052": {
-    "name": "Culvert",
+    "name": "地下排水路",
     "type": "instancelayer"
   },
   "83": {
-    "name": "Nornir Altar",
+    "name": "ノルニル祭壇",
     "type": "instancelayer"
   },
   "840001": {
-    "name": "Suspicious Cave",
+    "name": "怪しい洞窟",
     "type": "quest"
   },
   "840002": {
-    "name": "Etheria Rift",
+    "name": "エテリア亀裂",
     "type": "quest"
   },
   "840003": {
-    "name": "Bandit Den",
+    "name": "山賊の巣窟",
     "type": "quest"
   },
   "840004": {
-    "name": "Abandoned Drakan Prison",
+    "name": "捨てられたドラカンの牢獄施設",
     "type": "quest"
   },
   "840005": {
-    "name": "Quai Merchants Temporary Storage",
+    "name": "クァイリン商会の臨時倉庫",
     "type": "quest"
   },
   "840007": {
-    "name": "Dodo's Stolen Goods Stash",
+    "name": "ドドリンの盗品倉庫",
     "type": "quest"
   },
   "840008": {
-    "name": "Den of the Dead",
+    "name": "亡者の巣窟",
     "type": "quest"
   },
   "840009": {
-    "name": "Old Hideout",
+    "name": "古い隠れ家",
     "type": "quest"
   },
   "840010": {
-    "name": "Scarlotus Experiment Site",
+    "name": "スカロトゥスの実験場所",
     "type": "quest"
   },
   "840011": {
-    "name": "First Stage",
+    "name": "一つ目の舞台",
     "type": "quest"
   },
   "840012": {
-    "name": "Second Stage",
+    "name": "二つ目の舞台",
     "type": "quest"
   },
   "840013": {
-    "name": "Tarzel Depository",
+    "name": "タルジェル保管所",
     "type": "quest"
   },
   "840014": {
-    "name": "Hidden Storage",
+    "name": "隠された秘密倉庫",
     "type": "quest"
   },
   "840015": {
-    "name": "Spirit Temple",
+    "name": "精霊の寺院",
     "type": "quest"
   },
   "840016": {
-    "name": "Relic Storage",
+    "name": "遺物保管所",
     "type": "quest"
   },
   "840017": {
-    "name": "Ancient Ruins",
+    "name": "過去の遺跡地",
     "type": "quest"
   },
   "840018": {
-    "name": "Blood Haven",
+    "name": "血の安息所",
     "type": "quest"
   },
   "840019": {
-    "name": "Fallen Relic Storage",
+    "name": "陥落した遺物庫",
     "type": "quest"
   },
   "840020": {
-    "name": "Renegade Daeva Hideout",
+    "name": "裏切り者ディーヴァの隠れ家",
     "type": "quest"
   },
   "840021": {
-    "name": "Lagta Underground Cage",
+    "name": "ラグタ地下監禁所",
     "type": "quest"
   },
   "840022": {
-    "name": "Mysterious Ruins",
+    "name": "謎の遺跡地",
     "type": "quest"
   },
   "840023": {
-    "name": "Zumion Trial Hall",
+    "name": "ズミオンの試練場",
     "type": "quest"
   },
   "840024": {
-    "name": "Destruction Archons Library",
+    "name": "破壊のアルコン書庫",
     "type": "quest"
   },
   "840025": {
-    "name": "Penitent Altar",
+    "name": "懺悔の祭壇",
     "type": "quest"
   },
   "840026": {
-    "name": "Surana Refinery",
+    "name": "スラナ精製所",
     "type": "quest"
   },
   "840027": {
-    "name": "Hidden Chapel",
+    "name": "隠された礼拝堂",
     "type": "quest"
   },
   "840028": {
-    "name": "Slumbering Frozen Lake Cave",
+    "name": "眠れる氷の湖洞窟",
     "type": "quest"
   },
   "840029": {
-    "name": "Tsenka Merchants Secret Library",
+    "name": "チェンガルン商会の秘密の書庫",
     "type": "quest"
   },
   "840030": {
-    "name": "False Fate Conclave",
+    "name": "偽りの運命の集会場",
     "type": "quest"
   },
   "840031": {
-    "name": "Hilsrother Loot Depository",
+    "name": "ヒルスローター略奪品保管所",
     "type": "quest"
   },
   "840032": {
-    "name": "(Unused)",
+    "name": "(未使用)",
     "type": "quest"
   },
   "840033": {
-    "name": "Sand Dunes Hideout",
+    "name": "砂丘の隠れ家",
     "type": "quest"
   },
   "840034": {
-    "name": "Traitor's Temporary Office",
+    "name": "裏切り者の臨時商会",
     "type": "quest"
   },
   "840035": {
-    "name": "Contaminated Basement",
+    "name": "汚染された地下室",
     "type": "quest"
   },
   "840036": {
-    "name": "Tsenka Upper Supply Storage",
+    "name": "チェンガルン商会物資倉庫",
     "type": "quest"
   },
   "840037": {
-    "name": "Faded Pulse Library",
+    "name": "色あせた脈動の書庫",
     "type": "quest"
   },
   "840038": {
-    "name": "Coastal Cave Hidden Location",
+    "name": "海岸洞窟の隠された場所",
     "type": "quest"
   },
   "840039": {
-    "name": "Abandoned Storage",
+    "name": "捨てられた倉庫",
     "type": "quest"
   },
   "840040": {
-    "name": "Hidden Snowfield Cave",
+    "name": "隠された雪原洞窟",
     "type": "quest"
   },
   "840041": {
-    "name": "Abandoned Cave",
+    "name": "捨てられた洞窟",
     "type": "quest"
   },
   "840042": {
-    "name": "Lepharist Experiment Site",
+    "name": "レパル団実験場",
     "type": "quest"
   },
   "840043": {
-    "name": "Secluded Storage",
+    "name": "人里離れた倉庫",
     "type": "quest"
   },
   "840044": {
-    "name": "Secluded Storage",
+    "name": "人里離れた倉庫",
     "type": "quest"
   },
   "840045": {
-    "name": "Lepharist Laboratory",
+    "name": "レパル団研究室",
     "type": "quest"
   },
   "840046": {
-    "name": "Former Chloris's Band Base",
+    "name": "クロリス団の旧拠点",
     "type": "quest"
   },
   "840047": {
-    "name": "Milora's Hideout",
+    "name": "ミルロラの隠れ家",
     "type": "quest"
   },
   "840048": {
-    "name": "Mysterious Place",
+    "name": "謎の場所",
     "type": "quest"
   },
   "840049": {
-    "name": "Lava Canyon Cave",
+    "name": "溶岩峡谷の洞窟",
     "type": "quest"
   },
   "850000": {
-    "name": "Old Mercenaries Stronghold",
+    "name": "旧傭兵団の駐屯地",
     "type": "instancelayer"
   },
   "850001": {
-    "name": "Below the Dredgion Crash Site Cliff",
+    "name": "ドレドギオン墜落地の絶壁下",
     "type": "instancelayer"
   },
   "850002": {
-    "name": "Drakana Condensation Zone",
+    "name": "ドラカナ凝縮地",
     "type": "instancelayer"
   },
   "850003": {
-    "name": "Odyle Jelly Storage",
+    "name": "オード ゼリー倉庫",
     "type": "instancelayer"
   },
   "850004": {
-    "name": "Old Stone Chamber",
+    "name": "古い石室",
     "type": "quest"
   },
   "850005": {
-    "name": "Sanctum Outpost",
+    "name": "聖所の監視所",
     "type": "instancelayer"
   },
   "850006": {
-    "name": "Crash Site Cave",
+    "name": "墜落地の洞窟",
     "type": "instancelayer"
   },
   "850007": {
-    "name": "Grisilla's Hideout",
+    "name": "グリシラの隠れ家",
     "type": "instancelayer"
   },
   "850008": {
-    "name": "Hermit's Cave",
+    "name": "隠者の洞窟",
     "type": "instancelayer"
   },
   "850009": {
-    "name": "Highland Cave",
+    "name": "丘陵地の洞窟",
     "type": "instancelayer"
   },
   "850010": {
-    "name": "Black Claw Storage",
+    "name": "黒爪族の地下倉庫",
     "type": "instancelayer"
   },
   "850011": {
-    "name": "Old House",
+    "name": "古い家",
     "type": "instancelayer"
   },
   "850012": {
-    "name": "Temporary Clinic",
+    "name": "臨時治療所",
     "type": "instancelayer"
   },
   "850013": {
-    "name": "Wedding Hall",
+    "name": "結婚式場",
     "type": "instancelayer"
   },
   "850014": {
-    "name": "Small House",
+    "name": "小さな家",
     "type": "instancelayer"
   },
   "86": {
-    "name": "Old Purifying Altar",
+    "name": "古い浄化の祭壇",
     "type": "instancelayer"
   },
   "87": {
-    "name": "Notos Legion Office",
+    "name": "ノートス レギオン執務室",
     "type": "instancelayer"
   },
   "870001": {
-    "name": "Patamor Plains Outskirts",
+    "name": "パタモール平原外郭",
     "type": "instancelayer"
   },
   "870002": {
-    "name": "Patamor Plains Heartland",
+    "name": "パタモール平原中心部",
     "type": "instancelayer"
   },
   "870003": {
-    "name": "Hunter's Hideout",
+    "name": "ハンターの隠れ家",
     "type": "instancelayer"
   },
   "870004": {
-    "name": "Island Hidden by Barrierstone",
+    "name": "結界石が隠された島",
     "type": "instancelayer"
   },
   "870005": {
-    "name": "Patamor Village Storage",
+    "name": "パタモール村の倉庫",
     "type": "instancelayer"
   },
   "870006": {
-    "name": "Verdandi's Altar",
+    "name": "ベルダンディの祭壇",
     "type": "instancelayer"
   },
   "870010": {
-    "name": "Fragment Expedition Area",
+    "name": "破片探査地",
     "type": "instancelayer"
   },
   "870011": {
-    "name": "Kalsek's Nest",
+    "name": "カルセックの巣",
     "type": "instancelayer"
   },
   "870012": {
-    "name": "Gallows",
+    "name": "処刑場",
     "type": "instancelayer"
   },
   "870013": {
-    "name": "Abandoned Rime Shelter",
+    "name": "捨てられた霜の避難所",
     "type": "instancelayer"
   },
   "870014": {
-    "name": "Snowshade Hideout",
+    "name": "雪影の隠れ家",
     "type": "instancelayer"
   },
   "870020": {
-    "name": "Hidden Coastal Cave",
+    "name": "隠された海岸洞窟",
     "type": "instancelayer"
   },
   "870021": {
-    "name": "Burned Village",
+    "name": "燃え尽きた村跡",
     "type": "instancelayer"
   },
   "870030": {
-    "name": "Destroy the second Fafnium cave",
+    "name": "二つ目の破片の洞窟",
     "type": "instancelayer"
   },
   "870031": {
-    "name": "Destroy the first Fafnium cave",
+    "name": "一つ目の破片の洞窟",
     "type": "instancelayer"
   },
   "870032": {
-    "name": "Cave of Past Fragments",
+    "name": "過去の破片の洞窟",
     "type": "instancelayer"
   },
   "870040": {
-    "name": "Kromede's Island",
+    "name": "クロメデの島",
     "type": "instancelayer"
   },
   "900001": {
-    "name": "Daeva Bio-Research Base",
+    "name": "ディーヴァ生体研究基地",
     "type": "daily"
   },
   "900002": {
-    "name": "Odylium Repository",
+    "name": "オディウム貯蔵所",
     "type": "daily"
   },
   "900003": {
-    "name": "Crobakhi's Secret Depository",
+    "name": "クロパキンの秘密の保管所",
     "type": "daily"
   },
   "901": {
-    "name": "Altgard Legion Airship",
+    "name": "アルトガルド レギオンの飛行艇",
     "type": "guild"
   },
   "902": {
-    "name": "Verteron Legion Airship",
+    "name": "ベルテロン レギオンの飛行艇",
     "type": "guild"
   },
   "904": {
-    "name": "Eltnen Legion Airship",
+    "name": "エルテネン レギオンの飛行艇",
     "type": "guild"
   },
   "905": {
-    "name": "Morheim Legion Airship",
+    "name": "モルヘイム レギオンの飛行艇",
     "type": "guild"
   },
   "910011": {
-    "name": "Nightmare Altar (Easy)",
+    "name": "悪夢の祭壇(簡単)",
     "type": "awaken",
     "difficulty": "easy"
   },
   "910012": {
-    "name": "Nightmare Altar (Normal)",
+    "name": "悪夢の祭壇(普通)",
     "type": "awaken",
     "difficulty": "normal"
   },
   "910013": {
-    "name": "Nightmare Altar (Hard)",
+    "name": "悪夢の祭壇(難しい)",
     "type": "awaken",
     "difficulty": "hard"
   },
   "910014": {
-    "name": "Nightmare Altar (Challenge)",
+    "name": "悪夢の祭壇(極限)",
     "type": "awaken",
     "difficulty": "extreme"
   },
   "910015": {
-    "name": "Nightmare Altar (Insane)",
+    "name": "悪夢の祭壇(絶望)",
     "type": "awaken"
   },
   "910016": {
-    "name": "Nightmare Altar (Hell)",
+    "name": "悪夢の祭壇(地獄)",
     "type": "awaken"
   },
   "910021": {
-    "name": "Tyrant's Hideout (Easy)",
+    "name": "暴君の隠れ家(簡単)",
     "type": "awaken",
     "difficulty": "easy"
   },
   "910022": {
-    "name": "Tyrant's Hideout (Normal)",
+    "name": "暴君の隠れ家(普通)",
     "type": "awaken",
     "difficulty": "normal"
   },
   "910023": {
-    "name": "Tyrant's Hideout (Hard)",
+    "name": "暴君の隠れ家(難しい)",
     "type": "awaken",
     "difficulty": "hard"
   },
   "910024": {
-    "name": "Tyrant's Hideout (Challenge)",
+    "name": "暴君の隠れ家(極限)",
     "type": "awaken",
     "difficulty": "extreme"
   },
   "910025": {
-    "name": "Tyrant's Hideout (Insane)",
+    "name": "暴君の隠れ家(絶望)",
     "type": "awaken"
   },
   "910026": {
-    "name": "Tyrant's Hideout (Hell)",
+    "name": "暴君の隠れ家(地獄)",
     "type": "awaken"
   },
   "910031": {
-    "name": "Sanctum of Loathing (Easy)",
+    "name": "憎悪の聖所(簡単)",
     "type": "awaken",
     "difficulty": "easy"
   },
   "910032": {
-    "name": "Sanctum of Loathing (Normal)",
+    "name": "憎悪の聖所(普通)",
     "type": "awaken",
     "difficulty": "normal"
   },
   "910033": {
-    "name": "Sanctum of Loathing (Hard)",
+    "name": "憎悪の聖所(難しい)",
     "type": "awaken",
     "difficulty": "hard"
   },
   "910034": {
-    "name": "Sanctum of Loathing (Challenge)",
+    "name": "憎悪の聖所(極限)",
     "type": "awaken",
     "difficulty": "extreme"
   },
   "910035": {
-    "name": "Sanctum of Loathing (Insane)",
+    "name": "憎悪の聖所(絶望)",
     "type": "awaken"
   },
   "910036": {
-    "name": "Sanctum of Loathing (Hell)",
+    "name": "憎悪の聖所(地獄)",
     "type": "awaken"
   },
   "910041": {
-    "name": "Depository of Fates (Easy)",
+    "name": "軌跡保管所(簡単)",
     "type": "awaken",
     "difficulty": "easy"
   },
   "910042": {
-    "name": "Depository of Fates (Normal)",
+    "name": "軌跡保管所(普通)",
     "type": "awaken",
     "difficulty": "normal"
   },
   "910043": {
-    "name": "Depository of Fates (Hard)",
+    "name": "軌跡保管所(難しい)",
     "type": "awaken",
     "difficulty": "hard"
   },
   "910044": {
-    "name": "Depository of Fates (Challenge)",
+    "name": "軌跡保管所(極限)",
     "type": "awaken",
     "difficulty": "extreme"
   },
   "910045": {
-    "name": "Depository of Fates (Insane)",
+    "name": "軌跡保管所(絶望)",
     "type": "awaken"
   },
   "910046": {
-    "name": "Depository of Fates (Hell)",
+    "name": "軌跡保管所(地獄)",
     "type": "awaken"
   },
   "910051": {
-    "name": "Forgotten Repository (Easy)",
+    "name": "忘れられた保存庫(簡単)",
     "type": "awaken",
     "difficulty": "easy"
   },
   "910052": {
-    "name": "Forgotten Repository (Normal)",
+    "name": "忘れられた保存庫(普通)",
     "type": "awaken",
     "difficulty": "normal"
   },
   "910053": {
-    "name": "Forgotten Repository (Hard)",
+    "name": "忘れられた保存庫(難しい)",
     "type": "awaken",
     "difficulty": "hard"
   },
   "910054": {
-    "name": "Forgotten Repository (Challenge)",
+    "name": "忘れられた保存庫(極限)",
     "type": "awaken",
     "difficulty": "extreme"
   },
   "910055": {
-    "name": "Forgotten Repository (Insane)",
+    "name": "忘れられた保存庫(絶望)",
     "type": "awaken"
   },
   "910056": {
-    "name": "Forgotten Repository (Hell)",
+    "name": "忘れられた保存庫(地獄)",
     "type": "awaken"
   },
   "910057": {
-    "name": "Forgotten Repository (Doom)",
+    "name": "忘れられた保存庫(破滅)",
     "type": "awaken"
   },
   "910061": {
-    "name": "Chamber of the Dead (Easy)",
+    "name": "死者の寝室(簡単)",
     "type": "awaken",
     "difficulty": "easy"
   },
   "910062": {
-    "name": "Chamber of the Dead (Normal)",
+    "name": "死者の寝室(普通)",
     "type": "awaken",
     "difficulty": "normal"
   },
   "910063": {
-    "name": "Chamber of the Dead (Hard)",
+    "name": "死者の寝室(難しい)",
     "type": "awaken",
     "difficulty": "hard"
   },
   "910064": {
-    "name": "Chamber of the Dead (Challenge)",
+    "name": "死者の寝室(極限)",
     "type": "awaken",
     "difficulty": "extreme"
   },
   "910065": {
-    "name": "Chamber of the Dead (Insane)",
+    "name": "死者の寝室(絶望)",
     "type": "awaken"
   },
   "910066": {
-    "name": "Chamber of the Dead (Hell)",
+    "name": "死者の寝室(地獄)",
     "type": "awaken"
   },
   "910067": {
-    "name": "Chamber of the Dead (Doom)",
+    "name": "死者の寝室(破滅)",
     "type": "awaken"
   },
   "94": {
-    "name": "Near Coastal Cliffs",
+    "name": "海岸絶壁付近",
     "type": "instancelayer"
   },
   "96": {
-    "name": "Daminu Forest",
+    "name": "ダミヌの森",
     "type": "instancelayer"
   },
   "98": {
-    "name": "Base in Front of the Supply Depot",
+    "name": "補給所前の拠点",
     "type": "instancelayer"
   }
 }

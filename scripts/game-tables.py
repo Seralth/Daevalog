@@ -12,11 +12,10 @@ Writes, under src/data:
   no longer has are kept as they are.
 - i18n/skills/<lang>.json: the name of every skill the game names, and of
   the heals that come from no skill (NO_SKILL_HEALS).
-- i18n/dungeons/<lang>.json: for the languages already there, each dungeon's
-  name, kind, difficulty and party tier, and the game's words for that
-  difficulty. Instance maps without a dungeon row of their own get their map
-  title as the name. zh-Hans and zh-Hant keep their names and get the English
-  words.
+- i18n/dungeons/<lang>.json: each dungeon's name, kind, difficulty and party
+  tier, and the game's words for that difficulty. Instance maps without a
+  dungeon row of their own get their map title as the name. zh-Hans and
+  zh-Hant keep their names and get the English words.
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
 - open_world_maps.json: overworld maps, their world layers and the Abyss.
@@ -75,6 +74,9 @@ DIFFICULTY_TEXT = {
     "Suppression": "String_UI_SUPPRESSION_{}_body",
 }
 TIER_TEXT = "String_UI_CONTENTS_UNLOCK_PARTYDUNGEON{}TIER_body"
+CONQUEST_HARD_TEXT = "String_UI_PARTYDUNGEON_CONQUER_DIFFICULTY_ADVANCED_body"
+# A name that holds its variant in brackets: "Nightmare Altar (Easy)".
+VARIANT_IN_NAME = re.compile(r"[(\[（【].*[)\]）】]")
 
 
 def load(path):
@@ -129,23 +131,33 @@ def main():
             fields["tier"] = int(tier.group(1))
         return fields
 
-    # The game's words for a dungeon's difficulty, and its party tier with it.
-    def difficulty_label(dungeon, text):
-        key = DIFFICULTY_TEXT.get(enum(dungeon["DungeonSubType"])) or DIFFICULTY_TEXT.get(enum(dungeon["DungeonType"]))
+    # The game's words for a dungeon's difficulty, never repeating a word.
+    # A party tier's words ("Conquest Tier 3") hold the difficulty already,
+    # so they stand alone, with the game's Conquest "Hard" for an Advanced
+    # row. A name that holds its variant gets no words.
+    def difficulty_label(dungeon, name, text):
         difficulty = enum(dungeon["DungeonDifficulty"])
-        label = text.get(key.format(difficulty.upper())) if key and difficulty != "None" else None
-        if not named(label):
+        if difficulty == "None" or not name or VARIANT_IN_NAME.search(name):
             return None
         tier = re.fullmatch(r"PartyDungeon_(\d+)Tier", enum(dungeon["PartDungeonTier"]))
-        tier_label = text.get(TIER_TEXT.format(tier.group(1))) if tier else None
-        return f"{label} · {tier_label}" if named(tier_label) else label
+        if tier:
+            label = text.get(TIER_TEXT.format(tier.group(1)))
+            hard = text.get(CONQUEST_HARD_TEXT)
+            if difficulty == "Advanced" and named(label) and named(hard):
+                label = f"{label} · {hard}"
+        else:
+            key = DIFFICULTY_TEXT.get(enum(dungeon["DungeonSubType"])) or DIFFICULTY_TEXT.get(enum(dungeon["DungeonType"]))
+            label = text.get(key.format(difficulty.upper())) if key else None
+        if not named(label) or label.casefold() in name.casefold():
+            return None
+        return label
 
     def set_dungeon(table, dungeon, text):
         entry = table.setdefault(str(dungeon["ID"]["Value"]), {})
         for field in ("type", "difficulty", "tier", "label"):
             entry.pop(field, None)
         entry.update(dungeon_fields(dungeon))
-        label = difficulty_label(dungeon, text)
+        label = difficulty_label(dungeon, entry.get("name"), text)
         if label:
             entry["label"] = label
 
@@ -157,6 +169,7 @@ def main():
             return "player"
         return "test" if DUMMY_INTERNAL.search(npc["Name"]) else None
 
+    english_dungeons = load(DATA / "i18n/dungeons/en.json")
     for culture, lang in LANGS.items():
         text = english if lang == "en" else strings(export, culture)
 
@@ -200,22 +213,24 @@ def main():
         # or its map's where it has none, and the title of an instance map
         # without a dungeon row of its own.
         path = DATA / "i18n/dungeons" / f"{lang}.json"
-        if path.exists():
-            table = load(path)
-            for dungeon in dungeons:
-                name = text.get(f"String_{dungeon['Title']['Key']}_body")
-                own_map = map_by_id.get(dungeon["ID"]["Value"])
-                if not named(name) and own_map and value(dungeon["MapId"]) == dungeon["ID"]["Value"]:
-                    name = text.get(f"String_{own_map['Desc']['Key']}_body")
-                if named(name):
-                    table.setdefault(str(dungeon["ID"]["Value"]), {})["name"] = name
-                if str(dungeon["ID"]["Value"]) in table:
-                    set_dungeon(table, dungeon, text)
-            for m in maps:
-                name = text.get(f"String_{m['Desc']['Key']}_body")
-                if m["ID"]["Value"] not in open_world | dungeon_ids and named(name):
-                    table.setdefault(str(m["ID"]["Value"]), {})["name"] = name
-            save(path, table)
+        table = load(path)
+        for dungeon in dungeons:
+            name = text.get(f"String_{dungeon['Title']['Key']}_body")
+            own_map = map_by_id.get(dungeon["ID"]["Value"])
+            if not named(name) and own_map and value(dungeon["MapId"]) == dungeon["ID"]["Value"]:
+                name = text.get(f"String_{own_map['Desc']['Key']}_body")
+            if named(name):
+                table.setdefault(str(dungeon["ID"]["Value"]), {})["name"] = name
+            if str(dungeon["ID"]["Value"]) in table:
+                set_dungeon(table, dungeon, text)
+        for m in maps:
+            name = text.get(f"String_{m['Desc']['Key']}_body")
+            if m["ID"]["Value"] not in open_world | dungeon_ids and named(name):
+                table.setdefault(str(m["ID"]["Value"]), {})["name"] = name
+        # Ids the game no longer has, or has no name for here, keep the English.
+        for key, entry in english_dungeons.items():
+            table.setdefault(key, dict(entry))
+        save(path, table)
 
     groups = {str(s["ID"]["Value"]): value(s["DamageAnalyzerSkillIdOverride"]) for s in skills
               if value(s["DamageAnalyzerSkillIdOverride"]) not in (0, None, s["ID"]["Value"])}

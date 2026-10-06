@@ -4,7 +4,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 1,
-    "label": "Conquest · Conquest Tier 1"
+    "label": "Conquest Tier 1"
   },
   "600002": {
     "name": "克勞洞穴",
@@ -31,7 +31,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 2,
-    "label": "Conquest · Conquest Tier 2"
+    "label": "Conquest Tier 2"
   },
   "600013": {
     "name": "烏努庫庫峽谷",
@@ -52,7 +52,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 3,
-    "label": "Conquest · Conquest Tier 3"
+    "label": "Conquest Tier 3"
   },
   "600023": {
     "name": "火之神殿",
@@ -73,7 +73,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 1,
-    "label": "Conquest · Conquest Tier 1"
+    "label": "Conquest Tier 1"
   },
   "600033": {
     "name": "德拉烏伯尼爾",
@@ -94,7 +94,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 4,
-    "label": "Conquest · Conquest Tier 4"
+    "label": "Conquest Tier 4"
   },
   "600051": {
     "name": "德烏斯研究基地",
@@ -185,7 +185,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 2,
-    "label": "Conquest · Conquest Tier 2"
+    "label": "Conquest Tier 2"
   },
   "600073": {
     "name": "巴克隆空中島",
@@ -206,7 +206,7 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 3,
-    "label": "Conquest · Conquest Tier 3"
+    "label": "Conquest Tier 3"
   },
   "600093": {
     "name": "凶猛的角岩窟",
@@ -224,14 +224,14 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 4,
-    "label": "Conquest · Conquest Tier 4"
+    "label": "Conquest Tier 4"
   },
   "600123": {
     "name": "無之搖籃",
     "type": "party",
     "difficulty": "advanced",
     "tier": 4,
-    "label": "Conquest [Hard] · Conquest Tier 4"
+    "label": "Conquest Tier 4 · Hard"
   },
   "600131": {
     "name": "the Hall of Illusion",
@@ -244,14 +244,14 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 5,
-    "label": "Conquest · Conquest Tier 5"
+    "label": "Conquest Tier 5"
   },
   "600133": {
     "name": "the Hall of Illusion",
     "type": "party",
     "difficulty": "advanced",
     "tier": 5,
-    "label": "Conquest [Hard] · Conquest Tier 5"
+    "label": "Conquest Tier 5 · Hard"
   },
   "600141": {
     "name": "青息之島",
@@ -264,14 +264,14 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 5,
-    "label": "Conquest · Conquest Tier 5"
+    "label": "Conquest Tier 5"
   },
   "600143": {
     "name": "青息之島",
     "type": "party",
     "difficulty": "advanced",
     "tier": 5,
-    "label": "Conquest [Hard] · Conquest Tier 5"
+    "label": "Conquest Tier 5 · Hard"
   },
   "600151": {
     "name": "墮落守護者之城",
@@ -284,14 +284,14 @@
     "type": "party",
     "difficulty": "normal",
     "tier": 6,
-    "label": "Conquest · Conquest Tier 6"
+    "label": "Conquest Tier 6"
   },
   "600153": {
     "name": "墮落守護者之城",
     "type": "party",
     "difficulty": "advanced",
     "tier": 6,
-    "label": "Conquest [Hard] · Conquest Tier 6"
+    "label": "Conquest Tier 6 · Hard"
   },
   "600161": {
     "name": "被蠶食的德烏斯研究基地",
