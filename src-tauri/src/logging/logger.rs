@@ -260,14 +260,28 @@ pub fn set_packet_log_enabled(enabled: bool, log_dir: &std::path::Path) {
     }
 }
 
+/// One capture line, stamped with the packet's own capture time. libpcap hands
+/// packets over in 100 ms batches, so the time of writing falls on that grid
+/// and hides the real spacing between packets.
+fn packet_line(cap: &CapturedPayload) -> String {
+    use chrono::TimeZone;
+    // A payload that never came from libpcap (a test, a replay) has no
+    // capture time worth writing.
+    let captured = (1_000_000_000_000..2_000_000_000_000)
+        .contains(&cap.captured_at_ms)
+        .then(|| chrono::Local.timestamp_millis_opt(cap.captured_at_ms).single())
+        .flatten();
+    let ts = captured.unwrap_or_else(chrono::Local::now).format("%Y-%m-%dT%H:%M:%S%.3f%:z");
+    let key = crate::capture::captured_payload::stream_key(cap.src_port, cap.dst_port);
+    let hex: String = cap.data.iter().map(|b| format!("{:02X}", b)).collect();
+    format!("{}|{}|{}\n", ts, key, hex)
+}
+
 pub fn log_packet(cap: &CapturedPayload) {
     if !PACKET_LOG_ENABLED.load(Ordering::Relaxed) { return; }
     let mut guard = PACKET_LOGGER.lock();
     if let Some(ref mut logger) = *guard {
-        let ts = chrono::Local::now().format("%+");
-        let key = crate::capture::captured_payload::stream_key(cap.src_port, cap.dst_port);
-        let hex: String = cap.data.iter().map(|b| format!("{:02X}", b)).collect();
-        let line = format!("{}|{}|{}\n", ts, key, hex);
+        let line = packet_line(cap);
         if logger.writer.write_all(line.as_bytes()).is_ok() {
             // Flushed per packet on purpose: a capture is usually being taken
             // because something is going wrong, and the tail is the part that
@@ -389,6 +403,50 @@ mod packet_log_tests {
         assert_ne!(p1, p2, "rolling over within one second must not reuse a path");
         assert!(p1.exists() && p2.exists());
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    fn payload(captured_at_ms: i64) -> CapturedPayload {
+        CapturedPayload {
+            src_port: 13328,
+            dst_port: 50349,
+            data: vec![0x05, 0x04, 0x38, 0xAB],
+            device_name: Some("eth0".into()),
+            captured_at_ms,
+            src_ip: None,
+            dst_ip: None,
+            tcp_seq: 0,
+            tcp_ack: 0,
+        }
+    }
+
+    #[test]
+    fn a_packet_is_stamped_with_its_capture_time() {
+        // Off the 100 ms read grid, and long ago, so the time of writing
+        // cannot pass for it.
+        let at = 1_791_237_434_407;
+        let line = packet_line(&payload(at));
+        let mut parts = line.trim_end().splitn(3, '|');
+        let (ts, key, hex) = (parts.next().unwrap(), parts.next().unwrap(), parts.next().unwrap());
+        // Read back the way every replay reads a capture.
+        assert_eq!(chrono::DateTime::parse_from_rfc3339(ts).unwrap().timestamp_millis(), at, "{line}");
+        assert_eq!(ts.len(), "2026-10-04T00:42:05.392-07:00".len(), "{ts}");
+        assert_eq!(key, "Client:50349:13328");
+        assert_eq!(hex, "050438AB");
+    }
+
+    #[test]
+    fn old_captures_with_nanosecond_stamps_still_read() {
+        let old = "2026-10-04T00:42:05.392409062-07:00";
+        assert_eq!(chrono::DateTime::parse_from_rfc3339(old).unwrap().timestamp_millis(), 1_791_099_725_392);
+    }
+
+    #[test]
+    fn a_payload_without_a_capture_time_is_stamped_now() {
+        let before = chrono::Local::now().timestamp_millis();
+        let line = packet_line(&payload(0));
+        let ts = line.split('|').next().unwrap();
+        let at = chrono::DateTime::parse_from_rfc3339(ts).unwrap().timestamp_millis();
+        assert!(at >= before - 1 && at <= chrono::Local::now().timestamp_millis(), "{line}");
     }
 
     #[test]
