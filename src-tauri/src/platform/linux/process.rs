@@ -34,6 +34,7 @@ fn real_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|value| !value.is_empty())
 }
 
+#[cfg(feature = "desktop")]
 pub(crate) fn is_gnome() -> bool {
     desktop(&real_env) == Desktop::Gnome
 }
@@ -253,6 +254,7 @@ pub fn overlay_layer_by_default() -> bool {
 
 /// Whether the session could have a layer overlay, whatever backend the meter
 /// runs on now.
+#[cfg(feature = "desktop")]
 pub(crate) fn layer_offered() -> bool {
     LAYER_OFFERED.get().copied().unwrap_or(false)
 }
@@ -285,12 +287,24 @@ fn os_release_name(text: &str) -> String {
     }
 }
 
+/// Whether gtk-layer-shell loads. The layer is the Tauri window's, so without
+/// that window there is none to offer.
+#[cfg(feature = "desktop")]
+fn layer_library_loads() -> bool {
+    super::window::layer_library_loads()
+}
+
+#[cfg(not(feature = "desktop"))]
+fn layer_library_loads() -> bool {
+    false
+}
+
 /// Returns a note for the log.
 pub fn prepare() -> Option<String> {
     let mut notes = Vec::new();
     let offered = session(&real_env) == Session::Wayland
         && compositor_has_layer_shell()
-        && super::window::layer_library_loads();
+        && layer_library_loads();
     let _ = LAYER_OFFERED.set(offered);
     let plan = plan(&real_env, saved_layer_setting().as_deref(), offered);
     notes.push(format!("display backend: {}", plan.note));

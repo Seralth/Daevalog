@@ -7,7 +7,7 @@
 //!
 //! This half is parser core and stays wasm-clean: decoding a record, replaying
 //! packets over its window, and the comparison. Finding records on disk and
-//! matching them to saved fights is in `files` (desktop only).
+//! matching them to saved fights is in `files` (backend only).
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
@@ -20,7 +20,7 @@ use crate::combat::data_storage::{DataStorage, TargetCombatData};
 use crate::entity::{skill_group, summon_resolver};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod files;
 
 const KEY: [u8; 4] = [0x25, 0xa8, 0x7e, 0x91];

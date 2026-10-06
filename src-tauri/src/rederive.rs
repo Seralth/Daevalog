@@ -6,8 +6,8 @@
 //! through *this* parser — the same code, compiled to `wasm32-unknown-unknown` —
 //! and publishes what it derives.
 //!
-//! That is the whole reason the crate splits on the `desktop` feature and why CI
-//! builds this half for wasm32. Nothing here may reach for Tauri, pcap, HTTP or
+//! That is the whole reason the crate splits on the `backend` and `desktop`
+//! features and why CI builds this half for wasm32. Nothing here may reach for Tauri, pcap, HTTP or
 //! the Windows API.
 //!
 //! What it is worth being precise about: this proves the numbers were not typed

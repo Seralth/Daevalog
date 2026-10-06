@@ -3,5 +3,5 @@ pub mod dps_calculator;
 pub mod ping_tracker;
 
 // Owns the capture threads and the tokio channel they feed.
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod capture_dispatcher;

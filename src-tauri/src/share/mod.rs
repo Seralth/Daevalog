@@ -35,6 +35,6 @@ pub use slices::{
     forget_slice, names_from, prune_slices, read_slice, save_slice, share_status, slice_stamp, slice_uploader,
     slices_dir, uploader_in, write_slice, ShareStatus, SliceMeta,
 };
-#[cfg(test)]
+#[cfg(all(test, feature = "desktop"))]
 pub(crate) use upload::base64;
 pub use upload::{upload, upload_detailed, UploadFailure, UploadResult};

@@ -1,16 +1,17 @@
 //! Daevalog DPS Meter.
 //!
-//! The crate is split in two by the `desktop` feature, and the line is load
-//! bearing rather than tidy-mindedness. Everything outside the feature — the
-//! packet parser, the combat aggregation, the Evidence Slice builder — must
-//! compile to `wasm32-unknown-unknown`, because the log service re-derives an
-//! uploaded fight by running *this* code rather than trusting the numbers a
-//! client sent. Anything that reaches for Tauri, pcap, HTTP or Windows lives
-//! behind the feature.
+//! The crate is split in three by features, and the lines are load bearing
+//! rather than tidy-mindedness. Everything outside the features — the packet
+//! parser, the combat aggregation, the Evidence Slice builder — must compile to
+//! `wasm32-unknown-unknown`, because the log service re-derives an uploaded
+//! fight by running *this* code rather than trusting the numbers a client sent.
+//! Anything that reaches for pcap, HTTP or Windows lives behind `backend`, and
+//! anything that reaches for Tauri behind `desktop`, which includes `backend`.
 //!
-//! CI builds both. If a `use` of the desktop half creeps into the parser half,
+//! CI builds all three. If a `use` of the backend creeps into the parser core,
 //! the wasm build fails rather than the divergence being discovered later in a
-//! log whose numbers nobody can reproduce.
+//! log whose numbers nobody can reproduce. If Tauri creeps into the backend,
+//! the backend build fails.
 
 // ── parser core: must stay wasm-clean ──────────────────────────────────────
 pub mod capture;
@@ -22,23 +23,25 @@ pub mod i18n;
 pub mod rederive;
 pub mod version;
 
-// ── desktop only ───────────────────────────────────────────────────────────
-#[cfg(feature = "desktop")]
+// ── backend: the meter without a window ────────────────────────────────────
+#[cfg(feature = "backend")]
 pub mod account;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod config;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod history;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod logging;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
+pub mod migrate;
+#[cfg(feature = "backend")]
 pub mod platform;
-#[cfg(feature = "desktop")]
-mod migrate;
+#[cfg(feature = "backend")]
+pub mod share;
+
+// ── desktop: the Tauri app ─────────────────────────────────────────────────
 #[cfg(feature = "desktop")]
 mod tray;
-#[cfg(feature = "desktop")]
-pub mod share;
 
 #[cfg(feature = "desktop")]
 mod app;

@@ -17,6 +17,10 @@
 //! maths and PNG encoder, hotkey-label parsing) live beside this file and
 //! re-export the OS half, so callers have one path either way.
 //!
+//! The windows, screenshots and opener take Tauri's window or plugin, so they
+//! come with the `desktop` feature only. The rest is the `backend`, which a
+//! front end without Tauri links.
+//!
 //! The folder is `win32`, not `windows`: a local module named `windows` would
 //! shadow the `windows` crate the Windows code is written against.
 
@@ -37,7 +41,10 @@ pub mod hotkeys;
 pub mod procfs;
 pub mod screenshot;
 
-pub use os::{admin, clock, opener, pcap, process, secret, window, window_detector};
+pub use os::{admin, clock, pcap, process, secret, window_detector};
+// The Tauri app's windows, and Tauri's opener on Windows.
+#[cfg(feature = "desktop")]
+pub use os::{opener, window};
 
 /// Why `secret::unprotect` could not give a stored secret back.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -112,6 +112,7 @@ pub fn write_new_png(wanted: &std::path::Path, png: &[u8]) -> Option<std::path::
 }
 
 /// Capture, the default folder and the folder picker are the OS's.
+#[cfg(feature = "desktop")]
 pub use super::os::screen::{capture, default_folder, pick_folder};
 
 #[cfg(test)]

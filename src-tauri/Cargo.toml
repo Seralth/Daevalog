@@ -28,10 +28,11 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 #
 # is the check that enforces it.
 default = ["desktop"]
-desktop = [
-    "dep:tauri",
-    "dep:tauri-build",
-    "dep:tauri-plugin-opener",
+# The meter without a window: capture, history, settings, sharing, the account
+# and the log. No Tauri, so a front end other than the Tauri one can link it.
+#
+#   cargo check --no-default-features --features backend
+backend = [
     "dep:libloading",
     "dep:daevalog-capture",
     "dep:tokio",
@@ -43,11 +44,19 @@ desktop = [
     "dep:dirs",
     # Linux only (see the target section below); ignored elsewhere.
     "dep:secret-service",
+    "dep:ashpd",
+    "dep:libc",
+]
+# The Tauri app: the backend, plus its windows, tray and webview.
+desktop = [
+    "backend",
+    "dep:tauri",
+    "dep:tauri-build",
+    "dep:tauri-plugin-opener",
+    # Linux only (see the target section below); ignored elsewhere.
     "dep:gtk",
     "dep:webkit2gtk",
     "dep:x11-dl",
-    "dep:ashpd",
-    "dep:libc",
     "dep:open",
 ]
 
@@ -65,17 +74,17 @@ required-features = ["desktop"]
 [[bin]]
 name = "a2t-probe"
 path = "tools/a2t_probe.rs"
-required-features = ["desktop"]
+required-features = ["backend"]
 
 [[bin]]
 name = "a2t-derive"
 path = "tools/a2t_derive.rs"
-required-features = ["desktop"]
+required-features = ["backend"]
 
 [[bin]]
 name = "a2t-inspect"
 path = "tools/a2t_inspect.rs"
-required-features = ["desktop"]
+required-features = ["backend"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [], optional = true }
@@ -120,8 +129,8 @@ windows = { version = "0.59", features = [
     "Win32_UI_Shell_Common",
 ] }
 
-# Desktop-only, so optional and enabled by `desktop`: the log service builds
-# this crate without it and must not pull them in.
+# Optional, and enabled by `backend` or `desktop` (see the features): the log
+# service builds this crate without them and must not pull them in.
 #
 # The desktop keyring (KWallet, GNOME Keyring) for the account token, over the
 # Secret Service D-Bus API. async-io matches the zbus the opener plugin

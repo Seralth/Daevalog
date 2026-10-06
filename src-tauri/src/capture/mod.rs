@@ -12,18 +12,18 @@ pub mod varint;
 
 #[cfg(test)]
 mod replay_report;
-#[cfg(all(test, feature = "desktop"))]
+#[cfg(all(test, feature = "backend"))]
 mod record_check;
 
 // Live capture. pcap needs libloading, the port detector reads the wall clock,
 // and the file replay drives them both — none of which exist on wasm32.
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod combat_port_detector;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod file_replay;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 mod helper_process;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod live;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "backend")]
 pub mod pcap_capturer;
