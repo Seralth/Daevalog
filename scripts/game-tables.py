@@ -19,8 +19,8 @@ Writes, under src/data:
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
 - open_world_maps.json: overworld maps, their world layers and the Abyss.
-- solo_instance_maps.json: sealed and quest dungeons, whose map id is their
-  dungeon id.
+- instance_maps.json: instances filed under their own map id (sealed, quest,
+  daily, Ascension and Ascension Trial dungeons, and Nightmare).
 
 zh-Hans and zh-Hant are not in the global client and are left alone.
 """
@@ -74,6 +74,9 @@ DIFFICULTY_TEXT = {
     "Suppression": "String_UI_SUPPRESSION_{}_body",
 }
 TIER_TEXT = "String_UI_CONTENTS_UNLOCK_PARTYDUNGEON{}TIER_body"
+# Instances a fight is filed under by their map id: sealed, quest, daily,
+# Ascension and Ascension Trial (Awaken) dungeons, and Nightmare.
+OWN_MAP_TYPES = ("Seal", "Quest", "Daily", "Ascension", "Awaken", "BossChallenge")
 CONQUEST_HARD_TEXT = "String_UI_PARTYDUNGEON_CONQUER_DIFFICULTY_ADVANCED_body"
 # A name that holds its variant in brackets: "Nightmare Altar (Easy)".
 VARIANT_IN_NAME = re.compile(r"[(\[（【].*[)\]）】]")
@@ -276,13 +279,15 @@ def main():
         "maps": sorted(open_world),
     }) + "\n", encoding="utf-8")
 
-    solo = [d["ID"]["Value"] for d in dungeons
-            if enum(d["DungeonType"]) in ("Seal", "Quest") and value(d["MapId"]) == d["ID"]["Value"]
-            and d["ID"]["Value"] in map_by_id and d["ID"]["Value"] not in open_world]
-    (DATA / "solo_instance_maps.json").write_text(json.dumps({
-        "source": f"{source}: Dungeon table, sealed and quest dungeons (DungeonType Seal/Quest) "
-                  "on a map of the same id",
-        "maps": sorted(solo),
+    # These are entered without a party roster to name them: the dungeon row
+    # of the map's own id is the content.
+    own = [d["ID"]["Value"] for d in dungeons
+           if enum(d["DungeonType"]) in OWN_MAP_TYPES and value(d["MapId"]) == d["ID"]["Value"]
+           and d["ID"]["Value"] in map_by_id and d["ID"]["Value"] not in open_world]
+    (DATA / "instance_maps.json").write_text(json.dumps({
+        "source": f"{source}: Dungeon table. ownMaps: instances on a map of their own id "
+                  f"(DungeonType {', '.join(OWN_MAP_TYPES)})",
+        "ownMaps": sorted(own),
     }) + "\n", encoding="utf-8")
 
 

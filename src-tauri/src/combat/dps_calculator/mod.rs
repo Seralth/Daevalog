@@ -405,6 +405,21 @@ mod tests {
     }
 
     #[test]
+    fn every_instance_entered_without_a_roster_is_filed_under_its_map() {
+        let s = DataStorage::new();
+        // Daily, Ascension, Ascension Trial (Awaken) and Nightmare (BossChallenge).
+        for map in [900001, 200002, 910011, 200003] {
+            s.note_map_load(1010);
+            s.note_map_load(map);
+            assert_eq!(s.current_dungeon_id(), map);
+        }
+        // A party's Subjugation map is named by its roster, not its map.
+        s.note_map_load(1010);
+        s.note_map_load(156000);
+        assert_eq!(s.current_dungeon_id(), 0);
+    }
+
+    #[test]
     fn a_queued_dungeon_waits_for_the_load_into_it() {
         // 2026-10-04 capture: the roster named Krao Cave (600002) 46 seconds
         // before the load into it, while the party was still in World_L_A.
