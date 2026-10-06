@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+/target/
+# Written by the build, with this machine's paths.
+/.qmlls.ini

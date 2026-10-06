@@ -1,0 +1,17 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/daevalog">
+    <file alias="fonts/PretendardVariable.woff2">../public/vendor/fonts/pretendard/files/PretendardVariable.woff2</file>
+    <file alias="icons/app.png">../src-tauri/icons/64x64.png</file>
+    <file alias="classes/gladiator.png">../public/src/assets/검성.png</file>
+    <file alias="classes/templar.png">../public/src/assets/수호성.png</file>
+    <file alias="classes/ranger.png">../public/src/assets/궁성.png</file>
+    <file alias="classes/assassin.png">../public/src/assets/살성.png</file>
+    <file alias="classes/sorcerer.png">../public/src/assets/마도성.png</file>
+    <file alias="classes/spiritmaster.png">../public/src/assets/정령성.png</file>
+    <file alias="classes/cleric.png">../public/src/assets/치유성.png</file>
+    <file alias="classes/chanter.png">../public/src/assets/호법성.png</file>
+    <file alias="classes/fighter.png">../public/src/assets/권성.png</file>
+  </qresource>
+</RCC>
