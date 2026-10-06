@@ -58,6 +58,7 @@ pub use aggregates::{
     SegmentIdentity, SkillCombatData, TargetCombatData,
 };
 pub use damage::is_player_skill;
+pub use entities::UNATTRIBUTED_ID;
 pub use roster::is_open_world_map;
 
 use encounter::{retire_all, with_carry};
@@ -94,6 +95,8 @@ struct Inner {
     ended_segments: Vec<EndedSegment>,
     /// Job class detected per actor (across all targets, for summon matching)
     actor_jobs: HashMap<i32, JobClass>,
+    /// The class skills each actor used. See `entities::owners`.
+    actor_skills: HashMap<i32, entities::SkillUse>,
 
     nickname_storage: HashMap<i32, String>,
     pending_nicknames: HashMap<i32, String>,
@@ -118,6 +121,9 @@ struct Inner {
     /// entity here that deals class-band damage is a summon / spell-effect
     /// entity — it must not be flagged as a known player.
     summon_spawn_ids: HashSet<i32>,
+    /// Ids a `44/45 36` player record named, with or without a name in it.
+    /// Kept through a reset, which forgets the names.
+    player_spawn_ids: HashSet<i32>,
     /// Entity ids below the usual `>= 100` sanity floor that a spawn or identity
     /// record has proven real. The damage parser uses `>= 100` as a resync gate
     /// while walking varints, which silently discarded every hit from players
@@ -194,6 +200,7 @@ impl DataStorage {
                 idle_retired: false,
                 ended_segments: Vec::new(),
                 actor_jobs: HashMap::new(),
+                actor_skills: HashMap::new(),
                 nickname_storage: HashMap::new(),
                 pending_nicknames: HashMap::new(),
                 permanent_nicknames: HashMap::new(),
@@ -206,6 +213,7 @@ impl DataStorage {
                 authoritative_name_ids: HashSet::new(),
                 confirmed_summon_ids: HashSet::new(),
                 summon_spawn_ids: HashSet::new(),
+                player_spawn_ids: HashSet::new(),
                 low_id_entities: HashSet::new(),
                 party_members: HashMap::new(),
                 party_roster_at_ms: 0,
@@ -351,6 +359,7 @@ impl DataStorage {
         inner.encounter_carry.clear();
         inner.held_dot_ticks.clear();
         inner.actor_jobs.clear();
+        inner.actor_skills.clear();
         inner.known_player_ids.clear();
         inner.hostile_target_ids.clear();
         inner.dead_entity_ids.clear();
@@ -980,7 +989,52 @@ mod tests {
         assert!(!s.is_known_player(502), "still a summon after the reset");
 
         s.forget_summon_links();
-        assert!(s.get_summon_data().is_empty());
+        assert!(s.get_summon_data().is_empty(), "nor is the summon without one an effect of this session");
+    }
+
+    fn owner_of(s: &DataStorage, id: i32) -> Option<i32> {
+        s.get_summon_data().get(&id).copied()
+    }
+
+    #[test]
+    fn a_player_is_no_effect_without_a_name() {
+        let s = DataStorage::new();
+        // Named by a player spawn, and still a player once a reset forgets the name.
+        s.note_player_spawn(201);
+        s.append_nickname_authoritative(201, "Spawned");
+        // A player record with no name in it.
+        s.note_player_record(202);
+        s.append_damage(with_skill(hit(201, 900, 1_000, 100, false), 11_010_000));
+        s.append_damage(with_skill(hit(202, 900, 1_000, 100, false), 11_010_000));
+        // A player's rotation: five distinct skills.
+        for k in 0..5 {
+            s.append_damage(with_skill(hit(203, 900, 1_000, 100, false), 11_010_000 + k * 10_000));
+        }
+        // The owner of a linked summon, with one skill.
+        s.register_confirmed_summon_by_id(600, 204);
+        s.append_damage(with_skill(hit(204, 900, 1_000, 100, false), 16_010_000));
+        // Four skills and nothing else: an effect.
+        for k in 0..4 {
+            s.append_damage(with_skill(hit(700, 900, 1_000, 100, false), 11_010_000 + k * 10_000));
+        }
+        s.reset_nicknames();
+        let owners = s.get_summon_data();
+        for player in [201, 202, 203, 204] {
+            assert_eq!(owners.get(&player), None, "{player} is a player");
+        }
+        assert_eq!(owners.get(&700), Some(&UNATTRIBUTED_ID));
+    }
+
+    #[test]
+    fn an_effects_spawn_after_its_first_hits_leaves_them_for_its_link() {
+        let s = DataStorage::new();
+        s.append_damage(with_skill(hit(700, 900, 1_000, 300, false), 15_020_000));
+        s.note_summon_spawn(700);
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID), "no link yet");
+        s.register_confirmed_summon_by_id(700, 100);
+        s.append_damage(with_skill(hit(700, 900, 1_100, 50, false), 15_020_000));
+        assert_eq!(owner_of(&s, 700), Some(100));
+        assert_eq!(dealt(&s, 900, 700), 350, "all of it is the owner's");
     }
 
     #[test]

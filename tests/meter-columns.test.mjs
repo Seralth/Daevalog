@@ -95,3 +95,16 @@ test("rows carry the backend's ENC figures, and only ENC uses the columns", () =
   dps.targetSelection = "bossTargets";
   assert.equal(dps.getRowColumns(), null);
 });
+
+test("summons and effects tied to no player are one labelled row, not a player", () => {
+  const dps = app(columns());
+  dps.USER_NAME = "";
+  const rows = dps.buildRowsFromMapObject({
+    80000000: { job: "Unknown", nickname: "80000000", dps: 50, amount: 500 },
+    4321: { job: "Sorcerer", nickname: "4321", dps: 10, amount: 100 },
+  });
+  const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+  assert.equal(byId["80000000"].name, "Unattributed summons and effects");
+  assert.equal(byId["80000000"].isIdentifying, false);
+  assert.equal(byId["4321"].isIdentifying, true, "a player without a name still shows by id");
+});

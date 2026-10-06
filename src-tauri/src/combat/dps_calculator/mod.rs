@@ -143,6 +143,7 @@ mod tests {
     use super::meter_rows::active_time;
     use crate::entity::details_context::TargetDetailsResponse;
     use crate::entity::fight_record::FightRecord;
+    use crate::combat::data_storage::UNATTRIBUTED_ID;
     use crate::entity::summon_resolver;
     use crate::entity::damage_packet::ParsedDamagePacket;
     use crate::entity::special_damage::SpecialDamage;
@@ -471,6 +472,7 @@ mod tests {
         spawn(&s, 800, 1);
         hits(&s, 2259, 800, 1_000, 70_000);
         // Someone else joins for the last three seconds.
+        s.note_player_record(3000);
         hits(&s, 3000, 800, 68_000, 70_000);
         crate::clock::set_override(Some(70_000));
         let mut calc = meter_with_npcs(&s);
@@ -696,6 +698,7 @@ mod tests {
         spawn(&s, 36734, DUMMY);
         spawn(&s, 36735, DUMMY);
         spawn(&s, 36736, DUMMY);
+        s.note_player_record(9000);
         hits(&s, 9000, 36736, 1_000, 100_000);
         hits(&s, 9000, 36734, 80_000, 80_000);
         hits(&s, 2259, 36734, 95_000, 100_000);
@@ -934,17 +937,64 @@ mod tests {
         s.note_summon_spawn(500);
         s.append_damage(skill_hit(500, 900, 1_100, 16_010_000, 200));
         s.append_damage(skill_hit(501, 900, 1_200, 16_010_000, 300));
+        // A player whose record carried no name.
+        s.note_player_record(502);
+        s.append_damage(skill_hit(502, 900, 1_250, 16_010_000, 400));
         // A mob the player hits, using a class-band skill of the same class.
         s.append_damage(skill_hit(100, 700, 1_300, 16_010_000, 50));
         s.append_damage(skill_hit(700, 100, 1_400, 16_020_000, 5));
         let mut calc = meter(&s);
         let live = live_totals(&mut calc);
         assert_eq!(live.get(&100), Some(&1_000));
-        assert_eq!(live.get(&500), Some(&200));
-        assert_eq!(live.get(&501), Some(&300));
+        assert_eq!(live.get(&UNATTRIBUTED_ID), Some(&500), "the summon and the effect share one row");
+        assert_eq!(live.get(&502), Some(&400));
+        assert!(!live.contains_key(&500) && !live.contains_key(&501));
         let saved = saved_totals(&calc, 900);
         assert_eq!(saved.get(&100), Some(&1_000));
-        assert_eq!(saved.get(&500), Some(&200));
+        assert_eq!(saved.get(&UNATTRIBUTED_ID), Some(&500));
+    }
+
+    #[test]
+    fn effects_tied_to_no_one_are_one_row_and_no_player_of_a_saved_fight() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(100));
+        s.append_nickname_authoritative(100, "Me");
+        s.append_nickname_authoritative(200, "Other");
+        spawn(&s, 900, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        for i in 0..10 {
+            let at = 1_000 + i * 1_000;
+            crate::clock::set_override(Some(at));
+            s.append_damage(skill_hit(100, 900, at, 15_010_000, 1_000));
+            s.append_damage(skill_hit(200, 900, at, 17_010_000, 500));
+            // Effects of strangers in the crowd, never spawned: a Sorcerer's
+            // and a Cleric's.
+            s.append_damage(skill_hit(7001 + i as i32, 900, at, 15_020_000, 100));
+            s.append_damage(skill_hit(8001, 900, at, 17_020_000, 50));
+        }
+        let shown = calc.get_dps();
+        let rows: Vec<i32> = { let mut r: Vec<i32> = shown.map.keys().copied().collect(); r.sort(); r };
+        assert_eq!(rows, vec![100, 200, UNATTRIBUTED_ID]);
+        assert_eq!(shown.map[&UNATTRIBUTED_ID].amount, 1_500.0);
+        assert_eq!(shown.map[&UNATTRIBUTED_ID].job, "Unknown", "no class icon");
+
+        let context = calc.get_details_context();
+        let pseudo = context.actors.iter().find(|a| a.actor_id == UNATTRIBUTED_ID).expect("in Details");
+        assert_eq!((pseudo.job.as_str(), pseudo.job_id), ("", 0));
+
+        let saved = snapshot_at(&mut calc, 60_000);
+        assert_eq!(saved.len(), 1);
+        let record = &saved[0];
+        let mut actors: Vec<i32> = record.actors.iter().map(|a| a.actor_id).collect();
+        actors.sort();
+        assert_eq!(actors, vec![100, 200], "an upload counts two players");
+        assert_eq!(record.member_jobs().len(), 2);
+        assert_eq!(record.jobs.len(), 2);
+        let effects: Vec<_> = record.details.skills.iter().filter(|k| k.actor_id == UNATTRIBUTED_ID).collect();
+        assert_eq!(effects.iter().map(|k| k.dmg).sum::<i64>(), 1_500, "their damage stays in the fight");
+        assert!(effects.iter().all(|k| k.job.is_empty()));
+        assert_eq!(record.details.skills.iter().map(|k| k.dmg).sum::<i64>(), record.total_damage);
+        crate::clock::set_override(None);
     }
 
     #[test]

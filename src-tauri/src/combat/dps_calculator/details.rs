@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::combat::data_storage::{HealSkillData, SegmentIdentity, TargetCombatData};
+use crate::combat::data_storage::{HealSkillData, SegmentIdentity, TargetCombatData, UNATTRIBUTED_ID};
 use crate::entity::details_context::*;
 use crate::entity::job_class::JobClass;
 use crate::entity::summon_resolver;
@@ -49,7 +49,7 @@ impl DpsCalculator {
                     (resolve_nickname(uid, &nickname_data, &summon_data), String::new())
                 });
 
-                if actor_meta.get(&uid).unwrap().1.is_empty() {
+                if actor_meta.get(&uid).unwrap().1.is_empty() && uid != UNATTRIBUTED_ID {
                     if let Some(job) = actor_data.job {
                         actor_meta.get_mut(&uid).unwrap().1 = job.class_name().to_string();
                     }
@@ -59,7 +59,8 @@ impl DpsCalculator {
             // Remove actors with no job and no nickname
             let remove_ids: Vec<i32> = actor_damage.keys()
                 .filter(|id| {
-                    actor_meta.get(id).is_some_and(|(_, job)| job.is_empty() && !nickname_data.contains_key(id))
+                    **id != UNATTRIBUTED_ID
+                        && actor_meta.get(id).is_some_and(|(_, job)| job.is_empty() && !nickname_data.contains_key(id))
                 })
                 .copied().collect();
             for id in remove_ids {
@@ -84,7 +85,9 @@ impl DpsCalculator {
 
         let actors: Vec<DetailsActorSummary> = actor_meta.iter()
             .map(|(&id, (nick, job))| {
-                let job_id = if let Some(jc) = JobClass::convert_from_skill(
+                let job_id = if id == UNATTRIBUTED_ID {
+                    0
+                } else if let Some(jc) = JobClass::convert_from_skill(
                     // Find a skill code from this actor's aggregate data
                     combat_data.values()
                         .flat_map(|td| td.actors.get(&id))
@@ -288,6 +291,7 @@ impl DpsCalculator {
                     skill_name = format!("{} - DOT", skill_name);
                 }
                 let job = JobClass::convert_from_skill(skill_code)
+                    .filter(|_| uid != UNATTRIBUTED_ID)
                     .map(|j| j.class_name().to_string())
                     .unwrap_or_default();
 
@@ -375,6 +379,7 @@ impl DpsCalculator {
                     skill_name = format!("{} - HoT", skill_name);
                 }
                 let job = JobClass::convert_from_skill(skill_code)
+                    .filter(|_| uid != UNATTRIBUTED_ID)
                     .map(|j| j.class_name().to_string())
                     .unwrap_or_default();
                 let key = (uid, skill_code + if is_hot { 1_000_000_000 } else { 0 });

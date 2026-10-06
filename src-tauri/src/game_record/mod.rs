@@ -16,7 +16,7 @@ use chrono::{NaiveDateTime, TimeZone};
 use serde::Serialize;
 
 use crate::capture::stream_processor::StreamProcessor;
-use crate::combat::data_storage::{DataStorage, TargetCombatData};
+use crate::combat::data_storage::{DataStorage, TargetCombatData, UNATTRIBUTED_ID};
 use crate::entity::{skill_group, summon_resolver};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
@@ -152,7 +152,7 @@ pub fn rows_between(
 /// when nothing else says.
 pub fn closest_owner(rows: &HashMap<(i32, i32), Row>, total: i64) -> Option<i32> {
     let mut by_owner: BTreeMap<i32, i64> = BTreeMap::new();
-    for (&(owner, _), r) in rows {
+    for (&(owner, _), r) in rows.iter().filter(|((o, _), _)| *o != UNATTRIBUTED_ID) {
         *by_owner.entry(owner).or_default() += r.damage;
     }
     by_owner.into_iter().min_by_key(|(_, d)| (d - total).abs()).map(|(o, _)| o)

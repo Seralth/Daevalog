@@ -1207,9 +1207,10 @@ class DpsApp {
       const job = isObj ? (value.job ?? "") : "";
       const nickname = isObj ? (value.nickname ?? "") : "";
       const idText = String(id);
-      const hasNickname = !!nickname && nickname !== idText;
+      const unattributed = isUnattributedActor(numericId);
+      const hasNickname = unattributed || (!!nickname && nickname !== idText);
       const isIdentifying = !hasNickname;
-      const name = hasNickname ? nickname : idText;
+      const name = unattributed ? unattributedLabel() : hasNickname ? nickname : idText;
 
       const dpsRaw = isObj ? value.dps : value;
       const dps = Math.trunc(Number(dpsRaw));

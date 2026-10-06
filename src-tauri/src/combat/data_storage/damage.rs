@@ -97,6 +97,7 @@ impl DataStorage {
         // Track actor job
         if let Some(job) = JobClass::convert_from_skill(skill_code) {
             inner.actor_jobs.entry(actor_id).or_insert(job);
+            inner.actor_skills.entry(actor_id).or_default().add(skill_code);
         }
 
         // Boss encounter auto-reset: if this target is a boss and the current

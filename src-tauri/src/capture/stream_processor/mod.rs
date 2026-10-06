@@ -354,6 +354,24 @@ mod tests {
         p.parsing_damage(&packet, false, false)
     }
 
+    #[test]
+    fn a_player_record_without_a_name_still_marks_a_player() {
+        let (storage, p) = processor();
+        // `45 36 <id 9303> <u32> <mask2>`, the name bit clear.
+        p.parse_player_spawn_name(&hex("4536d748000000000000"), 2);
+        for actor in [9303, 9304] {
+            let mut hit = ParsedDamagePacket::new();
+            hit.set_actor_id(actor);
+            hit.set_target_id(900);
+            hit.set_skill_code(14_010_000);
+            hit.set_damage(100);
+            storage.append_damage(hit);
+        }
+        let owners = storage.get_summon_data();
+        assert_eq!(owners.get(&9303), None, "a player");
+        assert_eq!(owners.get(&9304), Some(&crate::combat::data_storage::UNATTRIBUTED_ID));
+    }
+
     fn processor() -> (Arc<DataStorage>, StreamProcessor) {
         let storage = Arc::new(DataStorage::new());
         let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
