@@ -238,9 +238,9 @@ impl DpsCalculator {
 
         // A summon with no owner link is on the unattributed row until a link
         // arrives; then all it did, before the link too, is its owner's. No
-        // guessing by class or power scalar: both are shared between players,
-        // and guesses put a mob, a party member and the player into other
-        // rows (2026-10-04).
+        // guessing by class or power scalar beyond `entities::party_owner`:
+        // both are shared between players, and guesses put a mob, a party
+        // member and the player into other rows (2026-10-04).
 
         // Filter and compute DPS
         let local_ids = self.resolve_local_ids(&summon_data);

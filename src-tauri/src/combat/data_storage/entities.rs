@@ -3,10 +3,11 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::Ordering;
 
+use crate::entity::job_class::JobClass;
 use crate::entity::summon_resolver;
 
 use super::damage::purge_friendly_damage;
-use super::{ActorCombatData, DataStorage, Inner};
+use super::{ActorCombatData, DataStorage, Inner, TargetCombatData};
 
 impl DataStorage {
     pub fn append_mob(&self, mid: i32, code: i32) {
@@ -228,32 +229,57 @@ const PLAYER_SKILLS: usize = 5;
 /// The class skills an actor used.
 #[derive(Debug, Clone, Default)]
 pub(super) struct SkillUse {
+    classes: Vec<JobClass>,
     /// The first `PLAYER_SKILLS` distinct ones.
     skills: Vec<i32>,
 }
 
 impl SkillUse {
-    pub(super) fn add(&mut self, skill: i32) {
+    pub(super) fn add(&mut self, job: JobClass, skill: i32) {
+        if !self.classes.contains(&job) {
+            self.classes.push(job);
+        }
         if self.skills.len() < PLAYER_SKILLS && !self.skills.contains(&skill) {
             self.skills.push(skill);
         }
     }
+
+    /// The class, while every skill was of one.
+    fn class(&self) -> Option<JobClass> {
+        match self.classes.as_slice() {
+            [job] => Some(*job),
+            _ => None,
+        }
+    }
 }
 
-/// The summon links, plus `UNATTRIBUTED_ID` for every actor that dealt damage
-/// with class skills and is neither linked nor a player. Those are summons and
+/// The summon links, plus an owner for every actor that dealt damage with
+/// class skills and is neither linked nor a player. Those are summons and
 /// effects: the server sends no spawn for other players' effects in a crowd,
 /// so the only packets naming them are their own damage records. In the
 /// check kit's world boss capture they dealt 5.7% of the class-skill damage,
 /// each shown as a player of its own named by its id, and a2tools.app
-/// refused a log of that fight as over raid size (2026-10-05). They share
-/// one row now.
+/// refused a log of that fight as over raid size (2026-10-05).
+///
+/// The owner is your party's one member of the effect's class when no
+/// other player of that class fought where the effect hit (see
+/// `party_owner`); else `UNATTRIBUTED_ID`, one row for them all.
 pub(super) fn owners(inner: &Inner) -> HashMap<i32, i32> {
+    owners_in(inner, inner.target_combat.values().chain(inner.encounter_carry.values()))
+}
+
+/// `owners`, judging who fought where an effect hit by `fights`.
+pub(super) fn owners_in<'a>(inner: &Inner, fights: impl Iterator<Item = &'a TargetCombatData>) -> HashMap<i32, i32> {
     let mut out = inner.summon_storage.clone();
     let owners: HashSet<i32> = inner.summon_storage.values().copied().collect();
+    let present = players_beside_effects(inner, &owners, fights);
     for (&id, used) in &inner.actor_skills {
         if is_effect(inner, &owners, id, used) {
-            out.insert(id, UNATTRIBUTED_ID);
+            let owner = used
+                .class()
+                .and_then(|job| party_owner(inner, job, present.get(&id).and_then(|p| p.get(&job))))
+                .filter(|&owner| owner != id);
+            out.insert(id, owner.unwrap_or(UNATTRIBUTED_ID));
         }
     }
     out
@@ -268,6 +294,61 @@ fn is_effect(inner: &Inner, owners: &HashSet<i32>, id: i32, used: &SkillUse) -> 
         && inner.local_player_id != Some(id as i64)
         && used.skills.len() < PLAYER_SKILLS
         && !owners.contains(&id)
+}
+
+/// The entity of your party's one member of class `job`, when the players of
+/// that class who fought where the effect hit (`present`) are that member
+/// alone. Anyone else of the class could be the caster: two party members
+/// of it, or a stranger nearby. Without that check, 114 summons and effects
+/// linked to strangers in three of the check kit's captures would have gone
+/// to the party's member of their class; with it, none would have, and 105
+/// would have gone to their right owner (2026-10-06).
+fn party_owner(inner: &Inner, job: JobClass, present: Option<&HashSet<i32>>) -> Option<i32> {
+    if inner.party_members.len() < 2 {
+        return None;
+    }
+    let mut of_class = inner.party_members.iter().filter(|(_, m)| m.job == Some(job));
+    let (name, _) = of_class.next()?;
+    if of_class.next().is_some() {
+        return None;
+    }
+    let member = inner.nickname_storage.iter().find(|(_, n)| n.trim() == name.trim()).map(|(&id, _)| id)?;
+    present.is_some_and(|ids| ids.len() == 1 && ids.contains(&member)).then_some(member)
+}
+
+/// For each effect, the players of each class in the fights it hit: players
+/// by their own skills, and the owners of linked summons by theirs.
+fn players_beside_effects<'a>(
+    inner: &Inner,
+    owners: &HashSet<i32>,
+    fights: impl Iterator<Item = &'a TargetCombatData>,
+) -> HashMap<i32, HashMap<JobClass, HashSet<i32>>> {
+    let mut out: HashMap<i32, HashMap<JobClass, HashSet<i32>>> = HashMap::new();
+    for fight in fights {
+        let mut players: HashMap<JobClass, HashSet<i32>> = HashMap::new();
+        let mut effects = Vec::new();
+        for &actor in fight.actors.keys() {
+            let Some(used) = inner.actor_skills.get(&actor) else { continue };
+            let player = if inner.summon_storage.contains_key(&actor) {
+                summon_resolver::resolve(actor, &inner.summon_storage)
+            } else if is_effect(inner, owners, actor, used) {
+                effects.push(actor);
+                continue;
+            } else {
+                actor
+            };
+            for &job in &used.classes {
+                players.entry(job).or_default().insert(player);
+            }
+        }
+        for effect in effects {
+            let present = out.entry(effect).or_default();
+            for (job, ids) in &players {
+                present.entry(*job).or_default().extend(ids);
+            }
+        }
+    }
+    out
 }
 
 /// Skill codes of the records a Spiritmaster's spirit sends its owner (about

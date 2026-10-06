@@ -996,6 +996,78 @@ mod tests {
         s.get_summon_data().get(&id).copied()
     }
 
+    /// You (Sorcerer, 100) and a Cleric (101) in a party, both fighting.
+    fn party_of_sorcerer_and_cleric() -> DataStorage {
+        let s = DataStorage::new();
+        s.set_local_player_id(Some(100));
+        s.append_nickname_authoritative(100, "Me");
+        s.append_nickname_authoritative(101, "Heal");
+        s.set_party_roster(
+            vec![("Me".into(), of_class(1, JobClass::Sorcerer)), ("Heal".into(), of_class(2, JobClass::Cleric))],
+            true,
+        );
+        s.append_damage(with_skill(hit(100, 900, 1_000, 500, false), 15_010_000));
+        s.append_damage(with_skill(hit(101, 900, 1_000, 500, false), 17_010_000));
+        s
+    }
+
+    #[test]
+    fn an_effect_goes_to_the_partys_one_member_of_its_class() {
+        let s = party_of_sorcerer_and_cleric();
+        // Never spawned, never linked: only its damage names it.
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(101));
+        assert!(!s.get_summon_data().contains_key(&100) && !s.get_summon_data().contains_key(&101));
+
+        // Another Cleric on another mob says nothing about this one.
+        s.append_nickname_authoritative(202, "Stranger");
+        s.append_damage(with_skill(hit(202, 901, 1_150, 400, false), 17_010_000));
+        assert_eq!(owner_of(&s, 700), Some(101));
+
+        // Skills of another class too: it could be anyone's.
+        s.append_damage(with_skill(hit(700, 900, 1_200, 300, false), 15_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+    }
+
+    #[test]
+    fn an_effect_is_not_guessed_when_another_could_have_cast_it() {
+        // Another Cleric on the same mob, outside the party.
+        let s = party_of_sorcerer_and_cleric();
+        s.append_nickname_authoritative(202, "Stranger");
+        s.append_damage(with_skill(hit(202, 900, 1_050, 400, false), 17_010_000));
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+
+        // A stranger's spirit, linked, puts its owner among the Clerics too.
+        let s = party_of_sorcerer_and_cleric();
+        s.register_confirmed_summon_by_id(600, 303);
+        s.append_damage(with_skill(hit(600, 900, 1_050, 400, false), 17_030_000));
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+
+        // Two Clerics in the party.
+        let s = party_of_sorcerer_and_cleric();
+        s.set_party_roster(
+            vec![
+                ("Me".into(), of_class(1, JobClass::Sorcerer)),
+                ("Heal".into(), of_class(2, JobClass::Cleric)),
+                ("Heal2".into(), of_class(3, JobClass::Cleric)),
+            ],
+            true,
+        );
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+
+        // The party's Cleric not named yet.
+        let s = DataStorage::new();
+        s.set_party_roster(
+            vec![("Me".into(), of_class(1, JobClass::Sorcerer)), ("Heal".into(), of_class(2, JobClass::Cleric))],
+            true,
+        );
+        s.append_damage(with_skill(hit(700, 900, 1_100, 300, false), 17_020_000));
+        assert_eq!(owner_of(&s, 700), Some(UNATTRIBUTED_ID));
+    }
+
     #[test]
     fn a_player_is_no_effect_without_a_name() {
         let s = DataStorage::new();

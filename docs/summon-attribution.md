@@ -135,9 +135,9 @@ Measured with that rule: **43 correct, 0 wrong**, 38 undetermined on the Aug-15
 pairs, and **zero** false merges of a real player into another. On Aug-18 it
 attributes all four Divine Auras to the (unnamed) Cleric.
 
-**Code:** none. The meter does not merge by power scalar or by class: both are
-shared between players, and such guesses put mobs, party members and the player
-into other rows.
+**Code:** none. The meter does not merge by power scalar, and by class only as
+section 5 says: both are shared between players, and such guesses put mobs,
+party members and the player into other rows.
 
 ---
 
@@ -151,7 +151,14 @@ with 5 or more distinct class skills. In the check kit's 11 captures
 more than 4 distinct skills; 82 unnamed actors with no `45 36` record used 5 to
 19, most of them players in a world boss crowd.
 
-They all share one row, `UNATTRIBUTED_ID`, labelled "Unattributed
+Such an actor goes to the party's one member of its class when the actor used
+skills of one class only, the party has exactly one member of it, that member is
+named, and the players of that class who fought the targets the actor hit are
+that member alone (`entities::party_owner`). Checked against every linked
+summon in the captures: 105 right, 0 wrong. Without the check on who fought
+there, 114 strangers' summons would have gone to the party member.
+
+Everything else shares one row, `UNATTRIBUTED_ID`, labelled "Unattributed
 summons and effects". A saved fight keeps its damage in the details but not in
 `actors`, so uploads and History do not count it as a player. A link that
 arrives later still takes all the actor did (`combat/data_storage/entities.rs`,
