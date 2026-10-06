@@ -554,6 +554,13 @@ mod tests {
         storage.append_mob(30000, 1);
         assert!(!p.parse_summon_spawn_at(&storm("CB8E01", "30750000"), 2));
         assert!(!storage.is_summon(18250) && !storage.is_summon(18251));
+
+        // Some spawns carry `07 02 01` instead of `07 02 06`.
+        let mut other = storm("CC8E01", "BF000000");
+        let m = other.windows(3).position(|w| w == [0x07, 0x02, 0x06]).unwrap();
+        other[m + 2] = 0x01;
+        assert!(p.parse_summon_spawn_at(&other, 2));
+        assert_eq!(storage.get_summon_data().get(&18252), Some(&191));
     }
 
     #[test]
