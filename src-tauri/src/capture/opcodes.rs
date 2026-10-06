@@ -14,7 +14,8 @@ pub const SUMMON_OWNERSHIP: [u8; 2] = [0x04, 0x8D];
 pub const ZONE_CHANGE: [u8; 2] = [0x23, 0x36];
 /// Map load, sent on every zone load.
 pub const MAP_LOAD: [u8; 2] = [0x21, 0x36];
-/// The self record: the character you are playing.
+/// The self record: the character you are playing. Your server and class
+/// follow the name.
 pub const SELF_IDENTITY: [u8; 2] = [0x33, 0x36];
 /// Party roster.
 pub const PARTY_ROSTER: [u8; 2] = [0x02, 0x97];

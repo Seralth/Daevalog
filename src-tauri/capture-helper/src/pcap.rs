@@ -84,6 +84,12 @@ pub mod linux {
     /// Debian-family system.
     pub const LIBRARIES: &[&str] = &["libpcap.so.1", "libpcap.so.0.8", "libpcap.so"];
 
+    /// The kernel buffer of each capture. libpcap cuts it into 256 KiB blocks
+    /// and hands one over at each read timeout (100 ms), however little is in
+    /// it, so its default 2 MiB lasts 0.8 s when the reader falls behind.
+    /// This lasts 3.2 s.
+    pub const BUFFER_BYTES: usize = 8 << 20;
+
     /// Skip libpcap's pseudo-devices. "any" sees every packet a second time on top
     /// of the real interface it arrived on; the rest carry no IP traffic.
     ///
@@ -224,6 +230,22 @@ impl Live {
 
 // ===== Pcap library wrapper =====
 
+/// The calls that open a handle with a chosen buffer size. Old libraries lack
+/// them; `pcap_open_live` does without.
+struct Create {
+    create: unsafe extern "C" fn(*const c_char, *mut c_char) -> PcapT,
+    set_snaplen: unsafe extern "C" fn(PcapT, c_int) -> c_int,
+    set_promisc: unsafe extern "C" fn(PcapT, c_int) -> c_int,
+    set_timeout: unsafe extern "C" fn(PcapT, c_int) -> c_int,
+    set_buffer_size: unsafe extern "C" fn(PcapT, c_int) -> c_int,
+    activate: unsafe extern "C" fn(PcapT) -> c_int,
+}
+
+const SNAPLEN: c_int = 65535;
+/// Not promiscuous: only this machine's own traffic.
+const PROMISC: c_int = 0;
+const TIMEOUT_MS: c_int = 100;
+
 pub struct PcapLib {
     _lib: Library,
     findalldevs: unsafe extern "C" fn(*mut PcapIfT, *mut c_char) -> c_int,
@@ -238,6 +260,7 @@ pub struct PcapLib {
     geterr: unsafe extern "C" fn(PcapT) -> *const c_char,
     breakloop: unsafe extern "C" fn(PcapT),
     stats: Option<unsafe extern "C" fn(PcapT, *mut PcapStat) -> c_int>,
+    create: Option<Create>,
     /// Older libpcap's filter compiler is not thread-safe.
     compile_lock: Mutex<()>,
 }
@@ -289,6 +312,17 @@ impl PcapLib {
             let breakloop: Symbol<unsafe extern "C" fn(PcapT)> =
                 lib.get(b"pcap_breakloop").map_err(|e| format!("pcap_breakloop: {}", e))?;
             let stats = lib.get::<unsafe extern "C" fn(PcapT, *mut PcapStat) -> c_int>(b"pcap_stats").ok().map(|f| *f);
+            let set = |name: &[u8]| lib.get::<unsafe extern "C" fn(PcapT, c_int) -> c_int>(name).ok().map(|f| *f);
+            let create = (|| {
+                Some(Create {
+                    create: *lib.get(b"pcap_create").ok()?,
+                    set_snaplen: set(b"pcap_set_snaplen")?,
+                    set_promisc: set(b"pcap_set_promisc")?,
+                    set_timeout: set(b"pcap_set_timeout")?,
+                    set_buffer_size: set(b"pcap_set_buffer_size")?,
+                    activate: *lib.get(b"pcap_activate").ok()?,
+                })
+            })();
 
             Ok(Self {
                 findalldevs: *findalldevs,
@@ -303,6 +337,7 @@ impl PcapLib {
                 geterr: *geterr,
                 breakloop: *breakloop,
                 stats,
+                create,
                 compile_lock: Mutex::new(()),
                 _lib: lib,
             })
@@ -365,34 +400,55 @@ impl PcapLib {
         Ok(devices.into_iter().filter(|d| d.has_addresses && !skip(&d.name)).collect())
     }
 
-    fn open_live_handle(&self, name: &str) -> Result<PcapT, String> {
+    /// A handle on `name`, with a kernel buffer of `buffer_bytes` where the
+    /// library can set one, else libpcap's default.
+    fn open_handle(&self, name: &str, buffer_bytes: Option<usize>) -> Result<PcapT, String> {
         let c_name = CString::new(name).map_err(|e| format!("Invalid device name: {}", e))?;
         let mut errbuf = [0u8; 256];
-
-        let handle = unsafe {
-            (self.open_live)(
-                c_name.as_ptr(),
-                65535,  // snaplen
-                0,      // not promiscuous: only this machine's own traffic
-                100,    // timeout ms
-                errbuf.as_mut_ptr() as *mut c_char,
-            )
+        let errbuf_text = |errbuf: &[u8]| {
+            unsafe { CStr::from_ptr(errbuf.as_ptr() as *const c_char) }.to_string_lossy().to_string()
         };
 
-        if handle.is_null() {
-            let err = unsafe { CStr::from_ptr(errbuf.as_ptr() as *const c_char) }
-                .to_string_lossy()
-                .to_string();
-            return Err(format!("pcap_open_live failed: {}", err));
+        if let (Some(bytes), Some(c)) = (buffer_bytes, &self.create) {
+            let handle = unsafe { (c.create)(c_name.as_ptr(), errbuf.as_mut_ptr() as *mut c_char) };
+            if handle.is_null() {
+                return Err(format!("pcap_create failed: {}", errbuf_text(&errbuf)));
+            }
+            // The setters fail only on a handle already active.
+            let status = unsafe {
+                (c.set_snaplen)(handle, SNAPLEN);
+                (c.set_promisc)(handle, PROMISC);
+                (c.set_timeout)(handle, TIMEOUT_MS);
+                (c.set_buffer_size)(handle, bytes.min(c_int::MAX as usize) as c_int);
+                (c.activate)(handle)
+            };
+            // Above 0 is a warning, and the handle works.
+            if status < 0 {
+                let err = self.last_error(handle);
+                unsafe { (self.close)(handle) };
+                return Err(format!("pcap_activate failed ({}): {}", status, err));
+            }
+            return Ok(handle);
         }
 
+        let handle = unsafe {
+            (self.open_live)(c_name.as_ptr(), SNAPLEN, PROMISC, TIMEOUT_MS, errbuf.as_mut_ptr() as *mut c_char)
+        };
+        if handle.is_null() {
+            return Err(format!("pcap_open_live failed: {}", errbuf_text(&errbuf)));
+        }
         Ok(handle)
     }
 
-    /// Open a capture on `device` with the plain `tcp` filter.
-    pub fn open(&self, device: &DeviceInfo) -> Result<Live, String> {
+    /// Open a capture on `device` with the plain `tcp` filter, and a kernel
+    /// buffer of `buffer_bytes` (`None`: libpcap's default).
+    pub fn open(&self, device: &DeviceInfo, buffer_bytes: Option<usize>) -> Result<Live, String> {
         let label = device.label().to_string();
-        let handle = self.open_live_handle(&device.name)?;
+        let handle = self.open_handle(&device.name, buffer_bytes)?;
+        let buffer = match buffer_bytes {
+            Some(bytes) if self.create.is_some() => format!(", buffer {} KiB", bytes / 1024),
+            _ => String::new(),
+        };
 
         let link_type = unsafe { (self.datalink)(handle) };
         // Only TCP reaches the meter. A filter that fails leaves the capture
@@ -401,7 +457,7 @@ impl PcapLib {
             log(Level::Warn, &format!("No packet filter on {}: {}", label, e));
             "none".to_string()
         });
-        log(Level::Info, &format!("Capture active on {} (link type {}, filter {})", label, link_type, filter));
+        log(Level::Info, &format!("Capture active on {} (link type {}, filter {}{})", label, link_type, filter, buffer));
         let applied = Arc::new(AtomicU32::new(0));
         live_handles().push(LiveHandle { handle: handle as usize, applied: applied.clone() });
         Ok(Live { handle: handle as usize, label, link_type, applied })

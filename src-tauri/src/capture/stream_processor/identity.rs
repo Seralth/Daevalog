@@ -8,6 +8,7 @@ use crate::capture::names::{
     exact_name, is_placeholder_name, sanitize_nickname, unicode_script, UnicodeScript, NAME_FIELD_BYTES,
 };
 use crate::capture::varint::{can_read_varint, read_varint, varint_ending_at, VarIntResult};
+use crate::entity::job_class::JobClass;
 
 impl StreamProcessor {
     /// Bind the local player from the account character-select list.
@@ -156,11 +157,26 @@ impl StreamProcessor {
                 i += 1;
                 continue;
             };
+            let after = mask2_idx + 2 + name_len;
+            // A self record without your server and class after the name is
+            // not one. The last `33 36` of a `1d 37` record ending `33 36 33 36`
+            // read with the next record's bytes as entity 16 and a two-letter
+            // name (2026-10-05 17:42:14), and the meter took that for you.
+            // Entity ids under 100 are real players, so the id cannot tell.
+            let profile = if is_self {
+                let Some(profile) = self_profile(data, after) else {
+                    i += 1;
+                    continue;
+                };
+                Some(profile)
+            } else {
+                None
+            };
 
             self.data_storage.note_low_id_entity(id.value);
             self.data_storage
                 .append_nickname_authoritative(id.value, &sanitized);
-            if is_self {
+            if let Some((server, job)) = profile {
                 // The game's word on who you are replaces whatever name was
                 // configured. That name comes from the window title or the last
                 // session, and both go stale: the title does not change when a
@@ -172,26 +188,15 @@ impl StreamProcessor {
                 {
                     tracing::info!("self record: local player '{}' -> entity {}", sanitized, id.value);
                 }
-                // Then your server (u16) and class (u32, the roster's encoding).
-                // The class has to read as one, so a record laid out some other
-                // way is not taken for a server.
-                let after = mask2_idx + 2 + name_len;
-                if let Some(rest) = data.get(after..after + 6) {
-                    let server = u16::from_le_bytes([rest[0], rest[1]]);
-                    let class = u32::from_le_bytes([rest[2], rest[3], rest[4], rest[5]]);
-                    let job = crate::entity::job_class::JobClass::from_roster_class(class);
-                    if (1000..3000).contains(&server) && job.is_some() {
-                        self.data_storage.note_player_server(&sanitized, server);
-                        // A byte, then level (u32). Confirmed by a level-up, 28
-                        // then 29 (Naicha, 2026-10-04), and against the roster's
-                        // levels for three other players.
-                        let level = data
-                            .get(after + 7..after + 11)
-                            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-                            .filter(|l| (1..=99).contains(l));
-                        self.data_storage.note_self_profile(&sanitized, job, level);
-                    }
-                }
+                self.data_storage.note_player_server(&sanitized, server);
+                // A byte, then level (u32). Confirmed by a level-up, 28
+                // then 29 (Naicha, 2026-10-04), and against the roster's
+                // levels for three other players.
+                let level = data
+                    .get(after + 7..after + 11)
+                    .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+                    .filter(|l| (1..=99).contains(l));
+                self.data_storage.note_self_profile(&sanitized, Some(job), level);
             } else {
                 tracing::debug!("player record: '{}' -> entity {}", sanitized, id.value);
             }
@@ -665,4 +670,14 @@ impl StreamProcessor {
         }
         name_end
     }
+}
+
+/// Your server (u16) and class (u32, the roster's encoding), which follow the
+/// name in a self record. Both must read as one.
+fn self_profile(data: &[u8], after: usize) -> Option<(u16, JobClass)> {
+    let rest = data.get(after..after + 6)?;
+    let server = u16::from_le_bytes([rest[0], rest[1]]);
+    let class = u32::from_le_bytes([rest[2], rest[3], rest[4], rest[5]]);
+    let job = JobClass::from_roster_class(class)?;
+    (1000..3000).contains(&server).then_some((server, job))
 }
