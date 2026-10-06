@@ -48,6 +48,7 @@ desktop = [
     "dep:x11-dl",
     "dep:ashpd",
     "dep:libc",
+    "dep:open",
 ]
 
 # Both binaries are declared rather than left to auto-discovery, so adding the
@@ -138,6 +139,9 @@ x11-dl = { version = "2.21", optional = true }
 # The lock hotkey, through the desktop's GlobalShortcuts portal. async-io like
 # secret-service, so it shares the same zbus.
 ashpd = { version = "0.13", default-features = false, features = ["async-io", "global_shortcuts"], optional = true }
+# The launchers Tauri's opener uses (xdg-open and others), started by the
+# meter so it can wait for them. Already in the tree through the opener.
+open = { version = "5", optional = true }
 # Starting that hotkey's helper without the capture capability.
 libc = { version = "0.2", optional = true }
 

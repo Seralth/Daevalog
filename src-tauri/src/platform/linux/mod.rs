@@ -15,6 +15,7 @@ pub mod clock;
 pub mod files;
 mod dialog;
 pub mod hotkeys;
+pub mod opener;
 pub mod pcap;
 pub mod process;
 pub mod screen;

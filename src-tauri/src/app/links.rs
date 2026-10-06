@@ -2,9 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
-use tauri_plugin_opener::OpenerExt;
-
 use super::data_folder;
+use crate::platform;
 
 /// What may be handed to the desktop's opener.
 #[derive(Debug, PartialEq, Eq)]
@@ -29,10 +28,10 @@ fn allowed(target: &str, data_dir: &Path) -> Option<Target> {
     path.is_dir().then_some(Target::Folder(path))
 }
 
-pub(crate) fn open(app: &tauri::AppHandle, data_dir: &Path, target: &str) {
+pub(crate) fn open(data_dir: &Path, target: &str) {
     let opened = match allowed(target, data_dir) {
-        Some(Target::Link(url)) => app.opener().open_url(url, None::<&str>),
-        Some(Target::Folder(path)) => app.opener().open_path(path.to_string_lossy(), None::<&str>),
+        Some(Target::Link(url)) => platform::opener::open_url(&url),
+        Some(Target::Folder(path)) => platform::opener::open_folder(&path),
         None => {
             let shown: String = target.chars().take(200).collect();
             tracing::warn!("Not opening {shown:?}: only https links and the meter's own folders open");
