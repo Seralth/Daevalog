@@ -17,6 +17,7 @@ use serde::Serialize;
 
 use crate::capture::stream_processor::StreamProcessor;
 use crate::combat::data_storage::{DataStorage, SkillCombatData, TargetCombatData, UNATTRIBUTED_ID};
+use crate::entity::taken::TakenStats;
 use crate::entity::{skill_group, summon_resolver};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
@@ -40,6 +41,19 @@ const GAME_FIELDS: [&str; N_COUNTS] = [
     "BlockCount", "MissCount", "ImmuneCount", "IronWallCount", "RestorationCount",
 ];
 
+/// How many counts the game keeps of the damage the player took.
+pub const N_TAKEN: usize = 12;
+/// The counts of `TakeStatData`, in the order `TakeStat::counts` holds them.
+pub const TAKEN_COUNTS: [&str; N_TAKEN] = [
+    "total", "accuracy", "crit", "perfect", "double", "front", "back",
+    "block", "miss", "immune", "ironwall", "restore",
+];
+const TAKEN_FIELDS: [&str; N_TAKEN] = [
+    "TotalCount", "AccuracyCount", "CriticalCount", "PerfectCount", "HardHitCount",
+    "FrontAttackCount", "BackAttackCount", "BlockCount", "MissCount", "ImmuneCount",
+    "IronWallCount", "RestorationCount",
+];
+
 /// How far to widen a record's window on each side. The game's clock and the
 /// capture's differ a little.
 pub const SLACK_MS: i64 = 500;
@@ -60,6 +74,37 @@ impl Row {
     }
 }
 
+/// The damage the player took: damage, then the counts in `TAKEN_COUNTS` order.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct TakeStat {
+    pub damage: i64,
+    pub counts: [i64; N_TAKEN],
+}
+
+impl TakeStat {
+    fn of(take: &serde_json::Value) -> Self {
+        let mut out = TakeStat { damage: number(&take["TotalDamageVal"]), ..TakeStat::default() };
+        for (i, f) in TAKEN_FIELDS.iter().enumerate() {
+            out.counts[i] = number(&take["HitStat"][*f]);
+        }
+        out
+    }
+
+    /// The meter's damage taken, counted as the game counts it. Checked on
+    /// three boss records of 2026-10-06: TotalCount is the hits with a value,
+    /// the reflects and the immunes; AccuracyCount the hits with a value;
+    /// Block flag 0x02 (Parry), with flag 0x01 (Shield Block) by the game's
+    /// names only. Misses, Endurance and Regeneration had no case.
+    pub fn of_meter(s: &TakenStats) -> Self {
+        let counts = [
+            s.total(), s.hits, s.crit, s.perfect, s.double, s.front, s.back,
+            s.shield_block.saturating_add(s.parry), s.miss, s.immune, s.iron_wall, s.regeneration,
+        ]
+        .map(i64::from);
+        TakeStat { damage: s.damage, counts }
+    }
+}
+
 /// A decoded record.
 #[derive(Debug, Clone)]
 pub struct GameRecord {
@@ -69,6 +114,8 @@ pub struct GameRecord {
     pub target: String,
     pub total: i64,
     pub skills: BTreeMap<i32, Row>,
+    /// What the player took over the window, from every attacker.
+    pub taken: TakeStat,
 }
 
 impl GameRecord {
@@ -117,6 +164,7 @@ pub fn decode(bytes: &[u8]) -> Option<GameRecord> {
         target: base["TargetName"].as_str().unwrap_or("").to_string(),
         total: number(&json["AttackStatData"]["TotalDamageVal"]),
         skills,
+        taken: TakeStat::of(&json["TakeStatData"]),
     })
 }
 

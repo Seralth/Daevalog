@@ -9,8 +9,13 @@
 //! A2_REPLAY_FILE=packets_x.txt     a capture that covers the fight (required)
 //! A2_SLACK_MS=500                  widen the record's window by this much on each
 //!                                  side (its clock and the capture's differ a little)
+//! A2_TAKEN_SLACK_MS=0              the same for the damage taken, which matches the
+//!                                  game with the record's own window
 //! cargo test --lib record_check -- --ignored --nocapture
 //! ```
+//!
+//! After the skill rows it sets the record's damage taken (`TakeStatData`)
+//! beside what the meter read of the hits on the same player in the window.
 //!
 //! `saved_fights_match_the_game` runs the app's own path end to end: it
 //! replays the capture as the live meter does, saves fights and their slices
@@ -28,7 +33,8 @@ use std::sync::Arc;
 use crate::capture::stream_assembler::StreamAssembler;
 use crate::capture::stream_processor::StreamProcessor;
 use crate::combat::data_storage::DataStorage;
-use crate::game_record::{self, Row, SkillRow, WindowTap, COUNTS};
+use crate::entity::taken::TakenStats;
+use crate::game_record::{self, Row, SkillRow, TakeStat, WindowTap, COUNTS, TAKEN_COUNTS};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
 fn env(n: &str) -> Option<String> {
@@ -102,11 +108,14 @@ fn record_check() {
     let storage = Arc::new(DataStorage::new());
     let mut streams: HashMap<String, (StreamAssembler, StreamProcessor)> = HashMap::new();
     let mut tap: Option<WindowTap> = None;
+    let mut window = (0, 0);
+    let mut taken = super::replay_taken::Gather::default();
     for line in std::fs::read_to_string(&capture).expect("capture readable").lines() {
         let Some((when, zone, key, bytes)) = capture_line(line) else { continue };
         // The record's times are local, so read them in the capture's zone.
         let tap = tap.get_or_insert_with(|| {
             let (from, until) = record.window_in(&zone).expect("record window");
+            window = (from, until);
             WindowTap::new(from - slack, until + slack)
         });
         if !tap.step(&storage, when) {
@@ -119,6 +128,7 @@ fn record_check() {
         });
         processor.set_override_timestamp(Some(when));
         assembler.process_chunk(&bytes, processor);
+        taken.after_line(&storage);
     }
     let (before, after) = tap.expect("the capture has packets").finish(&storage);
     let summons = storage.get_summon_data();
@@ -145,6 +155,9 @@ fn record_check() {
     }
     let Some((_, target, owner, meter)) = best else {
         println!("no damage in the window");
+        if let Some(me) = me {
+            compare_taken(&record, &taken, window, me, &skills, &npcs);
+        }
         return;
     };
     let total: i64 = meter.values().map(|r| r.damage).sum();
@@ -152,6 +165,53 @@ fn record_check() {
              storage.local_player_id(), meter.len());
     print_rows(&game_record::compare(&record.skills, &meter), &skills);
     println!("total: game {}, meter {total}", record.total);
+    compare_taken(&record, &taken, window, owner, &skills, &npcs);
+}
+
+/// The record's damage taken beside the meter's for `owner` over the
+/// record's window, then the meter's by skill.
+fn compare_taken(
+    record: &game_record::GameRecord,
+    taken: &super::replay_taken::Gather,
+    window: (i64, i64),
+    owner: i32,
+    skills: &SkillLookup,
+    npcs: &NpcLookup,
+) {
+    let taken_slack: i64 = env("A2_TAKEN_SLACK_MS").and_then(|v| v.parse().ok()).unwrap_or(0);
+    let (by, _) = taken.between(window.0 - taken_slack, window.1 + taken_slack);
+    let mut sum = TakenStats::default();
+    let mut rows: Vec<_> = by.get(&owner).into_iter().flatten().collect();
+    rows.sort_by_key(|(code, d)| (-d.stats.damage, **code));
+    for (_, d) in &rows {
+        sum.absorb(&d.stats);
+    }
+    print_taken(record.taken, TakeStat::of_meter(&sum), owner, taken_slack);
+    for (code, d) in rows {
+        let from = if d.source_code == 0 { "?".to_string() } else { npcs.get_npc_name(d.source_code) };
+        println!("  {code} {} from {from}: {}", skills.get_skill_name(*code), super::replay_taken::line(&d.stats));
+    }
+}
+
+/// The record's damage taken beside the meter's, number by number.
+fn print_taken(game: TakeStat, meter: TakeStat, owner: i32, slack: i64) {
+    println!("\ndamage taken by actor {owner}, the record's window widened by {slack} ms:");
+    let head: String = TAKEN_COUNTS.iter().map(|c| format!("{c:>9}")).collect();
+    println!("{:>6} {:>9}{head}", "", "damage");
+    for (side, t) in [("game", game), ("meter", meter)] {
+        let counts: String = t.counts.iter().map(|n| format!("{n:>9}")).collect();
+        println!("{side:>6} {:>9}{counts}", t.damage);
+    }
+    let differ: Vec<&str> = std::iter::once(("damage", game.damage != meter.damage))
+        .chain(TAKEN_COUNTS.iter().enumerate().map(|(i, c)| (*c, game.counts[i] != meter.counts[i])))
+        .filter(|(_, d)| *d)
+        .map(|(c, _)| c)
+        .collect();
+    if differ.is_empty() {
+        println!("damage taken: game and meter agree on every number");
+    } else {
+        println!("damage taken: game and meter differ on {}", differ.join(", "));
+    }
 }
 
 #[test]
