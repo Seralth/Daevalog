@@ -309,6 +309,8 @@ fn saved_fights_match_the_game() {
         println!("\n{}: {} fights {:?}, compared {}, damage game {} meter {}, {} of {} rows differ",
                  c.file, c.target, c.fights, c.compared, c.game_total, c.meter_total, c.differing(), c.rows.len());
         print_rows(&c.rows, &skills);
+        println!("damage taken: game {} {:?}, meter {} {:?}",
+                 c.game_taken.damage, c.game_taken.counts, c.meter_taken.damage, c.meter_taken.counts);
     }
     println!("\nHistory: {statuses:?}");
     // Rows can differ where the capture replay above matches: the slice's

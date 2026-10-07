@@ -16,7 +16,7 @@ use chrono::{NaiveDateTime, TimeZone};
 use serde::Serialize;
 
 use crate::capture::stream_processor::StreamProcessor;
-use crate::combat::data_storage::{DataStorage, SkillCombatData, TargetCombatData, UNATTRIBUTED_ID};
+use crate::combat::data_storage::{add_tick, DataStorage, SkillCombatData, TakenBy, TargetCombatData, UNATTRIBUTED_ID};
 use crate::entity::taken::TakenStats;
 use crate::entity::{skill_group, summon_resolver};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
@@ -296,6 +296,18 @@ pub struct SliceWindow<'a> {
     pub owner: Option<i32>,
     /// The record's total, to pick the player when nothing else says.
     pub game_total: i64,
+    /// Where to count the damage the player took: the record's own window,
+    /// not widened, or this fight's part of it. The game matches it so.
+    pub taken: (i64, i64),
+}
+
+/// A slice replayed over a record's window.
+#[derive(Debug, Default)]
+pub struct SliceReplay {
+    /// The player's rows on the fight's target.
+    pub rows: BTreeMap<i32, Row>,
+    /// What the player took over `SliceWindow::taken`, from every attacker.
+    pub taken: TakenStats,
 }
 
 pub fn replay_slice_window(
@@ -303,29 +315,53 @@ pub fn replay_slice_window(
     skills: &Arc<SkillLookup>,
     npcs: &Arc<NpcLookup>,
     dot_ids: &HashSet<i32>,
-) -> BTreeMap<i32, Row> {
+) -> SliceReplay {
     let storage = Arc::new(DataStorage::new());
     let mut processor = StreamProcessor::new(storage.clone(), skills.clone(), npcs.clone());
     processor.set_dot_skill_ids(dot_ids.clone());
     let mut tap = WindowTap::new(w.from, w.until);
+    // Summon links and the local player as they were when the damage
+    // window closed: the packets after it are read for damage taken only.
+    let mut closed = None;
+    let mut seen = 0;
+    let mut taken = TakenBy::new();
     for (dt, packet) in w.records {
         let at = w.fight_start_ms + *dt as i64;
         processor.set_override_timestamp(Some(at));
-        if !tap.step(&storage, at) {
+        if closed.is_none() && !tap.step(&storage, at) {
+            closed = Some((storage.get_summon_data(), storage.local_player_id()));
+        }
+        if closed.is_some() && at > w.taken.1 {
             break;
         }
         processor.consume_stream(packet);
+        // After each packet, so none is lost to pruning.
+        for t in storage.taken_since(seen) {
+            seen = t.seq;
+            if (w.taken.0..=w.taken.1).contains(&t.hit.at) {
+                add_tick(&mut taken, &t);
+            }
+        }
     }
     let (before, after) = tap.finish(&storage);
     processor.set_override_timestamp(None);
-    let Some(target) = after.get(&w.target_id) else { return BTreeMap::new() };
-    let rows = rows_between(before.get(&w.target_id), target, &storage.get_summon_data(), skills);
-    let owner = w
-        .owner
-        .or_else(|| storage.local_player_id().map(|v| v as i32))
+    let (summons, local) = closed.unwrap_or_else(|| (storage.get_summon_data(), storage.local_player_id()));
+    let rows = after
+        .get(&w.target_id)
+        .map(|target| rows_between(before.get(&w.target_id), target, &summons, skills))
+        .unwrap_or_default();
+    let known = w.owner.or_else(|| local.map(|v| v as i32));
+    let owner = known
         .filter(|o| rows.keys().any(|(owner, _)| owner == o))
         .or_else(|| closest_owner(&rows, w.game_total));
-    owner.map(|o| rows_of(&rows, o)).unwrap_or_default()
+    let mut out = SliceReplay { rows: owner.map(|o| rows_of(&rows, o)).unwrap_or_default(), ..SliceReplay::default() };
+    // The player who dealt nothing to the target still took what they took.
+    if let Some(skills) = owner.or(known).and_then(|o| taken.get(&o)) {
+        for d in skills.values() {
+            out.taken.absorb(&d.stats);
+        }
+    }
+    out
 }
 
 /// One skill row, the game's numbers beside the meter's.

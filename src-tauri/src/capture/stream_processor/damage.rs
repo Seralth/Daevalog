@@ -1132,4 +1132,30 @@ mod tests {
         let rapid: Vec<_> = ticks.iter().filter(|t| t.hit.skill == 1_800_650).map(|t| (t.hit.actor, t.source)).collect();
         assert_eq!(rapid, vec![(28846, 22869); 2]);
     }
+
+    /// The game record view replays a saved fight's slice: the damage taken
+    /// is counted over the record's own window, past the end of the damage
+    /// window too, for a player who dealt the target nothing.
+    #[test]
+    fn a_slice_replay_counts_the_damage_taken_over_the_record_window() {
+        use std::collections::HashSet;
+
+        use crate::game_record::{replay_slice_window, SliceWindow};
+
+        let records: Vec<(i32, Vec<u8>)> = BAKARMA
+            .iter()
+            .map(|(at, hex)| (*at as i32, (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()).collect()))
+            .collect();
+        let (skills, npcs) = (Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let replay_over = |until: i64, taken: (i64, i64)| {
+            let w = SliceWindow { records: &records, fight_start_ms: 0, target_id: 22869, from: 0, until, owner: Some(9200), game_total: 0, taken };
+            replay_slice_window(&w, &skills, &npcs, &HashSet::new()).taken
+        };
+        let all = replay_over(200_000, (0, 200_000));
+        assert_eq!(TakeStat::of_meter(&all), game(20374, [8, 7, 0, 0, 0, 3, 1, 0, 0, 1, 0, 0]));
+        assert_eq!(replay_over(1_000, (0, 200_000)), all, "read on past the damage window");
+        let later: Vec<TakenTick> = replay(BAKARMA, &[]).into_iter().filter(|t| t.hit.at >= 50_000).collect();
+        assert!(!later.is_empty() && later.len() < 9);
+        assert_eq!(TakeStat::of_meter(&replay_over(200_000, (50_000, 200_000))), took(&later));
+    }
 }

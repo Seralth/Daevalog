@@ -14,8 +14,9 @@ use std::time::SystemTime;
 use chrono::{FixedOffset, Local, TimeZone};
 use serde::Serialize;
 
-use super::{add_rows, compare, decode, replay_slice_window, GameRecord, SkillRow, SliceWindow, N_COUNTS, SLACK_MS};
+use super::{add_rows, compare, decode, replay_slice_window, GameRecord, SkillRow, SliceWindow, TakeStat, N_COUNTS, SLACK_MS};
 use crate::capture::evidence_slice;
+use crate::entity::taken::TakenStats;
 use crate::entity::fight_record::FightSummary;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
@@ -172,6 +173,10 @@ pub struct RecordCheck {
     pub game_total: i64,
     pub meter_total: i64,
     pub rows: Vec<SkillRow>,
+    /// The damage the player took over the record's window: the game's, and
+    /// the meter's from the fights' slices (zero when not compared).
+    pub game_taken: TakeStat,
+    pub meter_taken: TakeStat,
 }
 
 impl RecordCheck {
@@ -266,8 +271,9 @@ impl Checker {
         // The record's damage to its target, across every fight it covers:
         // each fight's slice counts only its own stretch of the window.
         let mut meter = BTreeMap::new();
+        let mut taken = TakenStats::default();
         let mut compared = true;
-        for f in fights {
+        for (i, f) in fights.iter().enumerate() {
             let Some((bytes, owner)) = crate::share::read_slice(&self.app_data_dir, &f.id) else {
                 compared = false;
                 break;
@@ -277,7 +283,11 @@ impl Checker {
                 break;
             };
             let (start, end) = fight_span(f);
-            let rows = replay_slice_window(
+            // The record's window for damage taken, split where the next
+            // fight starts.
+            let taken_from = if i == 0 { window.0 } else { window.0.max(start) };
+            let taken_until = fights.get(i + 1).map_or(window.1, |next| window.1.min(next.start_time_ms - 1));
+            let replay = replay_slice_window(
                 &SliceWindow {
                     records: &records,
                     fight_start_ms: f.start_time_ms,
@@ -286,15 +296,18 @@ impl Checker {
                     until: window.1.min(end) + SLACK_MS,
                     owner,
                     game_total: record.total,
+                    taken: (taken_from, taken_until),
                 },
                 &self.skills,
                 &self.npcs,
                 dot_ids,
             );
-            add_rows(&mut meter, &rows);
+            add_rows(&mut meter, &replay.rows);
+            taken.absorb(&replay.taken);
         }
         if !compared {
             meter.clear();
+            taken = TakenStats::default();
         }
         RecordCheck {
             file: path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default(),
@@ -306,6 +319,8 @@ impl Checker {
             game_total: record.total,
             meter_total: meter.values().map(|r| r.damage).sum(),
             rows: compare(&record.skills, &meter),
+            game_taken: record.taken,
+            meter_taken: TakeStat::of_meter(&taken),
         }
     }
 
@@ -417,6 +432,7 @@ pub fn report(fight: &FightSummary, check: &RecordCheck, names: &BTreeMap<i32, S
         return out;
     }
     out.push_str(&format!("Damage: meter {}, game {}\n", check.meter_total, check.game_total));
+    out.push_str(&format!("Damage taken: meter {}, game {}\n", check.meter_taken.damage, check.game_taken.damage));
     let differ: Vec<&SkillRow> = check.rows.iter().filter(|r| !r.same).collect();
     out.push_str(&format!("Rows that differ: {} of {}\n", differ.len(), check.rows.len()));
     for r in differ {
@@ -553,10 +569,13 @@ mod tests {
             game_total: 150,
             meter_total: 150,
             rows: compare(&[(1, hits(100, 2)), (2, hits(50, 1))].into(), &[(1, hits(100, 2)), (2, hits(50, 0))].into()),
+            game_taken: TakeStat { damage: 20_374, ..TakeStat::default() },
+            meter_taken: TakeStat { damage: 20_374, ..TakeStat::default() },
         };
         let names: BTreeMap<i32, String> = [(2, "Water Bomb".to_string())].into();
         let text = report(&f, &check, &names, Some(FixedOffset::east_opt(0).unwrap()));
         assert!(text.contains("Rows that differ: 1 of 2"), "{text}");
+        assert!(text.contains("Damage taken: meter 20374, game 20374"), "{text}");
         assert!(text.contains("  2 Water Bomb: hits meter 0 game 1; front meter 0 game 1"), "{text}");
         assert!(!text.contains("  1 "), "{text}");
         assert_eq!(check.differing(), 1);
