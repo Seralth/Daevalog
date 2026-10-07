@@ -241,7 +241,12 @@ pub(super) fn rebind_roster_after_naming(inner: &mut Inner, nickname: &str) {
 }
 
 pub(super) fn bind_roster_names_by_class(inner: &mut Inner) {
-    if inner.party_members.len() < 2 {
+    // Not in the open world, where each player's own spawn names them. A
+    // roster that came while the party's dungeon was still queued named two
+    // strangers fighting a field boss nearby (2026-10-06): their hits then
+    // counted as the party's, reset the meter and put the boss on screen.
+    // The guard below sees only the current fight, not everyone around.
+    if inner.party_members.len() < 2 || inner.map_kind == MapKind::OpenWorld {
         return;
     }
     let named: HashSet<&str> = inner.nickname_storage.values().map(|n| n.trim()).collect();

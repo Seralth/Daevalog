@@ -470,6 +470,57 @@ mod tests {
     }
 
     #[test]
+    fn a_roster_in_the_open_world_names_no_stranger_by_class() {
+        // Dev meter, 2026-10-06 21:30: back in World_L_A after a dungeon, the
+        // roster of a party queued for Draupnir named the one unnamed Ranger
+        // and Chanter fighting a field boss nearby. Their next hit reset the
+        // meter and put that boss and everyone on it on screen; you never
+        // hit it.
+        use crate::combat::data_storage::PartyMember;
+        use crate::entity::job_class::JobClass;
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(15740));
+        s.append_nickname_authoritative(15740, "Me");
+        s.note_map_load(1010);
+        spawn(&s, 800, 702);
+        spawn(&s, 65389, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        let strangers = |s: &DataStorage, from: i64, to: i64| {
+            for (n, at) in (from..=to).step_by(500).enumerate() {
+                let n = n as i32 % 6;
+                crate::clock::set_override(Some(at));
+                s.append_damage(skill_hit(1458, 65389, at, 14_010_000 + n * 10_000, 2_000));
+                s.append_damage(skill_hit(14536, 65389, at, 18_010_000 + n * 10_000, 2_000));
+            }
+        };
+        for at in (1_000..=10_000).step_by(500) {
+            crate::clock::set_override(Some(at));
+            s.append_damage(hit(15740, 800, at));
+        }
+        strangers(&s, 1_000, 10_000);
+        assert_eq!(calc.get_dps().target_id, 800, "your own mob");
+
+        let member = |slot, job| PartyMember { slot, job: Some(job), ..Default::default() };
+        s.set_current_dungeon(600031);
+        s.set_party_roster(
+            vec![
+                ("Me".into(), member(1, JobClass::Gladiator)),
+                ("Rr".into(), member(2, JobClass::Ranger)),
+                ("Cc".into(), member(3, JobClass::Chanter)),
+                ("Ll".into(), member(4, JobClass::Cleric)),
+                ("Tt".into(), member(5, JobClass::Templar)),
+            ],
+            true,
+        );
+        assert_eq!(s.current_dungeon_id(), 0, "queued, still in the open world");
+        strangers(&s, 10_100, 15_100);
+        assert_eq!((s.get_nickname(1458), s.get_nickname(14536)), (None, None));
+        assert!(s.get_combat_snapshot().contains_key(&800), "no boss reset cleared your mob");
+        assert_eq!(calc.get_dps().target_id, 800, "the strangers' boss stays off the meter");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn an_open_world_fight_ended_by_the_load_into_an_instance_has_no_dungeon() {
         // A field boss killed as the queue pops: the load into the instance
         // ends the fight, after the instance's id is known.

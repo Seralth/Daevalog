@@ -38,8 +38,10 @@ impl StreamProcessor {
     /// It joins to in-world entities by NAME: `dbid` is an account id, unrelated
     /// to the session-scoped entity ids everything else uses.
     ///
-    /// Empty slots are encoded with a zero mask and an empty name; parsing stops
-    /// there because their short form would desync the walk.
+    /// Vacant slots are records too: a zero mask, the slot number, a zero dbid,
+    /// an empty name and zero stats, in a shorter form. Slots after a vacant
+    /// one can still be filled (2026-10-06: slots 1 and 5 filled, 2 to 4
+    /// vacant), so the walk skips them.
     pub(super) fn scan_party_roster(&self, data: &[u8]) {
         if data.len() < 32 {
             return;
@@ -112,19 +114,26 @@ fn parse_party_roster_at(
             break;
         }
         let slot = data[o + 1];
+        if is_vacant_slot(data, o) {
+            if index + 1 == count_info.value {
+                complete = true;
+                break;
+            }
+            // Its length is not fixed either, so find the next record as
+            // after a member.
+            match find_next_member(data, o + VACANT_HEADER, slot.wrapping_add(1)) {
+                Some(next) => o = next,
+                None => break,
+            }
+            continue;
+        }
         o += 2; // presence_mask, slot
         let dbid = u64::from_le_bytes(data.get(o..o + 8)?.try_into().ok()?);
         o += 8;
         let server_id = (dbid >> 48) as u16;
         let nick_len = *data.get(o)? as usize;
         o += 1;
-        // An empty name is a vacant slot. Those records are short and the ones
-        // after them are all vacant too, so the roster ends here.
-        if nick_len == 0 {
-            complete = true;
-            break;
-        }
-        if nick_len > 40 || o + nick_len > data.len() {
+        if nick_len == 0 || nick_len > 40 || o + nick_len > data.len() {
             break;
         }
         let nickname = match std::str::from_utf8(&data[o..o + nick_len]) {
@@ -201,13 +210,35 @@ fn find_u16(data: &[u8], from: usize, to: usize, wanted: u16) -> Option<usize> {
     (from..=end).find(|&i| u16::from_le_bytes([data[i], data[i + 1]]) == wanted)
 }
 
-/// Re-acquire the start of the next party member record by its header shape:
-/// `<mask u8> <slot u8> <dbid u64> <name_len u8> <utf8 name>`, where the slot is
-/// known and the top `u16` of the dbid is a plausible world id.
+/// Bytes of a vacant slot's record up to its name: mask, slot, dbid, name length.
+const VACANT_HEADER: usize = 11;
+
+/// A vacant slot's record at `at`: a zero mask, then (after the slot number)
+/// a zero dbid, an empty name and a zero class, level and gear score. The 12
+/// zeros after the name are what tell it from a stray `00 <slot>` in the
+/// zeros of the record before it, whose next nonzero byte comes sooner.
+fn is_vacant_slot(data: &[u8], at: usize) -> bool {
+    data.get(at) == Some(&0)
+        && data.get(at + 2..at + VACANT_HEADER + 12).is_some_and(|zeros| zeros.iter().all(|&b| b == 0))
+}
+
+/// Re-acquire the start of the next record by its header shape: a vacant
+/// slot, or a member's `<mask u8> <slot u8> <dbid u64> <name_len u8> <utf8
+/// name>`, where the slot is known and the top `u16` of the dbid is a
+/// plausible world id.
 fn find_next_member(data: &[u8], from: usize, expected_slot: u8) -> Option<usize> {
     let end = (from + 32).min(data.len().saturating_sub(12));
     for i in from..=end {
         if data[i + 1] != expected_slot {
+            continue;
+        }
+        if is_vacant_slot(data, i) {
+            return Some(i);
+        }
+        // A member's mask is never 0 (0x0c, 0x0e, 0x1c or 0x1e in every
+        // capture so far). A record tail of `00 05 00 00 00 00 00 00 00 01 02`
+        // before slot 5 read as a member whose name was the next two bytes.
+        if data[i] == 0 {
             continue;
         }
         let server_id = u16::from_le_bytes([data[i + 8], data[i + 9]]);

@@ -582,6 +582,25 @@ mod tests {
         assert_eq!(storage.current_dungeon_id(), 0);
     }
 
+    /// Live captures of a sealed dungeon (2026-10-06: Seal 310057, a boss,
+    /// then the teleport out) and a quest instance (2026-10-05: 840010): the
+    /// load out names World_L_A, the same record as out of a party dungeon.
+    #[test]
+    fn leaving_a_sealed_or_quest_dungeon_loads_the_open_world() {
+        let storage = Arc::new(DataStorage::new());
+        let p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let load = |s: &str| p.parse_map_load_packet(&hex(s));
+        load("3421360800000029bb0400d7795600000000000050afc50080a74500c01bc40000000002000000000000000000001e0000");
+        assert_eq!(storage.current_dungeon_id(), 310057);
+        load("34213609000000f203000041bf5b00000000003aeb1c4896639ec7003c3e46a76fb0430200000000000000000000000000");
+        assert_eq!(storage.current_dungeon_id(), 0);
+        load("342136020000004ad10c0017a24800000000000068904500201dc500000a45da1041c102000000000000000000001e0000");
+        assert_eq!(storage.current_dungeon_id(), 840010);
+        load("34213603000000f20300002e8a4a00000000006b716cc719d70ec7005c2f46e7a182430200000000000000000000000000");
+        assert_eq!(storage.current_dungeon_id(), 0);
+    }
+
     /// A Daeva Hunter recon site is a boss arena of its own, though the Map
     /// table puts it on World_L_A as a layer. A live capture (2026-10-06):
     /// into Watcher Krache's Recon Site (151010), then back to World_L_A.
@@ -595,6 +614,65 @@ mod tests {
         assert_eq!(storage.current_dungeon_id(), 151010);
         load("34213603000000f2030000bac7350000000000ba53dd47c1ef414700ed0947cc6f33430200000000000000000000000000");
         assert_eq!(storage.current_dungeon_id(), 0);
+    }
+
+    /// A roster from a live capture (2026-10-06, names and ids replaced):
+    /// five slots, 1 and 5 filled, 2 to 4 vacant. Slot 5 was never read, so
+    /// its item level and combat power stayed at an older roster's 855 and
+    /// 44,315.
+    #[test]
+    fn a_roster_is_read_past_vacant_slots() {
+        let storage = Arc::new(DataStorage::new());
+        let p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let stale = |slot| crate::combat::data_storage::PartyMember { slot, gear_score: 855, combat_power: 44_315, ..Default::default() };
+        storage.set_party_roster(
+            ["Aaaaaaa", "Cc", "Dd", "Ee", "Bbbbbb"].iter().zip(1..).map(|(n, slot)| (n.to_string(), stale(slot))).collect(),
+            true,
+        );
+        let roster = [
+            "800202974dfb00000c5061727479206e616d65203105df2709000003010001000000b104630103051c01010001000000",
+            "b1040741616161616161160000002d0000003f030000b1046a10046f9e000000000000008e0000000000000001010002",
+            "000000000000000000000000000000000000000000040000000000000000000000000300000000000000000000000000",
+            "000000000000000004000000000000000000000000040000000000000000000000000000000000000000000400000000",
+            "000000000000001e05050001000000b104064262626262621a0000002d00000059030000b1046a1004d9ad0000000000",
+            "0000530000000000000001010009",
+        ]
+        .concat();
+        p.scan_party_roster(&hex(&roster));
+        let members = storage.get_party_members();
+        let mut names: Vec<&str> = members.keys().map(String::as_str).collect();
+        names.sort();
+        assert_eq!(names, ["Aaaaaaa", "Bbbbbb"], "the vacant slots' members have left");
+        let (first, fifth) = (&members["Aaaaaaa"], &members["Bbbbbb"]);
+        assert_eq!((first.slot, first.level, first.gear_score, first.combat_power), (1, 45, 831, 40_559));
+        assert_eq!((fifth.slot, fifth.level, fifth.gear_score, fifth.combat_power), (5, 45, 857, 44_505));
+        assert_eq!(fifth.job, Some(crate::entity::job_class::JobClass::Sorcerer));
+    }
+
+    /// A roster from a live capture (2026-10-05, names and ids replaced):
+    /// slot 4's record ends `00 05 … 01 02`, which read as slot 5's header
+    /// with a two-byte name, so slot 5 was lost from 42 rosters in a row.
+    #[test]
+    fn a_record_tail_is_not_read_as_the_next_member() {
+        let storage = Arc::new(DataStorage::new());
+        let p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let roster = [
+            "b7020297cc3800000c5061727479206e616d65203205c227090000030100020000009c08ff0102051e01010002000000",
+            "9c0804414141412400000016000000450100009c08691004153c000000000000003d0000000000000001051e02020002",
+            "0000009c0804424242421f000000220000002f0200009c08691001f067000000000000003e0000000000000001011e03",
+            "0300020000009c080a4343434343434343434320000000160000000b0100009c086910037c39000000000000004a0000",
+            "000000000001011e04040002000000b104064444444444441e00000016000000ef00000007b104691004cb3600000000",
+            "000000050000000000000001021e05050002000000b10407454545454545451600000026000000c3020000b104691004",
+            "4d8400000000000000510000000000000001010009",
+        ]
+        .concat();
+        p.scan_party_roster(&hex(&roster));
+        let members = storage.get_party_members();
+        assert_eq!(members.len(), 5);
+        let fifth = &members["EEEEEEE"];
+        assert_eq!((fifth.slot, fifth.level, fifth.gear_score, fifth.combat_power), (5, 38, 707, 33_869));
     }
 
     #[test]
