@@ -24,6 +24,7 @@ mod auto_upload;
 pub mod dev_logs;
 mod envelope;
 mod preview;
+pub mod report_log;
 pub mod ring;
 mod slices;
 mod upload;

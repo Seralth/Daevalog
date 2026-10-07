@@ -17,12 +17,12 @@ use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::sync::Arc;
 
-use super::evidence_slice::{frame_packet, Blinder, NameMap, EVENT_OPCODES};
-use super::framing::{self, FrameKind, MAX_BUNDLE_DEPTH};
-use super::packet_accumulator::PacketAccumulator;
-use super::stream_assembler::StreamAssembler;
-use super::stream_processor::StreamProcessor;
-use super::varint::read_varint;
+use crate::capture::evidence_slice::{frame_packet, Blinder, NameMap, EVENT_OPCODES};
+use crate::capture::framing::{self, FrameKind, MAX_BUNDLE_DEPTH};
+use crate::capture::packet_accumulator::PacketAccumulator;
+use crate::capture::stream_assembler::StreamAssembler;
+use crate::capture::stream_processor::StreamProcessor;
+use crate::capture::varint::read_varint;
 use crate::combat::data_storage::DataStorage;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 

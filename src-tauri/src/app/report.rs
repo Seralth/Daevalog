@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
-use crate::capture::report_log;
 use crate::platform;
+use crate::share::report_log;
 
 /// The few facts every issue form asks for, one per line. Nothing that names
 /// the player or the computer: no user or character names, no paths, no

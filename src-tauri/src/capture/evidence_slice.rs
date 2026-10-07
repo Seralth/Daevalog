@@ -219,7 +219,7 @@ fn lift_compact_context(packet: &[u8]) -> Option<Vec<u8>> {
 }
 
 /// Prefix a body with the game's length varint (see `framing`).
-pub(super) fn frame_packet(body: &[u8]) -> Option<Vec<u8>> {
+pub(crate) fn frame_packet(body: &[u8]) -> Option<Vec<u8>> {
     let mut out = encode_varint(framing::length_value(body.len()));
     out.extend_from_slice(body);
     Some(out)
@@ -227,7 +227,7 @@ pub(super) fn frame_packet(body: &[u8]) -> Option<Vec<u8>> {
 
 /// Opcodes that report what happened rather than who is there. Kept only in
 /// the fight window, so the prelude cannot carry another fight's numbers.
-pub(super) const EVENT_OPCODES: &[[u8; 2]] = &[opcodes::DAMAGE, opcodes::DOT, opcodes::HP_MP];
+pub(crate) const EVENT_OPCODES: &[[u8; 2]] = &[opcodes::DAMAGE, opcodes::DOT, opcodes::HP_MP];
 
 /// The opcodes the parser reads, and nothing else.
 ///
@@ -376,7 +376,7 @@ const MAX_NAME_BYTES: usize = 40;
 /// is known. That is the only pass for a name of one byte: searched for, its
 /// byte is everywhere. A false record named "A" (2026-10-06) blinded every
 /// `41` byte in the slice, spawn opcodes too, and the slice derived nothing.
-pub(super) struct Blinder {
+pub(crate) struct Blinder {
     /// Pass one: name bytes -> token bytes, longest first, for names of
     /// `MIN_NAME_BYTES` or more.
     known: Vec<(Vec<u8>, Vec<u8>)>,
@@ -403,6 +403,7 @@ enum Spelling {
     /// characters, letters and digits): the bug-report copy of a packet log.
     /// Hex tokens of all digits, or of more than twelve characters for a long
     /// Hangul name, were not names to it, and those players went unnamed.
+    #[cfg_attr(not(feature = "backend"), allow(dead_code))]
     Letters {
         /// name -> token, so a name is spelled the same everywhere.
         given: HashMap<String, String>,
@@ -442,7 +443,8 @@ fn letters_for(name: &str, seed: u32) -> String {
 impl Blinder {
     /// For every name in `names`, longest first (see `build`), with tokens
     /// the parser still reads as names (see `Spelling::Letters`).
-    pub(super) fn for_report(names: &NameMap) -> Self {
+    #[cfg_attr(not(feature = "backend"), allow(dead_code))]
+    pub(crate) fn for_report(names: &NameMap) -> Self {
         let ordered = longest_first(names);
         let taken = ordered.iter().map(|(name, _)| (*name).clone()).collect();
         Self::with_spelling(&ordered, Spelling::Letters { given: HashMap::new(), taken })
@@ -528,7 +530,7 @@ impl Blinder {
     }
 
     /// Blind one framed packet.
-    pub(super) fn blind(&mut self, buf: &mut [u8]) -> usize {
+    pub(crate) fn blind(&mut self, buf: &mut [u8]) -> usize {
         let mut replaced = 0;
         if !is_event(buf) {
             let fields = name_fields(buf);
@@ -542,7 +544,8 @@ impl Blinder {
     /// Blind bytes that are not one framed packet (the stretch between two
     /// packets, or the end of a bundle that does not frame): every pass, from
     /// the first byte.
-    pub(super) fn blind_unframed(&mut self, buf: &mut [u8]) -> usize {
+    #[cfg_attr(not(feature = "backend"), allow(dead_code))]
+    pub(crate) fn blind_unframed(&mut self, buf: &mut [u8]) -> usize {
         let fields = name_fields_unframed(buf);
         let mut replaced = self.blind_fields(buf, &fields);
         replaced += self.blind_known(buf);
