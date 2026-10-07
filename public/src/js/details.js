@@ -262,6 +262,18 @@ const createDetailsUI = ({
   );
   statSlots.forEach((value) => detailsStatsEl.appendChild(value.statEl));
 
+  // The stat columns as wide as the widest label and value on one line, so
+  // no label is cut (styles.css). Hidden stats measure 0.
+  const fitStatColumns = () => {
+    if (!detailsStatsEl.clientWidth) return;
+    detailsStatsEl.classList.add("isMeasuring");
+    const widest = Math.max(...statSlots.map((slot) => slot.statEl.getBoundingClientRect().width));
+    detailsStatsEl.classList.remove("isMeasuring");
+    detailsStatsEl.style.setProperty("--stat-col", `${Math.ceil(widest)}px`);
+  };
+  // Labels in a web font that loads late are measured again.
+  document.fonts?.addEventListener?.("loadingdone", fitStatColumns);
+
   const getTargetById = (targetId) =>
     detailsTargets.find((target) => Number(target?.targetId) === Number(targetId));
 
@@ -351,6 +363,7 @@ const createDetailsUI = ({
     }
     updateHeaderText();
     updateGridColumns();
+    fitStatColumns();
   };
 
   const resolveStatValue = (statKey, data) => {
@@ -456,6 +469,7 @@ const createDetailsUI = ({
         slot.valueEl.textContent = def.getValue(details);
       }
     }
+    fitStatColumns();
   };
 
   // Build party bar stats from detailsContext actorDamage (live fights).
@@ -1055,6 +1069,7 @@ const createDetailsUI = ({
       slot.valueEl.removeAttribute("style");
       slot.valueEl.textContent = GAME_NO_STAT.has(def.key) ? NO_GAME_VALUE : def.getValue(d);
     });
+    fitStatColumns();
   };
 
   // "—" where the game has no number; in Both, a "game N" tag in each cell

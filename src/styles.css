@@ -6217,12 +6217,21 @@ body.isHistoryWindow .historyPanel .historyHeader .closeX {
   color: var(--hud-sub);
 }
 
-/* Stat readouts: as many 150px columns as fit, each a label/figure pair on
-   its own hairline. Two fixed columns left 600px gaps in the wide window. */
+/* Stat readouts: as many columns as fit, each a label/figure pair on its own
+   hairline. Two fixed columns left 600px gaps in the wide window. A column is
+   as wide as the widest pair (--stat-col, from details.js), so no label is
+   cut; labels wrap only when one such column does not fit. */
 .detailsPanel .detailsStats {
   gap: 0 22px;
-  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, max(172px, var(--stat-col, 0px))), 1fr));
   padding: 8px 14px 9px;
+}
+/* For the measuring: each pair at its width on one line. */
+.detailsPanel .detailsStats.isMeasuring .stat {
+  width: max-content;
+}
+.detailsPanel .detailsStats.isMeasuring .stat .label {
+  white-space: nowrap;
 }
 .detailsPanel .detailsStats .stat {
   align-items: baseline;
@@ -6237,9 +6246,7 @@ body.isHistoryWindow .historyPanel .historyHeader .closeX {
   font-weight: 600;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   color: var(--hud-sub);
 }
 .detailsPanel .detailsStats .stat .value {
