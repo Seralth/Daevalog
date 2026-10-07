@@ -113,7 +113,7 @@ Your settings and fight history stay as they are.
 
 ### Your version
 
-Settings shows the version at the top, for example "Daevalog 1.0 · r250". The number after the "r" is the revision: the higher, the newer.
+Settings shows the version at the top, for example "Daevalog 1.1 · r250". The number after the "r" is the revision: the higher, the newer.
 
 The Arch package shows the same, with the commit added:
 

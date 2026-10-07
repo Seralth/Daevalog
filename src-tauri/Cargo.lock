@@ -751,7 +751,7 @@ dependencies = [
 
 [[package]]
 name = "daevalog-capture"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "libc",
  "libloading 0.8.9",
@@ -759,7 +759,7 @@ dependencies = [
 
 [[package]]
 name = "daevalog-dps-meter"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "ashpd",
  "chrono",

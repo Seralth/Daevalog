@@ -59,7 +59,7 @@ Flatpak and AppImage are not supported: neither can give the capture helper the 
 - **Linux first.** Daevalog is developed and tested on Linux, with AION 2 running under Proton. The Windows code is still in the source, but Daevalog is not built, tested or supported on Windows.
 - **No releases yet.** No packages are published. Build from source, as described above.
 - **No automatic updates.** Daevalog never updates itself and never checks for updates. The package manager that installed it updates it.
-- **Version.** Daevalog is version 1.0. Each build also has a revision number, the count of commits in this repository. Settings shows both, for example "Daevalog 1.0 · r250". The Arch package is numbered the same way, with the commit added: `1.0.r250.g8e3c962`.
+- **Version.** Daevalog is version 1.1. Each build also has a revision number, the count of commits in this repository. Settings shows both, for example "Daevalog 1.1 · r250". The Arch package is numbered the same way, with the commit added: `1.1.r250.g8e3c962`.
 
 ## Reporting problems
 
