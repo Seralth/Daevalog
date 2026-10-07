@@ -16,7 +16,7 @@ use chrono::{NaiveDateTime, TimeZone};
 use serde::Serialize;
 
 use crate::capture::stream_processor::StreamProcessor;
-use crate::combat::data_storage::{DataStorage, TargetCombatData, UNATTRIBUTED_ID};
+use crate::combat::data_storage::{DataStorage, SkillCombatData, TargetCombatData, UNATTRIBUTED_ID};
 use crate::entity::{skill_group, summon_resolver};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
@@ -25,11 +25,19 @@ pub mod files;
 
 const KEY: [u8; 4] = [0x25, 0xa8, 0x7e, 0x91];
 
+/// How many counts the game keeps per skill.
+pub const N_COUNTS: usize = 12;
 /// The counts the game keeps per skill, in the order `Row::counts` holds them.
-pub const COUNTS: [&str; 7] = ["hits", "crit", "perfect", "double", "front", "back", "addhit"];
-const GAME_FIELDS: [&str; 7] = [
+/// The last five are hit results: see `meter_counts` for what each is
+/// compared with.
+pub const COUNTS: [&str; N_COUNTS] = [
+    "hits", "crit", "perfect", "double", "front", "back", "addhit",
+    "block", "miss", "immune", "ironwall", "restore",
+];
+const GAME_FIELDS: [&str; N_COUNTS] = [
     "TotalCount", "CriticalCount", "PerfectCount", "HardHitCount",
     "FrontAttackCount", "BackAttackCount", "AdditionalHitCount",
+    "BlockCount", "MissCount", "ImmuneCount", "IronWallCount", "RestorationCount",
 ];
 
 /// How far to widen a record's window on each side. The game's clock and the
@@ -40,13 +48,13 @@ pub const SLACK_MS: i64 = 500;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct Row {
     pub damage: i64,
-    pub counts: [i64; 7],
+    pub counts: [i64; N_COUNTS],
 }
 
 impl Row {
     fn add(&mut self, other: &Row) {
         self.damage += other.damage;
-        for i in 0..7 {
+        for i in 0..N_COUNTS {
             self.counts[i] += other.counts[i];
         }
     }
@@ -131,10 +139,8 @@ pub fn rows_between(
                 if s.is_dot {
                     continue;
                 }
-                let c = [s.hit_count, s.crit_count, s.perfect_count, s.double_count,
-                         s.frontal_count, s.back_count, s.multi_hit_count];
-                for (i, v) in c.iter().enumerate() {
-                    r.counts[i] += sign * *v as i64;
+                for (i, v) in meter_counts(s).iter().enumerate() {
+                    r.counts[i] += sign * v;
                 }
             }
         }
@@ -146,6 +152,24 @@ pub fn rows_between(
     }
     out.retain(|_, r| *r != Row::default());
     out
+}
+
+/// A skill's counts in `COUNTS` order, as the game would count them.
+fn meter_counts(s: &SkillCombatData) -> [i64; N_COUNTS] {
+    [
+        s.hit_count, s.crit_count, s.perfect_count, s.double_count,
+        s.frontal_count, s.back_count, s.multi_hit_count,
+        // Block counts flag 0x02, the meter's Parry (a 2026-10-06 record).
+        // Flag 0x01, Shield Block, only by the game's names: no record yet.
+        s.shield_block_count + s.parry_count,
+        // Hit type 1, then hit type 6 (the meter's Resist, not yet checked).
+        s.miss_count,
+        s.resist_count,
+        // Flags 0x10 and 0x20, not yet checked.
+        s.iron_wall_count,
+        s.regeneration_count,
+    ]
+    .map(i64::from)
 }
 
 /// The owner whose damage comes closest to `total`: who the record is about,
@@ -283,14 +307,21 @@ pub fn compare(game: &BTreeMap<i32, Row>, meter: &BTreeMap<i32, Row>) -> Vec<Ski
 pub(crate) mod tests {
     use super::*;
 
-    /// A record as the game writes one, encoded.
-    pub(crate) fn record_bytes(start: &str, end: &str, target: &str, skills: &[(i32, i64, [i64; 7])]) -> Vec<u8> {
+    /// A row with its first counts given, the rest zero.
+    pub(crate) fn row(damage: i64, first: &[i64]) -> Row {
+        let mut counts = [0; N_COUNTS];
+        counts[..first.len()].copy_from_slice(first);
+        Row { damage, counts }
+    }
+
+    /// A record as the game writes one, encoded. Counts left out are zero.
+    pub(crate) fn record_bytes(start: &str, end: &str, target: &str, skills: &[(i32, i64, &[i64])]) -> Vec<u8> {
         let list: Vec<serde_json::Value> = skills
             .iter()
             .map(|(id, dmg, c)| {
                 let mut stat = serde_json::Map::new();
                 for (i, f) in GAME_FIELDS.iter().enumerate() {
-                    stat.insert(f.to_string(), c[i].into());
+                    stat.insert(f.to_string(), c.get(i).copied().unwrap_or(0).into());
                 }
                 serde_json::json!({ "SkillId": id, "DamageVal": dmg.to_string(), "HitStat": stat })
             })
@@ -312,15 +343,20 @@ pub(crate) mod tests {
     fn a_record_decodes() {
         let bytes = record_bytes(
             "2026-10-04T04:45:57.967Z", "2026-10-04T04:46:49.871Z", "Training Scarecrow",
-            &[(16040000, 21923, [21, 1, 2, 0, 21, 0, 6]), (16030000, 13422, [12, 1, 2, 0, 12, 0, 5])],
+            &[
+                (16040000, 21923, &[21, 1, 2, 0, 21, 0, 6]),
+                // The Kernon of the West record (2026-10-06): one Block.
+                (16110000, 29588, &[5, 0, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0]),
+            ],
         );
         // Encoded, it is not JSON.
         assert!(serde_json::from_slice::<serde_json::Value>(&bytes).is_err());
         let r = decode(&bytes).expect("decodes");
         assert_eq!(r.target, "Training Scarecrow");
-        assert_eq!(r.total, 35345);
+        assert_eq!(r.total, 51511);
         assert_eq!(r.start.to_string(), "2026-10-04 04:45:57.967");
-        assert_eq!(r.skills[&16040000], Row { damage: 21923, counts: [21, 1, 2, 0, 21, 0, 6] });
+        assert_eq!(r.skills[&16040000], row(21923, &[21, 1, 2, 0, 21, 0, 6]));
+        assert_eq!(r.skills[&16110000].counts[7], 1);
         // The "Z" is not UTC: the times read as local time in any zone.
         let pdt = chrono::FixedOffset::west_opt(7 * 3600).unwrap();
         let (from, until) = r.window_in(&pdt).unwrap();
@@ -338,16 +374,48 @@ pub(crate) mod tests {
     #[test]
     fn rows_compare_on_every_number() {
         let game: BTreeMap<i32, Row> = [
-            (1, Row { damage: 100, counts: [2, 0, 0, 0, 2, 0, 1] }),
-            (2, Row { damage: 50, counts: [1, 0, 0, 0, 1, 0, 0] }),
+            (1, row(100, &[2, 0, 0, 0, 2, 0, 1])),
+            (2, row(50, &[1, 0, 0, 0, 1, 0, 0])),
         ].into();
         let mut meter = game.clone();
-        meter.get_mut(&2).unwrap().counts[6] = 1;
-        meter.insert(3, Row { damage: 5, counts: [1; 7] });
+        meter.get_mut(&2).unwrap().counts[7] = 1;
+        meter.insert(3, Row { damage: 5, counts: [1; N_COUNTS] });
         let rows = compare(&game, &meter);
         assert_eq!(rows.iter().map(|r| r.skill_id).collect::<Vec<_>>(), vec![1, 2, 3]);
         assert_eq!(rows.iter().map(|r| r.same).collect::<Vec<_>>(), vec![true, false, false]);
         assert_eq!(rows[2].game, Row::default());
+    }
+
+    /// The hit results the game keeps, from the meter's flags and hit types.
+    #[test]
+    fn hit_results_are_counted_as_the_game_counts_them() {
+        use crate::combat::data_storage::NoDamageHit;
+        use crate::entity::damage_packet::ParsedDamagePacket;
+        use crate::entity::special_damage::SpecialDamage;
+        let storage = DataStorage::new();
+        let hit = |specials: Vec<SpecialDamage>| {
+            let mut p = ParsedDamagePacket::new();
+            p.set_timestamp(1_000);
+            p.set_target_id(500);
+            p.set_actor_id(700);
+            p.set_skill_code(16040000);
+            p.set_type(2);
+            p.set_specials(specials);
+            p.set_damage(100);
+            storage.append_damage(p);
+        };
+        hit(vec![SpecialDamage::Parry]);
+        hit(vec![SpecialDamage::ShieldBlock]);
+        hit(vec![SpecialDamage::IronWall, SpecialDamage::Regeneration]);
+        hit(vec![]);
+        storage.append_no_damage_hit(500, 700, 16040000, NoDamageHit::Miss);
+        storage.append_no_damage_hit(500, 700, 16040000, NoDamageHit::Resist);
+        let after = &storage.get_combat_snapshot_light()[&500];
+        let rows = rows_between(None, after, &HashMap::new(), &SkillLookup::new());
+        let r = rows[&(700, 16040000)];
+        assert_eq!(r.counts[0], 4);
+        // block, miss, immune, ironwall, restore
+        assert_eq!(r.counts[7..], [2, 1, 1, 1, 1]);
     }
 
     #[test]
