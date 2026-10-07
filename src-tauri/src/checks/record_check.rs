@@ -158,8 +158,8 @@ fn record_check() {
 #[ignore]
 fn saved_fights_match_the_game() {
     use crate::capture::evidence_slice::{self, CapturedPacket};
+    use crate::capture::ping_tracker::PingTracker;
     use crate::combat::dps_calculator::DpsCalculator;
-    use crate::combat::ping_tracker::PingTracker;
     use crate::game_record::files::Checker;
     use crate::history::fight_history::FightHistoryManager;
 

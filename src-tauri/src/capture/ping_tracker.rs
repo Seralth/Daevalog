@@ -4,6 +4,7 @@ use parking_lot::Mutex;
 
 use crate::capture::captured_payload::CapturedPayload;
 use crate::capture::varint::read_varint;
+use crate::clock::PerfClock;
 
 /// .NET epoch offset: milliseconds between 0001-01-01 and 1970-01-01.
 const DOTNET_EPOCH_OFFSET_MS: i64 = 62135596800000;
@@ -31,11 +32,6 @@ const UNREAL_CLOCK_OFFSET_MS: i64 = 16_777_216 * 1000;
 const PERF_AGREEMENT_MS: i64 = 25;
 /// Disagreements in a row before the counter stops being trusted.
 const PERF_MISSES_TO_DISTRUST: u8 = 2;
-
-/// Reads the performance counter (ms since boot) and the wall clock (Unix ms)
-/// together. The OS supplies it (`platform::clock::perf_clock`); this module
-/// only uses it, so it stays OS-neutral and builds for wasm32.
-pub type PerfClock = fn() -> (i64, i64);
 
 pub struct PingTracker {
     inner: Mutex<Inner>,

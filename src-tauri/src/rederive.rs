@@ -22,10 +22,10 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use crate::capture::evidence_slice;
+use crate::capture::ping_tracker::PingTracker;
 use crate::capture::stream_processor::StreamProcessor;
 use crate::combat::data_storage::DataStorage;
 use crate::combat::dps_calculator::DpsCalculator;
-use crate::combat::ping_tracker::PingTracker;
 use crate::entity::fight_record::FightRecord;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 

@@ -13,9 +13,9 @@ use std::sync::Arc;
 use parking_lot::Mutex;
 
 use crate::capture::combat_port_detector::CombatPortDetector;
+use crate::capture::ping_tracker::PingTracker;
 use crate::combat::data_storage::DataStorage;
 use crate::combat::dps_calculator::{DetailsSource, DpsCalculator};
-use crate::combat::ping_tracker::PingTracker;
 use crate::config::settings::Settings;
 use crate::history::fight_history::FightHistoryManager;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};

@@ -1,7 +1,7 @@
 //! The performance counter, which the newer game client stamps its pings with
-//! (see `combat::ping_tracker`).
+//! (see `capture::ping_tracker`).
 
-use crate::combat::ping_tracker::PerfClock;
+use crate::clock::PerfClock;
 
 /// The machine's performance counter for the ping tracker.
 pub fn perf_clock() -> Option<PerfClock> {

@@ -6,7 +6,7 @@
 //! the ping tracker notices it disagreeing with request timing and stops
 //! using it.
 
-use crate::combat::ping_tracker::PerfClock;
+use crate::clock::PerfClock;
 
 pub fn perf_clock() -> Option<PerfClock> {
     Some(read)

@@ -6,6 +6,7 @@ pub mod framing;
 mod names;
 mod opcodes;
 pub mod packet_accumulator;
+pub mod ping_tracker;
 pub mod stream_assembler;
 pub mod stream_processor;
 pub mod varint;

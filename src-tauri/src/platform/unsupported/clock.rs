@@ -1,4 +1,4 @@
-use crate::combat::ping_tracker::PerfClock;
+use crate::clock::PerfClock;
 
 /// No performance counter the game is known to stamp pings with; the ping
 /// tracker falls back to timing requests.

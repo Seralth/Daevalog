@@ -59,6 +59,11 @@ fn wall_clock_ms() -> i64 {
     0
 }
 
+/// Reads the performance counter (ms since boot) and the wall clock (Unix ms)
+/// together. The OS supplies it (`platform::clock::perf_clock`); the ping
+/// tracker only uses it, so it stays OS-neutral and builds for wasm32.
+pub type PerfClock = fn() -> (i64, i64);
+
 #[cfg(test)]
 mod tests {
     use super::*;

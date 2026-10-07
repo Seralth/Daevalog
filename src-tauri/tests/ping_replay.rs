@@ -11,7 +11,7 @@
 //! not have the files.
 
 use a2tools_dps_meter_lib::capture::captured_payload::CapturedPayload;
-use a2tools_dps_meter_lib::combat::ping_tracker::PingTracker;
+use a2tools_dps_meter_lib::capture::ping_tracker::PingTracker;
 
 const DOTNET_EPOCH_OFFSET_MS: i64 = 62135596800000;
 /// The whole response frame header: length 0x18 (21 bytes) then `03 36 00 00`.

@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use parking_lot::RwLock;
 
+use crate::capture::ping_tracker::PingTracker;
 use crate::combat::data_storage::DataStorage;
-use crate::combat::ping_tracker::PingTracker;
 use crate::entity::dps_data::DpsData;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
