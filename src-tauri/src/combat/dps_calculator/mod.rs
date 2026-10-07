@@ -892,6 +892,58 @@ mod tests {
     }
 
     #[test]
+    fn boss_mode_keeps_your_boss_through_spill_over_and_a_strangers_hits() {
+        // Krao capture 2026-10-05, 17:35-17:38: two boss-flagged scarecrows
+        // side by side, flipping several times a second.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(100));
+        s.append_nickname_authoritative(100, "Owner");
+        for id in [801, 802] {
+            spawn(&s, id, BOSS);
+        }
+        s.note_summon_spawn(500);
+        s.append_damage(skill_hit(500, 100, 500, 16_990_002, 20));
+        let mut calc = meter_with_npcs(&s);
+        let mut shown = Vec::new();
+        let mut tick = |at: i64, calc: &mut DpsCalculator| {
+            crate::clock::set_override(Some(at));
+            shown.push(calc.get_dps().target_id);
+        };
+
+        // You on 801; your spirit's area hits reach 802, where a stranger
+        // fights and so hits last.
+        for at in (1_000..=30_000).step_by(250) {
+            crate::clock::set_override(Some(at));
+            s.append_damage(skill_hit(100, 801, at, 16_010_000, 1_000));
+            if at % 2_000 == 0 {
+                s.append_damage(skill_hit(500, 801, at, 16_110_004, 200));
+                s.append_damage(skill_hit(500, 802, at, 16_110_004, 200));
+            }
+            crate::clock::set_override(Some(at + 50));
+            s.append_damage(skill_hit(9000, 802, at + 50, 11_010_000, 3_000));
+            tick(at + 50, &mut calc);
+        }
+        // You move on to 802.
+        for at in (30_250..=45_000).step_by(250) {
+            crate::clock::set_override(Some(at));
+            s.append_damage(skill_hit(100, 802, at, 16_010_000, 1_000));
+            tick(at, &mut calc);
+        }
+        // One area skill hits both in the same ms for the same damage.
+        for at in (45_250..=60_000).step_by(250) {
+            crate::clock::set_override(Some(at));
+            s.append_damage(skill_hit(100, 801, at, 16_020_000, 800));
+            s.append_damage(skill_hit(100, 802, at, 16_020_000, 800));
+            tick(at, &mut calc);
+        }
+        let switch = shown.iter().position(|&t| t == 802).expect("you moved on");
+        assert!(shown[..switch].iter().all(|&t| t == 801), "your scarecrow, not the stranger's: {shown:?}");
+        assert!(shown[switch..].iter().all(|&t| t == 802), "no flip back: {shown:?}");
+        assert!(switch > 117 && switch <= 117 + 40, "switched within 10 s of moving on, at tick {switch}");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn idle_targets_the_meter_does_not_show_are_retired() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));
@@ -1163,6 +1215,24 @@ mod tests {
         let shown = meter(&dungeon).get_dps();
         assert_eq!(shown.target_id, 0);
         assert!(shown.map.is_empty());
+    }
+
+    #[test]
+    fn boss_mode_keeps_one_of_two_equal_trash_mobs() {
+        // One area skill on two mobs, same ms, same damage: each update's
+        // map order picked one, so the meter flipped between them.
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        let mut calc = meter(&s);
+        let mut shown = Vec::new();
+        for at in (1_000..=20_000).step_by(500) {
+            crate::clock::set_override(Some(at));
+            s.append_damage(hit(2259, 60_000, at));
+            s.append_damage(hit(2259, 50_000, at));
+            shown.push(calc.get_dps().target_id);
+        }
+        assert!(shown.iter().all(|&t| t == 50_000), "one mob throughout: {shown:?}");
+        crate::clock::set_override(None);
     }
 
     /// Replay a capture file, calling `before` with each line's time of day

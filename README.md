@@ -104,6 +104,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - **Skill rows as in the game.** Skills are grouped the way the game's Damage Analyzer groups them. Additional hits are read from the damage record, the spirits' hits included.
 - **Hit results.** Details can show Shield Block, Parry, Perfect Block, Endurance, Regeneration, Miss and Resist for each skill. Hit types carry the game's names.
 - **Skill details on hover** in every mode, including the modes that show several targets.
+- BOSS mode stays on the boss you and your party are fighting. Another boss takes its place once it takes more than twice your and your party's damage over the last 10 seconds, or when the boss on screen dies and you fight on. It no longer flips between two bosses or scarecrows several times a second.
 - **Details, History and the hover tooltip never wait on the meter,** and settings are saved in the background (from mazixs's upstream PR #29). Closing the meter window quits the app, even with Settings open, and saves your fights first.
 - **Every UI string in all 10 languages.**
 - DoT rows sit under their skill in Details in every language: they are matched by skill code, not by name.
