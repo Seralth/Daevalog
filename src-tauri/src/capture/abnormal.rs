@@ -17,10 +17,11 @@
 //!   stack: Element Unification at 5 stacks is 5 live instances. A debuff
 //!   that several players keep up is one instance; a change names whoever
 //!   applied it last.
-//! - `end` is the server's clock in ms since the epoch (2100-01-01 when the
-//!   abnormal never ends, length -1); `length` runs from the instance's start
-//!   to `end`. A change that renews a stack keeps the start; one that applies
-//!   the abnormal again restarts it (the byte before the position is then 2).
+//! - `end` is the server's clock in ms since the epoch (2100-01-01 00:00 in
+//!   Korea when the abnormal never ends, length -1); `length` runs from the
+//!   instance's start to `end`. A change that renews a stack keeps the start;
+//!   one that applies the abnormal again restarts it (the byte before the
+//!   position is then 2).
 //! - Reason 1 is the timer running out; kind 7 (reason 11) is a skill taking
 //!   the abnormal off, the skill named; reason 5 a passive replaced by its new
 //!   level at login. Other reasons are not decoded.
@@ -41,8 +42,9 @@ pub const REMOVED: [u8; 2] = [0x2C, 0x38];
 pub const STATS_CHANGED: [u8; 2] = [0x4A, 0x36];
 pub const ALL_STATS: [u8; 2] = [0x49, 0x36];
 
-/// The `end` of an abnormal that never ends: 2100-01-01.
-const NEVER: i64 = 4_102_444_800_000;
+/// The `end` of an abnormal that never ends: 2100-01-01 00:00 in Korea
+/// (UTC+9), in all 7,815 such records of 29 captures.
+const NEVER: i64 = 4_102_412_400_000;
 /// Bytes after the skill: one byte, then the entity's position.
 const ADD_TAIL: usize = 13;
 const STATS_TAIL: usize = 8;
