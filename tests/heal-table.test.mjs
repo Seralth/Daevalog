@@ -184,6 +184,6 @@ test("DMG brings the damage columns and labels back", () => {
   assert.equal(headerCell("dmg").textContent, "Dmg");
   assert.equal(headerCell("dmg").getAttribute("data-tip"), "Damage");
   assert.equal(headerCell("dmg").dataset.i18n, "details.skills.dmg");
-  assert.equal(headerCell("hit").textContent, "Casts");
+  assert.equal(headerCell("hit").textContent, "HIT");
   assert.equal(gridTracks(skillsContainer), allTracks);
 });

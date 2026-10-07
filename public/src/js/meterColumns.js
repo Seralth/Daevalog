@@ -11,12 +11,12 @@
     { key: "dps", label: "DPS (own active time)", short: "DPS", width: 46, firstWidth: 62 },
     { key: "pct", label: "Damage %", short: "%", width: 36, firstWidth: 52 },
     { key: "total", label: "Total damage", short: "Total", width: 40, firstWidth: 54 },
-    { key: "crit", label: "Crit %", short: "Crit", width: 32, firstWidth: 44 },
+    { key: "crit", label: "Crit %", short: "CRI", width: 32, firstWidth: 44 },
     { key: "last10", label: "Last 10 s", short: "10s", width: 46, firstWidth: 62 },
     { key: "last30", label: "Last 30 s", short: "30s", width: 46, firstWidth: 62 },
     { key: "last60", label: "Last 60 s", short: "60s", width: 46, firstWidth: 62 },
     { key: "maxHit", label: "Max hit", short: "Max", width: 40, firstWidth: 54 },
-    { key: "hits", label: "Hits", short: "Hits", width: 36, firstWidth: 48 },
+    { key: "hits", label: "Hits", short: "HIT", width: 36, firstWidth: 48 },
   ];
   const BY_KEY = new Map(COLUMNS.map((c) => [c.key, c]));
   // Space between two figures (the row's flex gap).

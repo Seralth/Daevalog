@@ -257,7 +257,7 @@ const createDetailsUI = ({
     },
     { key: "details.stats.contribution", fallback: "Contribution", getValue: (d) => pctText(d?.contributionPct) },
     { key: "details.stats.combatTime", fallback: "Combat Time", getValue: (d) => d?.combatTime ?? "-" },
-    { key: "details.skills.hits", fallback: "Hits", getValue: (d) => formatCount(d?.totalHits) },
+    { key: "details.stats.hits", fallback: "Hits", getValue: (d) => formatCount(d?.totalHits) },
     { key: "details.stats.multiHitHits", fallback: "Additional Hits", getValue: (d) => pctText(d?.multiHitPct) },
     {
       key: "details.stats.multiHitDamage",
@@ -427,7 +427,6 @@ const createDetailsUI = ({
       case "details.stats.maxHp":
         return data.maxHp > 0 ? formatDamageCompact(data.maxHp) : "-";
       case "details.stats.hits":
-      case "details.skills.hits":
         return formatCount(data.totalHits);
       case "details.stats.multiHitDamage":
         return formatDamageCompact(data.multiHitDamage);
@@ -460,7 +459,7 @@ const createDetailsUI = ({
     "details.stats.totalDamage",
     "details.stats.contribution",
     "details.stats.combatTime",
-    "details.skills.hits",
+    "details.stats.hits",
     "details.stats.critRate",
   ]);
 

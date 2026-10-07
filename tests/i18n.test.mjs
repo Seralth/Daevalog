@@ -182,3 +182,41 @@ test("a slow language load does not undo a newer choice", async () => {
   const ko = JSON.parse(readFileSync(new URL("../src/data/i18n/ui/ko.json", import.meta.url)));
   assert.equal(window.i18n.t("target.all"), ko.target.all);
 });
+
+// The game's Combat Analysis heads its columns with these codes
+// (String_UI_DAMAGEANALYZER_SKILL_*_COUNT_body), mostly the same in every
+// language. zh has no game text and takes the shared codes. The game's Block
+// (BLOC) counted a parried hit on the 2026-10-06 Kernon record, so it heads Parry.
+const GAME_CODES = {
+  hits: { all: "HIT", es: "GOLPE" },
+  crit: { all: "CRI", es: "CRÍT" },
+  perfect: { all: "PERF" },
+  double: { all: "DOUB", es: "DOB" },
+  back: { all: "BACK", es: "ESPA", pt: "TRÁS" },
+  frontal: { all: "FRNT", ru: "Спереди" },
+  multiHit: { all: "MULT" },
+  parry: { all: "BLOC", es: "BLOQ" },
+  ironWall: { all: "ENDR", es: "RES" },
+  regeneration: { all: "RSTO", es: "REC" },
+};
+
+test("skill heads are the game's Combat Analysis codes, each with its full name as the tooltip", () => {
+  for (const lang of ["en", "de", "es", "fr", "ja", "ko", "pt", "ru", "zh-Hans", "zh-Hant"]) {
+    const ui = JSON.parse(readFileSync(new URL(`${lang}.json`, uiDir)));
+    const skills = ui.details.skills;
+    for (const [key, codes] of Object.entries(GAME_CODES)) {
+      const code = codes[lang] ?? codes.all;
+      assert.equal(skills[key], code, `${lang} details.skills.${key}`);
+      const tip = skills[`${key}Tooltip`];
+      assert.ok(tip && tip !== code, `${lang} details.skills.${key}Tooltip names the column in full`);
+    }
+    assert.equal(ui.meter.columns.crit, GAME_CODES.crit[lang] ?? GAME_CODES.crit.all, `${lang} meter crit`);
+    assert.equal(ui.meter.columns.hits, GAME_CODES.hits[lang] ?? GAME_CODES.hits.all, `${lang} meter hits`);
+    // No other skill head reads as one of the codes.
+    const codes = new Set(Object.values(GAME_CODES).map((c) => (c[lang] ?? c.all).toLowerCase()));
+    for (const [key, text] of Object.entries(skills)) {
+      if (key in GAME_CODES || key.endsWith("Tooltip")) continue;
+      assert.ok(!codes.has(String(text).toLowerCase()), `${lang} details.skills.${key} "${text}" reads as a game code`);
+    }
+  }
+});

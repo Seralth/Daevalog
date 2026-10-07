@@ -181,7 +181,7 @@
                     <div class="detailsSettingsLabel" data-i18n="details.columns.label">Skill columns</div>
                     <div class="detailsSettingsColumns">
                       <label class="detailsSettingsToggle">
-                        <span class="detailsSettingsToggleLabel" data-i18n="details.skills.hits">Hits</span>
+                        <span class="detailsSettingsToggleLabel" data-i18n="details.skills.hitsTooltip">Total Hits</span>
                         <span class="detailsSettingsToggleControl">
                           <input type="checkbox" class="detailsColumnToggle" data-column="hit" />
                           <span class="detailsSettingsToggleTrack" aria-hidden="true"></span>
@@ -216,7 +216,7 @@
                         </span>
                       </label>
                       <label class="detailsSettingsToggle">
-                        <span class="detailsSettingsToggleLabel" data-i18n="details.skills.crit">Crit</span>
+                        <span class="detailsSettingsToggleLabel" data-i18n="details.skills.critTooltip">Critical Hit %</span>
                         <span class="detailsSettingsToggleControl">
                           <input type="checkbox" class="detailsColumnToggle" data-column="crit" />
                           <span class="detailsSettingsToggleTrack" aria-hidden="true"></span>
@@ -237,7 +237,7 @@
                         </span>
                       </label>
                       <label class="detailsSettingsToggle">
-                        <span class="detailsSettingsToggleLabel" data-i18n="details.skills.back">Back</span>
+                        <span class="detailsSettingsToggleLabel" data-i18n="details.skills.backTooltip">Back Attack %</span>
                         <span class="detailsSettingsToggleControl">
                           <input type="checkbox" class="detailsColumnToggle" data-column="back" />
                           <span class="detailsSettingsToggleTrack" aria-hidden="true"></span>
@@ -403,21 +403,21 @@
                 <div class="detailsSkills">
                   <div class="skillHeader">
                     <div class="cell name" data-sort-key="name" data-i18n="details.skills.skill" data-tip="Skill Name" data-i18n-tip="details.skills.skillTooltip">Skill</div>
-                    <div class="cell center hit" data-sort-key="hit" data-i18n="details.skills.hits" data-tip="Casts" data-i18n-tip="details.skills.hitsTooltip">Casts</div>
+                    <div class="cell center hit" data-sort-key="hit" data-i18n="details.skills.hits" data-tip="Total Hits" data-i18n-tip="details.skills.hitsTooltip">HIT</div>
                     <div class="cell center dmg" data-sort-key="dmg" data-i18n="details.skills.dmg" data-tip="Damage" data-i18n-tip="details.skills.dmgTooltip">Dmg</div>
                     <div class="cell center dmgpct" data-sort-key="dmgpct" data-i18n="details.skills.dmgPct" data-tip="Damage %" data-i18n-tip="details.skills.dmgPctTooltip">D%</div>
-                    <div class="cell center mhit" data-sort-key="mhit" data-i18n="details.skills.multiHit" data-tip="Additional hits %" data-i18n-tip="details.skills.multiHitTooltip">AH%</div>
+                    <div class="cell center mhit" data-sort-key="mhit" data-i18n="details.skills.multiHit" data-tip="Multi-Hit %" data-i18n-tip="details.skills.multiHitTooltip">MULT</div>
                     <div class="cell center mdmg" data-sort-key="mdmg" data-i18n="details.skills.multiHitDamage" data-tip="Additional hit damage" data-i18n-tip="details.skills.multiHitDamageTooltip">AHD</div>
-                    <div class="cell center crit" data-sort-key="crit" data-i18n="details.skills.crit" data-tip="Crit %" data-i18n-tip="details.skills.critTooltip">Crit</div>
-                    <div class="cell center parry" data-sort-key="parry" data-i18n="details.skills.parry" data-tip="Parry %" data-i18n-tip="details.skills.parryTooltip">Par</div>
-                    <div class="cell center perfect" data-sort-key="perfect" data-i18n="details.skills.perfect" data-tip="Perfect %" data-i18n-tip="details.skills.perfectTooltip">Per</div>
-                    <div class="cell center double" data-sort-key="double" data-i18n="details.skills.double" data-tip="Double damage (Korean 강타; some guides call it Smite)" data-i18n-tip="details.skills.doubleTooltip">Dbl</div>
-                    <div class="cell center back" data-sort-key="back" data-i18n="details.skills.back" data-tip="Back Attack %" data-i18n-tip="details.skills.backTooltip">Back</div>
-                    <div class="cell center frontal" data-sort-key="frontal" data-i18n="details.skills.frontal" data-tip="Frontal %" data-i18n-tip="details.skills.frontalTooltip">Front</div>
-                    <div class="cell center block" data-sort-key="block" data-i18n="details.skills.shieldBlock" data-tip="Shield Block %" data-i18n-tip="details.skills.shieldBlockTooltip">Blk</div>
+                    <div class="cell center crit" data-sort-key="crit" data-i18n="details.skills.crit" data-tip="Critical Hit %" data-i18n-tip="details.skills.critTooltip">CRI</div>
+                    <div class="cell center parry" data-sort-key="parry" data-i18n="details.skills.parry" data-tip="Parry %" data-i18n-tip="details.skills.parryTooltip">BLOC</div>
+                    <div class="cell center perfect" data-sort-key="perfect" data-i18n="details.skills.perfect" data-tip="Perfect %" data-i18n-tip="details.skills.perfectTooltip">PERF</div>
+                    <div class="cell center double" data-sort-key="double" data-i18n="details.skills.double" data-tip="Double damage (Korean 강타; some guides call it Smite)" data-i18n-tip="details.skills.doubleTooltip">DOUB</div>
+                    <div class="cell center back" data-sort-key="back" data-i18n="details.skills.back" data-tip="Back Attack %" data-i18n-tip="details.skills.backTooltip">BACK</div>
+                    <div class="cell center frontal" data-sort-key="frontal" data-i18n="details.skills.frontal" data-tip="Front Attack %" data-i18n-tip="details.skills.frontalTooltip">FRNT</div>
+                    <div class="cell center block" data-sort-key="block" data-i18n="details.skills.shieldBlock" data-tip="Shield Block %" data-i18n-tip="details.skills.shieldBlockTooltip">SBlk</div>
                     <div class="cell center perfectblock" data-sort-key="perfectblock" data-i18n="details.skills.perfectBlock" data-tip="Perfect Block %" data-i18n-tip="details.skills.perfectBlockTooltip">PBlk</div>
-                    <div class="cell center ironwall" data-sort-key="ironwall" data-i18n="details.skills.ironWall" data-tip="Endurance %" data-i18n-tip="details.skills.ironWallTooltip">Endr</div>
-                    <div class="cell center regeneration" data-sort-key="regeneration" data-i18n="details.skills.regeneration" data-tip="Regeneration %" data-i18n-tip="details.skills.regenerationTooltip">Rgn</div>
+                    <div class="cell center ironwall" data-sort-key="ironwall" data-i18n="details.skills.ironWall" data-tip="Endurance %" data-i18n-tip="details.skills.ironWallTooltip">ENDR</div>
+                    <div class="cell center regeneration" data-sort-key="regeneration" data-i18n="details.skills.regeneration" data-tip="Regeneration %" data-i18n-tip="details.skills.regenerationTooltip">RSTO</div>
                     <div class="cell center miss" data-sort-key="miss" data-i18n="details.skills.miss" data-tip="Misses" data-i18n-tip="details.skills.missTooltip">Miss</div>
                     <div class="cell center resist" data-sort-key="resist" data-i18n="details.skills.resist" data-tip="Resists" data-i18n-tip="details.skills.resistTooltip">Res</div>
                     <div class="cell center regen" data-sort-key="regen" data-i18n="details.skills.regen" data-tip="Life-steal Regen" data-i18n-tip="details.skills.regenTooltip">Reg</div>
@@ -447,11 +447,11 @@
                     <div class="cell takenMonster" data-i18n="details.taken.monster">Monster</div>
                     <div class="cell center takenDmg" data-i18n="details.skills.dmg">Dmg</div>
                     <div class="cell center takenHits" data-i18n="details.stats.hits">Hits</div>
-                    <div class="cell center" data-taken="shieldBlock" data-i18n="details.skills.shieldBlock" data-tip="Shield Block %" data-i18n-tip="details.skills.shieldBlockTooltip">Blk</div>
-                    <div class="cell center" data-taken="parry" data-i18n="details.skills.parry" data-tip="Parry %" data-i18n-tip="details.skills.parryTooltip">Par</div>
+                    <div class="cell center" data-taken="shieldBlock" data-i18n="details.skills.shieldBlock" data-tip="Shield Block %" data-i18n-tip="details.skills.shieldBlockTooltip">SBlk</div>
+                    <div class="cell center" data-taken="parry" data-i18n="details.skills.parry" data-tip="Parry %" data-i18n-tip="details.skills.parryTooltip">BLOC</div>
                     <div class="cell center" data-taken="perfectBlock" data-i18n="details.skills.perfectBlock" data-tip="Perfect Block %" data-i18n-tip="details.skills.perfectBlockTooltip">PBlk</div>
-                    <div class="cell center" data-taken="ironWall" data-i18n="details.skills.ironWall" data-tip="Endurance %" data-i18n-tip="details.skills.ironWallTooltip">Endr</div>
-                    <div class="cell center" data-taken="regeneration" data-i18n="details.skills.regeneration" data-tip="Regeneration %" data-i18n-tip="details.skills.regenerationTooltip">Rgn</div>
+                    <div class="cell center" data-taken="ironWall" data-i18n="details.skills.ironWall" data-tip="Endurance %" data-i18n-tip="details.skills.ironWallTooltip">ENDR</div>
+                    <div class="cell center" data-taken="regeneration" data-i18n="details.skills.regeneration" data-tip="Regeneration %" data-i18n-tip="details.skills.regenerationTooltip">RSTO</div>
                   </div>
                   <div class="skills takenList"></div>
                 </div>
