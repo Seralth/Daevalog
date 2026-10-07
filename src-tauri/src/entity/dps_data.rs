@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use super::personal_data::PersonalData;
+use super::taken::TakenRow;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,6 +28,10 @@ pub struct DpsData {
     /// Instance id from the party roster (0 = not in a party instance). The
     /// frontend maps it to a dungeon name + difficulty.
     pub dungeon_id: i32,
+    /// Damage taken by each player over the fights behind the rows, most
+    /// first. Players who dealt no damage are here too.
+    #[serde(default)]
+    pub taken: Vec<TakenRow>,
 }
 
 impl DpsData {
@@ -43,6 +48,7 @@ impl DpsData {
             target_total_damage: 0,
             target_current_hp: -1,
             dungeon_id: 0,
+            taken: Vec::new(),
         }
     }
 }

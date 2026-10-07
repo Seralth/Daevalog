@@ -45,24 +45,17 @@ impl DataStorage {
             inner.despawned_summon_ids.remove(&actor_id);
         }
 
-        // NPC actors using NPC skills: track damage received on the player target, then skip
+        // NPC actors using NPC skills: damage taken, which `append_taken`
+        // counts. Here a tick on you or your party only extends the encounter.
         let uses_npc_skill = (1_000_000..=9_999_999).contains(&skill_code);
         if inner.mob_storage.contains_key(&actor_id)
             && !inner.summon_storage.contains_key(&actor_id)
             && uses_npc_skill
         {
-            // Track damage received on the player target
             let resolved_target = summon_resolver::resolve(target_id, &inner.summon_storage);
             if inner.known_player_ids.contains(&resolved_target) && is_ours(&inner, resolved_target) {
                 let timeout = self.encounter_timeout_ms.load(Ordering::Relaxed);
                 note_encounter(&mut inner, timeout, pdp.timestamp(), actor_id, true);
-            }
-            if inner.known_player_ids.contains(&resolved_target) {
-                let dmg = pdp.total_damage();
-                if let Some(actor_data) = fight_of(&mut inner, resolved_target, Some(actor_id)) {
-                    actor_data.damage_received += dmg;
-                    actor_data.hits_received = actor_data.hits_received.saturating_add(1);
-                }
             }
             return;
         }
@@ -83,7 +76,7 @@ impl DataStorage {
         if is_friendly_action(&inner, actor_id, target_id) {
             let heal_amount = pdp.total_damage();
             if heal_amount > 0 {
-                if let Some(actor_data) = fight_of(&mut inner, actor_id, None) {
+                if let Some(actor_data) = fight_of(&mut inner, actor_id) {
                     actor_data.party_heal += heal_amount;
                 }
                 // Also record per-skill so ally heals show in the HEAL view (the
@@ -302,20 +295,16 @@ pub(super) fn is_ours(inner: &Inner, actor_id: i32) -> bool {
         || inner.nickname_storage.get(&owner).is_some_and(|n| inner.party_members.contains_key(n.as_str()))
 }
 
-/// Where healing or damage taken by `actor` counts: neither has a target of
-/// its own. The fight against `mob` when the actor is in it, else the target
-/// the actor hit last (ties to the lowest id), so it is never left to the
-/// map's order.
-fn fight_of(inner: &mut Inner, actor: i32, mob: Option<i32>) -> Option<&mut ActorCombatData> {
-    let fights = |tid: &i32| inner.target_combat.get(tid).is_some_and(|td| td.actors.contains_key(&actor));
-    let tid = mob.filter(fights).or_else(|| {
-        inner
-            .target_combat
-            .iter()
-            .filter_map(|(&tid, td)| td.actors.get(&actor).map(|a| (a.last_damage_time, std::cmp::Reverse(tid))))
-            .max()
-            .map(|(_, std::cmp::Reverse(tid))| tid)
-    })?;
+/// Where party healing by `actor` counts: it has no target of its own. The
+/// target the actor hit last (ties to the lowest id), so it is never left to
+/// the map's order.
+fn fight_of(inner: &mut Inner, actor: i32) -> Option<&mut ActorCombatData> {
+    let tid = inner
+        .target_combat
+        .iter()
+        .filter_map(|(&tid, td)| td.actors.get(&actor).map(|a| (a.last_damage_time, std::cmp::Reverse(tid))))
+        .max()
+        .map(|(_, std::cmp::Reverse(tid))| tid)?;
     inner.target_combat.get_mut(&tid)?.actors.get_mut(&actor)
 }
 

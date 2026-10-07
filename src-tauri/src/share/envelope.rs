@@ -182,6 +182,7 @@ mod tests {
                 skills: Vec::new(),
                 ping_history: Vec::new(),
                 heal_skills: Vec::new(),
+                taken_skills: Vec::new(),
             },
             actors,
             is_train: false,

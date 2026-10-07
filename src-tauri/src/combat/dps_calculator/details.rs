@@ -2,9 +2,10 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::combat::data_storage::{HealSkillData, SegmentIdentity, TargetCombatData, UNATTRIBUTED_ID};
+use crate::combat::data_storage::{HealSkillData, SegmentIdentity, TakenBy, TargetCombatData, UNATTRIBUTED_ID};
 use crate::entity::details_context::*;
 use crate::entity::job_class::JobClass;
+use crate::entity::taken::{TakenSkillEntry, TakenStats};
 use crate::entity::summon_resolver;
 
 use super::rows::{build_nickname_canonical_map_from_aggregates, resolve_nickname};
@@ -83,6 +84,19 @@ impl DpsCalculator {
             });
         }
 
+        // Damage taken over every live fight, on the actor of the same name.
+        let all_targets: Vec<i32> = combat_data.keys().copied().collect();
+        let by_name: HashMap<&str, i32> = actor_meta.iter().map(|(&id, (nick, _))| (nick.as_str(), id)).collect();
+        let mut taken: HashMap<i32, TakenStats> = HashMap::new();
+        for (player, skills) in self.data_storage.taken_on(&all_targets, false, None) {
+            let nick = resolve_nickname(player, &nickname_data, &summon_data);
+            let uid = by_name.get(nick.as_str()).copied().unwrap_or(player);
+            let e = taken.entry(uid).or_default();
+            for d in skills.values() {
+                e.absorb(&d.stats);
+            }
+        }
+
         let actors: Vec<DetailsActorSummary> = actor_meta.iter()
             .map(|(&id, (nick, job))| {
                 let job_id = if id == UNATTRIBUTED_ID {
@@ -97,15 +111,14 @@ impl DpsCalculator {
                         .unwrap_or(0)
                 ) { jc.class_prefix() } else { 0 };
                 // Aggregate per-actor stats
-                let (mut party_heal, mut regen, mut dmg_recv, mut hits_recv) = (0i64, 0i64, 0i64, 0i32);
+                let (mut party_heal, mut regen) = (0i64, 0i64);
                 for td in combat_data.values() {
                     if let Some(ad) = td.actors.get(&id) {
                         party_heal += ad.party_heal;
                         regen += ad.regen;
-                        dmg_recv += ad.damage_received;
-                        hits_recv = hits_recv.saturating_add(ad.hits_received);
                     }
                 }
+                let received = taken.get(&id).copied().unwrap_or_default();
                 DetailsActorSummary {
                     actor_id: id,
                     nickname: nick.clone(),
@@ -113,8 +126,8 @@ impl DpsCalculator {
                     job_id,
                     party_heal,
                     regen,
-                    damage_received: dmg_recv,
-                    hits_received: hits_recv,
+                    damage_received: received.damage,
+                    hits_received: received.total(),
                     // The live view is never uploaded: nothing here reads the
                     // identity a saved record keeps.
                     dbid: 0,
@@ -161,7 +174,9 @@ impl DpsCalculator {
         let merged = TargetCombatData::merged(self.displayed_targets.iter().filter_map(|t| combat_data.get(t)));
         let Some(merged) = merged else { return self.target_details(0, actor_ids, summary_only) };
         let heals = if summary_only { HashMap::new() } else { self.fight_heals(&merged) };
-        let mut details = self.details_for(&merged, 0, &heals, actor_ids, None);
+        let encounter = self.target_selection_mode == TargetSelectionMode::Encounter;
+        let taken = if summary_only { TakenBy::new() } else { self.data_storage.taken_on(&self.displayed_targets, encounter, None) };
+        let mut details = self.details_for(&merged, 0, &heals, &taken, actor_ids, None);
         if summary_only {
             details.ping_history.clear();
         }
@@ -204,16 +219,18 @@ impl DpsCalculator {
                 skills: Vec::new(),
                 ping_history: Vec::new(),
                 heal_skills: Vec::new(),
+                taken_skills: Vec::new(),
             },
         };
         let max_hp = self.data_storage.get_mob_hp(target_id).unwrap_or(0);
         if summary_only {
-            let mut details = self.details_for(target_data, max_hp, &HashMap::new(), actor_ids, None);
+            let mut details = self.details_for(target_data, max_hp, &HashMap::new(), &TakenBy::new(), actor_ids, None);
             details.ping_history.clear();
             return details;
         }
         let heals = self.fight_heals(target_data);
-        self.details_for(target_data, max_hp, &heals, actor_ids, None)
+        let taken = self.data_storage.fight_taken(target_data);
+        self.details_for(target_data, max_hp, &heals, &taken, actor_ids, None)
     }
 
     /// The live data of these targets only; in ENC with what a boss pull
@@ -229,6 +246,7 @@ impl DpsCalculator {
         target_data: &TargetCombatData,
         max_hp: i32,
         heals: &HashMap<i32, HashMap<(i32, bool), HealSkillData>>,
+        taken: &TakenBy,
         actor_ids: Option<&[i32]>,
         identity: Option<&SegmentIdentity>,
     ) -> TargetDetailsResponse {
@@ -419,6 +437,31 @@ impl DpsCalculator {
             }
         }
 
+        // Damage taken this segment, per player and skill, keyed by the
+        // canonical actor as the rows are.
+        let mut taken_map: HashMap<(i32, i32), TakenSkillEntry> = HashMap::new();
+        for (&player, skills) in taken {
+            let nickname = resolve_nickname(player, &nickname_data, &summon_data);
+            let uid = *canonical.get(&nickname).unwrap_or(&player);
+            if let Some(ref filter) = filter_uids {
+                if !filter.contains(&uid) { continue; }
+            }
+            for (&code, d) in skills {
+                let entry = taken_map.entry((uid, code)).or_insert_with(|| TakenSkillEntry {
+                    actor_id: uid,
+                    code,
+                    name: self.skill_lookup.lookup_skill_name(code),
+                    source_code: d.source_code,
+                    stats: TakenStats::default(),
+                });
+                entry.stats.absorb(&d.stats);
+                // Two ids of one player: the same NPC either way, in any order.
+                entry.source_code = entry.source_code.max(d.source_code);
+            }
+        }
+        let mut taken_skills: Vec<TakenSkillEntry> = taken_map.into_values().collect();
+        taken_skills.sort_by_key(|e| (e.actor_id, e.code));
+
         let battle_time = (target_data.last_damage_time - target_data.first_damage_time).max(0);
 
         let ping_history = self.ping_tracker.get_ping_history(
@@ -436,6 +479,7 @@ impl DpsCalculator {
             skills: skill_map.into_values().collect(),
             ping_history,
             heal_skills: heal_map.into_values().collect(),
+            taken_skills,
         }
     }
 }

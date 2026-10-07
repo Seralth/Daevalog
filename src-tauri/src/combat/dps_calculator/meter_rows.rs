@@ -8,6 +8,7 @@ use crate::entity::dps_data::DpsData;
 use crate::entity::job_class::JobClass;
 use crate::entity::personal_data::PersonalData;
 use crate::entity::summon_resolver;
+use crate::entity::taken::{TakenRow, TakenStats};
 
 use super::rows::{build_nickname_canonical_map_from_aggregates, resolve_nickname};
 use super::{DpsCalculator, TargetSelectionMode};
@@ -304,6 +305,65 @@ impl DpsCalculator {
         }
         self.last_dps_snapshot = Some(dps_data.clone());
         dps_data
+    }
+}
+
+impl DpsCalculator {
+    /// Damage taken over the fights behind the rows (the same targets, the
+    /// same window), one row per player, the rows' ids where they have one.
+    /// Players with no damage row are named by the game or are you; an id
+    /// nothing names is left out, as on the damage rows.
+    pub(super) fn taken_rows(&mut self, dps: &DpsData) -> Vec<TakenRow> {
+        let encounter_mode = self.target_selection_mode == TargetSelectionMode::Encounter;
+        let since = self.window_since().or_else(|| {
+            encounter_mode
+                .then(|| self.data_storage.current_encounter())
+                .flatten()
+                .filter(|e| !e.blind)
+                .map(|e| e.start)
+        });
+        let key: super::TakenKey = (
+            self.data_storage.damage_generation(),
+            self.data_storage.taken_generation(),
+            self.target_selection_mode,
+            self.displayed_targets.clone(),
+            since,
+        );
+        if let Some((cached, rows)) = &self.taken_cache {
+            if *cached == key {
+                return rows.clone();
+            }
+        }
+        let taken = self.data_storage.taken_on(&self.displayed_targets, encounter_mode, since);
+        let nicknames = self.data_storage.get_nicknames();
+        let local = self.data_storage.local_player_id().map(|v| v as i32);
+        let party = self.data_storage.get_party_members();
+        let by_name: HashMap<&str, i32> = dps.map.iter().map(|(&id, d)| (d.nickname.trim(), id)).collect();
+        let mut rows: HashMap<i32, TakenRow> = HashMap::new();
+        for (player, skills) in &taken {
+            let name = nicknames.get(player);
+            if name.is_none() && Some(*player) != local && !dps.map.contains_key(player) {
+                continue;
+            }
+            let nickname = name.cloned().unwrap_or_else(|| player.to_string());
+            let uid = by_name.get(nickname.trim()).copied().unwrap_or(*player);
+            let row = rows.entry(uid).or_insert_with(|| {
+                let shown = dps.map.get(&uid);
+                let job = shown
+                    .map(|d| d.job.clone())
+                    .or_else(|| self.cached_job(&nickname))
+                    .or_else(|| party.get(&nickname).and_then(|m| m.job).map(|j| j.class_name().to_string()))
+                    .unwrap_or_default();
+                TakenRow { actor_id: uid, nickname, job, number: shown.map_or(0, |d| d.number), stats: TakenStats::default() }
+            });
+            for d in skills.values() {
+                row.stats.absorb(&d.stats);
+            }
+        }
+        let mut out: Vec<TakenRow> = rows.into_values().collect();
+        out.sort_by_key(|r| (std::cmp::Reverse(r.stats.damage), r.actor_id));
+        self.taken_cache = Some((key, out.clone()));
+        out
     }
 }
 

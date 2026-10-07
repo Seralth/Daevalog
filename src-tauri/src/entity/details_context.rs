@@ -14,6 +14,7 @@ pub struct DetailsActorSummary {
     pub party_heal: i64,
     #[serde(default)]
     pub regen: i64,
+    /// Damage taken, and the attacks on the actor (`TakenStats::total`).
     #[serde(default)]
     pub damage_received: i64,
     #[serde(default)]
@@ -143,6 +144,9 @@ pub struct TargetDetailsResponse {
     /// `dmg` = heal amount, `time` = tick count, `is_dot` = HoT. Empty for old files.
     #[serde(default)]
     pub heal_skills: Vec<DetailSkillEntry>,
+    /// Damage taken in this fight, per player and skill. Empty for old files.
+    #[serde(default)]
+    pub taken_skills: Vec<super::taken::TakenSkillEntry>,
 }
 
 #[cfg(test)]

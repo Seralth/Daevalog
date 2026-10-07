@@ -6,6 +6,7 @@ use parking_lot::RwLock;
 use crate::capture::ping_tracker::PingTracker;
 use crate::combat::data_storage::DataStorage;
 use crate::entity::dps_data::DpsData;
+use crate::entity::taken::TakenRow;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
 mod details;
@@ -40,7 +41,14 @@ pub struct DpsCalculator {
     view: Arc<RwLock<DetailsView>>,
     /// When idle targets were last retired. See `retire_idle_targets`.
     last_retire_ms: i64,
+    /// The last damage taken rows, and what they were built from. See
+    /// `taken_rows`.
+    taken_cache: Option<(TakenKey, Vec<TakenRow>)>,
 }
+
+/// What the damage taken rows depend on: both generations, the mode, its
+/// targets and its window start.
+type TakenKey = (i64, i64, TargetSelectionMode, Vec<i32>, Option<i64>);
 
 /// What Details needs of the meter beyond storage: the mode and the targets
 /// behind the rows on screen. The meter publishes it after each change.
@@ -103,6 +111,7 @@ impl DpsCalculator {
                 displayed_battle_time: 0,
             })),
             last_retire_ms: i64::MIN,
+            taken_cache: None,
         }
     }
 
@@ -117,7 +126,8 @@ impl DpsCalculator {
     }
 
     pub fn get_dps(&mut self) -> DpsData {
-        let dps = self.compute_dps();
+        let mut dps = self.compute_dps();
+        dps.taken = self.taken_rows(&dps);
         // After the rows: a mode just switched to has picked its targets.
         self.retire_idle_targets();
         self.publish_view();
@@ -1075,6 +1085,69 @@ mod tests {
         let by_id = |id: &str| saved.iter().find(|r| r.id == id).map(healed);
         assert_eq!(by_id("auto_800_40000"), Some(444), "saved after it was cleared");
         assert!(by_id("auto_800_1000").is_none_or(|h| h == 222));
+        crate::clock::set_override(None);
+    }
+
+    /// A boss hit from `actor` on `player` at `at`, Saraswati's Mutation
+    /// Breath parried from the front.
+    fn taken(s: &DataStorage, actor: i32, player: i32, at: i64, damage: i64) {
+        use crate::entity::taken::{TakenHit, TakenKind};
+        let mut hit = TakenHit::plain(at, player, actor, 1_218_730, damage, TakenKind::Hit);
+        hit.flags = 0x02;
+        hit.angle = 0x02;
+        s.append_taken(hit);
+    }
+
+    #[test]
+    fn a_saved_fight_keeps_the_damage_taken_during_it() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        let took = |details: &TargetDetailsResponse| {
+            details.taken_skills.iter().filter(|e| e.actor_id == 2259).map(|e| e.stats.damage).sum::<i64>()
+        };
+        taken(&s, 800, 2259, 500, 1);
+        hits(&s, 2259, 800, 1_000, 8_000);
+        taken(&s, 800, 2259, 4_000, 300);
+        taken(&s, 800, 2259, 9_500, 1);
+        assert_eq!(took(&calc.get_target_details(800, None)), 300, "live Details: the fight's window");
+        let row = calc.get_dps().taken;
+        assert_eq!((row[0].actor_id, row[0].stats.damage, row[0].stats.parry, row[0].stats.front), (2259, 300, 1, 1));
+        let saved = snapshot_at(&mut calc, 30_000);
+        assert_eq!(took(&saved[0].details), 300, "saved while live");
+        let you = saved[0].actors.iter().find(|a| a.actor_id == 2259).unwrap();
+        assert_eq!((you.damage_received, you.hits_received), (300, 1));
+
+        // Rule 7: the next pull, cleared by a zone load, is saved with its hits.
+        hits(&s, 2259, 800, 40_000, 48_000);
+        taken(&s, 800, 2259, 45_000, 700);
+        crate::clock::set_override(Some(50_000));
+        assert!(s.note_zone_change());
+        let saved = snapshot_at(&mut calc, 50_000);
+        let second = saved.iter().find(|r| r.id == "auto_800_40000").unwrap();
+        assert_eq!(took(&second.details), 700, "saved after it was cleared");
+        let entry = &second.details.taken_skills[0];
+        assert_eq!((entry.code, entry.source_code, entry.stats.hits), (1_218_730, BOSS, 1));
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn the_meter_lists_damage_taken_by_players_who_dealt_none() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        s.append_nickname_authoritative(3000, "Healer");
+        let mut calc = meter_with_npcs(&s);
+        hits(&s, 2259, 800, 1_000, 8_000);
+        taken(&s, 800, 3000, 2_000, 50);
+        taken(&s, 800, 2259, 3_000, 20);
+        taken(&s, 800, 4000, 3_000, 10); // nobody the game named
+        let rows = calc.get_dps().taken;
+        let shown: Vec<(i32, &str, i64)> = rows.iter().map(|r| (r.actor_id, r.nickname.as_str(), r.stats.damage)).collect();
+        assert_eq!(shown, vec![(3000, "Healer", 50), (2259, "2259", 20)]);
+        taken(&s, 800, 2259, 4_000, 5);
+        assert_eq!(calc.get_dps().taken[1].stats.damage, 25, "a new hit with no new damage dealt");
         crate::clock::set_override(None);
     }
 

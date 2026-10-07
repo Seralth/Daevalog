@@ -217,8 +217,6 @@ pub struct ActorCombatData {
     pub total_damage: i64,
     pub party_heal: i64,
     pub regen: i64,
-    pub damage_received: i64,
-    pub hits_received: i32,
     /// i64::MAX until the first hit.
     pub first_damage_time: i64,
     pub last_damage_time: i64,
@@ -257,8 +255,6 @@ impl ActorCombatData {
         self.total_damage = self.total_damage.saturating_add(other.total_damage);
         self.party_heal = self.party_heal.saturating_add(other.party_heal);
         self.regen = self.regen.saturating_add(other.regen);
-        self.damage_received = self.damage_received.saturating_add(other.damage_received);
-        self.hits_received = self.hits_received.saturating_add(other.hits_received);
         self.first_damage_time = self.first_damage_time.min(other.first_damage_time);
         self.last_damage_time = self.last_damage_time.max(other.last_damage_time);
         self.job = self.job.or(other.job);
@@ -280,8 +276,6 @@ impl ActorCombatData {
             total_damage: 0,
             party_heal: 0,
             regen: 0,
-            damage_received: 0,
-            hits_received: 0,
             first_damage_time: i64::MAX,
             last_damage_time: 0,
             job: None,

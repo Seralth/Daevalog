@@ -6,6 +6,7 @@ use crate::combat::data_storage::{SegmentIdentity, TargetCombatData, IDLE_RESET_
 use crate::entity::details_context::*;
 use crate::entity::fight_record::FightRecord;
 use crate::entity::job_class::JobClass;
+use crate::entity::taken::TakenStats;
 use crate::i18n::lookup::NpcLookup;
 
 use super::rows::resolve_nickname;
@@ -46,7 +47,7 @@ impl DpsCalculator {
             if !self.is_saved_fight_target(&mob_data, td) || self.saved_fights.get(&(td.target_id, td.first_damage_time)) == Some(&td.last_damage_time) {
                 continue;
             }
-            let details = self.details_for(td, seg.max_hp, &seg.heals, None, Some(&seg.identity));
+            let details = self.details_for(td, seg.max_hp, &seg.heals, &seg.taken, None, Some(&seg.identity));
             let stats = actor_stats([td].into_iter());
             records.push(self.build_record(td, details, &stats, &mob_data, Some(&seg.identity)));
             self.saved_fights.insert((td.target_id, td.first_damage_time), td.last_damage_time);
@@ -108,7 +109,7 @@ impl DpsCalculator {
         &self,
         target_data: &TargetCombatData,
         details: TargetDetailsResponse,
-        stats: &HashMap<i32, (i64, i64, i64, i32)>,
+        stats: &HashMap<i32, (i64, i64)>,
         mob_data: &HashMap<i32, i32>,
         identity: Option<&SegmentIdentity>,
     ) -> FightRecord {
@@ -166,7 +167,11 @@ impl DpsCalculator {
                         .map(|s| s.code)
                         .unwrap_or(0)
                 );
-                let (party_heal, regen, dmg_recv, hits_recv) = stats.get(&id).copied().unwrap_or_default();
+                let (party_heal, regen) = stats.get(&id).copied().unwrap_or_default();
+                let mut received = TakenStats::default();
+                for e in details.taken_skills.iter().filter(|e| e.actor_id == id) {
+                    received.absorb(&e.stats);
+                }
                 // Joined on the unobscured nickname: the roster is keyed by
                 // name, and `display_nick` above has already been masked for
                 // everyone but the local player.
@@ -178,8 +183,8 @@ impl DpsCalculator {
                     job_id: job_class.map(|j| j.class_prefix()).unwrap_or(0),
                     party_heal,
                     regen,
-                    damage_received: dmg_recv,
-                    hits_received: hits_recv,
+                    damage_received: received.damage,
+                    hits_received: received.total(),
                     dbid: roster.map(|m| m.dbid).unwrap_or(0),
                     server_id: roster.map(|m| m.server_id).unwrap_or(0),
                     level: roster.map(|m| m.level).unwrap_or(0),
@@ -225,16 +230,14 @@ impl DpsCalculator {
     }
 }
 
-/// Healing, regen and damage taken per actor over `targets`.
-fn actor_stats<'a>(targets: impl Iterator<Item = &'a TargetCombatData>) -> HashMap<i32, (i64, i64, i64, i32)> {
-    let mut stats: HashMap<i32, (i64, i64, i64, i32)> = HashMap::new();
+/// Healing and regen per actor over `targets`.
+fn actor_stats<'a>(targets: impl Iterator<Item = &'a TargetCombatData>) -> HashMap<i32, (i64, i64)> {
+    let mut stats: HashMap<i32, (i64, i64)> = HashMap::new();
     for td in targets {
         for (&id, ad) in &td.actors {
             let e = stats.entry(id).or_default();
             e.0 += ad.party_heal;
             e.1 += ad.regen;
-            e.2 += ad.damage_received;
-            e.3 += ad.hits_received;
         }
     }
     stats

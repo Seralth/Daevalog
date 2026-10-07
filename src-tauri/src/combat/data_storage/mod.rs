@@ -447,8 +447,6 @@ fn light_clone(td: &TargetCombatData) -> TargetCombatData {
                     total_damage: ad.total_damage,
                     party_heal: ad.party_heal,
                     regen: ad.regen,
-                    damage_received: ad.damage_received,
-                    hits_received: ad.hits_received,
                     first_damage_time: ad.first_damage_time,
                     last_damage_time: ad.last_damage_time,
                     job: ad.job,
@@ -1194,7 +1192,7 @@ mod tests {
     }
 
     #[test]
-    fn damage_taken_and_party_heal_land_on_the_fight_they_belong_to() {
+    fn party_heal_lands_on_the_fight_the_healer_was_in_last() {
         let s = DataStorage::new();
         // You and a party member, on fifty mobs; mob 830 last.
         for (i, t) in (800..850).filter(|&t| t != 830).chain([830]).enumerate() {
@@ -1202,19 +1200,6 @@ mod tests {
             s.append_damage(hit(100, t, 1_000 + i as i64, 500, false));
             s.append_damage(hit(200, t, 1_000 + i as i64, 500, false));
         }
-        let taken = |s: &DataStorage, t: i32| s.get_combat_snapshot_light()[&t].actors[&100].damage_received;
-        let mut by_mob = hit(810, 100, 3_000, 300, false);
-        by_mob.set_skill_code(1_200_001);
-        s.append_damage(by_mob);
-        assert_eq!(taken(&s, 810), 300, "on the fight with the mob that hit you");
-
-        // A mob you never hit: the fight you were in last.
-        s.append_mob(900, 1);
-        let mut by_stranger = hit(900, 100, 3_100, 70, false);
-        by_stranger.set_skill_code(1_200_001);
-        s.append_damage(by_stranger);
-        assert_eq!(taken(&s, 830), 70);
-
         s.append_damage(hit(200, 100, 3_200, 400, false));
         let snapshot = s.get_combat_snapshot_light();
         assert_eq!(snapshot[&830].actors[&200].party_heal, 400);
