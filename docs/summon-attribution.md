@@ -67,8 +67,17 @@ for one particular player, suspect this first.
 
 `41 36` sets bit 0 of the first subtree's mask byte when it carries a name
 string, and for a summon **that name is the owner's**, not the summon's. If the
-name resolves to a known entity, that is the owner. Cheap, and it covers
-`0x1C` effect entities where `parent_key` points at the target instead.
+name resolves to a known entity, that is the owner.
+
+A `0x1C` skill-effect entity is a monster's. Its name, when present, is a
+player's, nearly always the player it hits. The end of its spawn record names
+the monster, and its hits on players count as damage taken from that monster
+(ARCHITECTURE.md, Parsing). In the check kit's 14 captures (2026-10-07),
+1,019 of 1,020 `0x1C` spawns carried an NPC code, every one listed in the NPC
+table as no player's summon; the other carried neither code nor name. 117
+carried the name of a player the meter knew. 36 of them hit a player, 35 of
+those the named one (the other, a Gas Rock, hit another player). The NPC code
+check below keeps every one of them from linking to the named player.
 
 **Code:** `parse_summon_spawn_at`, the `spawn_name` fallback.
 
