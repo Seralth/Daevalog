@@ -730,13 +730,7 @@ Object.assign(DpsApp.prototype, {
       { value: "300000", label: this.i18n?.t("settings.allTargetsWindow.options.5m", "5 minutes") },
     ];
 
-    const defaultMeterModeOptions = [
-      { value: "lastHitByMe", label: "TARGET" },
-      { value: "bossTargets", label: "BOSS" },
-      { value: "allTargets", label: "ALL" },
-      { value: "trainTargets", label: "TRAIN" },
-      { value: "encounter", label: "ENC" },
-    ];
+    const defaultMeterModeOptions = TARGET_MODE_ORDER.map((value) => ({ value, label: TARGET_MODE_LABELS[value] }));
 
     const trainModeOptions = [
       { value: "all", label: this.i18n?.t("settings.trainingMode.options.all", "All") },

@@ -1022,8 +1022,11 @@
           <div class="footerBtns">
             <button
               class="footerBtn targetModeBtn"
+              id="targetModeBtn"
               type="button"
-              aria-label="Target mode">
+              aria-label="Target mode"
+              aria-haspopup="menu"
+              aria-expanded="false">
               TARGET
             </button>
             <button
@@ -1039,6 +1042,7 @@
                 data-lucide="arrow-up-wide-narrow"></i>
             </div>
           </div>
+          <div class="targetModeMenu" role="menu" aria-labelledby="targetModeBtn" data-no-drag></div>
           <div class="pingDisplay">
             <i data-lucide="wifi" class="pingIcon"></i>
             <span class="pingText"></span>
@@ -1211,6 +1215,7 @@
     <script src="/src/js/settings/detailsSettings.js"></script>
     <script src="/src/js/app/windowModes.js"></script>
     <script src="/src/js/app/windowChrome.js"></script>
+    <script src="/src/js/app/modeMenu.js"></script>
     <script src="/src/js/main.js"></script>
   </body>
 </html>

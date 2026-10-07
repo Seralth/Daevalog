@@ -250,6 +250,8 @@ Object.assign(DpsApp.prototype, {
   // Also called when the hotkey toggled the lock (the backend has done it).
   _onOverlayLockChanged(locked) {
     this._overlayLocked = !!locked;
+    // A locked overlay takes no clicks, so an open mode menu could not close.
+    if (this._overlayLocked) this.closeTargetModeMenu?.();
     this.safeSetSetting(this.storageKeys.overlayLocked, String(this._overlayLocked));
     document.body.classList.toggle("overlayLocked", this._overlayLocked);
     // Locked, the button is always shown: on Linux a tray or a hotkey may not
