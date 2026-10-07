@@ -215,7 +215,8 @@ pub fn parse(packet: &[u8]) -> Option<Record> {
 /// entries in the add layout from the flags on. The caster is left out when
 /// flags bit 0 is clear (only in `45 36`), and the byte before the position
 /// is there in some entries and not in others; what decides it is not
-/// known (the first entry always has it). The list sits behind fields of
+/// known (the first entry has it in 27,111 of 27,129 lists, a later one in
+/// 17,425 of 196,666 entries). The list sits behind fields of
 /// varying length, so it is found by trying each start and both entry
 /// lengths, and kept only when exactly one reading has every entry well
 /// formed and ends where `after` follows.
