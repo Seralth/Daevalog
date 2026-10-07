@@ -92,7 +92,37 @@ impl StreamProcessor {
         if opcode != SPAWN_OLD && opcode != SPAWN {
             return false;
         }
-        self.parse_summon_spawn_at(packet, offset + 2)
+        let linked = self.parse_summon_spawn_at(packet, offset + 2);
+        self.note_effect_parent(packet, offset + 2);
+        linked
+    }
+
+    /// A `0x1C` skill-effect entity's record ends with the entity it belongs
+    /// to: `<u32 parent> 00 <u8> 00 00 00 00`, after its abnormal list and one
+    /// byte (06 or 01). Read only from a record that is a whole packet, where
+    /// its end is known. For a monster's effect the parent is the monster:
+    /// Saraswati's 24810 and Bakarma's 28846 (2026-10-06) named their boss,
+    /// and the game's records counted their hits on the player as damage
+    /// taken.
+    fn note_effect_parent(&self, packet: &[u8], offset_after_opcode: usize) {
+        let id = read_varint(packet, offset_after_opcode);
+        if id.length <= 0 {
+            return;
+        }
+        let kind_at = offset_after_opcode + id.length as usize;
+        if packet.get(kind_at) != Some(&0x1C) || packet.len() < kind_at + 11 {
+            return;
+        }
+        let tail = &packet[packet.len() - 10..];
+        if tail[4] != 0 || tail[6..] != [0, 0, 0, 0] {
+            return;
+        }
+        let mut effect = id.value;
+        if effect > 1_000_000 {
+            effect = (effect & 0x3FFF) | 0x4000;
+        }
+        let parent = i32::from_le_bytes([tail[0], tail[1], tail[2], tail[3]]);
+        self.data_storage.note_effect_parent(effect, parent);
     }
 
     /// Parse a `41 36` spawn record (NPCs, summons/pets and transient

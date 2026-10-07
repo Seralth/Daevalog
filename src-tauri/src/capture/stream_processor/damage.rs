@@ -6,6 +6,7 @@ use crate::capture::varint::{parse_u32_le, read_varint, try_read_varint};
 use crate::combat::data_storage::NoDamageHit;
 use crate::entity::damage_packet::ParsedDamagePacket;
 use crate::entity::special_damage::{self, SpecialDamage};
+use crate::entity::taken::{TakenHit, TakenKind};
 
 /// Theostone raw item ids, read as skill codes after `* 10 + 1`.
 const THEOSTONE_ITEM_IDS: std::ops::RangeInclusive<i64> = 3_000_000..=3_099_999;
@@ -14,6 +15,13 @@ const MONSTER_SKILL_CODES: std::ops::RangeInclusive<i64> = 1_000_000..=9_999_999
 /// The skill code of a compact aggregation record; its real skill comes from
 /// `PendingCompactSkillContext`.
 const COMPACT_AGGREGATE_SKILL: i32 = 99_745_942;
+/// `05 38` effect types read for damage taken only: an immune, and damage
+/// reflected onto a player (the `04 38` record beside it has hit type 9 and
+/// no skill; the tick names the reflecting skill, 2026-10-06, Lakshmi).
+const IMMUNE_EFFECT: u32 = 0x30;
+const REFLECT_EFFECT: u32 = 0x4A;
+/// The code of an immune record that is the game's Immune.
+const IMMUNE_CODE: u32 = 2001;
 /// Switch `0x36`: layout 6 with both multi-hit bits (`0x30`) set. The
 /// repeated-hit fallbacks apply to this switch only.
 const MULTI_HIT_SWITCH: i32 = 54;
@@ -46,12 +54,17 @@ impl StreamProcessor {
         }
         let effect_type = packet[offset] as u32;
         offset += 1;
+        if effect_type == IMMUNE_EFFECT {
+            self.parse_immune(packet, target_info.value, offset);
+            return;
+        }
         // Effect type: 0x02/0x0A = damage; 0x01/0x09 = heal; 0x0B = HoT.
         // 0x00 = status, 0x08 = buff. Exact match, NOT bitmask — 0x0B (HoT) has bit
         // 1 set and would leak through a mask.
         let is_damage = effect_type == 0x02 || effect_type == 0x0A;
         let is_heal = effect_type == 0x01 || effect_type == 0x09 || effect_type == 0x0B;
-        if !is_damage && !is_heal {
+        let is_reflect = effect_type == REFLECT_EFFECT;
+        if !is_damage && !is_heal && !is_reflect {
             return;
         }
 
@@ -81,6 +94,29 @@ impl StreamProcessor {
 
         let amount_info = read_varint(packet, offset);
         if amount_info.length < 0 || amount_info.value <= 0 || amount_info.value > 99_999_999 {
+            return;
+        }
+
+        // A monster's damage over time on a player, or damage reflected onto
+        // one, is damage taken. A tick of a player's skill is not: a Chanter
+        // skill (18730002) that heals 347 as effect 0x09 also came as effect
+        // 0x0A ticks of 347 naming the monster that had just hit, and the
+        // game's record counts none of them (2026-10-06, Saraswati). Nor is a
+        // Theostone's tick, whose item id is 7 digits too.
+        let code = i64::from(skill_code);
+        if (is_damage || is_reflect) && MONSTER_SKILL_CODES.contains(&code) && !THEOSTONE_ITEM_IDS.contains(&code) {
+            let at = self.override_timestamp.unwrap_or_else(crate::clock::now_ms);
+            let kind = if is_reflect { TakenKind::Reflect } else { TakenKind::Tick };
+            self.data_storage.append_taken(TakenHit::plain(
+                at,
+                target_info.value,
+                actor_info.value,
+                skill_code,
+                i64::from(amount_info.value),
+                kind,
+            ));
+        }
+        if is_reflect {
             return;
         }
 
@@ -128,6 +164,30 @@ impl StreamProcessor {
         if pdp.actor_id() != pdp.target_id() {
             self.data_storage.append_damage(pdp);
         }
+    }
+
+    /// `05 38 <target> 30 <target> <n> <code u32> <attacker> <skill u32>`:
+    /// the target was immune to the attacker's skill. Code 2001 is the
+    /// game's Immune (ImmuneCount, two records of 2026-10-05 and -06). In the
+    /// check kit's 14 captures code 100000183 came on summons only, and four
+    /// records with other codes on players were not 2001.
+    fn parse_immune(&mut self, packet: &[u8], target: i32, mut offset: usize) {
+        let Some(again) = try_read_varint(packet, &mut offset) else { return };
+        if again != target || try_read_varint(packet, &mut offset).is_none() || offset + 4 > packet.len() {
+            return;
+        }
+        let code = parse_u32_le(packet, offset);
+        offset += 4;
+        let Some(attacker) = try_read_varint(packet, &mut offset) else { return };
+        if code != IMMUNE_CODE || offset + 4 > packet.len() {
+            return;
+        }
+        let skill = parse_u32_le(packet, offset) as i64;
+        if !MONSTER_SKILL_CODES.contains(&skill) || !self.data_storage.is_plausible_entity_id(attacker) {
+            return;
+        }
+        let at = self.override_timestamp.unwrap_or_else(crate::clock::now_ms);
+        self.data_storage.append_taken(TakenHit::plain(at, target, attacker, skill as i32, 0, TakenKind::Immune));
     }
 
     // ===== EMBEDDED DAMAGE PACKET =====
@@ -259,8 +319,10 @@ impl StreamProcessor {
                 break;
             }
 
-            // Skip 7-digit NPC skills
-            if MONSTER_SKILL_CODES.contains(&exact_skill_code) {
+            // 7-digit skills are monsters' (NPC) skills: damage taken. A
+            // record found inside another packet is left out, as before.
+            let monster = MONSTER_SKILL_CODES.contains(&exact_skill_code);
+            if monster && require_trusted {
                 break;
             }
 
@@ -278,7 +340,18 @@ impl StreamProcessor {
             // Hit type 1 (Miss) and 6 (Resist) carry no damage: count them on
             // the skill and stop here, as the parser always did on these.
             if no_value {
-                if !require_trusted && actor_value != target_value {
+                if monster {
+                    let kind = match NoDamageHit::from_hit_type(hit_type) {
+                        Some(NoDamageHit::Miss) => Some(TakenKind::Miss),
+                        Some(NoDamageHit::Resist) => Some(TakenKind::Resist),
+                        None => None,
+                    };
+                    if let Some(kind) = kind {
+                        let at = self.override_timestamp.unwrap_or_else(crate::clock::now_ms);
+                        let skill = exact_skill_code as i32;
+                        self.data_storage.append_taken(TakenHit::plain(at, target_value, actor_value, skill, 0, kind));
+                    }
+                } else if !require_trusted && actor_value != target_value {
                     if let Some(kind) = NoDamageHit::from_hit_type(hit_type) {
                         let skill = self.normalize_skill_id(exact_skill_code as i32);
                         let counted = self.data_storage.append_no_damage_hit(target_value, actor_value, skill, kind);
@@ -550,7 +623,33 @@ impl StreamProcessor {
                 break;
             }
 
-            if crate::entity::skill_group::restores_resource(exact_skill_code as i32) {
+            if monster {
+                // Damage taken: the record's value with its additional hits,
+                // the plotter's flags and angle, and the hit type's crit.
+                if actor_value != target_value {
+                    let damage = i64::from(final_damage) + multi_hit_damage;
+                    tracing::trace!(
+                        target: "taken_flags",
+                        "{} actor={actor_value} target={target_value} skill={exact_skill_code} damage={damage} type={hit_type} layout={layout} mods={} dir={} hp={}",
+                        self.override_timestamp.unwrap_or_else(crate::clock::now_ms),
+                        raw_mods.map_or("-".to_string(), |m| format!("{m:#04x}")),
+                        raw_dir.map_or("-".to_string(), |d| format!("{d:#04x}")),
+                        raw_hp.map_or("-".to_string(), |h| h.to_string()),
+                    );
+                    self.data_storage.append_taken(TakenHit {
+                        at: self.override_timestamp.unwrap_or_else(crate::clock::now_ms),
+                        target: target_value,
+                        actor: actor_value,
+                        skill: exact_skill_code as i32,
+                        damage,
+                        kind: TakenKind::Hit,
+                        flags: raw_mods.unwrap_or(0),
+                        angle: raw_dir.unwrap_or(0),
+                        crit: damage_type == 3,
+                        restored: raw_hp.map_or(0, i64::from),
+                    });
+                }
+            } else if crate::entity::skill_group::restores_resource(exact_skill_code as i32) {
                 // MP (or another resource) restored, not HP: neither damage
                 // nor healing. A Water Spirit's attack sends one of these to
                 // its Spiritmaster (16990002, 20 MP), filed under 100011.
@@ -813,3 +912,4 @@ fn to_hex_range(bytes: &[u8], start: usize, end: usize) -> String {
     let e = end.min(bytes.len());
     bytes[s..e].iter().map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ")
 }
+
