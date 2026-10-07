@@ -631,6 +631,31 @@ mod tests {
         assert_eq!(fifth.job, Some(crate::entity::job_class::JobClass::Sorcerer));
     }
 
+    /// A roster from a live capture (2026-10-05, names and ids replaced):
+    /// slot 4's record ends `00 05 … 01 02`, which read as slot 5's header
+    /// with a two-byte name, so slot 5 was lost from 42 rosters in a row.
+    #[test]
+    fn a_record_tail_is_not_read_as_the_next_member() {
+        let storage = Arc::new(DataStorage::new());
+        let p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let roster = [
+            "b7020297cc3800000c5061727479206e616d65203205c227090000030100020000009c08ff0102051e01010002000000",
+            "9c0804414141412400000016000000450100009c08691004153c000000000000003d0000000000000001051e02020002",
+            "0000009c0804424242421f000000220000002f0200009c08691001f067000000000000003e0000000000000001011e03",
+            "0300020000009c080a4343434343434343434320000000160000000b0100009c086910037c39000000000000004a0000",
+            "000000000001011e04040002000000b104064444444444441e00000016000000ef00000007b104691004cb3600000000",
+            "000000050000000000000001021e05050002000000b10407454545454545451600000026000000c3020000b104691004",
+            "4d8400000000000000510000000000000001010009",
+        ]
+        .concat();
+        p.scan_party_roster(&hex(&roster));
+        let members = storage.get_party_members();
+        assert_eq!(members.len(), 5);
+        let fifth = &members["EEEEEEE"];
+        assert_eq!((fifth.slot, fifth.level, fifth.gear_score, fifth.combat_power), (5, 38, 707, 33_869));
+    }
+
     #[test]
     fn another_players_spirit_is_linked_at_spawn_by_its_caster() {
         let storage = Arc::new(DataStorage::new());

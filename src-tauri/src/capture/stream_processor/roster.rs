@@ -235,6 +235,12 @@ fn find_next_member(data: &[u8], from: usize, expected_slot: u8) -> Option<usize
         if is_vacant_slot(data, i) {
             return Some(i);
         }
+        // A member's mask is never 0 (0x0c, 0x0e, 0x1c or 0x1e in every
+        // capture so far). A record tail of `00 05 00 00 00 00 00 00 00 01 02`
+        // before slot 5 read as a member whose name was the next two bytes.
+        if data[i] == 0 {
+            continue;
+        }
         let server_id = u16::from_le_bytes([data[i + 8], data[i + 9]]);
         if server_id == 0 || server_id > 9_999 {
             continue;
