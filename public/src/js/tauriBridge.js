@@ -9,7 +9,8 @@
   const { invoke } = window.__TAURI__.core;
   const { listen } = window.__TAURI__.event;
 
-  // The backend enables compositor resizing only on GNOME.
+  // The backend enables compositor resizing on GNOME, and for the tool
+  // windows on native Wayland (platform::window::compositor_resize_supported).
   const isLinux = /Linux/.test(navigator.userAgent);
   let compositorResize = isLinux ? null : false;
   const compositorResizeReady = isLinux ? invoke("compositor_resize_supported")
@@ -1136,7 +1137,9 @@
   // WebKitGTK ignores app-region, and a frameless window has no border to
   // grab, so on Linux the page starts both: the drag through start_tool_drag,
   // the resize through begin_tool_resize, which lifts the pinned size hints
-  // (platform::window::set_size) for the length of the resize.
+  // (platform::window::set_size) for the length of the resize. On native
+  // Wayland the resize goes through the compositor instead (startNativeResize):
+  // lifted hints reach a Wayland compositor only with the next frame.
   if (window.A2_VIEW !== "main" && /Linux/.test(navigator.userAgent)) {
     const DRAG_HEADERS = ".historyHeader, .detailsHeader, .settingsHeader";
     const NO_DRAG = "button, a, input, select, textarea, [data-no-drag], "

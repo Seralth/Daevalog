@@ -191,7 +191,7 @@ If XWayland is unavailable, the meter also falls back to native Wayland. GTK's n
 
 Drag the meter's bottom-right resize handle, or the edges of a tool window. On GNOME with X11, XWayland or native Wayland, the compositor resizes the actual window instead of temporarily expanding a transparent viewport. This avoids the expansion moving the meter back onto the screen. The application detects its actual display backend, including XWayland inside a Wayland session.
 
-KDE Plasma, Hyprland, Sway, i3 and other desktops keep the overlay viewport resizing and tool-window edge resizing. The GNOME path is not enabled on those desktops.
+KDE Plasma, Hyprland, Sway, i3 and other desktops keep the overlay viewport resizing. Their tool windows (Details, History, Settings) resize from the edges: on native Wayland through the compositor, as on GNOME, because a size change only reaches a Wayland compositor with the window's next frame; on X11 and XWayland through the window manager.
 
 The meter's minimum height is measured from its current content, so shrinking removes empty space without letting the frame overlap the header, rows or footer.
 

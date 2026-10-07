@@ -10,16 +10,24 @@
 
 use x11_dl::xlib;
 
-/// GNOME uses compositor resizing on both native Wayland and X11.
+/// Whether a resize goes through `prepare_resize` and the compositor. GNOME
+/// does this for every window, on native Wayland and X11. The tool windows do
+/// it on any native Wayland desktop: there the unpinned size reaches the
+/// compositor only with the window's next commit, so a resize started right
+/// after `release_size` kept the pinned size and the window did not move an
+/// edge (History, Details and Settings on KDE Plasma, 2026-10-07).
 pub fn compositor_resize_supported(window: &tauri::WebviewWindow) -> bool {
-    if !super::process::is_gnome() {
+    let gnome = super::process::is_gnome();
+    if !gnome && window.label() == "main" {
         return false;
     }
     use gtk::prelude::*;
     let window = window.clone();
     super::dialog::on_gtk_thread(move || {
-        window.gtk_window().ok().is_some_and(|w| {
-            matches!(w.display().type_().name(), "GdkWaylandDisplay" | "GdkX11Display")
+        window.gtk_window().ok().is_some_and(|w| match w.display().type_().name() {
+            "GdkWaylandDisplay" => true,
+            "GdkX11Display" => gnome,
+            _ => false,
         })
     }).unwrap_or(false)
 }
