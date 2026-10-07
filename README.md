@@ -104,7 +104,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - **Skill rows as in the game.** Skills are grouped the way the game's Damage Analyzer groups them. Additional hits are read from the damage record, the spirits' hits included.
 - **Hit results.** Details can show Shield Block, Parry, Perfect Block, Endurance, Regeneration, Miss and Resist for each skill. Hit types carry the game's names.
 - A spirit's damage over time stops counting when the spirit is unsummoned, as in the game's Damage Analyzer (Wind Spirit: Malicious Whirlwind).
-- With the game's record, Details also compares Parry, Miss, Resist, Endurance and Regeneration with the game's counts.
+- With the game's record, Details also compares Parry, Miss, Endurance and Regeneration with the game's counts. The game keeps no count of resists.
 - **Skill details on hover** in every mode, including the modes that show several targets.
 - BOSS mode stays on the boss you and your party are fighting. Another boss takes its place once it takes more than twice your and your party's damage over the last 10 seconds, or when the boss on screen dies and you fight on. It no longer flips between two bosses or scarecrows several times a second.
 - **Mode list.** The mode button opens a list of the five modes: pick one instead of clicking through them. The list stays inside the meter's window, so it also works on the Wayland layer overlay.

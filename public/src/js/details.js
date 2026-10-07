@@ -956,9 +956,10 @@ const createDetailsUI = ({
   const GAME_EMPTY_CELLS = ["multiHitDamageEl", "minDmgEl", "avgDmgEl", "maxDmgEl"];
   const GAME_TAGGED_CELLS = ["hitEl", "dmgEl", "dmgPctEl", "multiHitEl", "critEl", "perfectEl", "doubleEl", "backEl", "frontalEl", "parryEl"];
   // The game's other hit results: [count index, HIT_RESULTS column]. It has
-  // no Shield Block or Perfect Block count of its own.
-  const GAME_HIT_RESULTS = [[8, "miss"], [9, "resist"], [10, "ironwall"], [11, "regeneration"]];
-  const GAME_NO_HIT_RESULTS = ["block", "perfectblock"];
+  // no Shield Block, Perfect Block or Resist count of its own; its Immune
+  // (index 9) is another record that the meter does not read yet.
+  const GAME_HIT_RESULTS = [[8, "miss"], [10, "ironwall"], [11, "regeneration"]];
+  const GAME_NO_HIT_RESULTS = ["block", "perfectblock", "resist"];
 
   // The record's rows as details: the game's numbers ("game"), or the meter's
   // over the record's window with the game's beside them ("both").
@@ -977,7 +978,7 @@ const createDetailsUI = ({
         actorId, job, code: r.skillId, name: names?.[r.skillId] || `#${r.skillId}`,
         isDot: false, specs: [], dmg: v.damage,
         time: c[0], crit: c[1], perfect: c[2], double: c[3], frontal: c[4], back: c[5], multiHitCount: c[6],
-        parry: c[7] || 0, miss: c[8] || 0, resist: c[9] || 0, ironWall: c[10] || 0, regeneration: c[11] || 0,
+        parry: c[7] || 0, miss: c[8] || 0, resist: 0, ironWall: c[10] || 0, regeneration: c[11] || 0,
         shieldBlock: 0, perfectBlock: 0,
         multiHitDamage: 0, minDmg: 0, maxDmg: 0, regen: 0,
         _game: r.game, _meter: r.meter, _both: both,

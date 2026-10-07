@@ -162,9 +162,11 @@ fn meter_counts(s: &SkillCombatData) -> [i64; N_COUNTS] {
         // Block counts flag 0x02, the meter's Parry (a 2026-10-06 record).
         // Flag 0x01, Shield Block, only by the game's names: no record yet.
         s.shield_block_count + s.parry_count,
-        // Hit type 1, then hit type 6 (the meter's Resist, not yet checked).
+        // Hit type 1. The game's Immune is a `05 38` effect 0x30 record the
+        // meter does not read yet; a Resist (hit type 6) is the skill's effect
+        // resisted, not the hit, and the game does not count it.
         s.miss_count,
-        s.resist_count,
+        0,
         // Flags 0x10 and 0x20, not yet checked.
         s.iron_wall_count,
         s.regeneration_count,
@@ -415,7 +417,7 @@ pub(crate) mod tests {
         let r = rows[&(700, 16040000)];
         assert_eq!(r.counts[0], 4);
         // block, miss, immune, ironwall, restore
-        assert_eq!(r.counts[7..], [2, 1, 1, 1, 1]);
+        assert_eq!(r.counts[7..], [2, 1, 0, 1, 1]);
     }
 
     #[test]
