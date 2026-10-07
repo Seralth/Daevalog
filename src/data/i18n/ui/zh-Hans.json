@@ -116,8 +116,8 @@
       "healTicks": "治疗跳数",
       "hotTicks": "持续治疗跳数",
       "healSkills": "技能",
-      "damageReceived": "受到的伤害",
-      "hitsReceived": "受到的打击次数"
+      "damageReceived": "承受的总伤害",
+      "hitsReceived": "受到的攻击次数"
     },
     "fightVs": "战斗 vs",
     "all": "全部",
@@ -179,8 +179,8 @@
     "notCompared": "仅游戏数值",
     "damageMeter": "伤害（计量器）",
     "damageGame": "伤害（游戏）",
-    "takenMeter": "受到的伤害（计量器）",
-    "takenGame": "受到的伤害（游戏）",
+    "takenMeter": "承受伤害（计量器）",
+    "takenGame": "承受伤害（游戏）",
     "allMatch": "全部 {n} 个技能一致",
     "someMatch": "{n} 个技能中 {x} 个一致",
     "noComparison": "这场战斗没有保存数据包，因此只显示游戏的数值。",

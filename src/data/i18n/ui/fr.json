@@ -116,7 +116,7 @@
       "healTicks": "Ticks de soin",
       "hotTicks": "Ticks de HoT",
       "healSkills": "Compétences",
-      "damageReceived": "Dégâts subis",
+      "damageReceived": "DGT totaux subis",
       "hitsReceived": "Nb de coups reçus"
     },
     "fightVs": "Combat contre",

@@ -116,7 +116,7 @@
       "healTicks": "Tics de curación",
       "hotTicks": "Tics de HoT",
       "healSkills": "Habilidades",
-      "damageReceived": "Daño recibido",
+      "damageReceived": "Daño total recibido",
       "hitsReceived": "Ataques recibidos"
     },
     "fightVs": "Combate contra",

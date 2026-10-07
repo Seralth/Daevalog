@@ -116,7 +116,7 @@
       "healTicks": "회복 틱",
       "hotTicks": "HoT 틱",
       "healSkills": "스킬",
-      "damageReceived": "받은 피해",
+      "damageReceived": "받은 총 피해량",
       "hitsReceived": "받은 타격 횟수"
     },
     "fightVs": "전투 vs",
