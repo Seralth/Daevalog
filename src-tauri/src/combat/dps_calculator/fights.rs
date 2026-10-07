@@ -136,6 +136,9 @@ impl DpsCalculator {
             identity_dungeon
         };
 
+        // Each player's class from all their skills in the fight: the first
+        // skill in the list's hash-map order could be another class's.
+        let class_of = |uid: i32| JobClass::by_hits(details.skills.iter().filter(|s| s.actor_id == uid).map(|s| (s.code, s.time)));
         let mut record_actors: HashMap<i32, (String, String)> = HashMap::new();
         // The record's actors are its players, which an upload counts; the
         // unattributed row's damage stays in the details.
@@ -143,14 +146,9 @@ impl DpsCalculator {
             let uid = skill.actor_id;
             record_actors.entry(uid).or_insert_with(|| {
                 let nick = resolve_nickname(uid, &nickname_data, &summon_data_snap);
-                let job = if !skill.job.is_empty() { skill.job.clone() }
-                    else { JobClass::convert_from_skill(skill.code).map(|j| j.class_name().to_string()).unwrap_or_default() };
+                let job = class_of(uid).map(|j| j.class_name().to_string()).unwrap_or_default();
                 (nick, job)
             });
-            let entry = record_actors.get_mut(&uid).unwrap();
-            if entry.1.is_empty() && !skill.job.is_empty() {
-                entry.1 = skill.job.clone();
-            }
         }
 
         let local_id = local_id.unwrap_or(-1) as i32;
@@ -161,12 +159,7 @@ impl DpsCalculator {
                 } else {
                     crate::entity::fight_record::obscure_nickname(nick)
                 };
-                let job_class = JobClass::convert_from_skill(
-                    details.skills.iter()
-                        .find(|s| s.actor_id == id && !s.job.is_empty())
-                        .map(|s| s.code)
-                        .unwrap_or(0)
-                );
+                let job_class = class_of(id);
                 let (party_heal, regen) = stats.get(&id).copied().unwrap_or_default();
                 let mut received = TakenStats::default();
                 for e in details.taken_skills.iter().filter(|e| e.actor_id == id) {

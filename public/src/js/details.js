@@ -231,11 +231,38 @@ const createDetailsUI = ({
     return `${yr}-${mo}-${day} @ ${h12}:${mm} ${period}`;
   };
 
+  // The target the title names: the one picked; on every target the one the
+  // meter follows, which BOSS names in the meter's header; else the one that
+  // took the most damage, the lower id on a tie. It was the first target
+  // listed, and the list came in a new hash-map order on every read: one
+  // Kasia fight read Garden Papis, Thin Agrint and Wandering Earth Spirit.
+  const titleTarget = () => {
+    const picked = getTargetById(selectedTargetId);
+    if (picked) return picked;
+    const followed = getTargetById(detailsContext?.currentTargetId);
+    if (Number(followed?.targetId) > 0) return followed;
+    return detailsTargets.filter((t) => Number(t?.targetId) > 0).reduce((best, t) => {
+      if (!best) return t;
+      const more = (Number(t.totalDamage) || 0) - (Number(best.totalDamage) || 0);
+      return more > 0 || (more === 0 && Number(t.targetId) < Number(best.targetId)) ? t : best;
+    }, null);
+  };
+
+  // When the fight began: a saved fight's start, the picked target's first
+  // hit, or on every target the first hit on any of them.
+  const fightStartAt = () => {
+    if (historyRecord) return fightStartMs;
+    const picked = getTargetById(selectedTargetId);
+    const spans = targetSpans(picked ? [picked] : detailsTargets);
+    return spans.length ? Math.max(0, Math.min(...spans.map((sp) => sp[0]))) : 0;
+  };
+
   const renderFightTitle = () => {
     if (!detailsFightTitleEl) return;
-    const target = getTargetById(selectedTargetId) || detailsTargets[0];
+    const target = titleTarget();
     const bossName = (fightPlayer ? escapeHtml(playerLabel(fightPlayer)) : "") || (target ? getTargetLabel(target) : "");
-    const dateStr = fightStartMs > 0 ? formatFightDateTime(fightStartMs) : "";
+    const startMs = fightStartAt();
+    const dateStr = startMs > 0 ? formatFightDateTime(startMs) : "";
     if (!bossName) { detailsFightTitleEl.innerHTML = ""; return; }
     const fightVs = labelText("details.fightVs", "Fight vs");
     const suffix = dateStr ? ` - ${dateStr}` : "";
@@ -324,8 +351,19 @@ const createDetailsUI = ({
     detailsStatsEl.classList.remove("isMeasuring");
     detailsStatsEl.style.setProperty("--stat-col", `${Math.ceil(widest)}px`);
   };
-  // Labels in a web font that loads late are measured again.
-  document.fonts?.addEventListener?.("loadingdone", fitStatColumns);
+  // Labels and figures in a web font that loads late are measured again.
+  document.fonts?.addEventListener?.("loadingdone", () => {
+    fitStatColumns();
+    fitPartyBars();
+    fitTakenColumns();
+  });
+
+  // The fight's time on every target: the context's, as the meter counts it
+  // (in TRAIN your own time on the dummies, not the dummies' whole time);
+  // with no context, the time any of `spans` was being fought.
+  const fightTimeMs = (spans) => (Number(detailsContext?.battleTime) > 0
+    ? Number(detailsContext.battleTime)
+    : activeTime(spans));
 
   const getTargetById = (targetId) =>
     detailsTargets.find((target) => Number(target?.targetId) === Number(targetId));
@@ -368,6 +406,10 @@ const createDetailsUI = ({
     });
   };
 
+  // A player's class: the backend's, from all their skills (a saved fight's
+  // own), before one read off a skill row. The party bars and the chart took
+  // the class of whichever skill came last, and a Templar who also used a
+  // Gladiator-coded skill showed as Gladiator in some reads.
   const getActorJob = (actorId) => {
     const numericId = Number(actorId);
     if (!Number.isFinite(numericId) || numericId <= 0) return "";
@@ -549,7 +591,7 @@ const createDetailsUI = ({
         stats: [...combined.entries()]
           .map(([actorId, heal]) => ({
             actorId,
-            job: detectedJobByActorId.get(actorId) || detailsActors.get(actorId)?.job || "",
+            job: getActorJob(actorId),
             totalDmg: heal,
             contributionPct: (heal / total) * 100,
           }))
@@ -577,13 +619,13 @@ const createDetailsUI = ({
       stats: [...combined.entries()]
         .map(([actorId, dmg]) => ({
           actorId,
-          job: detectedJobByActorId.get(actorId) || detailsActors.get(actorId)?.job || "",
+          job: getActorJob(actorId),
           totalDmg: dmg,
           contributionPct: (dmg / total) * 100,
         }))
         .sort((a, b) => b.totalDmg - a.totalDmg),
       // The fight's time over these targets, as the overview counts it.
-      battleTimeMs: activeTime(targetSpans(targets)),
+      battleTimeMs: targets === allTargets ? fightTimeMs(targetSpans(targets)) : activeTime(targetSpans(targets)),
     };
   };
 
@@ -652,7 +694,8 @@ const createDetailsUI = ({
       const nameEl = document.createElement("span");
       nameEl.className =
         "detailsPartyBarName" +
-        (cjkRegex.test(name) ? " isCjk" : "");
+        (cjkRegex.test(name) ? " isCjk" : "") +
+        (isUnattributedActor(actorId) ? " isUnattributed" : "");
       nameEl.textContent = name;
       if (color) nameEl.style.color = color;
 
@@ -690,7 +733,70 @@ const createDetailsUI = ({
 
       detailsPartyListEl.appendChild(bar);
     });
+    fitPartyBars();
   };
+
+  // The text width of each element, as drawn; 0 where it cannot be measured.
+  const textWidths = (els) => {
+    if (typeof document.createRange !== "function") return [];
+    const range = document.createRange();
+    return els.map((el) => {
+      range.selectNodeContents(el);
+      return range.getBoundingClientRect().width || 0;
+    });
+  };
+
+  // The party bars' figures that fit beside the names, each as wide as its
+  // widest text; those that do not fit give way from the right end, as the
+  // skill table's columns do. The names come first: they keep room for the
+  // widest one, up to BAR_NAME_ROOM px (the unattributed row's long label is
+  // cut either way), before any figure, since "Gladiator 41" cut to
+  // "Gladiator..." no longer tells two players apart. At 520 px the fixed
+  // figure widths took the whole bar: no name was left and % was cut.
+  const BAR_FIGURES = ["dps", "dmg", "pct"];
+  const BAR_NAME_ROOM = 110;
+  // The figures' widths in styles.css.
+  const BAR_FIGURE_WIDTH = { dps: 62, dmg: 56, pct: 40 };
+  let lastBarFitWidth = 0;
+  const fitPartyBars = () => {
+    if (!detailsPartyListEl) return;
+    detailsPartyListEl.classList.remove(...BAR_FIGURES.map((f) => `drop-bar-${f}`));
+    const content = detailsPartyListEl.querySelector(".detailsPartyBarDps")?.parentElement;
+    const room = content?.clientWidth || 0;
+    lastBarFitWidth = detailsPartyListEl.clientWidth || 0;
+    const cell = (f) => `.detailsPartyBar${f.charAt(0).toUpperCase()}${f.slice(1)}`;
+    const widths = new Map(BAR_FIGURES.map((f) => [
+      f, Math.ceil(Math.max(0, ...textWidths([...detailsPartyListEl.querySelectorAll(cell(f))]))),
+    ]));
+    if (!(room > 0) || ![...widths.values()].some((w) => w > 0)) {
+      BAR_FIGURES.forEach((f) => detailsPartyListEl.style.removeProperty(`--bar-${f}-w`));
+      return;
+    }
+    const gap = parseFloat(getComputedStyle(content).columnGap) || 6;
+    const icons = [...detailsPartyListEl.querySelectorAll(".detailsPartyBarIcon")].map((el) => el.offsetWidth || 0);
+    const iconRoom = Math.max(0, ...icons) > 0 ? Math.max(...icons) + gap : 0;
+    const names = textWidths([...detailsPartyListEl.querySelectorAll(".detailsPartyBarName")]
+      .filter((name) => !name.classList.contains("isUnattributed")));
+    let used = iconRoom + Math.min(BAR_NAME_ROOM, Math.ceil(Math.max(0, ...names)));
+    // Where everything fits, the figures keep their usual widths.
+    const roomy = new Map(BAR_FIGURES.map((f) => [f, Math.max(BAR_FIGURE_WIDTH[f], widths.get(f))]));
+    const sizes = used + BAR_FIGURES.reduce((n, f) => n + gap + roomy.get(f), 0) <= room ? roomy : widths;
+    const kept = [];
+    for (const f of BAR_FIGURES) {
+      const need = gap + sizes.get(f);
+      if (used + need > room) break;
+      used += need;
+      kept.push(f);
+    }
+    BAR_FIGURES.forEach((f) => detailsPartyListEl.style.setProperty(`--bar-${f}-w`, `${sizes.get(f)}px`));
+    detailsPartyListEl.classList.add(...BAR_FIGURES.filter((f) => !kept.includes(f)).map((f) => `drop-bar-${f}`));
+  };
+  // A narrower or wider window fits the figures again.
+  if (typeof ResizeObserver === "function" && detailsPartyListEl) {
+    new ResizeObserver(() => {
+      if ((detailsPartyListEl.clientWidth || 0) !== lastBarFitWidth) fitPartyBars();
+    }).observe(detailsPartyListEl);
+  }
 
   // Hit results from the record's flags byte and hit type, after Front:
   // [column, skill field, shown as]. Misses and resists are not hits, so
@@ -1541,10 +1647,7 @@ const createDetailsUI = ({
     takenTable.querySelectorAll(".skillHeader .cell[data-taken]").forEach((cell) => {
       cell.style.display = shown.includes(cell.dataset.taken) ? "" : "none";
     });
-    takenTable.style.setProperty("--skill-grid-cols", [
-      "minmax(90px, 3fr)", "minmax(70px, 2fr)", "minmax(44px, 1fr)", "minmax(30px, 0.75fr)",
-      ...shown.map(() => "minmax(24px, 0.65fr)"),
-    ].join(" "));
+    takenShown = shown;
     const total = rows.reduce((n, r) => n + r.damage, 0);
     takenList.innerHTML = "";
     rows.forEach((r) => {
@@ -1569,10 +1672,56 @@ const createDetailsUI = ({
       cell("takenMonster", r.sourceCode > 0 ? i18n?.getNpcName?.(r.sourceCode, "") || `#${r.sourceCode}` : "-");
       cell("center takenDmg", formatNum(r.damage));
       cell("center takenHits", `${r.attacks}`);
-      shown.forEach((f) => cell("center", r[f] > 0 && r.hits > 0 ? `${Math.round((r[f] / r.hits) * 100)}%` : ""));
+      shown.forEach((f) => cell(`center taken-${f}`, r[f] > 0 && r.hits > 0 ? `${Math.round((r[f] / r.hits) * 100)}%` : ""));
       takenList.appendChild(rowEl);
     });
+    fitTakenColumns();
   };
+
+  // The damage received columns: the skill and the monster as before (they
+  // end in "…"), each figure at least as wide as its widest text, header
+  // included. Figures that do not fit give way from the right end, as the
+  // skill table's do; the damage always stays. At 520 px the Endurance
+  // header ("Endr") lost its first letter.
+  const TAKEN_LEAD = ["minmax(90px, 3fr)", "minmax(70px, 2fr)"];
+  const takenTrack = (f) => ({ takenDmg: "minmax(44px, 1fr)", takenHits: "minmax(30px, 0.75fr)" })[f] || "minmax(24px, 0.65fr)";
+  let takenShown = [];
+  let lastTakenFitWidth = 0;
+  const fitTakenColumns = () => {
+    if (!takenTable || !takenList) return;
+    const figures = ["takenDmg", "takenHits", ...takenShown];
+    const header = (f) => [...takenTable.querySelectorAll(".skillHeader .cell")]
+      .find((c) => c.classList.contains(f) || c.dataset.taken === f);
+    const cells = (f) => [header(f), ...takenList.querySelectorAll(`.cell.${f.startsWith("taken") ? f : `taken-${f}`}`)].filter(Boolean);
+    const least = (f) => Number(/minmax\((\d+)px/.exec(takenTrack(f))[1]);
+    const widths = new Map(figures.map((f) => [f, Math.max(least(f), Math.ceil(Math.max(0, ...textWidths(cells(f)))))]));
+    lastTakenFitWidth = takenList.clientWidth || 0;
+    const listStyle = getComputedStyle(takenList);
+    const room = (takenList.clientWidth || 0) - (parseFloat(listStyle.paddingLeft) || 0) - (parseFloat(listStyle.paddingRight) || 0);
+    let kept = figures;
+    if (room > 0 && typeof document.createRange === "function") {
+      const gap = parseFloat(getComputedStyle(takenList.querySelector(".skillRow") ?? takenList).columnGap) || 8;
+      let used = TAKEN_LEAD.reduce((n, track) => n + Number(/minmax\((\d+)px/.exec(track)[1]), gap);
+      kept = [];
+      for (const f of figures) {
+        const need = gap + widths.get(f);
+        if (kept.length && used + need > room) break;
+        used += need;
+        kept.push(f);
+      }
+    }
+    figures.forEach((f) => cells(f).forEach((c) => { c.style.display = kept.includes(f) ? "" : "none"; }));
+    takenTable.style.setProperty("--skill-grid-cols", [
+      ...TAKEN_LEAD,
+      ...kept.map((f) => takenTrack(f).replace(/minmax\(\d+px/, `minmax(${widths.get(f)}px`)),
+    ].join(" "));
+  };
+  // A narrower or wider window, or the section opened, fits them again.
+  if (typeof ResizeObserver === "function" && takenList) {
+    new ResizeObserver(() => {
+      if ((takenList.clientWidth || 0) !== lastTakenFitWidth) fitTakenColumns();
+    }).observe(takenList);
+  }
 
   // ── Collapsible section toggle ──
   const sectionHeaders = detailsPanel?.querySelectorAll?.(".detailsSectionHeader");
@@ -1722,7 +1871,7 @@ const createDetailsUI = ({
         actorId,
         hits,
         totalDmg: hits.reduce((s, h) => s + h.dmg, 0),
-        job: detectedJobByActorId.get(actorId) || detailsActors.get(actorId)?.job || "",
+        job: getActorJob(actorId),
       }))
       .sort((a, b) => b.totalDmg - a.totalDmg);
 
@@ -2285,7 +2434,7 @@ const createDetailsUI = ({
     const pct = (num, den) => (den > 0 ? Math.round((num / den) * 1000) / 10 : 0);
     // The fight's time as the meter counts several targets; a boss and its
     // adds fought at once count once.
-    const battleTimeMs = activeTime(spans);
+    const battleTimeMs = fightTimeMs(spans);
     // The charts run from the fight's first hit to its last.
     const spanMs = spans.length ? Math.max(...spans.map((sp) => sp[1])) - fightStart : 0;
     // The fight's healing, each tick once (the context's list): each target's
@@ -2577,12 +2726,8 @@ const createDetailsUI = ({
     if (selectedAttackerIds && selectedAttackerIds.length === 1) {
       selectedAttackerLabel = resolveActorLabel(selectedAttackerIds[0]);
     }
-    // Compute fight start time from target context
-    const firstTarget = getTargetById(selectedTargetId) || detailsTargets[0];
-    fightStartMs = firstTarget
-      ? Math.max(0, (Number(firstTarget.lastDamageTime) || 0) - (Number(firstTarget.battleTime) || 0))
-      : 0;
-    fightPlayer = firstTarget || !row ? null : row;
+    // No target at all: the title names the player.
+    fightPlayer = detailsTargets.some((t) => Number(t?.targetId) > 0) || !row ? null : row;
     fightDungeonId = Number(getDungeonId?.()) || 0;
     updateHeaderText();
     detailsPanel.classList.add("open");

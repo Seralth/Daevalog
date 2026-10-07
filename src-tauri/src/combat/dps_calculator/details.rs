@@ -9,6 +9,7 @@ use crate::entity::job_class::JobClass;
 use crate::entity::taken::{TakenSkillEntry, TakenStats};
 use crate::entity::summon_resolver;
 
+use super::meter_rows::{active_time, own_span};
 use super::rows::{build_nickname_canonical_map_from_aggregates, resolve_nickname};
 use super::{DpsCalculator, TargetSelectionMode};
 
@@ -21,43 +22,61 @@ impl DpsCalculator {
         let summon_data = self.data_storage.get_summon_data();
         let mob_hp_data = self.data_storage.get_mob_hp_data();
         let mob_data = self.data_storage.get_mob_data();
+        let local_id = self.data_storage.local_player_id().map(|v| v as i32);
+
+        // TRAIN and BOSS: the targets on the meter. Details' "All" merged
+        // every dummy in the area in TRAIN, other players' too; in BOSS it
+        // took every target not yet dropped, the boss with whatever adds were
+        // hit in the last 30 s (Kasia 2026-10-06: healing 19.74k on every
+        // target, 16.40k for the boss the meter showed).
+        let train = self.target_selection_mode == TargetSelectionMode::TrainTargets;
+        let on_meter = train || self.target_selection_mode == TargetSelectionMode::BossTargets;
+        // Most damage first, then by id. A hash map's order changed with
+        // every read, and with it the first listed target.
+        let mut listed: Vec<(i32, &TargetCombatData)> = combat_data.iter()
+            .filter(|(id, _)| !on_meter || self.displayed_targets.contains(id))
+            .map(|(&id, td)| (id, td))
+            .collect();
+        listed.sort_by_key(|&(id, td)| (std::cmp::Reverse(td.total_damage), id));
+        let listed_ids: Vec<i32> = listed.iter().map(|&(id, _)| id).collect();
+
+        // Each target's actors on their canonical ids, and each player's
+        // class from all their skills on the listed targets (`JobClass::by_hits`).
+        let canonicals: Vec<HashMap<String, i32>> = listed.iter()
+            .map(|(_, td)| build_nickname_canonical_map_from_aggregates(
+                &td.actors.iter().map(|(&id, ad)| (id, ad.total_damage)).collect(),
+                &summon_data,
+                &nickname_data,
+                local_id,
+            ))
+            .collect();
+        let uid_of = |actor_id: i32, canonical: &HashMap<String, i32>| -> Option<i32> {
+            let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
+            if raw_uid <= 0 { return None; }
+            let nickname = resolve_nickname(raw_uid, &nickname_data, &summon_data);
+            Some(*canonical.get(&nickname).unwrap_or(&raw_uid))
+        };
+        let mut class_hits: HashMap<i32, Vec<(i32, i32)>> = HashMap::new();
+        for ((_, td), canonical) in listed.iter().zip(&canonicals) {
+            for (&actor_id, actor_data) in &td.actors {
+                let Some(uid) = uid_of(actor_id, canonical) else { continue };
+                class_hits.entry(uid).or_default()
+                    .extend(actor_data.skills.values().map(|s| (s.skill_code, s.hit_count)));
+            }
+        }
+        let class_of = |uid: i32| if uid == UNATTRIBUTED_ID { None } else { class_hits.get(&uid).and_then(|h| JobClass::by_hits(h.iter().copied())) };
 
         let mut actor_meta: HashMap<i32, (String, String)> = HashMap::new();
         let mut targets = Vec::new();
-
-        // TRAIN: the dummies on the meter. Details' "All" merged every dummy
-        // in the area, other players' too.
-        let train = self.target_selection_mode == TargetSelectionMode::TrainTargets;
-        let mut listed: Vec<&TargetCombatData> = Vec::new();
-        for (&target_id, target_data) in &combat_data {
-            if train && !self.displayed_targets.contains(&target_id) {
-                continue;
-            }
-            listed.push(target_data);
+        for (&(target_id, target_data), canonical) in listed.iter().zip(&canonicals) {
             let mut actor_damage: HashMap<i32, i64> = HashMap::new();
-            let canonical = build_nickname_canonical_map_from_aggregates(
-                &target_data.actors.iter().map(|(&id, ad)| (id, ad.total_damage)).collect(),
-                &summon_data,
-                &nickname_data,
-                self.data_storage.local_player_id().map(|v| v as i32),
-            );
-
             for (&actor_id, actor_data) in &target_data.actors {
-                let raw_uid = summon_resolver::resolve(actor_id, &summon_data);
-                if raw_uid <= 0 { continue; }
-                let nickname = resolve_nickname(raw_uid, &nickname_data, &summon_data);
-                let uid = *canonical.get(&nickname).unwrap_or(&raw_uid);
+                let Some(uid) = uid_of(actor_id, canonical) else { continue };
                 *actor_damage.entry(uid).or_insert(0) += actor_data.total_damage;
-
                 actor_meta.entry(uid).or_insert_with(|| {
-                    (resolve_nickname(uid, &nickname_data, &summon_data), String::new())
+                    let job = class_of(uid).map(|j| j.class_name().to_string()).unwrap_or_default();
+                    (resolve_nickname(uid, &nickname_data, &summon_data), job)
                 });
-
-                if actor_meta.get(&uid).unwrap().1.is_empty() && uid != UNATTRIBUTED_ID {
-                    if let Some(job) = actor_data.job {
-                        actor_meta.get_mut(&uid).unwrap().1 = job.class_name().to_string();
-                    }
-                }
             }
 
             // Remove actors with no job and no nickname
@@ -87,12 +106,11 @@ impl DpsCalculator {
             });
         }
 
-        // Damage taken over every live fight, on the actor of the same name.
-        let all_targets: Vec<i32> = combat_data.keys().copied().collect();
+        // Damage taken over the listed fights, on the actor of the same name.
         let by_name: HashMap<&str, i32> = actor_meta.iter().map(|(&id, (nick, _))| (nick.as_str(), id)).collect();
         let mut taken: HashMap<i32, TakenStats> = HashMap::new();
         let mut taken_skills: HashMap<(i32, i32), TakenSkillEntry> = HashMap::new();
-        for (player, skills) in self.data_storage.taken_on(&all_targets, false, None) {
+        for (player, skills) in self.data_storage.taken_on(&listed_ids, false, None) {
             let nick = resolve_nickname(player, &nickname_data, &summon_data);
             let uid = by_name.get(nick.as_str()).copied().unwrap_or(player);
             let e = taken.entry(uid).or_default();
@@ -111,7 +129,7 @@ impl DpsCalculator {
         }
         let mut taken_skills: Vec<TakenSkillEntry> = taken_skills.into_values().collect();
         taken_skills.sort_by_key(|e| (e.actor_id, e.code));
-        let deaths = self.data_storage.deaths_on(&all_targets, false, None);
+        let deaths = self.data_storage.deaths_on(&listed_ids, false, None);
         let deaths = death_entries(&deaths, |player| {
             let nick = resolve_nickname(player, &nickname_data, &summon_data);
             by_name.get(nick.as_str()).copied().unwrap_or(player)
@@ -120,8 +138,9 @@ impl DpsCalculator {
         // Healing over the listed fights, on the actor of the same name: each
         // target's own list holds the ticks of its span, so targets fought at
         // once would count a tick twice.
+        let fights: Vec<&TargetCombatData> = listed.iter().map(|&(_, td)| td).collect();
         let mut heal_skills: HashMap<(i32, i32), DetailSkillEntry> = HashMap::new();
-        for (actor_id, skills) in self.data_storage.fights_heals(&listed) {
+        for (actor_id, skills) in self.data_storage.fights_heals(&fights) {
             let owner = summon_resolver::resolve(actor_id, &summon_data);
             if owner <= 0 { continue; }
             let nick = resolve_nickname(owner, &nickname_data, &summon_data);
@@ -133,22 +152,22 @@ impl DpsCalculator {
         let mut heal_skills: Vec<DetailSkillEntry> = heal_skills.into_values().collect();
         heal_skills.sort_by_key(|e| (e.actor_id, e.code, e.is_dot));
 
-        let actors: Vec<DetailsActorSummary> = actor_meta.iter()
+        // The fight's time as the meter counts it: in TRAIN your own time on
+        // the dummies, as the meter does (Krao 2026-10-05 17:39:20: 01:22 on
+        // the meter, 01:27 in Details, from a stranger's hits on one dummy).
+        let battle_time = if train {
+            let mine = self.resolve_local_ids(&summon_data).unwrap_or_default();
+            active_time(fights.iter().filter_map(|td| own_span(td, &mine, &summon_data)), i64::MIN)
+        } else {
+            active_time(fights.iter().map(|td| (td.first_damage_time, td.last_damage_time)), i64::MIN)
+        };
+
+        let mut actors: Vec<DetailsActorSummary> = actor_meta.iter()
             .map(|(&id, (nick, job))| {
-                let job_id = if id == UNATTRIBUTED_ID {
-                    0
-                } else if let Some(jc) = JobClass::convert_from_skill(
-                    // Find a skill code from this actor's aggregate data
-                    combat_data.values()
-                        .flat_map(|td| td.actors.get(&id))
-                        .flat_map(|ad| ad.skills.keys())
-                        .find(|&&(sc, _)| JobClass::convert_from_skill(sc).is_some())
-                        .map(|&(sc, _)| sc)
-                        .unwrap_or(0)
-                ) { jc.class_prefix() } else { 0 };
+                let job_id = class_of(id).map_or(0, |j| j.class_prefix());
                 // Aggregate per-actor stats
                 let (mut party_heal, mut regen) = (0i64, 0i64);
-                for td in combat_data.values() {
+                for td in &fights {
                     if let Some(ad) = td.actors.get(&id) {
                         party_heal += ad.party_heal;
                         regen += ad.regen;
@@ -177,6 +196,7 @@ impl DpsCalculator {
                 }
             })
             .collect();
+        actors.sort_by_key(|a| a.actor_id);
 
         let numbers = self.player_numbers(actors.iter().map(|a| (a.actor_id, a.nickname.as_str())));
         DetailsContext {
@@ -189,6 +209,7 @@ impl DpsCalculator {
             taken_skills,
             heal_skills,
             deaths: Some(deaths),
+            battle_time,
         }
     }
 

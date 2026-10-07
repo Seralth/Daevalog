@@ -152,7 +152,7 @@ mod tests {
     use super::*;
     use super::fights::fight_dungeon;
     use super::meter_rows::active_time;
-    use crate::entity::details_context::TargetDetailsResponse;
+    use crate::entity::details_context::{DetailSkillEntry, TargetDetailsResponse};
     use crate::entity::fight_record::FightRecord;
     use crate::combat::data_storage::UNATTRIBUTED_ID;
     use crate::entity::summon_resolver;
@@ -1197,10 +1197,12 @@ mod tests {
         s.append_nickname_authoritative(2259, "Me");
         spawn(&s, 800, BOSS);
         spawn(&s, 801, BOSS);
-        let calc = meter_with_npcs(&s);
+        let mut calc = meter_with_npcs(&s);
         hits(&s, 2259, 800, 1_000, 8_000);
         hits(&s, 2259, 801, 2_000, 9_000);
         taken(&s, 800, 2259, 4_000, 300);
+        calc.set_target_selection_mode("allTargets");
+        calc.get_dps();
         let each: i64 = [800, 801]
             .iter()
             .flat_map(|&t| calc.get_target_details(t, None).taken_skills)
@@ -1222,7 +1224,7 @@ mod tests {
         s.set_local_player_id(Some(2259));
         s.append_nickname_authoritative(2259, "Me");
         spawn(&s, 800, BOSS);
-        let calc = meter_with_npcs(&s);
+        let mut calc = meter_with_npcs(&s);
         hits(&s, 2259, 800, 1_000, 20_000); // the boss
         hits(&s, 2259, 801, 5_000, 8_000); // an add
         hits(&s, 2259, 802, 12_000, 15_000); // another add
@@ -1234,6 +1236,8 @@ mod tests {
             .map(|&t| calc.get_target_details(t, None).heal_skills.iter().map(|e| e.dmg).sum())
             .collect();
         assert_eq!(each, vec![2_000, 400, 400], "each target holds the ticks of its own span");
+        calc.set_target_selection_mode("allTargets");
+        calc.get_dps();
         let context = calc.get_details_context();
         let listed: Vec<(i32, i32, i64, i32, bool)> =
             context.heal_skills.iter().map(|e| (e.actor_id, e.code, e.dmg, e.time, e.is_dot)).collect();
@@ -1242,6 +1246,100 @@ mod tests {
             let again = calc.get_details_context();
             assert_eq!(serde_json::to_value(&again.heal_skills).unwrap(), serde_json::to_value(&context.heal_skills).unwrap());
         }
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn details_lists_its_targets_most_damage_first_on_every_read() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        for (target, last) in [(801, 3_000), (802, 9_000), (803, 6_000), (804, 5_000)] {
+            hits(&s, 2259, target, 1_000, last);
+        }
+        let mut calc = meter(&s);
+        calc.set_target_selection_mode("allTargets");
+        calc.get_dps();
+        for _ in 0..8 {
+            let listed: Vec<i32> = calc.get_details_context().targets.iter().map(|t| t.target_id).collect();
+            assert_eq!(listed, vec![802, 803, 804, 801], "most damage first, the same every read");
+        }
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn boss_details_on_every_target_is_the_boss_on_the_meter() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        s.append_nickname_authoritative(2259, "Me");
+        s.append_nickname_authoritative(2260, "Other");
+        spawn(&s, 800, BOSS);
+        hits(&s, 2259, 800, 1_000, 20_000);
+        hits(&s, 2260, 801, 5_000, 8_000); // an add only another player hit
+        s.append_heal(2260, 17_010_000, 1_000, false, 6_000);
+        s.append_heal(2259, 17_010_000, 100, false, 10_000);
+        let mut calc = meter_with_npcs(&s);
+        let healed = |e: &[DetailSkillEntry]| e.iter().map(|h| h.dmg).sum::<i64>();
+
+        calc.set_target_selection_mode("bossTargets");
+        let shown = calc.get_dps();
+        assert_eq!(shown.target_id, 800);
+        let context = calc.details_source().reader().get_details_context();
+        assert_eq!(context.targets.iter().map(|t| t.target_id).collect::<Vec<_>>(), vec![800], "the boss the meter shows");
+        assert_eq!(context.battle_time, shown.battle_time);
+        assert_eq!(healed(&context.heal_skills), healed(&calc.get_displayed_details(None).heal_skills), "the meter's healing");
+        assert_eq!(healed(&context.heal_skills), 100);
+
+        // ALL shows both, and so does Details.
+        calc.set_target_selection_mode("allTargets");
+        calc.get_dps();
+        let context = calc.details_source().reader().get_details_context();
+        assert_eq!(context.targets.iter().map(|t| t.target_id).collect::<Vec<_>>(), vec![800, 801]);
+        assert_eq!(healed(&context.heal_skills), 1_100);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn train_details_count_your_time_on_the_dummies_as_the_meter_does() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 36734, DUMMY);
+        hits(&s, 9000, 36734, 1_000, 20_000); // a stranger on the same dummy
+        hits(&s, 2259, 36734, 10_000, 20_000);
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("trainTargets");
+        let shown = calc.get_dps();
+        assert_eq!(shown.battle_time, 10_000, "your time");
+        let context = calc.details_source().reader().get_details_context();
+        assert_eq!(context.battle_time, 10_000, "Details counts it too");
+        assert_eq!(context.targets[0].battle_time, 19_000, "the dummy's own span stays");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn a_players_class_in_details_and_saved_fights_is_the_class_of_most_hits() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, BOSS);
+        // A Templar whose first hit on each target is a Gladiator-coded skill
+        // (11340000) that other classes use too.
+        for target in [800, 801, 802] {
+            for at in (1_000..=10_000).step_by(1_000) {
+                crate::clock::set_override(Some(at));
+                let skill = if at == 1_000 { 11_340_000 } else { 12_010_000 };
+                s.append_damage(skill_hit(2259, target, at, skill, 100));
+            }
+        }
+        let mut calc = meter_with_npcs(&s);
+        calc.set_target_selection_mode("allTargets");
+        calc.get_dps();
+        for _ in 0..8 {
+            let me = calc.get_details_context().actors.into_iter().find(|a| a.actor_id == 2259).unwrap();
+            assert_eq!((me.job.as_str(), me.job_id), ("수호성", 12));
+        }
+        calc.set_target_selection_mode("bossTargets");
+        let saved = snapshot_at(&mut calc, 30_000);
+        let me = saved[0].actors.iter().find(|a| a.actor_id == 2259).unwrap();
+        assert_eq!((me.job.as_str(), me.job_id), ("수호성", 12));
         crate::clock::set_override(None);
     }
 
@@ -1257,6 +1355,7 @@ mod tests {
             crate::clock::set_override(Some(at));
             s.append_damage(skill_hit(2259, 800, at, skill, 1_000_000_000));
         }
+        calc.get_dps();
         let target = calc.get_details_context().targets.into_iter().find(|t| t.target_id == 800).unwrap();
         assert_eq!(target.total_damage as i64, 3_000_000_000);
         assert_eq!(target.actor_damage[&2259] as i64, 3_000_000_000);

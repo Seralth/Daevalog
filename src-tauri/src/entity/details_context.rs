@@ -82,9 +82,15 @@ pub struct DetailsContext {
     /// the ticks of that target's span, so targets fought at once overlap.
     #[serde(default)]
     pub heal_skills: Vec<DetailSkillEntry>,
-    /// The deaths of you and your party over every live fight, each once.
+    /// The deaths of you and your party over the listed targets' fights, each
+    /// once.
     #[serde(default)]
     pub deaths: Option<Vec<super::deaths::DeathEntry>>,
+    /// The fight's time over the listed targets, as the meter counts it: the
+    /// time any of them was being fought, gaps between pulls left out; in
+    /// TRAIN your own time on the dummies. Details on every target shows it.
+    #[serde(default)]
+    pub battle_time: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
