@@ -190,8 +190,8 @@ test("the damage received table gives each figure its widest text and drops figu
   ui.render(fight, { id: 1, name: "" });
   const tracks = takenColumns(takenTable);
   const header = shownHeader(takenTable);
-  assert.deepEqual(header, ["Skill", "Monster", "Dmg", "Hits", "Par", "PBlk", "Endr", "Rgn"]);
-  // "Endr" (4 characters) was cut in a 24 px column.
+  assert.deepEqual(header, ["Skill", "Monster", "Dmg", "Hits", "BLOC", "PBlk", "ENDR", "RSTO"]);
+  // "ENDR" (4 characters) was cut in a 24 px column.
   const least = tracks.slice(2).map((t) => Number(/minmax\((\d+)px/.exec(t)[1]));
   header.slice(2).forEach((text, i) => assert.ok(least[i] >= text.length * CHAR, `${text} fits its column`));
 
