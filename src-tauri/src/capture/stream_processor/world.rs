@@ -4,6 +4,10 @@ use super::StreamProcessor;
 use crate::capture::opcodes::{DEATH, DEATH_OLD, HP_MP, MAP_LOAD, PARTY_SCOPE, ZONE_CHANGE};
 use crate::capture::varint::{parse_u32_le, read_varint};
 
+/// The `42 36` flag of an entity leaving the world, a spirit unsummoned among
+/// others (197 of the 370 in a 2026-10-06 capture were linked spirits).
+const DESPAWN_FLAG: i32 = 7;
+
 impl StreamProcessor {
     // ===== PARTY SCOPE (06 38) =====
 
@@ -106,7 +110,8 @@ impl StreamProcessor {
         }
         pos += skip_info.length as usize;
 
-        // Death flag: 1 = zone-init (entity loaded dead), 3 = combat death
+        // Death flag: 1 = zone-init (entity loaded dead), 3 = combat death,
+        // 7 = gone from the world.
         let flag_info = read_varint(packet, pos);
         if flag_info.length <= 0 {
             return;
@@ -115,6 +120,9 @@ impl StreamProcessor {
         if flag_info.value == 3 {
             tracing::trace!("Death event: entity {} killed in combat", entity_id);
             self.data_storage.mark_entity_dead(entity_id);
+        }
+        if flag_info.value == DESPAWN_FLAG {
+            self.data_storage.note_despawn(entity_id);
         }
     }
 

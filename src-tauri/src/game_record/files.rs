@@ -14,7 +14,7 @@ use std::time::SystemTime;
 use chrono::{FixedOffset, Local, TimeZone};
 use serde::Serialize;
 
-use super::{add_rows, compare, decode, replay_slice_window, GameRecord, SkillRow, SliceWindow, SLACK_MS};
+use super::{add_rows, compare, decode, replay_slice_window, GameRecord, SkillRow, SliceWindow, N_COUNTS, SLACK_MS};
 use crate::capture::evidence_slice;
 use crate::entity::fight_record::FightSummary;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
@@ -376,7 +376,10 @@ pub struct RecordView {
     pub report: String,
 }
 
-const COUNT_LABELS: [&str; 7] = ["hits", "crit", "perfect", "double", "front", "back", "additional hits"];
+const COUNT_LABELS: [&str; N_COUNTS] = [
+    "hits", "crit", "perfect", "double", "front", "back", "additional hits",
+    "block", "miss", "immune", "endurance", "regeneration",
+];
 
 fn clock(ms: i64, zone: Option<FixedOffset>, format: &str) -> String {
     match zone {
@@ -422,7 +425,7 @@ pub fn report(fight: &FightSummary, check: &RecordCheck, names: &BTreeMap<i32, S
         if r.meter.damage != r.game.damage {
             parts.push(format!("damage meter {} game {}", r.meter.damage, r.game.damage));
         }
-        for i in 0..7 {
+        for i in 0..N_COUNTS {
             if r.meter.counts[i] != r.game.counts[i] {
                 parts.push(format!("{} meter {} game {}", COUNT_LABELS[i], r.meter.counts[i], r.game.counts[i]));
             }
@@ -435,8 +438,7 @@ pub fn report(fight: &FightSummary, check: &RecordCheck, names: &BTreeMap<i32, S
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::game_record::tests::record_bytes;
-    use crate::game_record::Row;
+    use crate::game_record::tests::{record_bytes, row};
 
     fn fight(id: &str, name: &str, mob: i32, start: i64, duration: i64) -> FightSummary {
         FightSummary {
@@ -496,7 +498,7 @@ mod tests {
         std::fs::write(
             account.join("record_1.dat"),
             record_bytes("2026-10-04T04:45:57.967Z", "2026-10-04T04:46:49.871Z", "Training Scarecrow",
-                         &[(16040000, 21923, [21, 1, 2, 0, 21, 0, 6])]),
+                         &[(16040000, 21923, &[21, 1, 2, 0, 21, 0, 6])]),
         )
         .unwrap();
         // A record no saved fight overlaps.
@@ -529,7 +531,7 @@ mod tests {
         let v = &views[0];
         assert!(!v.check.compared);
         assert_eq!(v.check.game_total, 21923);
-        assert_eq!(v.check.rows[0].game, Row { damage: 21923, counts: [21, 1, 2, 0, 21, 0, 6] });
+        assert_eq!(v.check.rows[0].game, row(21923, &[21, 1, 2, 0, 21, 0, 6]));
         assert_eq!(v.covered_ms, 51_904);
         assert_eq!(v.other_fights, 0);
         assert!(v.report.contains("record_1.dat, 04:45:57.967 to 04:46:49.871"), "{}", v.report);
@@ -540,7 +542,7 @@ mod tests {
     #[test]
     fn the_report_lists_rows_that_differ_with_both_values() {
         let f = fight("auto_1_2", "Training Scarecrow", 2400032, 0, 26_300);
-        let row = |d, h| Row { damage: d, counts: [h, 0, 0, 0, h, 0, 0] };
+        let hits = |d, h| row(d, &[h, 0, 0, 0, h, 0, 0]);
         let check = RecordCheck {
             file: "record_9.dat".into(),
             start_ms: 0,
@@ -550,7 +552,7 @@ mod tests {
             compared: true,
             game_total: 150,
             meter_total: 150,
-            rows: compare(&[(1, row(100, 2)), (2, row(50, 1))].into(), &[(1, row(100, 2)), (2, row(50, 0))].into()),
+            rows: compare(&[(1, hits(100, 2)), (2, hits(50, 1))].into(), &[(1, hits(100, 2)), (2, hits(50, 0))].into()),
         };
         let names: BTreeMap<i32, String> = [(2, "Water Bomb".to_string())].into();
         let text = report(&f, &check, &names, Some(FixedOffset::east_opt(0).unwrap()));

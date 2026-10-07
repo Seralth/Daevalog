@@ -67,14 +67,20 @@ fn capture_line(line: &str) -> Option<(i64, chrono::FixedOffset, &str, Vec<u8>)>
 
 fn print_rows(rows: &[SkillRow], skills: &SkillLookup) {
     println!("\n{:>9} {:<34} {:>16}  {}", "skill", "name", "damage game/meter",
-             COUNTS.map(|c| format!("{c:>11}")).join(""));
+             COUNTS.map(|c| format!("{c:>9}")).join(""));
     for r in rows {
         let (g, m) = (r.game, r.meter);
-        let cell = |a: i64, b: i64| if a == b { format!("{a:>11}") } else { format!("{:>11}", format!("{a}/{b}*")) };
-        let counts: String = (0..7).map(|i| cell(g.counts[i], m.counts[i])).collect();
+        let cell = |a: i64, b: i64| if a == b { format!("{a:>9}") } else { format!("{:>9}", format!("{a}/{b}*")) };
+        let counts: String = (0..COUNTS.len()).map(|i| cell(g.counts[i], m.counts[i])).collect();
         println!("{:>9} {:<34.34} {:>16}  {counts}", r.skill_id, skills.get_skill_name(r.skill_id),
                  if g.damage == m.damage { g.damage.to_string() } else { format!("{}/{}*", g.damage, m.damage) });
     }
+    // The hit results over all rows: most are zero on every row.
+    let sum = |side: fn(&SkillRow) -> &Row, i: usize| rows.iter().map(|r| side(r).counts[i]).sum::<i64>();
+    let results: Vec<String> = (7..COUNTS.len())
+        .map(|i| format!("{} {}/{}", COUNTS[i], sum(|r| &r.game, i), sum(|r| &r.meter, i)))
+        .collect();
+    println!("\nhit results, game/meter: {}", results.join(", "));
     let damage_same = rows.iter().filter(|r| r.game.damage == r.meter.damage).count();
     let same = rows.iter().filter(|r| r.same).count();
     println!("\nrows: {}; damage equal on {damage_same}; every count equal on {same}. * = game/meter differ", rows.len());

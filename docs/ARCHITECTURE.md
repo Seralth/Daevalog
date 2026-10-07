@@ -57,6 +57,7 @@ Each rule below fixed a real fault. Do not break a rule without a test that show
 8. **Each fight segment is saved once per change.** A segment is keyed by target id and start time. A second run on the same target is a new segment.
 9. **Training dummies.** On a training dummy, DoT ticks after the actor's last direct hit do not count. The game's own meter does the same. The dummy list survives a reset.
 10. **Fight time is active time.** In modes with several targets, fight time is the union of the targets' active spans, not the longest span.
+11. **A spirit's ticks end with the spirit.** When a linked summon leaves the world (`42 36` flag 7), its DoT ticks after that do not count. The game's own meter does the same: four records of 2026-10-06 (Malicious Whirlwind) counted every tick before the spirit left and none after.
 
 ## Meter modes
 

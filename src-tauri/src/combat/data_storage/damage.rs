@@ -26,11 +26,23 @@ impl DataStorage {
 
         // Not damage: a spirit and its owner naming each other.
         if let Some((summon, owner)) = owner_link(skill_code, actor_id, target_id) {
+            // Sent only while the spirit is out.
+            inner.despawned_summon_ids.remove(&summon);
             if link_summon(&mut inner, summon, owner) {
                 tracing::debug!("Summon {} linked to owner {} by skill {}", summon, owner, skill_code);
                 self.damage_generation.fetch_add(1, Ordering::Relaxed);
             }
             return;
+        }
+
+        // A tick from a spirit that has left the world: the game does not
+        // count it. A direct hit means the id is back.
+        if pdp.is_dot() {
+            if inner.despawned_summon_ids.contains(&actor_id) {
+                return;
+            }
+        } else {
+            inner.despawned_summon_ids.remove(&actor_id);
         }
 
         // NPC actors using NPC skills: track damage received on the player target, then skip

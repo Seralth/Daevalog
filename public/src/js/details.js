@@ -954,7 +954,11 @@ const createDetailsUI = ({
     "details.stats.regen",
   ]);
   const GAME_EMPTY_CELLS = ["multiHitDamageEl", "minDmgEl", "avgDmgEl", "maxDmgEl"];
-  const GAME_TAGGED_CELLS = ["hitEl", "dmgEl", "dmgPctEl", "multiHitEl", "critEl", "perfectEl", "doubleEl", "backEl", "frontalEl"];
+  const GAME_TAGGED_CELLS = ["hitEl", "dmgEl", "dmgPctEl", "multiHitEl", "critEl", "perfectEl", "doubleEl", "backEl", "frontalEl", "parryEl"];
+  // The game's other hit results: [count index, HIT_RESULTS column]. It has
+  // no Shield Block or Perfect Block count of its own.
+  const GAME_HIT_RESULTS = [[8, "miss"], [9, "resist"], [10, "ironwall"], [11, "regeneration"]];
+  const GAME_NO_HIT_RESULTS = ["block", "perfectblock"];
 
   // The record's rows as details: the game's numbers ("game"), or the meter's
   // over the record's window with the game's beside them ("both").
@@ -968,15 +972,18 @@ const createDetailsUI = ({
     const skills = shown.map((r) => {
       const v = side(r);
       const c = v.counts;
+      // The game's Block counts the hits the meter reads as Parry.
       return {
         actorId, job, code: r.skillId, name: names?.[r.skillId] || `#${r.skillId}`,
         isDot: false, specs: [], dmg: v.damage,
         time: c[0], crit: c[1], perfect: c[2], double: c[3], frontal: c[4], back: c[5], multiHitCount: c[6],
-        multiHitDamage: 0, minDmg: 0, maxDmg: 0, parry: 0, regen: 0,
+        parry: c[7] || 0, miss: c[8] || 0, resist: c[9] || 0, ironWall: c[10] || 0, regeneration: c[11] || 0,
+        shieldBlock: 0, perfectBlock: 0,
+        multiHitDamage: 0, minDmg: 0, maxDmg: 0, regen: 0,
         _game: r.game, _meter: r.meter, _both: both,
       };
     });
-    const t = { dmg: 0, counts: [0, 0, 0, 0, 0, 0, 0] };
+    const t = { dmg: 0, counts: new Array(rows[0]?.game.counts.length || 7).fill(0) };
     rows.forEach((r) => {
       const v = side(r);
       t.dmg += v.damage;
@@ -1009,10 +1016,13 @@ const createDetailsUI = ({
   // "—" where the game has no number; in Both, a "game N" tag in each cell
   // whose number the game has differently.
   const decorateGameCells = (view, skill) => {
+    const resultEl = (col) => view.hitResultEls[HIT_RESULTS.findIndex(([c]) => c === col)];
     view.rowEl.classList.remove("isGameDiffer");
     GAME_TAGGED_CELLS.forEach((k) => view[k].classList.remove("isGameDiffer"));
+    view.hitResultEls.forEach((el) => el.classList.remove("isGameDiffer"));
     if (!skill._game) return;
     GAME_EMPTY_CELLS.forEach((k) => { view[k].textContent = NO_GAME_VALUE; });
+    GAME_NO_HIT_RESULTS.forEach((col) => { resultEl(col).textContent = NO_GAME_VALUE; });
     if (!skill._both) return;
     const g = skill._game;
     const m = skill._meter;
@@ -1030,9 +1040,14 @@ const createDetailsUI = ({
     tag(view.hitEl, m.counts[0] !== g.counts[0], `${g.counts[0]}`);
     tag(view.dmgEl, m.damage !== g.damage, formatDamageCompact(g.damage));
     tag(view.dmgPctEl, m.damage !== g.damage, `${(gameTotal > 0 ? (g.damage / gameTotal) * 100 : 0).toFixed(1)}%`);
-    [["critEl", 1], ["perfectEl", 2], ["doubleEl", 3], ["frontalEl", 4], ["backEl", 5], ["multiHitEl", 6]].forEach(([k, i]) => {
+    [["critEl", 1], ["perfectEl", 2], ["doubleEl", 3], ["frontalEl", 4], ["backEl", 5], ["multiHitEl", 6], ["parryEl", 7]].forEach(([k, i]) => {
       const gr = rate(g.counts[i], g.counts[0]);
       tag(view[k], g.counts[i] !== m.counts[i] || gr !== rate(m.counts[i], m.counts[0]), `${gr}%`);
+    });
+    GAME_HIT_RESULTS.forEach(([i, col]) => {
+      const kind = HIT_RESULTS.find(([c]) => c === col)[2];
+      const value = kind === "count" ? `${g.counts[i]}` : `${rate(g.counts[i], g.counts[0])}%`;
+      tag(resultEl(col), g.counts[i] !== m.counts[i], value);
     });
   };
 
