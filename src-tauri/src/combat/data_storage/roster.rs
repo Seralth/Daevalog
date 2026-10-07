@@ -5,6 +5,7 @@ use std::sync::atomic::Ordering;
 
 use crate::entity::job_class::JobClass;
 
+use super::deaths::end_hp_known;
 use super::names::append_nickname_inner;
 use super::{now_ms, DataStorage, Inner, PartyMember, PARTY_PLACEHOLDER_MS};
 
@@ -45,6 +46,9 @@ impl DataStorage {
                 members.len()
             );
             inner.party_members.clear();
+            inner.party_hp_ids.clear();
+            let now = now_ms();
+            end_hp_known(&mut inner, now, |inner, id| inner.local_player_id != Some(id as i64));
             // An instance under its own map is no party's.
             if inner.map_kind != MapKind::Own {
                 inner.current_dungeon_id = 0;
@@ -62,6 +66,19 @@ impl DataStorage {
         for (name, member) in members {
             inner.party_members.insert(name, member);
         }
+        // A named player the roster no longer lists has left the party.
+        if complete {
+            let left = |inner: &Inner, id: i32| {
+                inner.local_player_id != Some(id as i64)
+                    && inner.nickname_storage.get(&id).is_some_and(|n| !inner.party_members.contains_key(n.as_str()))
+            };
+            let gone: Vec<i32> = inner.party_hp_ids.iter().copied().filter(|&id| left(&inner, id)).collect();
+            for id in gone {
+                inner.party_hp_ids.remove(&id);
+            }
+            let now = now_ms();
+            end_hp_known(&mut inner, now, left);
+        }
         bind_roster_names_by_class(&mut inner);
     }
 
@@ -76,6 +93,8 @@ impl DataStorage {
     pub fn note_map_load(&self, map_id: i32) {
         let mut inner = self.inner.write();
         inner.own_records.zone_loaded();
+        // Ids are handed out again: whose HP is known starts over.
+        end_hp_known(&mut inner, now_ms(), |_, _| true);
         let kind = if is_open_world_map(map_id) {
             MapKind::OpenWorld
         } else if own_dungeon(map_id) != 0 {

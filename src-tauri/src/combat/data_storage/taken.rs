@@ -16,7 +16,7 @@ const MAX_TAKEN: usize = 1_000_000;
 const PRUNE_EVERY: usize = 4096;
 /// Hits this recent are kept even with no fight open: a fight's first hit
 /// can come after the hits taken during it (the boss hits the tank first).
-const TAKEN_SLACK_MS: i64 = 60_000;
+pub(super) const TAKEN_SLACK_MS: i64 = 60_000;
 /// Skill-effect entities whose monster is known, at most. They live for
 /// seconds; the map starts over when full.
 const MAX_EFFECT_PARENTS: usize = 16_384;

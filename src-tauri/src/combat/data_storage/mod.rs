@@ -45,6 +45,7 @@ fn now_ms() -> i64 {
 
 mod aggregates;
 mod damage;
+mod deaths;
 mod encounter;
 mod entities;
 mod heal;
@@ -59,6 +60,7 @@ pub use aggregates::{
     SegmentIdentity, SkillCombatData, TargetCombatData,
 };
 pub use damage::is_player_skill;
+pub use deaths::{deaths_between, DeathTick, DeathsBy, HpKnown, DEATH_SLACK_MS};
 pub use entities::UNATTRIBUTED_ID;
 pub use roster::is_open_world_map;
 pub use taken::{add_tick, TakenBy, TakenSkillData, TakenTick};
@@ -123,6 +125,17 @@ struct Inner {
     mob_hp_data: HashMap<i32, i32>,
     /// Live CURRENT HP per entity, from the in-place `8D <id> 02 01 00 <u32>` feed.
     mob_current_hp: HashMap<i32, i32>,
+    /// The last current HP of each entity from every HP record, and the
+    /// deaths of you and your party it showed. See `deaths`.
+    hp_now: HashMap<i32, i64>,
+    deaths: VecDeque<deaths::DeathTick>,
+    /// The number of the last death.
+    death_seq: u64,
+    /// When the HP of each of you and your party was known.
+    hp_known: deaths::HpKnown,
+    /// Ids the party record (`1B 92`) named, less the named players a
+    /// complete roster no longer lists.
+    party_hp_ids: HashSet<i32>,
     known_player_ids: HashSet<i32>,
     /// Ids whose nickname came from an authoritative source (a 45/44 36 player
     /// spawn or the account char-list). Lower-confidence parsers may not steal
@@ -229,6 +242,11 @@ impl DataStorage {
                 effect_parents: HashMap::new(),
                 mob_hp_data: HashMap::new(),
                 mob_current_hp: HashMap::new(),
+                hp_now: HashMap::new(),
+                deaths: VecDeque::new(),
+                death_seq: 0,
+                hp_known: HashMap::new(),
+                party_hp_ids: HashSet::new(),
                 known_player_ids: HashSet::new(),
                 authoritative_name_ids: HashSet::new(),
                 confirmed_summon_ids: HashSet::new(),
@@ -392,6 +410,7 @@ impl DataStorage {
         inner.mob_current_hp.clear();
         inner.heal_ticks.clear();
         inner.taken.clear();
+        inner.deaths.clear();
         inner.current_target = 0;
         drop(inner);
         self.clear_player_numbers();
@@ -413,6 +432,7 @@ impl DataStorage {
         inner.mob_current_hp.clear();
         inner.heal_ticks.clear();
         inner.taken.clear();
+        inner.deaths.clear();
         inner.current_target = 0;
         drop(inner);
         self.clear_player_numbers();

@@ -389,6 +389,8 @@ pub struct EndedSegment {
     pub heals: HashMap<i32, HashMap<(i32, bool), HealSkillData>>,
     /// The damage taken during it, per player and skill.
     pub taken: super::TakenBy,
+    /// The deaths of you and your party during it.
+    pub deaths: super::DeathsBy,
     pub identity: SegmentIdentity,
 }
 
