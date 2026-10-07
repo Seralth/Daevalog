@@ -167,7 +167,7 @@ The meter picks how it draws on each desktop when it starts. The log says which:
 
 The layer needs `gtk-layer-shell`. **Settings > Overlay: Wayland layer** turns it off; it takes effect at the next start. With the layer off or `gtk-layer-shell` missing, KDE Plasma runs the meter through XWayland, where KWin keeps it on top, and Hyprland and Sway open a normal window (see [Tiling desktops](#tiling-desktops-hyprland-sway-i3)). On other Wayland desktops the switch turns the layer on, when the desktop offers one.
 
-A `GDK_BACKEND` you set yourself always wins. A launcher with `env GDK_BACKEND=x11` is no longer needed on KDE Plasma.
+A `GDK_BACKEND` you set yourself always wins. A launcher with `env GDK_BACKEND=x11` is no longer needed on KDE Plasma. COSMIC sets `GDK_BACKEND=wayland,x11` for every app; on COSMIC the meter treats that value as the session's, not yours, and the log says so.
 
 ## GNOME: keep the meter above other windows
 

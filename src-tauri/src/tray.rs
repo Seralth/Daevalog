@@ -42,13 +42,30 @@ pub fn apply_taskbar(app: &AppHandle) {
     }
 }
 
+/// Where the meter was when the tray hid it. GTK forgets a window's place
+/// when it is hidden, and X11 window managers (GNOME's XWayland, Xfce,
+/// Cinnamon) then put it somewhere else. A layer overlay keeps its margins.
+static HIDDEN_AT: parking_lot::Mutex<Option<tauri::PhysicalPosition<i32>>> = parking_lot::Mutex::new(None);
+
 /// Show the meter if it is hidden, hide it if it is shown.
 pub fn toggle_meter(app: &AppHandle) {
     let Some(main) = app.get_webview_window("main") else { return };
     if main.is_visible().unwrap_or(false) {
+        let normal = !crate::platform::window::is_layer(&main);
+        // Not a minimized place (Windows reports -32000,-32000).
+        *HIDDEN_AT.lock() = main.outer_position().ok().filter(|p| normal && p.x > -10000 && p.y > -10000);
         let _ = main.hide();
     } else {
+        // Before the show for the window manager's placement, and after it
+        // for a window manager that placed it anyway.
+        let place = HIDDEN_AT.lock().take();
+        if let Some(pos) = place {
+            let _ = main.set_position(pos);
+        }
         let _ = main.show();
+        if let Some(pos) = place {
+            let _ = main.set_position(pos);
+        }
         let _ = main.unminimize();
         let _ = main.set_focus();
     }

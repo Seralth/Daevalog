@@ -40,11 +40,9 @@ pub fn run() {
     // Before anything starts a thread: it may set environment variables.
     let process_note = platform::process::prepare();
     logging::logger::init_logging();
-    for note in moved {
-        tracing::info!("{note}");
-    }
-    if let Some(note) = process_note {
-        tracing::info!("{note}");
+    // Kept for debug.log, which opens later, once the settings are read.
+    for note in moved.into_iter().chain(process_note) {
+        logging::logger::start_note(note);
     }
 
     tauri::Builder::default()

@@ -115,6 +115,16 @@ impl tracing::field::Visit for MessageVisitor {
     }
 }
 
+/// Lines logged at start, before debug.log can be opened (the display
+/// backend, a moved data folder). Written again each time debug.log opens.
+static START_NOTES: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+/// Log a note from startup and keep it for debug.log.
+pub fn start_note(note: String) {
+    tracing::info!("{note}");
+    START_NOTES.lock().push(note);
+}
+
 pub fn set_debug_enabled(enabled: bool, log_dir: &std::path::Path) {
     let prev = DEBUG_ENABLED.swap(enabled, Ordering::SeqCst);
     if enabled && !prev {
@@ -131,6 +141,10 @@ pub fn set_debug_enabled(enabled: bool, log_dir: &std::path::Path) {
                 });
             } // guard dropped before tracing
             tracing::info!("Debug file logging started: {}", path.display());
+            let notes = START_NOTES.lock().clone();
+            for note in notes {
+                tracing::info!("{note}");
+            }
         }
     } else if !enabled && prev {
         {
@@ -323,6 +337,29 @@ fn shorten(msg: String) -> String {
         cut -= 1;
     }
     format!("{}...", &msg[..cut])
+}
+
+#[cfg(test)]
+mod debug_log_tests {
+    use super::*;
+    use tracing_subscriber::layer::SubscriberExt;
+
+    #[test]
+    fn debug_log_gets_the_notes_from_start() {
+        let dir = std::env::temp_dir().join("a2tools-logtest-start-notes");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let subscriber = tracing_subscriber::registry().with(DebugFileLayer);
+        tracing::subscriber::with_default(subscriber, || {
+            // Logged before debug.log is open, as at start.
+            start_note("display backend: xwayland (GNOME)".into());
+            set_debug_enabled(true, &dir);
+            set_debug_enabled(false, &dir);
+        });
+        let text = std::fs::read_to_string(dir.join("debug.log")).unwrap();
+        assert!(text.contains("display backend: xwayland (GNOME)"), "{text}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
 
 #[cfg(test)]
