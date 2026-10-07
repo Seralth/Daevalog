@@ -13,8 +13,8 @@
   "details": {
     "hoverTooltip": {
       "loading": "Wird geladen...",
-      "empty": "Keine Skill-Daten für diesen Kampf",
-      "error": "Skills konnten nicht geladen werden"
+      "empty": "Keine Fähigkeitsdaten für diesen Kampf",
+      "error": "Fähigkeiten konnten nicht geladen werden"
     },
     "tooltip": "Schaden über Zeit wird in den Gesamtquoten für Krit.-Treffer, Wucht, Perfektion, Treffer (Rückseitig) und Waffenblock nicht mitgezählt.",
     "settings": {
@@ -25,7 +25,7 @@
       "label": "Schriftgröße"
     },
     "iconSize": {
-      "label": "Größe der Skill-Symbole"
+      "label": "Größe der Fähigkeitssymbole"
     },
     "screenshots": {
       "label": "Screenshots",
@@ -33,7 +33,7 @@
       "saveToFolder": "Screenshots in Ordner speichern"
     },
     "columns": {
-      "label": "Skill-Spalten"
+      "label": "Fähigkeitsspalten"
     },
     "screenshot": {
       "ariaLabel": "Screenshot in die Zwischenablage",
@@ -45,8 +45,8 @@
       "fileFailed": "In Zwischenablage gespeichert (Datei fehlgeschlagen)"
     },
     "skills": {
-      "skill": "Skill",
-      "skillTooltip": "Skill-Name",
+      "skill": "Fähigkeit",
+      "skillTooltip": "Fähigkeitsname",
       "hits": "HIT",
       "hitsTooltip": "Gesamtschläge",
       "dmg": "Sch",
@@ -115,7 +115,7 @@
       "hps": "HPS",
       "healTicks": "Heilticks",
       "hotTicks": "HoT-Ticks",
-      "healSkills": "Skills",
+      "healSkills": "Fähigkeiten",
       "damageReceived": "Gesamtschaden (Erhalten)",
       "hitsReceived": "Gesamtschläge (Erhalten)",
       "deaths": "Tode"
@@ -182,8 +182,8 @@
     "damageGame": "Schaden, Spiel",
     "takenMeter": "Erhaltener Schaden, Meter",
     "takenGame": "Erhaltener Schaden, Spiel",
-    "allMatch": "Alle {n} Skills stimmen überein",
-    "someMatch": "{x} von {n} Skills stimmen überein",
+    "allMatch": "Alle {n} Fähigkeiten stimmen überein",
+    "someMatch": "{x} von {n} Fähigkeiten stimmen überein",
     "noComparison": "Für diesen Kampf sind keine Pakete gespeichert, daher werden nur die Werte des Spiels gezeigt.",
     "window": "Spielaufzeichnung von {from} bis {to}.",
     "covers": "Deckt {s} s dieses Kampfes ab",
@@ -473,7 +473,7 @@
     }
   },
   "skills": {
-    "fallback": "Skill {code}",
+    "fallback": "Fähigkeit {code}",
     "dot": "{name} - DoT"
   },
   "connection": {
