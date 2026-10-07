@@ -196,6 +196,8 @@
     "characterName": "名前#ID",
     "characterNamePlaceholder": "キャラクター名を入力",
     "pinMeToTop": "常に自分を一番上に表示",
+    "hideOtherNames": "他のプレイヤーの名前を隠す",
+    "hideOtherNamesHint": "他のプレイヤーはクラスと番号で表示されるため、スクリーンショットに名前が写りません。保存された戦闘には名前が残ります。",
     "slimMode": "スリムモード",
     "meterLayout": {
       "label": "メーターのレイアウト",
@@ -443,6 +445,8 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
+    "hiddenPlayer": "{class} {n}",
+    "hiddenPlayerNoClass": "プレイヤー {n}",
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {

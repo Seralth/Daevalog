@@ -196,6 +196,8 @@
     "characterName": "Nom#ID",
     "characterNamePlaceholder": "Saisissez le nom de votre personnage",
     "pinMeToTop": "Toujours m'afficher en haut",
+    "hideOtherNames": "Masquer le nom des autres joueurs",
+    "hideOtherNamesHint": "Les autres joueurs apparaissent sous leur classe et un numéro : une capture d'écran ne nomme personne. Les combats enregistrés gardent les noms.",
     "slimMode": "Mode compact",
     "meterLayout": {
       "label": "Disposition du meter",
@@ -443,6 +445,8 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
+    "hiddenPlayer": "{class} {n}",
+    "hiddenPlayerNoClass": "Joueur {n}",
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {

@@ -196,6 +196,8 @@
     "characterName": "Имя#ID",
     "characterNamePlaceholder": "Введите имя персонажа",
     "pinMeToTop": "Всегда показывать меня сверху",
+    "hideOtherNames": "Скрывать имена других игроков",
+    "hideOtherNamesHint": "Другие игроки показаны как класс и номер, поэтому на скриншоте нет ничьих имён. В сохранённых боях имена остаются.",
     "slimMode": "Компактный режим",
     "meterLayout": {
       "label": "Макет счётчика",
@@ -443,6 +445,8 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
+    "hiddenPlayer": "{class} {n}",
+    "hiddenPlayerNoClass": "Игрок {n}",
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {

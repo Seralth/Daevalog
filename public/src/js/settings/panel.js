@@ -38,6 +38,7 @@ Object.assign(DpsApp.prototype, {
     this.meterLayoutDropdownBtn = document.querySelector(".meterLayoutDropdownBtn");
     this.meterLayoutDropdownMenu = document.querySelector(".meterLayoutDropdownMenu");
     this.playerNamesBoldCheckbox = document.querySelector(".playerNamesBoldCheckbox");
+    this.hideOtherNamesCheckbox = document.querySelector(".hideOtherNamesCheckbox");
     this.autoUploadCheckbox = document.querySelector(".autoUploadCheckbox");
     this.accountStateEl = document.querySelector(".accountState");
     this.accountHintEl = document.querySelector(".accountHint");
@@ -114,6 +115,7 @@ Object.assign(DpsApp.prototype, {
     this.setOnlyShowUser(false, { persist: false });
     this.setDebugLogging(storedDebugLogging, { persist: false, syncBackend: true });
     this.setPinMeToTop(storedPinMeToTop, { persist: false });
+    this.setHideOtherNames(this.safeGetSetting(this.storageKeys.hideOtherNames) === "true", { persist: false });
     this.setBetaUi(this.safeGetSetting(this.storageKeys.betaUi) !== "false", { persist: false });
     const storedSlimMode = this.safeGetSetting(this.storageKeys.slimMode) === "true";
     this.setSlimMode(storedSlimMode, { persist: false });
@@ -330,6 +332,12 @@ Object.assign(DpsApp.prototype, {
       this.pinMeToTopCheckbox.addEventListener("change", (event) => {
         const isChecked = !!event.target?.checked;
         this.setPinMeToTop(isChecked, { persist: true });
+      });
+    }
+    if (this.hideOtherNamesCheckbox) {
+      this.hideOtherNamesCheckbox.checked = playerNames.hideOthers;
+      this.hideOtherNamesCheckbox.addEventListener("change", (event) => {
+        this.setHideOtherNames(!!event.target?.checked, { persist: true });
       });
     }
     if (this.accountConnectBtn) {
@@ -969,6 +977,21 @@ Object.assign(DpsApp.prototype, {
       this.safeSetSetting(this.storageKeys.pinMeToTop, String(this.pinMeToTop));
     }
     this.renderCurrentRows();
+  },
+
+  // Other players by class and number, in every view of this window.
+  setHideOtherNames(enabled, { persist = false } = {}) {
+    playerNames.hideOthers = !!enabled;
+    if (this.hideOtherNamesCheckbox && document.activeElement !== this.hideOtherNamesCheckbox) {
+      this.hideOtherNamesCheckbox.checked = playerNames.hideOthers;
+    }
+    if (persist) {
+      this.safeSetSetting(this.storageKeys.hideOtherNames, String(playerNames.hideOthers));
+    }
+    this.renderCurrentRows();
+    this.hideHoverTooltip();
+    this.detailsUI?.refresh?.();
+    this.detailsUI?.relabelHistoryFight?.();
   },
 
   getMeterLayout() {
