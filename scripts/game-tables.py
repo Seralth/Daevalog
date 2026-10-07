@@ -11,7 +11,7 @@ Writes, under src/data:
   Fields the game data does not hold (category, tier, dungeonId) and NPCs it
   no longer has are kept as they are.
 - i18n/skills/<lang>.json: the name of every skill the game names, and of
-  the heals that come from no skill (NO_SKILL_HEALS).
+  the heals and damage over time that come from no skill (NO_SKILL_EFFECTS).
 - i18n/dungeons/<lang>.json: each dungeon's name, kind, difficulty and party
   tier, and the game's words for that difficulty. Instance maps without a
   dungeon row of their own get their map title as the name. zh-Hans and
@@ -39,11 +39,18 @@ LANGS = {"de-DE": "de", "en-US": "en", "es-ES": "es", "fr-FR": "fr",
 DUMMY_NAMES = ("Training Scarecrow", "Punching Bag")
 DUMMY_INTERNAL = re.compile(r"TraDummy|Sandbag", re.IGNORECASE)
 
-# A heal tick carries the id of the abnormal effect that healed, and the meter
-# files it under that id // 100: the skill that owns the abnormal. These
-# abnormals belong to no skill, so their code takes the abnormal's name.
+# A heal or damage tick carries the id of the abnormal effect behind it, and
+# the meter files it under that id // 100: the skill that owns the abnormal.
+# These abnormals belong to no skill, so their code takes the abnormal's name.
 # 19000013 is Restore HP, a full heal (seen in the captures of 2026-10-04/05).
-NO_SKILL_HEALS = {1900001: 19000013}
+# 12000101 to 12000181 are Poison, Bleed and Burn, shared by many skills,
+# nearly all of them monsters' (on players in the captures of 2026-10-04/05).
+NO_SKILL_EFFECTS = {
+    1900001: 19000013,
+    1200010: 12000101, 1200011: 12000111, 1200012: 12000121,
+    1200014: 12000141, 1200015: 12000151, 1200016: 12000161,
+    1200018: 12000181,
+}
 
 DATA = Path(__file__).resolve().parent.parent / "src" / "data"
 
@@ -214,7 +221,7 @@ def main():
             if named(name) and not (generic and key in table):
                 table[key] = name
         skill_ids = {skill["ID"]["Value"] for skill in skills}
-        for code, abnormal in NO_SKILL_HEALS.items():
+        for code, abnormal in NO_SKILL_EFFECTS.items():
             name = text.get(f"SkillAbnormalString_{abnormals[abnormal]['SkillAbnormalString_Key']}_desc_name")
             if named(name) and code not in skill_ids:
                 table[str(code)] = name
