@@ -530,8 +530,8 @@ mod tests {
         // (two captures of 2026-10-04: one and two more mobs).
         let report = |text: &str| {
             let mut lines = Vec::new();
-            let options = crate::capture::replay_report::Options::default();
-            crate::capture::replay_report::run(text, options, &mut |line| lines.push(line));
+            let options = crate::checks::replay_report::Options::default();
+            crate::checks::replay_report::run(text, options, &mut |line| lines.push(line));
             lines.retain(|l| !l.starts_with("payloads ") && !l.starts_with("window "));
             for line in lines.iter_mut().filter(|l| l.starts_with("state: ")) {
                 if let Some(at) = line.rfind(", ") {

@@ -28,7 +28,7 @@ A unit test proves that the code does what the author thinks. A unit test does n
 
    ```
    A2_RECORD=<record_*.dat> A2_REPLAY_FILE=<capture> \
-   cargo test --lib capture::record_check::record_check -- --exact --ignored --nocapture
+   cargo test --lib checks::record_check::record_check -- --exact --ignored --nocapture
    ```
 
    The game shows a DoT inside its skill and joins summon attacks of one name. The replay shows separate rows. The totals must match.

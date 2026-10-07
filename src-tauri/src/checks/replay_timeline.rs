@@ -15,7 +15,7 @@ use serde_json::{json, Map, Value};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::Layer;
 
-use super::abnormal::{self, Instance, StatEvent, Timeline};
+use crate::capture::abnormal::{self, Instance, StatEvent, Timeline};
 use crate::entity::summon_resolver;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 

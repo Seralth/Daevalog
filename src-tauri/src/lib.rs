@@ -23,6 +23,10 @@ pub mod i18n;
 pub mod rederive;
 pub mod version;
 
+// ── check tools: run through cargo test ────────────────────────────────────
+#[cfg(test)]
+mod checks;
+
 // ── backend: the meter without a window ────────────────────────────────────
 #[cfg(feature = "backend")]
 pub mod account;

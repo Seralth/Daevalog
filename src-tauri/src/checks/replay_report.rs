@@ -21,11 +21,11 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
-use super::framing::{self, FrameKind};
-use super::packet_accumulator::PacketAccumulator;
-use super::stream_assembler::StreamAssembler;
-use super::stream_processor::StreamProcessor;
-use super::varint::read_varint;
+use crate::capture::framing::{self, FrameKind};
+use crate::capture::packet_accumulator::PacketAccumulator;
+use crate::capture::stream_assembler::StreamAssembler;
+use crate::capture::stream_processor::StreamProcessor;
+use crate::capture::varint::read_varint;
 use crate::combat::data_storage::{DataStorage, TargetCombatData};
 use crate::combat::dps_calculator::DpsCalculator;
 use crate::combat::ping_tracker::PingTracker;

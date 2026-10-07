@@ -25,8 +25,8 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
-use super::stream_assembler::StreamAssembler;
-use super::stream_processor::StreamProcessor;
+use crate::capture::stream_assembler::StreamAssembler;
+use crate::capture::stream_processor::StreamProcessor;
 use crate::combat::data_storage::DataStorage;
 use crate::game_record::{self, Row, SkillRow, WindowTap, COUNTS};
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
