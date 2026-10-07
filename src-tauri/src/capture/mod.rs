@@ -1,4 +1,5 @@
 // Parser core — compiled for wasm32 as well as the desktop app.
+pub mod abnormal;
 pub mod captured_payload;
 pub mod evidence_slice;
 pub mod framing;
