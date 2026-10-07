@@ -31,6 +31,9 @@
 //!                                  capture ms first, in the window
 //! A2_REPLAY_CHARACTER=1            print your own character's latest state as
 //!                                  JSON instead (see `replay_character`)
+//!
+//! The report always ends with the deaths of you and your party in the
+//! window and in each fight the meter would save (see `replay_deaths`).
 //! cargo test --lib replay_report -- --ignored --nocapture
 //! ```
 
@@ -203,6 +206,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let _tap = gather.as_ref().map(|g| g.tap.install());
     let mut window_ms = 0i64;
     let mut taken = taken.then(super::replay_taken::Gather::default);
+    let mut deaths = super::replay_deaths::Gather::default();
     let mut met = list_players.then(super::replay_players::Players::default);
     let mut first_ts = None;
 
@@ -297,6 +301,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
         if let Some(t) = &mut taken {
             t.after_line(&storage);
         }
+        deaths.after_line(&storage);
         if let Some(g) = &mut gather {
             g.after_line(ts_ms, storage.local_player_id().map(|v| v as i32), || storage.get_summon_data());
         }
@@ -304,6 +309,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
         if window_started {
             last_tod = tod.clone();
             let now = storage.get_combat_snapshot_light();
+            deaths.note_fights(now.values());
             let ids: Vec<i32> = match target {
                 Some(t) => vec![t],
                 None => now.keys().copied().collect(),
@@ -423,6 +429,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     if let Some(t) = &taken {
         t.report((window_ms, last_ts), local, &skills, &npcs, out);
     }
+    deaths.report((window_ms, last_ts), &storage, &skills, &npcs, out);
     if let Some(g) = gather {
         let mobs = storage.get_mob_data();
         let zone = zone.unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
