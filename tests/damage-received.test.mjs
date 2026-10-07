@@ -23,7 +23,7 @@ const fight = [
 test("a saved fight's damage received follows the chosen player", async () => {
   const details = async (takenSkills, attackerIds) => {
     const window = { addEventListener() {}, _historyDetailsOverride: { skills: [], battleTime: 1000, takenSkills } };
-    const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/players.js", "shared/targetModes.js", "core.js"],
+    const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/players.js", "shared/targetModes.js", "details.js", "core.js"],
       { window, console, document: { readyState: "loading", addEventListener() {} } });
     const app = vm.runInContext("Object.create(DpsApp.prototype)", context);
     app.dpsFormatter = new Intl.NumberFormat("en-US");

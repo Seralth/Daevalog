@@ -29,6 +29,32 @@ const formatDamageCompact = (v) => {
   return `${Math.round(n)}`;
 };
 
+// 1.23k, 4.5m, and whole numbers below 1k through `formatter`.
+const formatAbbreviated = (value, formatter) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "-";
+  const abs = Math.abs(n);
+  const units = [
+    { value: 1e12, suffix: "t" },
+    { value: 1e9, suffix: "b" },
+    { value: 1e6, suffix: "m" },
+    { value: 1e3, suffix: "k" },
+  ];
+  for (const unit of units) {
+    if (abs >= unit.value) {
+      const scaled = (n / unit.value).toFixed(2);
+      const trimmed = scaled.replace(/\.?0+$/, "");
+      return `${trimmed}${unit.suffix}`;
+    }
+  }
+  // Whole numbers below 1k too: a per-second rate read "368.036".
+  return formatter.format(Math.round(n));
+};
+
+// An amount per second as Details' overview writes it; "-" with no time.
+const perSecondText = (amount, battleMs, formatter) =>
+  (battleMs > 0 ? formatAbbreviated((amount / battleMs) * 1000, formatter) : "-");
+
 const formatDamage = (v) => {
   const n = Number(v);
   if (!Number.isFinite(n)) return "-";

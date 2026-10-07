@@ -1765,41 +1765,8 @@ class DpsApp {
       }))
       .sort((a, b) => b.totalDmg - a.totalDmg);
 
-    // Process healing (DMG/HEAL toggle): filter by selected member, resolve skill
-    // names, and compute heal-mode stat totals. Mirrors the damage skill pipeline.
-    const healSkillsRaw = Array.isArray(detailObj?.healSkills) ? detailObj.healSkills : [];
-    const healSkillsOut = [];
-    let totalHeal = 0;
-    let healTicks = 0;
-    let healHotTicks = 0;
-    const healActors = new Set();
-    for (const v of healSkillsRaw) {
-      if (!v || typeof v !== "object") continue;
-      const aId = Number(v.actorId);
-      if (attackerIdSet && (!Number.isFinite(aId) || !attackerIdSet.has(aId))) continue;
-      const code = String(v.code ?? "");
-      const nameRaw = typeof v.name === "string" ? v.name.trim() : "";
-      const name = (this.i18n?.getSkillName?.(code, nameRaw) ?? nameRaw) || `Skill ${code}`;
-      const amt = Number(v.dmg) || 0;
-      const ticks = Number(v.time) || 0;
-      const isHot = !!v.isDot;
-      if (amt <= 0) continue;
-      totalHeal += amt;
-      healTicks += ticks;
-      if (isHot) healHotTicks += ticks;
-      if (Number.isFinite(aId)) healActors.add(aId);
-      healSkillsOut.push({
-        actorId: Number.isFinite(aId) ? aId : null,
-        code: Number.isFinite(Number(code)) ? Number(code) : v.code,
-        name,
-        dmg: amt,
-        time: ticks,
-        isDot: isHot,
-        crit: 0, parry: 0, back: 0, frontal: 0, perfect: 0, double: 0,
-        regen: 0, multiHitCount: 0, multiHitDamage: 0, multiHitHits: 0,
-        minDmg: 0, maxDmg: 0, job: v.job ?? "", specs: null, hitTimestamps: [],
-      });
-    }
+    // Healing (DMG/HEAL toggle), of the selected members, named.
+    const heals = readHeals(detailObj?.healSkills, attackerIdSet, (code, name) => this.i18n?.getSkillName?.(code, name) ?? name);
     // Damage received, per player and skill. A saved fight is filtered to the
     // chosen players here, a live one by the backend. null for a fight saved
     // before damage received was kept.
@@ -1808,17 +1775,14 @@ class DpsApp {
       : null;
 
     const healBattleMs = Number.isFinite(battleTimeMsRaw) ? battleTimeMsRaw : 0;
-    const healPerSecText = healBattleMs > 0
-      ? `${this.formatAbbreviatedNumber(totalHeal / healBattleMs * 1000)}`
-      : "-";
 
     return {
       totalDmg,
-      totalHeal,
-      healTicks,
-      healHotTicks,
-      healSkillCount: healSkillsOut.length,
-      healPerSecText,
+      totalHeal: heals.totalHeal,
+      healTicks: heals.healTicks,
+      healHotTicks: heals.healHotTicks,
+      healSkillCount: heals.healSkillCount,
+      healPerSecText: perSecondText(heals.totalHeal, healBattleMs, this.dpsFormatter),
       contributionPct,
       totalCritPct: pct(totalCrit, totalTimes),
       totalParryPct: pct(totalParry, totalTimes),
@@ -1832,12 +1796,14 @@ class DpsApp {
       totalRegen,
       combatTime,
       battleTimeMs: Number.isFinite(battleTimeMsRaw) ? battleTimeMsRaw : 0,
+      // The answer's first hit: its hit times count from it.
+      startTime: Number(detailObj?.startTime) || 0,
       maxHp: Number(detailObj?.maxHp) || 0,
 
       skills,
       // Per-actor/skill healing (DMG/HEAL toggle), filtered to the selected member
       // and name-resolved (see processing above).
-      healSkills: healSkillsOut,
+      healSkills: heals.healSkills,
       takenSkills,
       showSkillIcons,
       perActorStats,
@@ -2015,24 +1981,7 @@ class DpsApp {
   }
 
   formatAbbreviatedNumber(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return "-";
-    const abs = Math.abs(n);
-    const units = [
-      { value: 1e12, suffix: "t" },
-      { value: 1e9, suffix: "b" },
-      { value: 1e6, suffix: "m" },
-      { value: 1e3, suffix: "k" },
-    ];
-    for (const unit of units) {
-      if (abs >= unit.value) {
-        const scaled = (n / unit.value).toFixed(2);
-        const trimmed = scaled.replace(/\.?0+$/, "");
-        return `${trimmed}${unit.suffix}`;
-      }
-    }
-    // Whole numbers below 1k too: a per-second rate read "368.036".
-    return this.dpsFormatter.format(Math.round(n));
+    return formatAbbreviated(value, this.dpsFormatter);
   }
 
   // DPS to the nearest thousand: 1,012,326 reads as "1,012k", 554,874 as "555k".

@@ -1,16 +1,61 @@
-// The healing in merged Details. Healing is not kept per target, so every
-// target's details carry the same heals: take them once.
-const combinedHealFields = (detailsList = []) => {
-  const first = detailsList.find((d) => d && typeof d === "object") || {};
-  return {
-    healSkills: Array.isArray(first.healSkills) ? first.healSkills : [],
-    totalHeal: Number(first.totalHeal) || 0,
-    healTicks: Number(first.healTicks) || 0,
-    healHotTicks: Number(first.healHotTicks) || 0,
-    healSkillCount: Number(first.healSkillCount) || 0,
-    healPerSecText: first.healPerSecText ?? "-",
-  };
+// A backend heal list as Details shows it: the players in `only` (everyone
+// when null), named by `nameOf`, with the HEAL overview's counts.
+const readHeals = (raw, only, nameOf) => {
+  const healSkills = [];
+  let totalHeal = 0;
+  let healTicks = 0;
+  let healHotTicks = 0;
+  for (const v of Array.isArray(raw) ? raw : []) {
+    if (!v || typeof v !== "object") continue;
+    const aId = Number(v.actorId);
+    if (only && (!Number.isFinite(aId) || !only.has(aId))) continue;
+    const code = String(v.code ?? "");
+    const nameRaw = typeof v.name === "string" ? v.name.trim() : "";
+    const name = nameOf(code, nameRaw) || `Skill ${code}`;
+    const amt = Number(v.dmg) || 0;
+    const ticks = Number(v.time) || 0;
+    const isHot = !!v.isDot;
+    if (amt <= 0) continue;
+    totalHeal += amt;
+    healTicks += ticks;
+    if (isHot) healHotTicks += ticks;
+    healSkills.push({
+      actorId: Number.isFinite(aId) ? aId : null,
+      code: Number.isFinite(Number(code)) ? Number(code) : v.code,
+      name,
+      dmg: amt,
+      time: ticks,
+      isDot: isHot,
+      crit: 0, parry: 0, back: 0, frontal: 0, perfect: 0, double: 0,
+      regen: 0, multiHitCount: 0, multiHitDamage: 0, multiHitHits: 0,
+      minDmg: 0, maxDmg: 0, job: v.job ?? "", specs: null, hitTimestamps: [],
+    });
+  }
+  return { healSkills, totalHeal, healTicks, healHotTicks, healSkillCount: healSkills.length };
 };
+
+// The time any of these [first, last] spans was being fought, gaps between
+// them left out: the meter's fight time over several targets (`active_time`
+// in meter_rows.rs, rule 10 in ARCHITECTURE.md).
+const activeTime = (spans) => {
+  const sorted = [...spans].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  let total = 0;
+  let current = null;
+  for (const [first, last] of sorted) {
+    if (current && first <= current[1]) {
+      current[1] = Math.max(current[1], last);
+    } else {
+      if (current) total += current[1] - current[0];
+      current = [first, last];
+    }
+  }
+  return total + (current ? current[1] - current[0] : 0);
+};
+
+// Each Details context target's [first hit, last hit].
+const targetSpans = (targets) => (Array.isArray(targets) ? targets : [])
+  .filter((t) => Number(t?.targetId) > 0 && Number(t?.lastDamageTime) > 0)
+  .map((t) => [Number(t.lastDamageTime) - (Number(t.battleTime) || 0), Number(t.lastDamageTime)]);
 
 // Each DoT row goes under the direct row of its skill, matched by skill code
 // (a DoT row's code is the skill's code plus "-dot"), never by its name,
@@ -490,7 +535,8 @@ const createDetailsUI = ({
         if (!Number.isFinite(actorId) || actorId <= 0) return;
         combined.set(actorId, (combined.get(actorId) || 0) + (Number(s?.dmg) || 0));
       });
-      if (combined.size === 0) return null;
+      // No healing: no bars, never the damage bars.
+      if (combined.size === 0) return { stats: [], battleTimeMs: Number(lastDetails?.battleTimeMs) || 0 };
       const total = [...combined.values()].reduce((a, b) => a + b, 0) || 1;
       return {
         stats: [...combined.entries()]
@@ -509,12 +555,9 @@ const createDetailsUI = ({
       ? (getTargetById(selectedTargetId) ? [getTargetById(selectedTargetId)] : allTargets)
       : allTargets;
     const combined = new Map();
-    let maxBattleTimeMs = 0;
     targets.forEach((target) => {
       const actorDmg = target?.actorDamage;
       if (!actorDmg || typeof actorDmg !== "object") return;
-      const bt = Number(target?.battleTime) || 0;
-      if (bt > maxBattleTimeMs) maxBattleTimeMs = bt;
       Object.entries(actorDmg).forEach(([id, dmg]) => {
         const actorId = Number(id);
         if (!Number.isFinite(actorId) || actorId <= 0) return;
@@ -532,7 +575,8 @@ const createDetailsUI = ({
           contributionPct: (dmg / total) * 100,
         }))
         .sort((a, b) => b.totalDmg - a.totalDmg),
-      battleTimeMs: maxBattleTimeMs,
+      // The fight's time over these targets, as the overview counts it.
+      battleTimeMs: activeTime(targetSpans(targets)),
     };
   };
 
@@ -1557,13 +1601,18 @@ const createDetailsUI = ({
     return entry;
   };
 
+  // The charts' length: on every target from the fight's first hit to its
+  // last (gaps between pulls included, as the hit times are), else the
+  // target's fight time.
+  const chartMs = (d) => Number(d?.spanMs) || Number(d?.battleTimeMs) || 0;
+
   const renderDpsChart = (details) => {
     if (!dpsChartCanvas || !dpsChartXAxis || !dpsChartLegend) return;
 
     // Use unfiltered skills for DPS lines + boss health; filtered details for ping + battleTime
     const unfilteredDetails = lastUnfilteredDetails || details;
     const chartSkills = Array.isArray(unfilteredDetails?.skills) ? unfilteredDetails.skills : [];
-    const battleTimeMs = Number(unfilteredDetails?.battleTimeMs) || Number(details?.battleTimeMs) || 0;
+    const battleTimeMs = chartMs(unfilteredDetails) || chartMs(details);
     if (battleTimeMs <= 0 || chartSkills.length === 0) {
       dpsChartCanvas.width = 0;
       dpsChartCanvas.height = 0;
@@ -1837,7 +1886,7 @@ const createDetailsUI = ({
     if (!timelineCanvas || !timelineViewport || !timelineLegend || !timelineXAxis) return;
 
     const skills = Array.isArray(details?.skills) ? details.skills : [];
-    const battleTimeMs = Number(lastUnfilteredDetails?.battleTimeMs) || Number(details?.battleTimeMs) || 0;
+    const battleTimeMs = chartMs(lastUnfilteredDetails) || chartMs(details);
     if (battleTimeMs <= 0 || skills.length === 0) {
       timelineCanvas.width = 0;
       timelineCanvas.height = 0;
@@ -2121,8 +2170,27 @@ const createDetailsUI = ({
     return [...totals.values()].sort((a, b) => b.totalDmg - a.totalDmg);
   };
 
-  const buildCombinedDetails = (detailsList = [], totalTargetDamage = 0, showSkillIcons = true, attackerIds = null) => {
-    const skills = detailsList.flatMap((details) => (Array.isArray(details?.skills) ? details.skills : []));
+  // Every target as one fight. `fightSpans` are the spans of all the fight's
+  // targets (the context's), so a picked player's view keeps the fight's time
+  // and start.
+  const buildCombinedDetails = (detailsList = [], totalTargetDamage = 0, showSkillIcons = true, attackerIds = null, fightSpans = []) => {
+    const answered = detailsList.filter((d) => Number(d?.startTime) > 0);
+    const spans = [
+      ...fightSpans,
+      ...answered.map((d) => [Number(d.startTime), Number(d.startTime) + (Number(d.battleTimeMs) || 0)]),
+    ];
+    const fightStart = spans.length ? Math.min(...spans.map((sp) => sp[0])) : 0;
+    // Each answer counts its hit times from its own target's first hit; on
+    // every target they count from the fight's first hit.
+    const skills = detailsList.flatMap((details) => {
+      const list = Array.isArray(details?.skills) ? details.skills : [];
+      const shift = Number(details?.startTime) > 0 ? Number(details.startTime) - fightStart : 0;
+      if (!shift) return list;
+      return list.map((skill) => ({
+        ...skill,
+        hitTimestamps: (Array.isArray(skill?.hitTimestamps) ? skill.hitTimestamps : []).map((t) => Number(t) + shift),
+      }));
+    });
     let totalDmg = 0;
     let totalTimes = 0;
     let totalCrit = 0;
@@ -2151,7 +2219,18 @@ const createDetailsUI = ({
     });
 
     const pct = (num, den) => (den > 0 ? Math.round((num / den) * 1000) / 10 : 0);
-    const battleTimeMs = detailsList.reduce((sum, details) => sum + (Number(details?.battleTimeMs) || 0), 0);
+    // The fight's time as the meter counts several targets; a boss and its
+    // adds fought at once count once.
+    const battleTimeMs = activeTime(spans);
+    // The charts run from the fight's first hit to its last.
+    const spanMs = spans.length ? Math.max(...spans.map((sp) => sp[1])) - fightStart : 0;
+    // The fight's healing, each tick once (the context's list): each target's
+    // answer holds the ticks of its own span only.
+    const heals = readHeals(
+      detailsContext?.healSkills,
+      attackerIds?.length ? new Set(attackerIds.map(Number)) : null,
+      (code, name) => i18n?.getSkillName?.(code, name) ?? name,
+    );
 
     return {
       totalDmg,
@@ -2184,8 +2263,10 @@ const createDetailsUI = ({
         : null,
       combatTime: formatBattleTime(battleTimeMs),
       battleTimeMs,
+      spanMs,
       skills,
-      ...combinedHealFields(detailsList),
+      ...heals,
+      healPerSecText: perSecondText(heals.totalHeal, battleTimeMs, dpsFormatter),
       showSkillIcons,
       perActorStats: combinePerActorStats(detailsList),
       showCombinedTotals: !selectedAttackerIds || selectedAttackerIds.length === 0,
@@ -2261,7 +2342,7 @@ const createDetailsUI = ({
         (sum, target) => sum + (Number(target?.totalDamage) || 0),
         0
       );
-      const mergedDetails = buildCombinedDetails(allTargetDetails, totalTargetDamage, showSkillIcons, selectedAttackerIds);
+      const mergedDetails = buildCombinedDetails(allTargetDetails, totalTargetDamage, showSkillIcons, selectedAttackerIds, targetSpans(detailsTargets));
       if (typeof seq === "number" && seq !== openSeq) return;
       render(mergedDetails, row);
       return;
@@ -2315,7 +2396,7 @@ const createDetailsUI = ({
         (sum, target) => sum + (Number(target?.totalDamage) || 0),
         0
       );
-      return buildCombinedDetails(allTargetDetails, totalTargetDamage, true);
+      return buildCombinedDetails(allTargetDetails, totalTargetDamage, true, null, targetSpans(detailsTargets));
     }
     const target = getTargetById(selectedTargetId);
     return await getDetails(row, {

@@ -8,7 +8,7 @@ const tick = () => new Promise((resolve) => setImmediate(resolve));
 function setup(getBattleDetail) {
   const logs = [];
   const window = { addEventListener() {}, dpsData: { getBattleDetail }, javaBridge: { logToDebug: (s) => logs.push(s) } };
-  const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/players.js", "shared/targetModes.js", "core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
+  const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/players.js", "shared/targetModes.js", "details.js", "core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
   const app = vm.runInContext("Object.create(DpsApp.prototype)", context);
   app.dpsFormatter = new Intl.NumberFormat("en-US");
   app.elList = { querySelector: () => ({}) };
