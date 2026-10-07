@@ -132,11 +132,13 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - A dungeon's difficulty is shown in the game's own words and language, taken from the game's dungeon table, only where the game gives one, and never repeating the name.
 - Spirits are linked to their owners by the game's link records and the spawn caster field. Owners are not guessed by power scalar or class.
 - Fight slices keep skill ids that look like short text. They are no longer blanked out as names.
+- The party roster is read to its end. Members after an empty slot keep their item level and combat power up to date.
 
 ### Fights and identity
 - The backend alone decides which player is the local player, from the game's own record of you.
 - Every fight segment is saved before any reset. Only fights that you or your party fought are saved, and only once the meter knows who you are: the game says so on login and on every zone change, so a meter started in the middle of a session saves nothing until the next one.
 - A fight cleared by a zone change keeps the ids, names and spirit links it had.
+- A party roster never names a player by class in the open world, where each player's own spawn names them. Strangers fighting nearby are not taken for your party.
 - A fight's healing is the healing done during that fight, in live Details and in the saved fight alike.
 - MP and other resource restores are not counted as healing or damage. A mob healing itself is not counted as healing.
 - A monster's summon is never taken for the summon of the player it attacks, so its damage on that player is not counted as healing.
