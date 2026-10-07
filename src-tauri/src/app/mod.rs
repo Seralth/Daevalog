@@ -31,6 +31,7 @@ mod links;
 mod local_player;
 mod meter;
 mod overlay_lock;
+mod page_settings;
 mod page_support;
 mod replay;
 mod report;

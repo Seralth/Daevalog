@@ -26,13 +26,12 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
   // View mode: "dungeon" (each dungeon and difficulty a collapsible section,
   // the default), "grouped" (each boss a section) or "list" (flat, newest first).
+  // Both list choices are settings in settings.json, read through the bridge.
   const VIEW_KEY = "historyViewMode";
   const VIEWS = ["dungeon", "grouped", "list"];
   let viewMode = (() => {
-    try {
-      const saved = localStorage.getItem(VIEW_KEY);
-      return VIEWS.includes(saved) ? saved : "dungeon";
-    } catch { return "dungeon"; }
+    const saved = window.javaBridge?.getSetting?.(VIEW_KEY);
+    return VIEWS.includes(saved) ? saved : "dungeon";
   })();
   const expandedGroups = new Set();
 
@@ -63,10 +62,8 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
   const bossLabel = (f) => (Number(f.mobCode) > 0 ? i18n?.getNpcName?.(Number(f.mobCode), "") : "")
     || f.bossName || `Boss #${f.targetId}`;
 
-  const STORAGE_KEY = "historyShowTraining";
-  let showTraining = (() => {
-    try { return localStorage.getItem(STORAGE_KEY) !== "0"; } catch { return true; }
-  })();
+  const TRAINING_KEY = "historyShowTraining";
+  let showTraining = window.javaBridge?.getSetting?.(TRAINING_KEY) !== "0";
 
   const syncTrainToggle = () => {
     if (!trainToggleBtn) return;
@@ -712,7 +709,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
 
   trainToggleBtn?.addEventListener("click", () => {
     showTraining = !showTraining;
-    try { localStorage.setItem(STORAGE_KEY, showTraining ? "1" : "0"); } catch {}
+    window.javaBridge?.setSetting?.(TRAINING_KEY, showTraining ? "1" : "0");
     syncTrainToggle();
     renderList(allFights);
   });
@@ -727,7 +724,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
       const mode = VIEWS.includes(btn.dataset.view) ? btn.dataset.view : "dungeon";
       if (mode === viewMode) return;
       viewMode = mode;
-      try { localStorage.setItem(VIEW_KEY, viewMode); } catch {}
+      window.javaBridge?.setSetting?.(VIEW_KEY, viewMode);
       syncViewToggle();
       expandedGroups.clear();
       renderList(allFights);

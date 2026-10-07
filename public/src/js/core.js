@@ -157,33 +157,15 @@ class DpsApp {
     DpsApp.instance = this;
   }
 
-  safeGetStorage(key) {
-    try {
-      return localStorage.getItem(key);
-    } catch (e) {
-      globalThis.uiDebug?.log?.("localStorage.get blocked", { key, error: String(e) });
-      return null;
-    }
-  }
-
-  safeSetStorage(key, value) {
-    try {
-      localStorage.setItem(key, value);
-    } catch (e) {
-      globalThis.uiDebug?.log?.("localStorage.set blocked", { key, error: String(e) });
-    }
-  }
-
+  // Settings are in settings.json alone; the bridge holds this window's copy.
+  // The page's own storage is not read for them (see tauriBridge.js).
   safeGetSetting(key) {
     try {
-      const bridgeValue = window.javaBridge?.getSetting?.(key);
-      if (bridgeValue !== undefined && bridgeValue !== null) {
-        return bridgeValue;
-      }
+      return window.javaBridge?.getSetting?.(key) ?? null;
     } catch (e) {
       globalThis.uiDebug?.log?.("getSetting blocked", { key, error: String(e) });
+      return null;
     }
-    return this.safeGetStorage(key);
   }
 
   safeSetSetting(key, value) {
@@ -192,7 +174,6 @@ class DpsApp {
     } catch (e) {
       globalThis.uiDebug?.log?.("setSetting blocked", { key, error: String(e) });
     }
-    this.safeSetStorage(key, value);
   }
 
 
@@ -496,7 +477,7 @@ class DpsApp {
     this.setupConsoleDebugging();
     this.bindNativeHotkeyBridge();
 
-    const storedDisplayMode = this.safeGetStorage(this.storageKeys.displayMode);
+    const storedDisplayMode = this.safeGetSetting(this.storageKeys.displayMode);
     this.setDisplayMode(storedDisplayMode || this.displayMode, { persist: false });
 
     // History is a browser you leave open: picking a fight launches it into a
@@ -652,7 +633,7 @@ class DpsApp {
     // A tutorial character's missing name is not worth remembering over the
     // last real one.
     if (name) {
-      this.safeSetStorage(this.storageKeys.userName, name);
+      this.safeSetSetting(this.storageKeys.userName, name);
     }
     this.renderCurrentRows();
     return true;
@@ -1381,16 +1362,14 @@ class DpsApp {
     }
   }
 
+  // Reloads once the backend has cleared settings.json, so the page cannot
+  // load the old values again.
   resetAllSettings() {
-    for (const key of Object.values(this.storageKeys)) {
-      try {
-        localStorage.removeItem(key);
-      } catch (_) {}
-    }
+    let cleared = null;
     try {
-      window.javaBridge?.clearAllSettings?.();
+      cleared = window.javaBridge?.clearAllSettings?.();
     } catch (_) {}
-    window.location.reload();
+    Promise.resolve(cleared).finally(() => window.location.reload());
   }
 
   triggerDetailsFlash() {
@@ -2126,7 +2105,7 @@ class DpsApp {
     if (!list || !Columns || list.dataset.wired) return;
     list.dataset.wired = "1";
     const current = () =>
-      this.encColumns ?? Columns.defaultsFor(this.safeGetStorage(this.storageKeys.displayMode) || this.displayMode);
+      this.encColumns ?? Columns.defaultsFor(this.safeGetSetting(this.storageKeys.displayMode) || this.displayMode);
     this.encColumnsCheckboxes = new Map();
     for (const col of Columns.COLUMNS) {
       const label = document.createElement("label");

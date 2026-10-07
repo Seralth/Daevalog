@@ -119,7 +119,7 @@ function setup({ mode = "bossTargets", buttonTop = 300, place = null, screenY = 
     targetSelection: mode,
     isCollapse: false,
     storageKeys: { targetSelection: "dpsMeter.targetSelection" },
-    safeSetStorage: (key, value) => calls.push(`${key}=${value}`),
+    safeSetSetting: (key, value) => calls.push(`${key}=${value}`),
     logDebug() {},
     hideHoverTooltip: () => calls.push("tooltip hidden"),
     fetchDps: () => calls.push("fetch"),

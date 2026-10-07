@@ -97,6 +97,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - The package `daevalog-dps-meter` replaces an installed `a2tools-dps-meter` package.
 - On its first start, Daevalog moves the data folder of A2Tools DPS Meter (`com.a2tools.dps-meter`) to its own folder. Your settings, saved fights and sign-in come with it.
 - Daevalog keeps reading A2Tools DPS Meter's settings and saved fights where practical. This is not promised: a later version may stop reading them.
+- Settings are kept in `settings.json` only. A2Tools DPS Meter also kept a copy inside its window and showed that copy when `settings.json` had no value, so a switch could show a value the meter did not use. On its first start Daevalog moves what is left of that copy into `settings.json` once.
 
 ### Meter
 - **Encounter mode (ENC).** An encounter ends after a set time without combat by you or your party: 15 seconds by default, 5 to 300 seconds in Settings. A boss you hit keeps the encounter open while it lives, for up to 5 minutes without combat. You choose what each row shows: ENCDPS, DPS over your own active time, damage share, total, crit rate, the last 10, 30 or 60 seconds, biggest hit and hits.

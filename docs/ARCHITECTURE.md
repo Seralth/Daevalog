@@ -47,6 +47,14 @@ Every window loads the same `index.html` and runs the same `core.js`. The window
 
 Linux: `~/.local/share/com.daevalog.dps-meter/`. The folder holds `settings.json`, `history/`, `slices/`, `debug.log` and, when packet logging is on, `packets_*.txt`. Packet logs contain chat and the names of other players. Do not share packet logs.
 
+## Settings
+
+`settings.json` is the only store for settings: one JSON object of strings. Every reader uses `config::settings::read_file`, and a file that does not read as such an object counts as empty.
+
+- **Backend.** `Settings` (`config/settings.rs`) reads the file once at startup and rewrites the whole file a moment after each change. The display setup reads the layer switch from the file before the window opens (`platform/linux/process.rs`). Some settings act only in the backend: the layer, uploads, the tray settings, auto-hide, the encounter time, the packet log and the hotkeys.
+- **Page.** Each window keeps a copy in memory (`tauriBridge.js`). It loads the copy before any page code reads a setting (`settingsReady`, which `main.js` waits for). A change goes to the backend (`update_settings`), and the backend tells every window (`setting-changed`). The page's own WebKit storage holds no settings.
+- **Older builds** also kept every setting in the page's storage and read that copy when `settings.json` had no value. On its first start the page hands what is left there to the backend once (`adopt_page_settings`, `app/page_settings.rs`) and removes it. Where both have a value, `settings.json` wins. A value only the page had moves if the page acted on it; a setting that acts only in the backend stays out, because the page's copy never took effect.
+
 ## Rules that must hold
 
 Each rule below fixed a real fault. Do not break a rule without a test that shows the new behaviour is correct against the game.
@@ -62,6 +70,7 @@ Each rule below fixed a real fault. Do not break a rule without a test that show
 9. **Training dummies count every tick.** On a training dummy, DoT ticks after the actor's last direct hit count, as on any other target. The game's own meter counts them too: two scarecrow records of 2026-10-06 (15:48:24 and 15:48:27) hold only Corrode ticks, and on 16 scarecrow records every DoT row equals the ticks inside the record's window, moved 0.1 s earlier to fit the capture's times. The dummy list survives a reset, so a dummy fight after a reset is still saved (rule 7).
 10. **Fight time is active time.** In modes with several targets, fight time is the union of the targets' active spans, not the longest span.
 11. **A spirit's ticks end with the spirit.** When a linked summon leaves the world (`42 36` flag 7), its DoT ticks after that do not count. The game's own meter does the same: four records of 2026-10-06 (Malicious Whirlwind) counted every tick before the spirit left and none after.
+12. **Settings have one store.** The page reads and writes settings only through the backend, and never reads its own storage for a setting. A value only the page's storage held showed in Settings without taking effect: on COSMIC, 2026-10-07, the layer switch showed on while the meter ran as a normal window.
 
 ## Meter modes
 

@@ -31,6 +31,8 @@ const startApp = async ({ forced = false } = {}) => {
   // the window runs before this page (SETTINGS_WINDOW_SCRIPT in app/tool_windows.rs), so
   // they work before any of this has loaded.
   try {
+    // Every setting read below comes from settings.json, so load it first.
+    await window.javaBridge?.settingsReady;
     await window.i18n?.init?.();
     window.lucide?.createIcons?.();
     dpsApp.start();

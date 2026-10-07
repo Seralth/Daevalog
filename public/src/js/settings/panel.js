@@ -79,18 +79,11 @@ Object.assign(DpsApp.prototype, {
       targetSelectionWindowMs: "5000",
     };
 
-    const storedName = this.safeGetStorage(this.storageKeys.userName) || "";
-    const storedAllTargetsWindowMs = this.safeGetSetting(this.storageKeys.allTargetsWindowMs) ||
-      this.safeGetStorage(this.storageKeys.allTargetsWindowMs) ||
-      "0";
-    const storedTrainSelectionMode = this.safeGetSetting(this.storageKeys.trainSelectionMode) ||
-      this.safeGetStorage(this.storageKeys.trainSelectionMode) ||
-      "all";
-    const storedTargetSelectionWindowMs = this.safeGetSetting(this.storageKeys.targetSelectionWindowMs) ||
-      this.safeGetStorage(this.storageKeys.targetSelectionWindowMs) ||
-      "5000";
-    let storedMeterOpacity = this.safeGetSetting(this.storageKeys.meterFillOpacity) ||
-      this.safeGetStorage(this.storageKeys.meterFillOpacity);
+    const storedName = this.safeGetSetting(this.storageKeys.userName) || "";
+    const storedAllTargetsWindowMs = this.safeGetSetting(this.storageKeys.allTargetsWindowMs) || "0";
+    const storedTrainSelectionMode = this.safeGetSetting(this.storageKeys.trainSelectionMode) || "all";
+    const storedTargetSelectionWindowMs = this.safeGetSetting(this.storageKeys.targetSelectionWindowMs) || "5000";
+    let storedMeterOpacity = this.safeGetSetting(this.storageKeys.meterFillOpacity);
     if (this.safeGetSetting("dpsMeter.migration.opacityReset1") !== "done") {
       storedMeterOpacity = "80";
       this.safeSetSetting(this.storageKeys.meterFillOpacity, "80");
@@ -103,8 +96,7 @@ Object.assign(DpsApp.prototype, {
     const mainPlayerDpsBoldSetting = this.safeGetSetting(this.storageKeys.mainPlayerDpsBold);
     const storedMainPlayerDpsBold = mainPlayerDpsBoldSetting !== "false";
     const storedDefaultMeterMode = this.safeGetSetting(this.storageKeys.defaultMeterMode) || "bossTargets";
-    const storedTargetSelection = this.safeGetStorage(this.storageKeys.targetSelection);
-    const storedLanguage = this.safeGetStorage(this.storageKeys.language);
+    const storedLanguage = this.safeGetSetting(this.storageKeys.language);
     const storedTheme = this.safeGetSetting(this.storageKeys.theme);
 
     // Only the overlay tells the backend things at startup. Every window runs
@@ -165,7 +157,6 @@ Object.assign(DpsApp.prototype, {
         if (name === savedName) return;
         savedName = name;
         this.setUserName(name, { persist: true, syncBackend: true, manual: true });
-        this.safeSetSetting(this.storageKeys.userName, name);
       };
       this.characterNameInput.addEventListener("input", () => {
         clearTimeout(saveTimer);
@@ -475,7 +466,7 @@ Object.assign(DpsApp.prototype, {
 
     // Window opacity
     if (this.windowOpacityInput && this.windowOpacityValue) {
-      const storedWindowOpacity = this.safeGetStorage(this.storageKeys.windowOpacity);
+      const storedWindowOpacity = this.safeGetSetting(this.storageKeys.windowOpacity);
       const resolvedWindowOpacity = storedWindowOpacity !== null && String(storedWindowOpacity).trim() !== ""
         ? Math.max(0, Math.min(100, Math.round(Number(storedWindowOpacity))))
         : 40;
@@ -748,7 +739,6 @@ Object.assign(DpsApp.prototype, {
       (value) => {
         if (!value) return;
         this.settingsSelections.language = value;
-        this.safeSetStorage(this.storageKeys.language, value);
         this.i18n?.setLanguage?.(value, { persist: true });
       }
     );
@@ -921,7 +911,7 @@ Object.assign(DpsApp.prototype, {
       this.characterNameInput.value = trimmed;
     }
     if (persist) {
-      localStorage.setItem(this.storageKeys.userName, trimmed);
+      this.safeSetSetting(this.storageKeys.userName, trimmed);
     }
     if (syncBackend) {
       window.javaBridge?.setCharacterName?.(trimmed, manual);
@@ -942,7 +932,7 @@ Object.assign(DpsApp.prototype, {
   setOnlyShowUser(enabled, { persist = false } = {}) {
     this.onlyShowUser = !!enabled;
     if (persist) {
-      localStorage.setItem(this.storageKeys.onlyShowUser, String(this.onlyShowUser));
+      this.safeSetSetting(this.storageKeys.onlyShowUser, String(this.onlyShowUser));
     }
     if (!this.isCollapse) {
       this.fetchDps();
@@ -1049,7 +1039,7 @@ Object.assign(DpsApp.prototype, {
       ? mode
        : "lastHitByMe";
     if (persist) {
-      this.safeSetStorage(this.storageKeys.targetSelection, String(this.targetSelection));
+      this.safeSetSetting(this.storageKeys.targetSelection, String(this.targetSelection));
     }
     if (syncBackend) {
       window.javaBridge?.setTargetSelection?.(this.targetSelection);
@@ -1084,7 +1074,7 @@ Object.assign(DpsApp.prototype, {
   setDisplayMode(mode, { persist = false } = {}) {
     this.displayMode = mode === "totalDamage" || mode === "both" ? mode : "dps";
     if (persist) {
-      this.safeSetStorage(this.storageKeys.displayMode, this.displayMode);
+      this.safeSetSetting(this.storageKeys.displayMode, this.displayMode);
     }
     this.updateDisplayToggleLabel();
   },

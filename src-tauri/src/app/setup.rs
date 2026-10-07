@@ -291,6 +291,7 @@ pub fn run() {
             commands::identity::bind_local_actor_id,
             commands::identity::bind_local_nickname,
             commands::settings::clear_settings,
+            commands::settings::adopt_page_settings,
             commands::meter::reset_combat,
             commands::capture::is_admin,
             commands::settings::set_language,

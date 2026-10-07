@@ -2,6 +2,7 @@
 
 use tauri::Emitter;
 
+use crate::app::page_settings;
 use crate::app::setting_changes::{self, apply_encounter_timeout, ENCOUNTER_TIMEOUT_KEY};
 use crate::app::AppState;
 
@@ -38,6 +39,25 @@ pub(crate) fn update_settings(
         }
         let _ = app.emit("setting-changed", serde_json::json!({ "key": key, "value": value }));
     }
+}
+
+/// The page's old copy of the settings, handed over once (`app/page_settings.rs`).
+/// Saved to disk before it answers, since the page then deletes its copy.
+/// Returns every setting after the move.
+#[tauri::command]
+pub(crate) fn adopt_page_settings(
+    state: tauri::State<'_, AppState>,
+    values: std::collections::HashMap<String, String>,
+) -> std::collections::HashMap<String, String> {
+    let offered = values.len();
+    let moved = page_settings::adopt(&state.settings, values);
+    tracing::info!("Settings from the page's storage: {offered} found, {} moved to settings.json {moved:?}", moved.len());
+    if !moved.is_empty() {
+        if let Err(e) = state.settings.flush() {
+            tracing::warn!("Could not save the moved settings: {e}");
+        }
+    }
+    state.settings.get_all()
 }
 
 #[tauri::command]

@@ -12,30 +12,18 @@ const createI18n = ({
   let dungeonStrings = {};
   const listeners = new Set();
 
-  const safeGetStorage = (key) => {
+  // The language is a setting in settings.json, read through the bridge.
+  const readSetting = (key) => {
     try {
-      const bridgeValue = window.javaBridge?.getSetting?.(key);
-      if (bridgeValue !== undefined && bridgeValue !== null) {
-        return bridgeValue;
-      }
-    } catch {
-      // ignore
-    }
-    try {
-      return localStorage.getItem(key);
+      return window.javaBridge?.getSetting?.(key) ?? null;
     } catch {
       return null;
     }
   };
 
-  const safeSetStorage = (key, value) => {
+  const saveSetting = (key, value) => {
     try {
       window.javaBridge?.setSetting?.(key, value);
-    } catch {
-      // ignore
-    }
-    try {
-      localStorage.setItem(key, value);
     } catch {
       // ignore
     }
@@ -207,7 +195,7 @@ const createI18n = ({
     currentLanguage = next;
 
     if (persist) {
-      safeSetStorage(storageKey, next);
+      saveSetting(storageKey, next);
       // Each window holds its own strings: the others follow this change.
       window.__TAURI__?.event?.emit?.(LANGUAGE_EVENT, next);
     }
@@ -233,7 +221,7 @@ const createI18n = ({
   };
 
   const init = async () => {
-    const stored = safeGetStorage(storageKey);
+    const stored = readSetting(storageKey);
     await setLanguage(stored || defaultLanguage, { persist: false });
     // A language picked in another window (Settings): History, Details and
     // the meter showed the old one until they were reopened.

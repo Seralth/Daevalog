@@ -124,8 +124,10 @@
   }
 
   // --- Cached state ---
+  // Settings live in settings.json, which only the backend reads and writes.
+  // This is the window's copy, filled before any page code reads a setting
+  // (main.js waits for settingsReady).
   let settingsCache = {};
-  let settingsLoaded = false;
   let cachedDpsJson = null;      // latest DPS snapshot as JSON string
   let cachedPing = null;
   let cachedCaptureStatus = null;
@@ -145,19 +147,40 @@
     if (typeof v === "string") cachedAppVersion = v;
   }).catch(() => {});
 
-  // Load settings from Rust backend and merge with localStorage.
-  // localStorage acts as the synchronous fallback for first reads before invoke resolves.
-  invoke("get_settings").then((s) => {
-    if (s && typeof s === "object") {
-      // Merge backend settings into cache (backend is authoritative)
-      settingsCache = s;
-      settingsLoaded = true;
-      // Also sync to localStorage so future reads before invoke are accurate
-      for (const [k, v] of Object.entries(s)) {
-        try { localStorage.setItem(k, v); } catch {}
+  // Older builds also kept every setting in the page's own storage and read
+  // that copy when settings.json had no value, so Settings could show a value
+  // the backend did not use. What is left there is handed to the backend once
+  // (app/page_settings.rs decides what moves) and then removed. The page never
+  // reads its storage for settings again. Only the overlay hands over: it is
+  // the one window that changes backend state at startup.
+  const PAGE_SETTING_KEY = /^(dpsMeter\.|window\.|backend\.|historyViewMode$|historyShowTraining$)/;
+  const adoptPageSettings = () => {
+    if (viewMode !== "main") return null;
+    const old = {};
+    let storage = null;
+    try {
+      storage = window.localStorage;
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (key && PAGE_SETTING_KEY.test(key)) old[key] = storage.getItem(key);
       }
+    } catch {
+      return null;
     }
-  }).catch(() => { settingsLoaded = true; });
+    if (!Object.keys(old).length) return null;
+    return invoke("adopt_page_settings", { values: old }).then((all) => {
+      if (all && typeof all === "object") settingsCache = all;
+      for (const key of Object.keys(old)) {
+        try { storage.removeItem(key); } catch {}
+      }
+    });
+  };
+  const settingsReady = invoke("get_settings")
+    .then((s) => {
+      if (s && typeof s === "object") settingsCache = s;
+      return adoptPageSettings();
+    })
+    .catch((e) => console.error("[Daevalog] settings", e));
 
   // --- DPS data polling via events ---
   // The Rust backend emits "dps-update" every 500ms.
@@ -185,7 +208,6 @@
     const value = event?.payload?.value;
     if (typeof key !== "string") return;
     settingsCache[key] = String(value);
-    try { localStorage.setItem(key, String(value)); } catch {}
     window._dpsApp?.applyRemoteSettingChange?.(key, String(value));
   });
 
@@ -359,22 +381,23 @@
     },
 
     // --- Settings ---
+    // Resolves once this window's copy of settings.json is loaded.
+    settingsReady,
     getSetting(key) {
-      return settingsCache[key] ?? localStorage.getItem(key);
+      return settingsCache[key] ?? null;
     },
     setSetting(key, value) {
       settingsCache[key] = String(value);
-      localStorage.setItem(key, String(value));
       invoke("update_settings", { key, value: String(value) }).catch(() => {});
       // Reload backend i18n data when language changes
       if (key === "dpsMeter.language") {
         invoke("set_language", { language: String(value) }).catch(() => {});
       }
     },
+    // Resolves once the backend has cleared them.
     clearAllSettings() {
-      localStorage.clear();
       settingsCache = {};
-      invoke("clear_settings").catch(() => {});
+      return invoke("clear_settings").catch(() => {});
     },
 
     // --- DPS & Combat ---
