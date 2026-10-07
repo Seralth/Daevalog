@@ -4,9 +4,10 @@
 //! A fight is the local player's and their summons' hits on one target, cut
 //! where they stop for more than 15 s. Times are capture ms, as in the
 //! `hit_flags` lines. Per fight one `fight` line, one `buff` line per timed
-//! buff or debuff of yours (times from the fight's start, uptime in the
-//! fight), then the whole fight as one `timeline {json}` line, other
-//! players' debuffs on the target and passives included.
+//! buff or debuff of yours (its name, times from the fight's start, uptime
+//! in the fight), then the whole fight as one `timeline {json}` line, other
+//! players' debuffs on the target and passives included, with the game's
+//! English names of the abnormals and stats.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -79,6 +80,9 @@ fn read_hit(line: &str) -> Option<Hit> {
 pub(crate) struct Gather {
     pub tap: HitTap,
     pub timeline: Timeline,
+    /// The game's English names of abnormals and of stats.
+    abnormal_names: HashMap<u32, String>,
+    stat_names: HashMap<u16, String>,
     hits: Vec<Hit>,
     /// (from ms, entity) each time the local player's id changed.
     local: Vec<(i64, i32)>,
@@ -89,13 +93,22 @@ pub(crate) struct Gather {
 }
 
 impl Gather {
-    /// With the game data in `data_dir`: each abnormal's stack limit.
+    /// With the game data in `data_dir`: each abnormal's stack limit, and
+    /// the names of abnormals and stats.
     pub(crate) fn new(data_dir: &std::path::Path) -> Gather {
+        let read = |file: &str| -> Value {
+            std::fs::read_to_string(data_dir.join(file)).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+        };
+        let names = |table: &Value| -> Vec<(String, String)> {
+            let entries = table.as_object().into_iter().flatten();
+            entries.filter_map(|(id, name)| Some((id.clone(), name.as_str()?.to_string()))).collect()
+        };
         let mut g = Gather::default();
-        let table: Value = std::fs::read_to_string(data_dir.join("abnormals.json"))
-            .ok()
-            .and_then(|t| serde_json::from_str(&t).ok())
-            .unwrap_or_default();
+        g.abnormal_names = names(&read("i18n/abnormals/en.json")).into_iter().filter_map(|(id, n)| Some((id.parse().ok()?, n))).collect();
+        // A stat's English name, else the game's own name for it (EStat).
+        let stats = names(&read("stats.json")["stats"]).into_iter().chain(names(&read("i18n/stats/en.json")));
+        g.stat_names = stats.filter_map(|(id, n)| Some((id.parse().ok()?, n))).collect();
+        let table = read("abnormals.json");
         let limits = table["abnormals"]
             .as_object()
             .into_iter()
@@ -244,6 +257,7 @@ impl Gather {
         for t in &tracks {
             let source = if local.contains(&t.owner) { "self" } else if t.owner == target { "target" } else { "other" };
             let name = t.skills.first().map(|&s| skills.get_skill_name(s as i32)).unwrap_or_default();
+            let own_name = self.abnormal_names.get(&t.abnormal).map_or("", String::as_str);
             // Time on in the fight, and the stack count weighted by it.
             let (mut on, mut weighted) = (0i64, 0i64);
             for (k, &(at, n)) in t.stacks.iter().enumerate() {
@@ -256,7 +270,7 @@ impl Gather {
             }
             if !t.endless && source == "self" {
                 lines.push(format!(
-                    "buff {} {} {} via {name:?} from {source} lv {} {:+.1} .. {} s, {}, uptime {:.0}%, stacks {:.1} avg {} max",
+                    "buff {} {} {} {own_name:?} via {name:?} from {source} lv {} {:+.1} .. {} s, {}, uptime {:.0}%, stacks {:.1} avg {} max",
                     who(t.entity).unwrap_or("-"),
                     t.entity,
                     t.abnormal,
@@ -273,6 +287,7 @@ impl Gather {
                 "on": who(t.entity),
                 "entity": t.entity,
                 "abnormal": t.abnormal,
+                "name": own_name,
                 "source": source,
                 "source_entity": t.owner,
                 "skills": t.skills,
@@ -287,6 +302,9 @@ impl Gather {
             }));
         }
         let (at_start, changes) = stats_in(&self.timeline.stats, &local, start, end);
+        let stat_ids = at_start.keys().copied().chain(changes.iter().filter_map(|c| c["stat"].as_u64().map(|s| s as u16)));
+        let stat_names: BTreeMap<u16, &str> =
+            stat_ids.filter_map(|id| Some((id, self.stat_names.get(&id)?.as_str()))).collect();
         let json = json!({
             "target": target,
             "target_name": target_name,
@@ -300,7 +318,7 @@ impl Gather {
                 Value::Object(f)
             }).collect::<Vec<_>>(),
             "buffs": buffs,
-            "stats": { "at_start": at_start, "changes": changes },
+            "stats": { "at_start": at_start, "changes": changes, "names": stat_names },
         });
         (lines, json)
     }
@@ -373,12 +391,16 @@ mod tests {
             (Some("self"), Some("self"), Some(on), Some(off))
         );
         assert_eq!(buff["stacks"], serde_json::json!([[on, 1], [off, 0]]));
+        assert_eq!(buff["name"], "Spirit's Benediction");
+        assert!(out.iter().any(|l| l.starts_with("buff self 6759 161900001 \"Spirit's Benediction\" via ")), "{out:#?}");
         assert_eq!(fight["stats"]["at_start"]["379"], 4100);
+        assert_eq!(fight["stats"]["names"]["379"], "PvE Damage Boost");
         // The spirit's passive from its spawn, at its summon's level.
         let passive = fight["buffs"].as_array().unwrap().iter().find(|b| b["abnormal"] == 161_002_304).expect("the passive");
         assert_eq!(
             (passive["on"].as_str(), passive["entity"].as_i64(), passive["level"].as_i64(), passive["endless"].as_bool()),
             (Some("summon"), Some(28113), Some(13), Some(true))
         );
+        assert_eq!(passive["name"], "Fire Spirit");
     }
 }
