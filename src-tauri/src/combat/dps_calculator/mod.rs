@@ -1178,6 +1178,35 @@ mod tests {
     }
 
     #[test]
+    fn details_lists_the_healing_of_fights_at_once_once_and_the_same_every_read() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        s.append_nickname_authoritative(2259, "Me");
+        spawn(&s, 800, BOSS);
+        let calc = meter_with_npcs(&s);
+        hits(&s, 2259, 800, 1_000, 20_000); // the boss
+        hits(&s, 2259, 801, 5_000, 8_000); // an add
+        hits(&s, 2259, 802, 12_000, 15_000); // another add
+        for at in (1_000..=20_000).step_by(1_000) {
+            s.append_heal(2259, 17_010_000, 100, false, at);
+        }
+        let each: Vec<i64> = [800, 801, 802]
+            .iter()
+            .map(|&t| calc.get_target_details(t, None).heal_skills.iter().map(|e| e.dmg).sum())
+            .collect();
+        assert_eq!(each, vec![2_000, 400, 400], "each target holds the ticks of its own span");
+        let context = calc.get_details_context();
+        let listed: Vec<(i32, i32, i64, i32, bool)> =
+            context.heal_skills.iter().map(|e| (e.actor_id, e.code, e.dmg, e.time, e.is_dot)).collect();
+        assert_eq!(listed, vec![(2259, 17_010_000, 2_000, 20, false)], "the fight's healing, each tick once");
+        for _ in 0..8 {
+            let again = calc.get_details_context();
+            assert_eq!(serde_json::to_value(&again.heal_skills).unwrap(), serde_json::to_value(&context.heal_skills).unwrap());
+        }
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn damage_totals_past_two_billion_do_not_wrap() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));

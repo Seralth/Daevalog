@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::Ordering;
 
 use super::damage::is_ours;
-use super::heal::fight_heals;
+use super::heal::fights_heals;
 use super::taken::taken_in;
 use super::{
     DataStorage, Encounter, EndedSegment, Inner, SegmentIdentity, TargetCombatData, BOSS_HOLD_MAX_MS,
@@ -68,7 +68,7 @@ pub(super) fn retire_segment(inner: &mut Inner, data: TargetCombatData) {
         inner.ended_segments.remove(0);
     }
     let max_hp = inner.mob_hp_data.get(&tid).copied().unwrap_or(0);
-    let heals = fight_heals(inner, &data);
+    let heals = fights_heals(inner, &[&data]);
     let taken = taken_in(inner, &[&data], i64::MIN);
     let identity = SegmentIdentity {
         summons: super::entities::owners_in(inner, std::iter::once(&data)),

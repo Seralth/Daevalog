@@ -29,19 +29,30 @@ impl DataStorage {
         heals_between(&self.inner.read(), from_ms, to_ms)
     }
 
-    /// One fight's healing: see `fight_heals`.
+    /// One fight's healing: see `fights_heals`.
     pub fn fight_heals(&self, fight: &TargetCombatData) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
-        fight_heals(&self.inner.read(), fight)
+        fights_heals(&self.inner.read(), &[fight])
+    }
+
+    /// The healing of several fights at once, each tick once: see `fights_heals`.
+    pub fn fights_heals(&self, fights: &[&TargetCombatData]) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
+        fights_heals(&self.inner.read(), fights)
     }
 }
 
-/// The healing done during a fight by the people in it: you, your party, and
-/// whoever hit the fight's target, their summons included. Players nearby who
-/// only healed are someone else's fight (strangers at the next training
-/// dummy filled a solo dummy fight's HEAL, 2026-10-05).
-pub(super) fn fight_heals(inner: &Inner, fight: &TargetCombatData) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
-    let fighters: HashSet<i32> = fight.actors.keys().map(|&a| summon_resolver::resolve(a, &inner.summon_storage)).collect();
-    let mut out = heals_between(inner, fight.first_damage_time, fight.last_damage_time);
+/// The healing done during fights by the people in them: you, your party, and
+/// whoever hit one of the fights' targets, their summons included. Players
+/// nearby who only healed are someone else's fight (strangers at the next
+/// training dummy filled a solo dummy fight's HEAL, 2026-10-05). Several
+/// fights take the ticks while any of them was being fought, each tick once,
+/// the gaps between pulls left out as the fight time leaves them out.
+pub(super) fn fights_heals(inner: &Inner, fights: &[&TargetCombatData]) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
+    let fighters: HashSet<i32> = fights.iter()
+        .flat_map(|f| f.actors.keys())
+        .map(|&a| summon_resolver::resolve(a, &inner.summon_storage))
+        .collect();
+    let spans = merged_spans(fights.iter().map(|f| (f.first_damage_time, f.last_damage_time)));
+    let mut out = heals_within(inner, &spans);
     out.retain(|&actor, _| {
         let owner = summon_resolver::resolve(actor, &inner.summon_storage);
         fighters.contains(&owner)
@@ -78,8 +89,28 @@ fn prune_heal_ticks(inner: &mut Inner) {
 }
 
 pub(super) fn heals_between(inner: &Inner, from_ms: i64, to_ms: i64) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
+    heals_within(inner, &[(from_ms, to_ms)])
+}
+
+/// Spans that overlap or touch joined into one, in time order.
+fn merged_spans(spans: impl Iterator<Item = (i64, i64)>) -> Vec<(i64, i64)> {
+    let mut spans: Vec<(i64, i64)> = spans.collect();
+    spans.sort_unstable();
+    let mut out: Vec<(i64, i64)> = Vec::new();
+    for (first, last) in spans {
+        match out.last_mut() {
+            Some((_, end)) if first <= *end => *end = (*end).max(last),
+            _ => out.push((first, last)),
+        }
+    }
+    out
+}
+
+/// Healing done inside any of these spans (each from..=to), by anyone.
+fn heals_within(inner: &Inner, spans: &[(i64, i64)]) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
     let mut out: HashMap<i32, HashMap<(i32, bool), HealSkillData>> = HashMap::new();
-    for t in inner.heal_ticks.iter().filter(|t| (from_ms..=to_ms).contains(&t.at) && !is_mob(inner, t.actor)) {
+    let inside = |at: i64| spans.iter().any(|&(from, to)| (from..=to).contains(&at));
+    for t in inner.heal_ticks.iter().filter(|t| inside(t.at) && !is_mob(inner, t.actor)) {
         let e = out.entry(t.actor).or_default().entry((t.skill, t.is_hot)).or_default();
         e.total_heal += t.amount;
         e.tick_count = e.tick_count.saturating_add(1);
@@ -157,6 +188,35 @@ mod tests {
         let inner = s.inner.read();
         assert_eq!(inner.heal_ticks.len(), PRUNE_EVERY);
         assert_eq!(inner.heal_ticks.front().map(|t| t.at), Some(200_000));
+    }
+
+    #[test]
+    fn fights_at_once_take_each_tick_once_and_leave_out_the_gaps() {
+        let s = DataStorage::new();
+        let on = |target: i32, at: i64| {
+            let mut p = ParsedDamagePacket::new();
+            p.set_actor_id(1000);
+            p.set_target_id(target);
+            p.set_skill_code(11_010_000);
+            p.set_damage(100);
+            p.set_timestamp(at);
+            s.append_damage(p);
+        };
+        on(900, 0);
+        on(900, 10_000); // a boss, 0 to 10 s
+        on(901, 4_000);
+        on(901, 6_000); // its add, 4 to 6 s
+        on(902, 30_000);
+        on(902, 35_000); // the next pull, 30 to 35 s
+        for at in [2_000, 5_000, 20_000, 32_000] {
+            s.append_heal(1000, 17_010_000, 100, false, at);
+        }
+        let inner = s.inner.read();
+        let fights: Vec<&TargetCombatData> = [900, 901, 902].iter().map(|t| &inner.target_combat[t]).collect();
+        let each: i32 = fights.iter().map(|f| fights_heals(&inner, &[f])[&1000][&(17_010_000, false)].tick_count).sum();
+        assert_eq!(each, 4, "the tick at 5 s is in the boss's span and the add's");
+        let all = &fights_heals(&inner, &fights)[&1000][&(17_010_000, false)];
+        assert_eq!((all.tick_count, all.total_heal), (3, 300), "once each; the tick at 20 s fell between pulls");
     }
 
     #[test]

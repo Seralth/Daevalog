@@ -76,6 +76,12 @@ pub struct DetailsContext {
     /// count a hit taken during two fights twice.
     #[serde(default)]
     pub taken_skills: Vec<super::taken::TakenSkillEntry>,
+    /// The healing done over the listed targets' fights, per healer and skill,
+    /// each tick once (`dmg` = heal amount, `time` = tick count, `is_dot` =
+    /// HoT). Details shows it on every target: each target's own list holds
+    /// the ticks of that target's span, so targets fought at once overlap.
+    #[serde(default)]
+    pub heal_skills: Vec<DetailSkillEntry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

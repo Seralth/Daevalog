@@ -27,10 +27,12 @@ impl DpsCalculator {
         // TRAIN: the dummies on the meter. Details' "All" merged every dummy
         // in the area, other players' too.
         let train = self.target_selection_mode == TargetSelectionMode::TrainTargets;
+        let mut listed: Vec<&TargetCombatData> = Vec::new();
         for (&target_id, target_data) in &combat_data {
             if train && !self.displayed_targets.contains(&target_id) {
                 continue;
             }
+            listed.push(target_data);
             let mut actor_damage: HashMap<i32, i64> = HashMap::new();
             let canonical = build_nickname_canonical_map_from_aggregates(
                 &target_data.actors.iter().map(|(&id, ad)| (id, ad.total_damage)).collect(),
@@ -109,6 +111,22 @@ impl DpsCalculator {
         let mut taken_skills: Vec<TakenSkillEntry> = taken_skills.into_values().collect();
         taken_skills.sort_by_key(|e| (e.actor_id, e.code));
 
+        // Healing over the listed fights, on the actor of the same name: each
+        // target's own list holds the ticks of its span, so targets fought at
+        // once would count a tick twice.
+        let mut heal_skills: HashMap<(i32, i32), DetailSkillEntry> = HashMap::new();
+        for (actor_id, skills) in self.data_storage.fights_heals(&listed) {
+            let owner = summon_resolver::resolve(actor_id, &summon_data);
+            if owner <= 0 { continue; }
+            let nick = resolve_nickname(owner, &nickname_data, &summon_data);
+            let uid = by_name.get(nick.as_str()).copied().unwrap_or(owner);
+            for ((code, is_hot), hd) in skills {
+                self.add_heal(&mut heal_skills, uid, code, is_hot, &hd);
+            }
+        }
+        let mut heal_skills: Vec<DetailSkillEntry> = heal_skills.into_values().collect();
+        heal_skills.sort_by_key(|e| (e.actor_id, e.code, e.is_dot));
+
         let actors: Vec<DetailsActorSummary> = actor_meta.iter()
             .map(|(&id, (nick, job))| {
                 let job_id = if id == UNATTRIBUTED_ID {
@@ -163,6 +181,7 @@ impl DpsCalculator {
             actors,
             numbers,
             taken_skills,
+            heal_skills,
         }
     }
 
@@ -244,6 +263,52 @@ impl DpsCalculator {
         let heals = self.fight_heals(target_data);
         let taken = self.data_storage.fight_taken(target_data);
         self.details_for(target_data, max_hp, &heals, &taken, actor_ids, None)
+    }
+
+    /// Adds one healer's ticks of one skill to a heal list, as Details lists
+    /// healing: `dmg` = heal amount, `time` = tick count, `is_dot` = HoT.
+    fn add_heal(&self, heals: &mut HashMap<(i32, i32), DetailSkillEntry>, uid: i32, skill_code: i32, is_hot: bool, hd: &HealSkillData) {
+        let entry = heals.entry((uid, skill_code + if is_hot { 1_000_000_000 } else { 0 })).or_insert_with(|| {
+            let mut name = self.skill_lookup.lookup_skill_name(skill_code);
+            if is_hot && !name.is_empty() {
+                name = format!("{} - HoT", name);
+            }
+            let job = JobClass::convert_from_skill(skill_code)
+                .filter(|_| uid != UNATTRIBUTED_ID)
+                .map(|j| j.class_name().to_string())
+                .unwrap_or_default();
+            DetailSkillEntry {
+                actor_id: uid,
+                code: skill_code,
+                name,
+                time: 0,
+                dmg: 0,
+                multi_hit_count: 0,
+                multi_hit_damage: 0,
+                multi_hit_hits: 0,
+                min_dmg: 0,
+                max_dmg: 0,
+                crit: 0,
+                shield_block: 0,
+                parry: 0,
+                back: 0,
+                frontal: 0,
+                perfect: 0,
+                double: 0,
+                iron_wall: 0,
+                regeneration: 0,
+                perfect_block: 0,
+                miss: 0,
+                resist: 0,
+                regen: 0,
+                job,
+                is_dot: is_hot,
+                hit_timestamps: Vec::new(),
+                specs: Vec::new(),
+            }
+        });
+        entry.dmg = entry.dmg.saturating_add(hd.total_heal);
+        entry.time = entry.time.saturating_add(hd.tick_count);
     }
 
     /// The live data of these targets only; in ENC with what a boss pull
@@ -407,46 +472,7 @@ impl DpsCalculator {
                 if !filter.contains(&uid) { continue; }
             }
             for (&(skill_code, is_hot), hd) in skills {
-                let mut skill_name = self.skill_lookup.lookup_skill_name(skill_code);
-                if is_hot && !skill_name.is_empty() {
-                    skill_name = format!("{} - HoT", skill_name);
-                }
-                let job = JobClass::convert_from_skill(skill_code)
-                    .filter(|_| uid != UNATTRIBUTED_ID)
-                    .map(|j| j.class_name().to_string())
-                    .unwrap_or_default();
-                let key = (uid, skill_code + if is_hot { 1_000_000_000 } else { 0 });
-                let entry = heal_map.entry(key).or_insert_with(|| DetailSkillEntry {
-                    actor_id: uid,
-                    code: skill_code,
-                    name: skill_name,
-                    time: 0,
-                    dmg: 0,
-                    multi_hit_count: 0,
-                    multi_hit_damage: 0,
-                    multi_hit_hits: 0,
-                    min_dmg: 0,
-                    max_dmg: 0,
-                    crit: 0,
-                    shield_block: 0,
-                    parry: 0,
-                    back: 0,
-                    frontal: 0,
-                    perfect: 0,
-                    double: 0,
-                    iron_wall: 0,
-                    regeneration: 0,
-                    perfect_block: 0,
-                    miss: 0,
-                    resist: 0,
-                    regen: 0,
-                    job,
-                    is_dot: is_hot,
-                    hit_timestamps: Vec::new(),
-                    specs: Vec::new(),
-                });
-                entry.dmg = entry.dmg.saturating_add(hd.total_heal);
-                entry.time = entry.time.saturating_add(hd.tick_count);
+                self.add_heal(&mut heal_map, uid, skill_code, is_hot, hd);
             }
         }
 
