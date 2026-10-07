@@ -408,8 +408,10 @@
     "encColumns": {
       "title": "ENC 模式",
       "hint": "遭遇战何时结束，以及 ENC 模式下每行显示的内容。窗口较窄时从末尾开始隐藏列。",
-      "encDps": "ENCDPS",
-      "dps": "DPS（自身战斗时间）",
+      "encDps": "DPS",
+      "encDpsHint": "整场战斗的每秒伤害。",
+      "dps": "活跃DPS",
+      "dpsHint": "从玩家第一次命中到最后一次命中的每秒伤害。",
       "pct": "伤害 %",
       "total": "总伤害",
       "crit": "暴击 %",
@@ -458,8 +460,8 @@
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/秒",
     "columns": {
-      "encDps": "ENC",
-      "dps": "DPS",
+      "encDps": "DPS",
+      "dps": "活跃",
       "pct": "%",
       "total": "总计",
       "crit": "CRI",

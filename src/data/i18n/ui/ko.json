@@ -408,8 +408,10 @@
     "encColumns": {
       "title": "ENC 모드",
       "hint": "교전이 끝나는 시점과 ENC 모드에서 각 줄에 표시할 항목. 미터가 좁으면 뒤쪽 열부터 숨겨집니다.",
-      "encDps": "ENCDPS",
-      "dps": "DPS (본인 전투 시간)",
+      "encDps": "DPS",
+      "encDpsHint": "전투 전체의 초당 피해.",
+      "dps": "액티브 DPS",
+      "dpsHint": "플레이어의 첫 타격부터 마지막 타격까지의 초당 피해.",
       "pct": "피해 %",
       "total": "총 피해",
       "crit": "치명타 %",
@@ -458,8 +460,8 @@
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/초",
     "columns": {
-      "encDps": "ENC",
-      "dps": "DPS",
+      "encDps": "DPS",
+      "dps": "액티브",
       "pct": "%",
       "total": "합계",
       "crit": "CRI",

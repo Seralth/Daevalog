@@ -408,8 +408,10 @@
     "encColumns": {
       "title": "Modo ENC",
       "hint": "Cuándo termina un encuentro y qué muestra cada fila en el modo ENC. Un medidor estrecho quita columnas desde el final.",
-      "encDps": "ENCDPS",
-      "dps": "DPS (tiempo activo propio)",
+      "encDps": "DPS",
+      "encDpsHint": "Daño por segundo durante todo el combate.",
+      "dps": "DPS activo",
+      "dpsHint": "Daño por segundo desde el primer golpe del jugador hasta el último.",
       "pct": "Daño %",
       "total": "Daño total",
       "crit": "Crít %",
@@ -458,8 +460,8 @@
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {
-      "encDps": "ENC",
-      "dps": "DPS",
+      "encDps": "DPS",
+      "dps": "DPS act.",
       "pct": "%",
       "total": "Total",
       "crit": "CRÍT",

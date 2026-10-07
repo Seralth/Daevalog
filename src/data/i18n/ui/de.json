@@ -408,8 +408,10 @@
     "encColumns": {
       "title": "ENC-Modus",
       "hint": "Wann eine Begegnung endet und was jede Zeile im ENC-Modus zeigt. Ein schmales Fenster lässt Spalten von hinten weg.",
-      "encDps": "ENCDPS",
-      "dps": "DPS (eigene aktive Zeit)",
+      "encDps": "DPS",
+      "encDpsHint": "Schaden pro Sekunde über den ganzen Kampf.",
+      "dps": "Aktiv-DPS",
+      "dpsHint": "Schaden pro Sekunde vom ersten bis zum letzten Treffer des Spielers.",
       "pct": "Schaden %",
       "total": "Gesamtschaden",
       "crit": "Krit %",
@@ -458,8 +460,8 @@
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {
-      "encDps": "ENC",
-      "dps": "DPS",
+      "encDps": "DPS",
+      "dps": "Akt. DPS",
       "pct": "%",
       "total": "Ges.",
       "crit": "CRI",

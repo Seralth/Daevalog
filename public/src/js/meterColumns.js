@@ -1,5 +1,7 @@
 // The figures a meter row can show in Encounter mode (ENC), in the order they
-// sit on the row. Until a choice is saved, rows keep the usual readout: the
+// sit on the row. The keys are saved, so they never change: `encDps` is the
+// DPS over the whole fight, `dps` the Active DPS from the player's first hit to
+// their last. Until a choice is saved, rows keep the usual readout: the
 // figure the display toggle picks, then damage %.
 //
 // `width` is the room a figure needs at the row's type sizes, in px. The first
@@ -7,8 +9,10 @@
 // columns from the end of the list until the rest fit.
 (function (root) {
   const COLUMNS = [
-    { key: "encDps", label: "ENCDPS", short: "ENC", width: 46, firstWidth: 62 },
-    { key: "dps", label: "DPS (own active time)", short: "DPS", width: 46, firstWidth: 62 },
+    { key: "encDps", label: "DPS", short: "DPS", width: 46, firstWidth: 62,
+      hint: "Damage per second over the whole fight." },
+    { key: "dps", label: "Active DPS", short: "Act. DPS", width: 46, firstWidth: 62,
+      hint: "Damage per second from the player's first hit to their last." },
     { key: "pct", label: "Damage %", short: "%", width: 36, firstWidth: 52 },
     { key: "total", label: "Total damage", short: "Total", width: 40, firstWidth: 54 },
     { key: "crit", label: "Crit %", short: "CRI", width: 32, firstWidth: 44 },

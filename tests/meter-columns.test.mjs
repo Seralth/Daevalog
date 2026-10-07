@@ -72,6 +72,25 @@ test("each column shows its own figure", () => {
   assert.equal(C.cellText("crit", { hits: 0 }, fmt, 0), "-");
 });
 
+test("DPS is the whole fight and Active DPS the player's own time; the saved keys stay", () => {
+  const C = columns();
+  const col = (key) => C.COLUMNS.find((c) => c.key === key);
+  // encDps shows row.dps (whole fight), dps shows row.activeDps (first to last hit).
+  assert.equal(C.cellText("encDps", { dps: 1, activeDps: 2 }, fmt, 0), "1");
+  assert.equal(C.cellText("dps", { dps: 1, activeDps: 2 }, fmt, 0), "2");
+  assert.equal(col("encDps").label, "DPS");
+  assert.equal(col("encDps").short, "DPS");
+  assert.equal(col("dps").label, "Active DPS");
+  const ui = (lang) => JSON.parse(read(`../src/data/i18n/ui/${lang}.json`));
+  for (const lang of ["en", "de", "es", "fr", "ja", "ko", "pt", "ru", "zh-Hans", "zh-Hant"]) {
+    const { settings, meter } = ui(lang);
+    assert.equal(settings.encColumns.encDps, "DPS", lang);
+    assert.equal(meter.columns.encDps, "DPS", lang);
+    assert.match(settings.encColumns.dps, /DPS/, lang);
+    assert.doesNotMatch(JSON.stringify([settings.encColumns, meter.columns]), /ENC ?DPS|"ENC"/, lang);
+  }
+});
+
 test("rows carry the backend's ENC figures, and only ENC uses the columns", () => {
   const C = columns();
   const dps = app(C);

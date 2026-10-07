@@ -408,8 +408,10 @@
     "encColumns": {
       "title": "Mode ENC",
       "hint": "Quand une rencontre se termine et ce que chaque ligne affiche en mode ENC. Un meter étroit retire les colonnes en partant de la fin.",
-      "encDps": "ENCDPS",
-      "dps": "DPS (temps actif propre)",
+      "encDps": "DPS",
+      "encDpsHint": "Dégâts par seconde sur tout le combat.",
+      "dps": "DPS actif",
+      "dpsHint": "Dégâts par seconde du premier coup du joueur à son dernier.",
       "pct": "Dégâts %",
       "total": "Dégâts totaux",
       "crit": "Crit %",
@@ -458,8 +460,8 @@
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {
-      "encDps": "ENC",
-      "dps": "DPS",
+      "encDps": "DPS",
+      "dps": "DPS act.",
       "pct": "%",
       "total": "Total",
       "crit": "CRI",

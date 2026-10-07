@@ -408,8 +408,10 @@
     "encColumns": {
       "title": "Режим ENC",
       "hint": "Когда заканчивается бой и что показывает каждая строка в режиме ENC. В узком окне столбцы убираются с конца.",
-      "encDps": "ENCDPS",
-      "dps": "DPS (своё активное время)",
+      "encDps": "DPS",
+      "encDpsHint": "Урон в секунду за весь бой.",
+      "dps": "Активный DPS",
+      "dpsHint": "Урон в секунду от первого удара игрока до последнего.",
       "pct": "Урон %",
       "total": "Общий урон",
       "crit": "Крит %",
@@ -458,8 +460,8 @@
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {
-      "encDps": "ENC",
-      "dps": "DPS",
+      "encDps": "DPS",
+      "dps": "Акт. DPS",
       "pct": "%",
       "total": "Всего",
       "crit": "CRI",

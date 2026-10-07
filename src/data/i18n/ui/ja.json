@@ -408,8 +408,10 @@
     "encColumns": {
       "title": "ENCモード",
       "hint": "エンカウントの終了条件と、ENCモードで各行に表示する項目。幅が狭いと後ろの列から省かれます。",
-      "encDps": "ENCDPS",
-      "dps": "DPS（自分の戦闘時間）",
+      "encDps": "DPS",
+      "encDpsHint": "戦闘全体の秒間ダメージ。",
+      "dps": "アクティブDPS",
+      "dpsHint": "プレイヤーの最初のヒットから最後のヒットまでの秒間ダメージ。",
       "pct": "ダメージ %",
       "total": "総ダメージ",
       "crit": "クリティカル %",
@@ -458,8 +460,8 @@
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {
-      "encDps": "ENC",
-      "dps": "DPS",
+      "encDps": "DPS",
+      "dps": "アクティブ",
       "pct": "%",
       "total": "合計",
       "crit": "CRI",

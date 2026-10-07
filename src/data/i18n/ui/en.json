@@ -408,8 +408,10 @@
     "encColumns": {
       "title": "ENC mode",
       "hint": "When an encounter ends, and what each row shows in ENC mode. A narrow meter drops columns from the end.",
-      "encDps": "ENCDPS",
-      "dps": "DPS (own active time)",
+      "encDps": "DPS",
+      "encDpsHint": "Damage per second over the whole fight.",
+      "dps": "Active DPS",
+      "dpsHint": "Damage per second from the player's first hit to their last.",
       "pct": "Damage %",
       "total": "Total damage",
       "crit": "Crit %",
@@ -458,8 +460,8 @@
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/s",
     "columns": {
-      "encDps": "ENC",
-      "dps": "DPS",
+      "encDps": "DPS",
+      "dps": "Act. DPS",
       "pct": "%",
       "total": "Total",
       "crit": "CRI",

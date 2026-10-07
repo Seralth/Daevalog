@@ -1232,8 +1232,9 @@ class DpsApp {
         totalDamage,
         damageContribution,
         combatPower,
-        // For the ENC columns: DPS over the player's own active time and over
-        // the last 10/30/60 s, direct hits, crits among them, biggest hit.
+        // For the ENC columns: Active DPS (from the player's first hit to
+        // their last), DPS over the last 10/30/60 s, direct hits, crits among
+        // them, biggest hit.
         activeDps: num(value?.activeDps),
         last10Dps: num(value?.last10Dps),
         last30Dps: num(value?.last30Dps),
@@ -2069,6 +2070,10 @@ class DpsApp {
       text.className = "settingsToggleLabel settingsLabel";
       text.dataset.i18n = `settings.encColumns.${col.key}`;
       text.textContent = this.i18n?.t(`settings.encColumns.${col.key}`, col.label) ?? col.label;
+      if (col.hint) {
+        text.dataset.i18nTitle = `settings.encColumns.${col.key}Hint`;
+        text.title = this.i18n?.t(`settings.encColumns.${col.key}Hint`, col.hint) ?? col.hint;
+      }
       const control = document.createElement("span");
       control.className = "settingsToggleControl";
       const input = document.createElement("input");

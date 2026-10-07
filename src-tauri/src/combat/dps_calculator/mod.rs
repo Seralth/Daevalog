@@ -639,7 +639,7 @@ mod tests {
     }
 
     #[test]
-    fn encounter_rows_carry_encdps_own_dps_and_last_n() {
+    fn encounter_rows_carry_dps_active_dps_and_last_n() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));
         spawn(&s, 800, 1);
@@ -655,9 +655,9 @@ mod tests {
         let me = &shown.map[&2259];
         let other = &shown.map[&3000];
         let close = |a: f64, b: f64| (a - b).abs() < 0.01;
-        assert!(close(me.dps, 70.0 * 500.0 / 69.0), "ENCDPS over the encounter");
+        assert!(close(me.dps, 70.0 * 500.0 / 69.0), "DPS over the whole encounter");
         assert!(close(other.dps, 3.0 * 500.0 / 69.0));
-        assert!(close(other.active_dps, 3.0 * 500.0 / 2.0), "own DPS over its own 2 s");
+        assert!(close(other.active_dps, 3.0 * 500.0 / 2.0), "Active DPS over its own 2 s");
         assert!(close(me.last10_dps, 11.0 * 500.0 / 10.0), "60..70 s");
         assert!(close(me.last60_dps, 61.0 * 500.0 / 60.0), "10..70 s");
         crate::clock::set_override(None);
@@ -1706,7 +1706,7 @@ mod tests {
             rows.sort_by(|a, b| b.1.amount.total_cmp(&a.1.amount));
             for (uid, r) in rows.iter().take(4) {
                 let you = if me == Some(**uid as i64) { " (you)" } else { "" };
-                eprintln!("      {uid}{you}: dmg {:.0} encdps {:.0} own {:.0} last10/30/60 {:.0}/{:.0}/{:.0}",
+                eprintln!("      {uid}{you}: dmg {:.0} dps {:.0} active {:.0} last10/30/60 {:.0}/{:.0}/{:.0}",
                     r.amount, r.dps, r.active_dps, r.last10_dps, r.last30_dps, r.last60_dps);
             }
         };
