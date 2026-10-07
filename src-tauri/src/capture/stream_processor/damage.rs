@@ -388,8 +388,8 @@ impl StreamProcessor {
                 // Double 0x08 (the game's HardHit, 강타). From the 2026-10-04
                 // captures (hit sizes, issue #5): Shield Block 0x01, Parry 0x02,
                 // Iron Wall 0x10, Regeneration 0x20, Perfect Block 0x40. 0x80
-                // is not a plotter field: it mirrors switch bit 0x10 and is
-                // fixed per skill.
+                // is a Power Shard hit: one shard leaves the bag per flagged
+                // cast (counted against the bag, 2026-10-07).
                 raw_mods = Some(plotter.flags);
                 specials = special_damage::from_hit_flags(plotter.flags);
                 // Angle byte. Verified against the combat log and the game's
