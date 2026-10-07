@@ -1152,6 +1152,32 @@ mod tests {
     }
 
     #[test]
+    fn details_lists_a_hit_taken_during_two_fights_once() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        s.append_nickname_authoritative(2259, "Me");
+        spawn(&s, 800, BOSS);
+        spawn(&s, 801, BOSS);
+        let calc = meter_with_npcs(&s);
+        hits(&s, 2259, 800, 1_000, 8_000);
+        hits(&s, 2259, 801, 2_000, 9_000);
+        taken(&s, 800, 2259, 4_000, 300);
+        let each: i64 = [800, 801]
+            .iter()
+            .flat_map(|&t| calc.get_target_details(t, None).taken_skills)
+            .map(|e| e.stats.damage)
+            .sum();
+        assert_eq!(each, 600, "both fights took the hit");
+        let context = calc.get_details_context();
+        let listed: Vec<(i32, i32, i64, i32)> =
+            context.taken_skills.iter().map(|e| (e.actor_id, e.code, e.stats.damage, e.source_code)).collect();
+        assert_eq!(listed, vec![(2259, 1_218_730, 300, BOSS)]);
+        let you = context.actors.iter().find(|a| a.actor_id == 2259).unwrap();
+        assert_eq!((you.damage_received, you.hits_received), (300, 1));
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn damage_totals_past_two_billion_do_not_wrap() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));

@@ -88,14 +88,26 @@ impl DpsCalculator {
         let all_targets: Vec<i32> = combat_data.keys().copied().collect();
         let by_name: HashMap<&str, i32> = actor_meta.iter().map(|(&id, (nick, _))| (nick.as_str(), id)).collect();
         let mut taken: HashMap<i32, TakenStats> = HashMap::new();
+        let mut taken_skills: HashMap<(i32, i32), TakenSkillEntry> = HashMap::new();
         for (player, skills) in self.data_storage.taken_on(&all_targets, false, None) {
             let nick = resolve_nickname(player, &nickname_data, &summon_data);
             let uid = by_name.get(nick.as_str()).copied().unwrap_or(player);
             let e = taken.entry(uid).or_default();
-            for d in skills.values() {
+            for (&code, d) in &skills {
                 e.absorb(&d.stats);
+                let entry = taken_skills.entry((uid, code)).or_insert_with(|| TakenSkillEntry {
+                    actor_id: uid,
+                    code,
+                    name: self.skill_lookup.lookup_skill_name(code),
+                    source_code: d.source_code,
+                    stats: TakenStats::default(),
+                });
+                entry.stats.absorb(&d.stats);
+                entry.source_code = entry.source_code.max(d.source_code);
             }
         }
+        let mut taken_skills: Vec<TakenSkillEntry> = taken_skills.into_values().collect();
+        taken_skills.sort_by_key(|e| (e.actor_id, e.code));
 
         let actors: Vec<DetailsActorSummary> = actor_meta.iter()
             .map(|(&id, (nick, job))| {
@@ -150,6 +162,7 @@ impl DpsCalculator {
             targets,
             actors,
             numbers,
+            taken_skills,
         }
     }
 

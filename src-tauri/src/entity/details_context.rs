@@ -71,6 +71,11 @@ pub struct DetailsContext {
     /// Each other player's number, as on the meter. See `PersonalData::number`.
     #[serde(default)]
     pub numbers: std::collections::HashMap<i32, u32>,
+    /// The damage taken that `actors` add up, per player and skill. Details
+    /// lists it for several targets at once: each target's own list would
+    /// count a hit taken during two fights twice.
+    #[serde(default)]
+    pub taken_skills: Vec<super::taken::TakenSkillEntry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
