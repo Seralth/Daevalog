@@ -443,9 +443,11 @@ impl StreamProcessor {
             // varint.
             //
             // The scalar is not a constant marker (as this once assumed): it is
-            // the actor's damage multiplier in hundredths of a percent — mobs read
-            // 10000 (= 100.00%), geared players 16000-22000 — and it shifts with
-            // buffs.
+            // the actor's combat speed in hundredths of a percent, 10000 plus the
+            // CombatSpeed stat (282). In the check kit's 14 captures it matched
+            // the local player's stat on 9,091 of 9,096 hits, the other five
+            // within 250 ms of a speed change, and it did not move with Damage
+            // Boost or PvE Damage Boost. Players' hits read 10000 to 17534.
             let mut pad = false;
             if first_value == 0 {
                 let after_second_offset = offset;
