@@ -993,6 +993,47 @@ const createDetailsUI = ({
   };
 
   let lastMeasuredNameWidth = 0;
+  const dropClass = (col) => `drop-col-${col}`;
+  const minWidthOf = (col) => Number(/minmax\((\d+)px/.exec(GRID_COL_DEFS[col])?.[1]) || 0;
+
+  // The data columns that fit the table: each as wide as its widest text,
+  // header included, and those that do not fit give way from the right end,
+  // as the meter's columns do (meterColumns.js). A column narrower than its
+  // text cut the left digits off (146.87k read "6.87k" at 520 px). The first
+  // column always stays; past that the skill name gives way. Measured with
+  // every column shown, before the browser draws.
+  const fitColumns = (skillsContainer, skillsEl, cols) => {
+    detailsPanel.classList.remove(...GRID_COL_ORDER.map(dropClass));
+    const width = skillsEl?.clientWidth || 0;
+    if (!(width > 0) || typeof document.createRange !== "function" || !lastMeasuredNameWidth) {
+      return { kept: cols, widths: new Map(), nameWidth: lastMeasuredNameWidth };
+    }
+    const listStyle = getComputedStyle(skillsEl);
+    const room = width - (parseFloat(listStyle.paddingLeft) || 0) - (parseFloat(listStyle.paddingRight) || 0);
+    const gap = parseFloat(getComputedStyle(skillsEl.querySelector(".skillRow") ?? skillsEl).columnGap) || 8;
+    const range = document.createRange();
+    const textWidth = (cell) => {
+      range.selectNodeContents(cell);
+      return range.getBoundingClientRect().width;
+    };
+    const widths = new Map(cols.map((col) => [
+      col,
+      Math.max(minWidthOf(col), Math.ceil(Math.max(0, ...[...skillsContainer.querySelectorAll(`.cell.${col}`)].map(textWidth)))),
+    ]));
+    let used = lastMeasuredNameWidth;
+    const kept = [];
+    for (const col of cols) {
+      const need = gap + widths.get(col);
+      if (kept.length && used + need > room) break;
+      used += need;
+      kept.push(col);
+    }
+    detailsPanel.classList.add(...cols.filter((col) => !kept.includes(col)).map(dropClass));
+    const nameWidth = Math.max(60, Math.min(lastMeasuredNameWidth, lastMeasuredNameWidth + room - used));
+    return { kept, widths, nameWidth };
+  };
+
+  let lastFitWidth = 0;
   const updateGridColumns = () => {
     if (!detailsPanel) return;
     const skillsContainer = detailsPanel.querySelector(".detailsSkills");
@@ -1006,15 +1047,30 @@ const createDetailsUI = ({
     }
 
     const visibleCols = GRID_COL_ORDER.filter((col) => !detailsPanel.classList.contains(`hide-col-${col}`) && !isHiddenForMode(col));
+    const dataCols = visibleCols.filter((c) => c !== "name");
+    const { kept, widths, nameWidth } = fitColumns(skillsContainer, skillsEl, dataCols);
+    lastFitWidth = skillsEl?.clientWidth || 0;
+    const track = (col) => (widths.has(col)
+      ? GRID_COL_DEFS[col].replace(/minmax\(\d+px/, `minmax(${widths.get(col)}px`)
+      : GRID_COL_DEFS[col]);
     if (lastMeasuredNameWidth > 0) {
-      const dataCols = visibleCols.filter((c) => c !== "name");
-      const template = `${lastMeasuredNameWidth}px ${dataCols.map((col) => GRID_COL_DEFS[col]).join(" ")}`;
+      const template = `${nameWidth}px ${kept.map(track).join(" ")}`;
       skillsContainer.style.setProperty("--skill-grid-cols", template);
     } else {
       const cols = visibleCols.map((col) => GRID_COL_DEFS[col]);
       skillsContainer.style.setProperty("--skill-grid-cols", cols.join(" "));
     }
   };
+  // A narrower or wider window fits the columns again; a saved fight is not
+  // drawn again by itself.
+  if (typeof ResizeObserver === "function") {
+    const list = detailsPanel?.querySelector?.(".detailsSkills .skills");
+    if (list) {
+      new ResizeObserver(() => {
+        if ((list.clientWidth || 0) !== lastFitWidth) updateGridColumns();
+      }).observe(list);
+    }
+  }
 
 
   const bindSkillHeaderSorting = () => {
@@ -1252,7 +1308,6 @@ const createDetailsUI = ({
     });
     const arrowSpace = 14; // dotToggle: 10px width + 2px margin each side
     lastMeasuredNameWidth = Math.ceil(iconSize + iconMargin + arrowSpace + maxNameWidth + namePad);
-    updateGridColumns();
 
     for (let i = 0; i < skillSlots.length; i++) {
       const view = skillSlots[i];
@@ -1461,7 +1516,8 @@ const createDetailsUI = ({
       view.rowFillEl.style.transform = `scaleX(${barFillRatio})`;
       decorateGameCells(view, skill);
     }
-
+    // The columns fit the texts just written.
+    updateGridColumns();
   };
 
   // ── Damage received: what hit the players shown, by skill and monster ──

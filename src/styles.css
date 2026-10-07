@@ -3627,6 +3627,30 @@ body.mainPlayerNamesBold .settingsPanel .themeDropdownMenu .settingsDropdownItem
 .detailsPanel.hide-col-maxdmg .detailsSkills .cell.maxdmg {
   display: none;
 }
+/* Columns that do not fit the window give way from the right end (fitColumns in details.js) */
+.detailsPanel.drop-col-hit .detailsSkills .cell.hit,
+.detailsPanel.drop-col-dmg .detailsSkills .cell.dmg,
+.detailsPanel.drop-col-dmgpct .detailsSkills .cell.dmgpct,
+.detailsPanel.drop-col-mhit .detailsSkills .cell.mhit,
+.detailsPanel.drop-col-mdmg .detailsSkills .cell.mdmg,
+.detailsPanel.drop-col-crit .detailsSkills .cell.crit,
+.detailsPanel.drop-col-parry .detailsSkills .cell.parry,
+.detailsPanel.drop-col-perfect .detailsSkills .cell.perfect,
+.detailsPanel.drop-col-double .detailsSkills .cell.double,
+.detailsPanel.drop-col-back .detailsSkills .cell.back,
+.detailsPanel.drop-col-frontal .detailsSkills .cell.frontal,
+.detailsPanel.drop-col-block .detailsSkills .cell.block,
+.detailsPanel.drop-col-perfectblock .detailsSkills .cell.perfectblock,
+.detailsPanel.drop-col-ironwall .detailsSkills .cell.ironwall,
+.detailsPanel.drop-col-regeneration .detailsSkills .cell.regeneration,
+.detailsPanel.drop-col-miss .detailsSkills .cell.miss,
+.detailsPanel.drop-col-resist .detailsSkills .cell.resist,
+.detailsPanel.drop-col-regen .detailsSkills .cell.regen,
+.detailsPanel.drop-col-mindmg .detailsSkills .cell.mindmg,
+.detailsPanel.drop-col-avgdmg .detailsSkills .cell.avgdmg,
+.detailsPanel.drop-col-maxdmg .detailsSkills .cell.maxdmg {
+  display: none;
+}
 /* The footnote is about damage ratios. */
 .detailsPanel.isHealMode .detailsFootnote {
   display: none;
