@@ -1,7 +1,8 @@
 //! The player list of the replay report (`A2_REPLAY_PLAYERS=1`): every player
-//! met, with home server and class and where each came from.
+//! met, with home server and class and where each came from, and every Item
+//! Level and Combat Power a party, party finder or legion list stated.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::capture::names::{exact_name, NAME_FIELD_BYTES};
 use crate::capture::opcodes::{PLAYER_SPAWN, PLAYER_SPAWN_OLD};
@@ -14,6 +15,11 @@ use crate::entity::job_class::JobClass;
 #[derive(Default)]
 pub(crate) struct Players {
     by_name: BTreeMap<String, PlayerSeen>,
+    /// Item Level and Combat Power readings in capture order, each kept only
+    /// when it differs from what the same list said last about that player:
+    /// the party roster is sent again on every party change.
+    gear: Vec<GearSeen>,
+    last_gear: HashMap<(String, &'static str), Gear>,
 }
 
 #[derive(Default)]
@@ -86,6 +92,122 @@ fn record_server(data: &[u8], after: usize) -> Option<u16> {
         .map(|j| u16_at(j + 2))
 }
 
+/// What a party, party finder or legion list states about one member.
+#[derive(Clone, PartialEq)]
+struct Gear {
+    server: u16,
+    class: JobClass,
+    level: u32,
+    item_level: u32,
+    combat_power: u64,
+}
+
+/// The lists that state Item Level and Combat Power, by opcode. `01 97` is
+/// probably the party finder: it lists rooms, each with a title, a dungeon id
+/// and its members. `0b 97` and `1f 97` each carry one member of your party.
+fn gear_list(op: &[u8]) -> Option<&'static str> {
+    match op {
+        [0x02, 0x97] => Some("party"),
+        [0x0b, 0x97] => Some("party-0b97"),
+        [0x1f, 0x97] => Some("party-1f97"),
+        [0x01, 0x97] => Some("finder"),
+        [0x05, 0x8a] => Some("legion"),
+        _ => None,
+    }
+}
+
+/// The account id both kinds of list carry: a character id, two zero bytes,
+/// then the home server.
+fn dbid_server(data: &[u8], at: usize) -> Option<u16> {
+    let b = data.get(at..at + 8)?;
+    let server = u16::from_le_bytes([b[6], b[7]]);
+    (b[4] == 0 && b[5] == 0 && is_server_id(server)).then_some(server)
+}
+
+fn u32_at(data: &[u8], at: usize) -> Option<u32> {
+    Some(u32::from_le_bytes(data.get(at..at + 4)?.try_into().ok()?))
+}
+
+fn u64_at(data: &[u8], at: usize) -> Option<u64> {
+    Some(u64::from_le_bytes(data.get(at..at + 8)?.try_into().ok()?))
+}
+
+/// The name, class and level every member record carries in that order, and
+/// where the bytes after them start.
+fn member_head(data: &[u8], at: usize, class_first: bool) -> Option<(String, JobClass, u32, usize)> {
+    let class_at = |o: usize| JobClass::from_roster_class(u32_at(data, o)?);
+    let name_at = if class_first { at + 4 } else { at };
+    let len = *data.get(name_at)? as usize;
+    let name = exact_name(data.get(name_at + 1..name_at + 1 + len)?)?;
+    let mut o = name_at + 1 + len;
+    let class = if class_first {
+        class_at(at)?
+    } else {
+        o += 4;
+        class_at(o - 4)?
+    };
+    let level = u32_at(data, o).filter(|l| (1..=99).contains(l))?;
+    Some((name, class, level, o + 4))
+}
+
+/// A member record of the party roster's layout (see `scan_party_roster`),
+/// which `01 97`, `0b 97` and `1f 97` share: mask, slot, account id, name,
+/// class, level, Item Level, then the server again within ten bytes and
+/// Combat Power five bytes past it. Returns where the record ends.
+fn party_member(data: &[u8], at: usize) -> Option<(String, Gear, usize)> {
+    let server = dbid_server(data, at + 2)?;
+    let (name, class, level, o) = member_head(data, at + 10, false)?;
+    let item_level = u32_at(data, o).filter(|il| *il <= 10_000)?;
+    let o = o + 4;
+    let anchor = (o..=o + 10).find(|&i| data.get(i..i + 2) == Some(&server.to_le_bytes()[..]))?;
+    let combat_power = u64_at(data, anchor + 5).filter(|cp| *cp <= 100_000_000)?;
+    Some((name, Gear { server, class, level, item_level, combat_power }, anchor + 13))
+}
+
+/// A member record of the legion list (`05 8a`):
+///
+/// ```text
+/// record id     u64
+/// account id    u64       character id, 00 00, home server
+/// class         u32
+/// name          str
+/// level         u32
+/// unnamed       u8
+/// unnamed       nothing, one byte, or a text with its length then a byte
+/// last seen     u64       Unix ms
+/// unnamed       u32       0, or a value that looks like a map id
+/// item level    u32
+/// combat power  u64
+/// unnamed       u8        not after the last record
+/// ```
+///
+/// Where the u32 before the Item Level is 0, the Item Level read 400 to 900
+/// above the one the same player had in the lists before and after, Combat
+/// Power the same (761 of the 762 readings far off the Combat Power line, over
+/// seven captures of 2026-10-04 to 10-06): those give no reading. The last-seen time
+/// anchors the rest; it must fall in the two years before the capture.
+fn legion_member(data: &[u8], at: usize, now_ms: i64) -> Option<(String, Option<Gear>, usize)> {
+    if u32_at(data, at + 4)? != 0 {
+        return None;
+    }
+    let server = dbid_server(data, at + 8)?;
+    let (name, class, level, o) = member_head(data, at + 16, true)?;
+    let seen = (now_ms - 2 * 365 * 86_400_000)..=(now_ms + 86_400_000);
+    let stamp = (o + 1..o + 64).find(|&i| u64_at(data, i).is_some_and(|t| seen.contains(&(t as i64))))?;
+    let item_level = u32_at(data, stamp + 12).filter(|il| *il <= 10_000)?;
+    let combat_power = u64_at(data, stamp + 16).filter(|cp| *cp <= 100_000_000)?;
+    let gear = (u32_at(data, stamp + 8)? != 0).then_some(Gear { server, class, level, item_level, combat_power });
+    Some((name, gear, stamp + 24))
+}
+
+/// A reading for `A2_REPLAY_PLAYERS`.
+struct GearSeen {
+    at: i64,
+    list: &'static str,
+    name: String,
+    gear: Gear,
+}
+
 impl Players {
     fn seen(&mut self, name: &str, id: i32, at: i64) -> &mut PlayerSeen {
         let p = self
@@ -139,6 +261,37 @@ impl Players {
         }
     }
 
+    /// Item Level and Combat Power from a list packet, `<varint len> <opcode>`.
+    /// Every record shape in the body is read, so a record that does not read
+    /// costs only itself; the party finder holds several rooms.
+    pub fn scan_gear(&mut self, packet: &[u8], at: i64) {
+        let len = read_varint(packet, 0);
+        if len.length <= 0 {
+            return;
+        }
+        let o = len.length as usize;
+        let Some(list) = packet.get(o..o + 2).and_then(gear_list) else { return };
+        let body = &packet[o + 2..];
+        let mut i = 0;
+        while i < body.len() {
+            let read = if list == "legion" {
+                legion_member(body, i, at)
+            } else {
+                party_member(body, i).map(|(name, gear, end)| (name, Some(gear), end))
+            };
+            let Some((name, gear, end)) = read else {
+                i += 1;
+                continue;
+            };
+            i = end;
+            let Some(gear) = gear else { continue };
+            if self.last_gear.get(&(name.clone(), list)) != Some(&gear) {
+                self.last_gear.insert((name.clone(), list), gear.clone());
+                self.gear.push(GearSeen { at, list, name, gear });
+            }
+        }
+    }
+
     /// A class skill used by `actor` while it carried a name.
     pub fn hit(&mut self, storage: &DataStorage, actor: i32, skill: i32, at: i64) {
         let Some(class) = JobClass::convert_from_skill(skill) else { return };
@@ -168,7 +321,7 @@ impl Players {
     /// skills used. Each source follows with its counts, `-` where it said
     /// nothing; `servers` gives the roster's, the player records' and the
     /// loot or summon records'. Players only a loot or summon record named
-    /// are dated by the whole capture.
+    /// are dated by the whole capture. Then one `gear` line per reading.
     pub fn lines(mut self, storage: &DataStorage, first_ms: i64, last_ms: i64) -> Vec<String> {
         for (name, server) in storage.player_servers() {
             let p = self.by_name.entry(name).or_insert_with_key(|name| PlayerSeen {
@@ -205,6 +358,19 @@ impl Players {
                     p.last_ms,
                 )
             })
+            .chain(self.gear.into_iter().map(|g| {
+                format!(
+                    "gear {} {} server {} class {} level {} item {} power {} name {}",
+                    g.at,
+                    g.list,
+                    g.gear.server,
+                    class_name(g.gear.class),
+                    g.gear.level,
+                    g.gear.item_level,
+                    g.gear.combat_power,
+                    g.name,
+                )
+            }))
             .collect()
     }
 }
@@ -267,5 +433,108 @@ mod tests {
         let mut lines = Vec::new();
         run(&text, Options::default(), &mut |l| lines.push(l));
         assert!(!lines.iter().any(|l| l.starts_with("player ")));
+    }
+
+    /// One reading per list record, in capture order: a party member record (the
+    /// same one twice gives one reading), two party finder members around an
+    /// empty slot, and legion members with a greeting, with one odd byte, with
+    /// the u32 before the Item Level at 0 (no reading), and last without its
+    /// closing byte.
+    #[test]
+    fn players_lists_item_level_and_combat_power_readings() {
+        let frame = |body: Vec<u8>| {
+            let mut len = framing::length_value(body.len());
+            let mut out = Vec::new();
+            while len >= 0x80 {
+                out.push(len as u8 | 0x80);
+                len >>= 7;
+            }
+            out.push(len as u8);
+            out.extend(body);
+            out
+        };
+        let account = |char_id: u32, server: u16| {
+            let mut b = char_id.to_le_bytes().to_vec();
+            b.extend([0, 0]);
+            b.extend(server.to_le_bytes());
+            b
+        };
+        let member = |slot: u8, char_id: u32, server: u16, name: &str, class: u32, level: u32, il: u32, wide: bool, cp: u64| {
+            let mut b = vec![0x0c, slot];
+            b.extend(account(char_id, server));
+            b.push(name.len() as u8);
+            b.extend(name.as_bytes());
+            for v in [class, level, il] {
+                b.extend(v.to_le_bytes());
+            }
+            if wide {
+                b.push(0x01);
+            }
+            b.extend(server.to_le_bytes());
+            b.extend(server.to_le_bytes());
+            b.push(0x04);
+            b.extend(cp.to_le_bytes());
+            b.extend([0x01, 0x01]);
+            b
+        };
+        let at = |s: &str| chrono::DateTime::parse_from_rfc3339(s).unwrap().timestamp_millis();
+        let t = ["2026-10-06T12:00:00-07:00", "2026-10-06T12:00:01-07:00", "2026-10-06T12:00:02-07:00", "2026-10-06T12:00:03-07:00"];
+        let seen = (at(t[3]) - 3_600_000) as u64;
+        let legion = |id: u64, char_id: u32, name: &str, class: u32, odd: &[u8], map: u32, il: u32, cp: u64, last: bool| {
+            let mut b = id.to_le_bytes().to_vec();
+            b.extend(account(char_id, 1201));
+            b.extend(class.to_le_bytes());
+            b.push(name.len() as u8);
+            b.extend(name.as_bytes());
+            b.extend(45u32.to_le_bytes());
+            b.push(0x02);
+            b.extend(odd);
+            b.extend(seen.to_le_bytes());
+            b.extend(map.to_le_bytes());
+            b.extend(il.to_le_bytes());
+            b.extend(cp.to_le_bytes());
+            if !last {
+                b.push(0x00);
+            }
+            b
+        };
+
+        // 2201 = `99 08`; class 8 is a Gladiator, 30 a Cleric, 22 an Elementalist.
+        let mut join = vec![0x0b, 0x97];
+        join.extend(member(4, 0x45817, 2201, "Tester", 8, 22, 353, true, 21_250));
+        let mut finder = vec![0x01, 0x97, 0x00, 0x00, 0xff, 0x27, 0x09, 0x00, 0x05, b'R', b'o', b'o', b'm', b'.'];
+        finder.extend(member(1, 0x3d60d, 2201, "Other", 30, 45, 1913, false, 81_398));
+        finder.extend([0x00, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00]);
+        finder.extend(member(3, 0x50e09, 1201, "Third", 22, 45, 861, true, 45_961));
+        let mut list = vec![0x05, 0x8a, 0x00, 0x00, 0x04, 0x00];
+        let greeting: Vec<u8> = [&[0x05u8][..], b"Hello"].concat();
+        list.extend(legion(0x808cf, 0x4b002, "Fourth", 9, &greeting, 2040, 1403, 67_893, false));
+        list.extend(legion(0x80c52, 0x4bd2e, "Fifth", 29, &[0x42], 2010, 843, 37_476, false));
+        list.extend(legion(0x80d00, 0x4c000, "Sixth", 13, &[], 0, 2040, 67_000, false));
+        list.extend(legion(0x80e00, 0x4c100, "Seventh", 33, &[], 2064, 2116, 95_541, true));
+        let hex = |b: &[u8]| b.iter().map(|x| format!("{x:02x}")).collect::<String>();
+        let text = [(t[0], &join), (t[1], &join), (t[2], &finder), (t[3], &list)]
+            .iter()
+            .map(|(ts, body)| format!("{}|Client:50000:13328|{}", ts.replace("-07:00", ".000-07:00"), hex(&frame((*body).clone()))))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut lines = Vec::new();
+        run(&text, Options { players: true, ..Default::default() }, &mut |l| lines.push(l));
+        let gear: Vec<&String> = lines.iter().filter(|l| l.starts_with("gear ")).collect();
+        let (t0, t2, t3) = (at(t[0]), at(t[2]), at(t[3]));
+        assert_eq!(
+            gear,
+            [
+                &format!("gear {t0} party-0b97 server 2201 class Gladiator level 22 item 353 power 21250 name Tester"),
+                &format!("gear {t2} finder server 2201 class Cleric level 45 item 1913 power 81398 name Other"),
+                &format!("gear {t2} finder server 1201 class Elementalist level 45 item 861 power 45961 name Third"),
+                &format!("gear {t3} legion server 1201 class Templar level 45 item 1403 power 67893 name Fourth"),
+                &format!("gear {t3} legion server 1201 class Cleric level 45 item 843 power 37476 name Fifth"),
+                &format!("gear {t3} legion server 1201 class Chanter level 45 item 2116 power 95541 name Seventh"),
+            ]
+        );
+        let mut lines = Vec::new();
+        run(&text, Options::default(), &mut |l| lines.push(l));
+        assert!(!lines.iter().any(|l| l.starts_with("gear ")));
     }
 }

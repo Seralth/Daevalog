@@ -21,8 +21,11 @@
 //! A2_REPLAY_TAKEN=1                print the damage players took in the window,
 //!                                  per player and skill (see `replay_taken`)
 //! A2_REPLAY_PLAYERS=1              print every player met, at the end: entity id,
-//!                                  server, class and where it came from, name
-//!                                  (see `replay_players`)
+//!                                  server, class and where it came from, name;
+//!                                  then every Item Level and Combat Power a party,
+//!                                  party finder or legion list stated (`gear`
+//!                                  lines, capture ms and list first; see
+//!                                  `replay_players`)
 //! cargo test --lib replay_report -- --ignored --nocapture
 //! ```
 
@@ -89,7 +92,8 @@ fn diff(before: Option<&TargetCombatData>, after: Option<&TargetCombatData>) -> 
     out
 }
 
-/// Packets inside a buffer, bundles opened, for the opcode dump.
+/// Packets inside a buffer, bundles opened, for the opcode dump, the timeline
+/// and the player list.
 fn frames_of(buf: &[u8], top: bool, out: &mut Vec<Vec<u8>>, depth: usize) {
     let walk = if top { framing::walk(buf) } else { framing::walk_inner(buf) };
     for f in &walk.frames {
@@ -238,8 +242,14 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             if let Some(met) = met.as_mut() {
                 for p in &packets {
                     met.scan_spawns(p, ts_ms);
+                    met.scan_gear(p, ts_ms);
                     for bundle in framing::embedded_bundles(p) {
                         met.scan_spawns(&bundle.data, ts_ms);
+                        let mut inner = Vec::new();
+                        frames_of(&bundle.data, false, &mut inner, 1);
+                        for q in &inner {
+                            met.scan_gear(q, ts_ms);
+                        }
                     }
                 }
                 met.roster_and_self(&storage, ts_ms);
