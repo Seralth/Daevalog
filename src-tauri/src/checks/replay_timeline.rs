@@ -403,4 +403,32 @@ mod tests {
         );
         assert_eq!(passive["name"], "Fire Spirit");
     }
+
+    /// Records of 2026-10-06 by the local player 6759, moved onto target
+    /// 40171: two own stat records, a hit with two additional hits of 45,
+    /// and `more`. The fight's timeline JSON.
+    fn fight_of_one_hit(more: &[(&str, &str)]) -> serde_json::Value {
+        let own = "294a36e734044100840300004c00000000007b01340800007c01000000000000000000000000";
+        let hit = "270438ebb9022600e73430c1f4001202040002cf769b5f01000000e65bf00f022d2d0100";
+        let lines = [("21:47:55.000", own), ("21:47:55.100", own), ("21:47:56.170", hit)];
+        let text: String = lines
+            .iter()
+            .chain(more)
+            .map(|(t, hex)| format!("2026-10-06T{t}000000-07:00|Client:40000:13328|{hex}\n"))
+            .collect();
+        let mut out = Vec::new();
+        run(&text, Options { timeline: true, ..Default::default() }, &mut |l| out.push(l));
+        let json = out.iter().find_map(|l| l.strip_prefix("timeline ")).expect("a timeline line");
+        serde_json::from_str(json).unwrap()
+    }
+
+    #[test]
+    fn a_hit_has_its_additional_hits_damage_and_scalar() {
+        let fight = fight_of_one_hit(&[]);
+        let hit = &fight["hits"][0];
+        assert_eq!(
+            (hit["damage"].as_i64(), hit["multi"].as_i64(), hit["multi_dmg"].as_i64(), hit["scalar"].as_i64()),
+            (Some(1942), Some(2), Some(90), Some(11750))
+        );
+    }
 }

@@ -437,16 +437,20 @@ impl StreamProcessor {
             // the actor's damage multiplier in hundredths of a percent — mobs read
             // 10000 (= 100.00%), geared players 16000-22000 — and it shifts with
             // buffs.
+            let mut pad = false;
             if first_value == 0 {
                 let after_second_offset = offset;
                 if let Some(third) = try_read_varint(packet, &mut offset) {
                     first_value = second_value;
                     after_first_offset = after_second_offset;
                     second_value = third;
+                    pad = true;
                 }
             }
 
             let first_is_damage = should_treat_first_value_as_damage(first_value, second_value, layout, damage_type as i32);
+            // The scalar, for `A2_REPLAY_FLAGS` in the replay report.
+            let scalar = (pad && !first_is_damage).then_some(first_value);
 
             let mut final_damage = if first_is_damage {
                 offset = after_first_offset;
@@ -670,11 +674,12 @@ impl StreamProcessor {
                 pdp.set_damage(final_damage);
                 tracing::trace!(
                     target: "hit_flags",
-                    "{} actor={actor_value} target={target_value} skill={resolved_skill_code} damage={final_damage} type={hit_type} layout={layout} mods={} dir={} multi={multi_hit_count} hp={}",
+                    "{} actor={actor_value} target={target_value} skill={resolved_skill_code} damage={final_damage} type={hit_type} layout={layout} mods={} dir={} multi={multi_hit_count} multi_dmg={multi_hit_damage} hp={} scalar={}",
                     pdp.timestamp(),
                     raw_mods.map_or("-".to_string(), |m| format!("{m:#04x}")),
                     raw_dir.map_or("-".to_string(), |d| format!("{d:#04x}")),
                     raw_hp.map_or("-".to_string(), |h| h.to_string()),
+                    scalar.map_or("-".to_string(), |s| s.to_string()),
                 );
 
                 self.data_storage.append_damage(pdp);

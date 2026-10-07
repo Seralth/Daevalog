@@ -11,7 +11,9 @@
 //!                                  name the target, in the window
 //! A2_REPLAY_RESET_AT=04:48:00      clear combat data there, as the reset button does
 //! A2_REPLAY_FLAGS=1                print every hit's raw type, flag and direction
-//!                                  bytes (`hit_flags` lines, capture ms first)
+//!                                  bytes, its additional hits and their damage,
+//!                                  and the scalar before its value (`hit_flags`
+//!                                  lines, capture ms first)
 //! A2_REPLAY_TIMELINE=1             print each fight of the local player in the
 //!                                  window with its hits, buffs and stats (see
 //!                                  `replay_timeline`); takes the `hit_flags` lines
