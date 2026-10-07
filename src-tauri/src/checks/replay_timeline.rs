@@ -7,7 +7,9 @@
 //! buff or debuff of yours (its name, times from the fight's start, uptime
 //! in the fight), then the whole fight as one `timeline {json}` line, other
 //! players' debuffs on the target and passives included, with the game's
-//! English names of the abnormals and stats.
+//! English names of the abnormals and stats. The JSON keeps your and your
+//! summons' DoT ticks on the target (`dot_ticks` lines) apart from the hits,
+//! up to 15 s after the last hit.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -23,17 +25,18 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 /// The gap that ends a fight, as the encounter mode's default.
 const FIGHT_GAP_MS: i64 = 15_000;
 
-/// The `hit_flags` trace lines, kept instead of printed.
+/// The `hit_flags` and `dot_ticks` trace lines, kept instead of printed,
+/// each with its target.
 #[derive(Clone, Default)]
-pub(crate) struct HitTap(Arc<Mutex<Vec<String>>>);
+pub(crate) struct HitTap(Arc<Mutex<Vec<(&'static str, String)>>>);
 
 impl HitTap {
     /// Collect the lines while the guard lives (this thread only).
     pub(crate) fn install(&self) -> tracing::subscriber::DefaultGuard {
-        let filter = tracing_subscriber::filter::filter_fn(|m| m.target() == "hit_flags");
+        let filter = tracing_subscriber::filter::filter_fn(|m| matches!(m.target(), "hit_flags" | "dot_ticks"));
         tracing::subscriber::set_default(tracing_subscriber::registry().with(self.clone().with_filter(filter)))
     }
-    fn take(&self) -> Vec<String> {
+    fn take(&self) -> Vec<(&'static str, String)> {
         std::mem::take(&mut *self.0.lock().unwrap())
     }
 }
@@ -50,11 +53,11 @@ impl<S: tracing::Subscriber> Layer<S> for HitTap {
         }
         let mut m = Message(String::new());
         event.record(&mut m);
-        self.0.lock().unwrap().push(m.0);
+        self.0.lock().unwrap().push((event.metadata().target(), m.0));
     }
 }
 
-/// One `hit_flags` line: `<ms> key=value ...`.
+/// One `hit_flags` or `dot_ticks` line: `<ms> key=value ...`.
 struct Hit {
     ms: i64,
     actor: i32,
@@ -84,6 +87,7 @@ pub(crate) struct Gather {
     abnormal_names: HashMap<u32, String>,
     stat_names: HashMap<u16, String>,
     hits: Vec<Hit>,
+    dots: Vec<Hit>,
     /// (from ms, entity) each time the local player's id changed.
     local: Vec<(i64, i32)>,
     /// (ms, summon links) at each map load and at the end: a link holds
@@ -119,10 +123,17 @@ impl Gather {
         g
     }
 
+    fn take_lines(&mut self) {
+        for (kind, line) in self.tap.take() {
+            let Some(h) = read_hit(&line) else { continue };
+            if kind == "dot_ticks" { self.dots.push(h) } else { self.hits.push(h) }
+        }
+    }
+
     /// After each capture line: the hits it made, who you are, and the
     /// summon links before a map load makes the entities anew.
     pub(crate) fn after_line(&mut self, ms: i64, local: Option<i32>, links: impl FnOnce() -> HashMap<i32, i32>) {
-        self.hits.extend(self.tap.take().iter().filter_map(|l| read_hit(l)));
+        self.take_lines();
         if let Some(id) = local
             && self.local.last().is_none_or(|l| l.1 != id)
         {
@@ -150,6 +161,18 @@ impl Gather {
         &self.links.iter().find(|(at, _)| *at >= ms).or(self.links.last()).expect("links at the end").1
     }
 
+    /// A line of yours or your summons' on an enemy, in the window.
+    fn own(&self, h: &Hit, window: (i64, i64), target: Option<i32>) -> bool {
+        if h.ms < window.0 || h.ms > window.1 || target.is_some_and(|t| t != h.target) {
+            return false;
+        }
+        let links = self.links_at(h.ms);
+        let local = self.local_at(h.ms, h.ms);
+        // Heals on you and your spirits are not a fight.
+        let friendly = local.contains(&summon_resolver::resolve(h.target, links));
+        local.contains(&summon_resolver::resolve(h.actor, links)) && !friendly
+    }
+
     /// Print every fight in `window` (capture ms), only `target`'s if given.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn report(
@@ -164,23 +187,15 @@ impl Gather {
         npcs: &NpcLookup,
         out: &mut dyn FnMut(String),
     ) {
-        self.hits.extend(self.tap.take().iter().filter_map(|l| read_hit(l)));
+        self.take_lines();
         self.links.push((end_ms, final_links));
         let instances = self.timeline.all_instances();
         let mut fights: Vec<(i32, Vec<&Hit>)> = Vec::new();
         let mut by_target: BTreeMap<i32, Vec<&Hit>> = BTreeMap::new();
-        for h in &self.hits {
-            if h.ms < window.0 || h.ms > window.1 || target.is_some_and(|t| t != h.target) {
-                continue;
-            }
-            let links = self.links_at(h.ms);
-            let local = self.local_at(h.ms, h.ms);
-            // Heals on you and your spirits are not a fight.
-            let friendly = local.contains(&summon_resolver::resolve(h.target, links));
-            if local.contains(&summon_resolver::resolve(h.actor, links)) && !friendly {
-                by_target.entry(h.target).or_default().push(h);
-            }
+        for h in self.hits.iter().filter(|h| self.own(h, window, target)) {
+            by_target.entry(h.target).or_default().push(h);
         }
+        let dots: Vec<&Hit> = self.dots.iter().filter(|d| self.own(d, window, target)).collect();
         for (t, hits) in by_target {
             let mut cur: Vec<&Hit> = Vec::new();
             for h in hits {
@@ -195,7 +210,7 @@ impl Gather {
         out(format!("\n== timeline: {} fights", fights.len()));
         for (t, hits) in fights {
             let (start, end) = (hits[0].ms, hits[hits.len() - 1].ms);
-            let fight = self.fight(t, start, end, &hits, &instances, zone, mobs, skills, npcs);
+            let fight = self.fight(t, start, end, &hits, &dots, &instances, zone, mobs, skills, npcs);
             for line in fight.0 {
                 out(line);
             }
@@ -210,6 +225,7 @@ impl Gather {
         start: i64,
         end: i64,
         hits: &[&Hit],
+        dots: &[&Hit],
         instances: &[Instance],
         zone: chrono::FixedOffset,
         mobs: &HashMap<i32, i32>,
@@ -305,18 +321,23 @@ impl Gather {
         let stat_ids = at_start.keys().copied().chain(changes.iter().filter_map(|c| c["stat"].as_u64().map(|s| s as u16)));
         let stat_names: BTreeMap<u16, &str> =
             stat_ids.filter_map(|id| Some((id, self.stat_names.get(&id)?.as_str()))).collect();
+        let row = |h: &&Hit| {
+            let mut f = h.fields.clone();
+            f.insert("ms".into(), h.ms.into());
+            f.insert("owner".into(), owner(h.actor).into());
+            Value::Object(f)
+        };
+        // Ticks go on after the last hit. The next fight on this target
+        // starts more than FIGHT_GAP_MS later.
+        let dots = dots.iter().filter(|d| d.target == target && d.ms >= start && d.ms <= end + FIGHT_GAP_MS);
         let json = json!({
             "target": target,
             "target_name": target_name,
             "start_ms": start,
             "end_ms": end,
             "local_ids": local_ids,
-            "hits": hits.iter().map(|h| {
-                let mut f = h.fields.clone();
-                f.insert("ms".into(), h.ms.into());
-                f.insert("owner".into(), owner(h.actor).into());
-                Value::Object(f)
-            }).collect::<Vec<_>>(),
+            "hits": hits.iter().map(row).collect::<Vec<_>>(),
+            "dots": dots.map(row).collect::<Vec<_>>(),
             "buffs": buffs,
             "stats": { "at_start": at_start, "changes": changes, "names": stat_names },
         });
@@ -430,5 +451,22 @@ mod tests {
             (hit["damage"].as_i64(), hit["multi"].as_i64(), hit["multi_dmg"].as_i64(), hit["scalar"].as_i64()),
             (Some(1942), Some(2), Some(90), Some(11750))
         );
+    }
+
+    /// A Jointstrike: Curse tick (16140000) of 6759's, 10 s and 16 s after
+    /// the hit.
+    #[test]
+    fn a_fight_keeps_its_dot_ticks_apart_from_its_hits() {
+        let tick = "170538ebb9020ae73401b3af3360f2056c47f600";
+        let fight = fight_of_one_hit(&[("21:48:06.170", tick), ("21:48:12.170", tick)]);
+        assert_eq!(fight["hits"].as_array().map(Vec::len), Some(1));
+        // The second tick is more than 15 s after the last hit.
+        let dots = fight["dots"].as_array().expect("dots");
+        assert_eq!(dots.len(), 1, "{dots:?}");
+        assert_eq!(
+            (dots[0]["actor"].as_i64(), dots[0]["owner"].as_i64(), dots[0]["skill"].as_i64(), dots[0]["damage"].as_i64()),
+            (Some(6759), Some(6759), Some(16_140_000), Some(754))
+        );
+        assert_eq!(dots[0]["ms"].as_i64(), Some(1_791_348_486_170));
     }
 }

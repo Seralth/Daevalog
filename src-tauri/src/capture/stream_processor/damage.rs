@@ -162,6 +162,15 @@ impl StreamProcessor {
         pdp.set_damage(amount_info.value);
 
         if pdp.actor_id() != pdp.target_id() {
+            // For `A2_REPLAY_TIMELINE` in the replay report.
+            tracing::trace!(
+                target: "dot_ticks",
+                "{} actor={} target={} skill={skill_code} damage={}",
+                pdp.timestamp(),
+                pdp.actor_id(),
+                pdp.target_id(),
+                amount_info.value,
+            );
             self.data_storage.append_damage(pdp);
         }
     }

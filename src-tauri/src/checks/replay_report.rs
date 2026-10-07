@@ -15,8 +15,9 @@
 //!                                  and the scalar before its value (`hit_flags`
 //!                                  lines, capture ms first)
 //! A2_REPLAY_TIMELINE=1             print each fight of the local player in the
-//!                                  window with its hits, buffs and stats (see
-//!                                  `replay_timeline`); takes the `hit_flags` lines
+//!                                  window with its hits, DoT ticks, buffs and
+//!                                  stats (see `replay_timeline`); takes the
+//!                                  `hit_flags` and `dot_ticks` lines
 //! A2_REPLAY_TAKEN=1                print the damage players took in the window,
 //!                                  per player and skill (see `replay_taken`)
 //! cargo test --lib replay_report -- --ignored --nocapture
