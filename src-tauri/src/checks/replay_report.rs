@@ -15,6 +15,8 @@
 //! A2_REPLAY_TIMELINE=1             print each fight of the local player in the
 //!                                  window with its hits, buffs and stats (see
 //!                                  `replay_timeline`); takes the `hit_flags` lines
+//! A2_REPLAY_TAKEN=1                print the damage players took in the window,
+//!                                  per player and skill (see `replay_taken`)
 //! cargo test --lib replay_report -- --ignored --nocapture
 //! ```
 
@@ -107,6 +109,7 @@ pub(crate) struct Options {
     pub reset_at: Option<String>,
     pub dump_op: Option<[u8; 2]>,
     pub timeline: bool,
+    pub taken: bool,
 }
 
 #[test]
@@ -124,6 +127,7 @@ fn replay_report() {
         reset_at: env("A2_REPLAY_RESET_AT"),
         dump_op: env("A2_REPLAY_DUMP").and_then(|h| decode_hex(&h)).and_then(|v| v.try_into().ok()),
         timeline: env("A2_REPLAY_TIMELINE").is_some(),
+        taken: env("A2_REPLAY_TAKEN").is_some(),
     };
     let _flags = env("A2_REPLAY_FLAGS").map(|_| {
         tracing::subscriber::set_default(
@@ -142,7 +146,7 @@ fn replay_report() {
 
 /// Replay a capture's text and hand each line of the report to `out`.
 pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
-    let Options { target, from, to, show_hits, mut reset_at, dump_op, timeline } = options;
+    let Options { target, from, to, show_hits, mut reset_at, dump_op, timeline, taken } = options;
     let data_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
     let skills = Arc::new(SkillLookup::new());
     let npcs = Arc::new(NpcLookup::new());
@@ -169,6 +173,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let mut zone = None;
     let _tap = gather.as_ref().map(|g| g.tap.install());
     let mut window_ms = 0i64;
+    let mut taken = taken.then(super::replay_taken::Gather::default);
 
     for line in text.lines() {
         if line.is_empty() || line.starts_with('#') {
@@ -236,6 +241,9 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
                 let hex: String = p.iter().map(|b| format!("{b:02x}")).collect();
                 out(format!("dump {tod} {hex}"));
             }
+        }
+        if let Some(t) = &mut taken {
+            t.after_line(&storage);
         }
         if let Some(g) = &mut gather {
             g.after_line(ts_ms, storage.local_player_id().map(|v| v as i32), || storage.get_summon_data());
@@ -349,6 +357,9 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             ));
         }
         crate::clock::set_override(None);
+    }
+    if let Some(t) = &taken {
+        t.report((window_ms, last_ts), local, &skills, &npcs, out);
     }
     if let Some(g) = gather {
         let mobs = storage.get_mob_data();
