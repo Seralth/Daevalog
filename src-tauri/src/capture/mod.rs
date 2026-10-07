@@ -11,6 +11,10 @@ pub mod stream_assembler;
 pub mod stream_processor;
 pub mod varint;
 
+// Your own character's records, read only by the replay's character report.
+#[cfg(test)]
+pub(crate) mod character_report;
+
 // Live capture. pcap needs libloading, the port detector reads the wall clock,
 // and the file replay drives them both — none of which exist on wasm32.
 #[cfg(feature = "backend")]

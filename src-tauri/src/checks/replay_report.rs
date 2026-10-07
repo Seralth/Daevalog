@@ -29,6 +29,8 @@
 //! A2_REPLAY_PACKETS=1              print every framed packet (`pkt`) and every
 //!                                  bundle opened inside one (`bun`) as hex,
 //!                                  capture ms first, in the window
+//! A2_REPLAY_CHARACTER=1            print your own character's latest state as
+//!                                  JSON instead (see `replay_character`)
 //! cargo test --lib replay_report -- --ignored --nocapture
 //! ```
 
@@ -50,7 +52,7 @@ fn env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.is_empty())
 }
 
-fn decode_hex(hex: &str) -> Option<Vec<u8>> {
+pub(super) fn decode_hex(hex: &str) -> Option<Vec<u8>> {
     let hex = hex.trim();
     if hex.len() % 2 != 0 {
         return None;
@@ -97,7 +99,7 @@ fn diff(before: Option<&TargetCombatData>, after: Option<&TargetCombatData>) -> 
 
 /// Packets inside a buffer, bundles opened, for the opcode dump, the timeline
 /// and the player list.
-fn frames_of(buf: &[u8], top: bool, out: &mut Vec<Vec<u8>>, depth: usize) {
+pub(super) fn frames_of(buf: &[u8], top: bool, out: &mut Vec<Vec<u8>>, depth: usize) {
     let walk = if top { framing::walk(buf) } else { framing::walk_inner(buf) };
     for f in &walk.frames {
         match f.kind {
@@ -138,6 +140,10 @@ fn replay_report() {
         eprintln!("set A2_REPLAY_FILE");
         return;
     };
+    if env("A2_REPLAY_CHARACTER").is_some() {
+        println!("{}", super::replay_character::report(&path));
+        return;
+    }
     let options = Options {
         target: env("A2_REPLAY_TARGET").and_then(|v| v.parse().ok()),
         from: env("A2_REPLAY_FROM"),

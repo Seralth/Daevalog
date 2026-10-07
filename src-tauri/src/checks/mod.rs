@@ -1,3 +1,4 @@
+mod replay_character;
 pub(crate) mod replay_report;
 mod replay_players;
 mod replay_taken;
