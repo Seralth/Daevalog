@@ -3,7 +3,6 @@ use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 
 use parking_lot::{Mutex, RwLock};
 
-use crate::entity::damage_packet::ParsedDamagePacket;
 use crate::entity::job_class::JobClass;
 
 /// Maximum idle gap before a fight is considered ended and a new one begins.
@@ -461,6 +460,7 @@ fn light_clone(td: &TargetCombatData) -> TargetCombatData {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::entity::damage_packet::ParsedDamagePacket;
 
     #[test]
     fn damage_window_sums_recent_seconds_only() {
