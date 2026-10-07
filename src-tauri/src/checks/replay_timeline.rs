@@ -8,8 +8,11 @@
 //! in the fight), then the whole fight as one `timeline {json}` line, other
 //! players' debuffs on the target and passives included, with the game's
 //! English names of the abnormals and stats. The JSON keeps your and your
-//! summons' DoT ticks on the target (`dot_ticks` lines) apart from the hits,
-//! up to 15 s after the last hit.
+//! summons' DoT ticks on the target (`dot_ticks` lines: the ticks the game's
+//! records count, so none of a spirit that has left, but those a training
+//! dummy holds) apart from the hits: from the window's start when one is
+//! given, else from 15 s before the first hit, never the ticks of the fight
+//! before on that target, up to 15 s after the last hit.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -24,6 +27,9 @@ use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
 /// The gap that ends a fight, as the encounter mode's default.
 const FIGHT_GAP_MS: i64 = 15_000;
+/// With no window given, how long before a fight's first hit its DoT ticks
+/// count: the same gap, so ticks belong to a fight on either side alike.
+const TICK_LEAD_MS: i64 = FIGHT_GAP_MS;
 
 /// The `hit_flags` and `dot_ticks` trace lines, kept instead of printed,
 /// each with its target.
@@ -162,8 +168,8 @@ impl Gather {
     }
 
     /// A line of yours or your summons' on an enemy, in the window.
-    fn own(&self, h: &Hit, window: (i64, i64), target: Option<i32>) -> bool {
-        if h.ms < window.0 || h.ms > window.1 || target.is_some_and(|t| t != h.target) {
+    fn own(&self, h: &Hit, window: (Option<i64>, i64), target: Option<i32>) -> bool {
+        if window.0.is_some_and(|from| h.ms < from) || h.ms > window.1 || target.is_some_and(|t| t != h.target) {
             return false;
         }
         let links = self.links_at(h.ms);
@@ -173,14 +179,15 @@ impl Gather {
         local.contains(&summon_resolver::resolve(h.actor, links)) && !friendly
     }
 
-    /// Print every fight in `window` (capture ms), only `target`'s if given.
+    /// Print every fight in `window` (capture ms; from the capture's start
+    /// when its start is None), only `target`'s if given.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn report(
         mut self,
         zone: chrono::FixedOffset,
         end_ms: i64,
         final_links: HashMap<i32, i32>,
-        window: (i64, i64),
+        window: (Option<i64>, i64),
         target: Option<i32>,
         mobs: &HashMap<i32, i32>,
         skills: &SkillLookup,
@@ -190,27 +197,30 @@ impl Gather {
         self.take_lines();
         self.links.push((end_ms, final_links));
         let instances = self.timeline.all_instances();
-        let mut fights: Vec<(i32, Vec<&Hit>)> = Vec::new();
         let mut by_target: BTreeMap<i32, Vec<&Hit>> = BTreeMap::new();
         for h in self.hits.iter().filter(|h| self.own(h, window, target)) {
             by_target.entry(h.target).or_default().push(h);
         }
         let dots: Vec<&Hit> = self.dots.iter().filter(|d| self.own(d, window, target)).collect();
+        // (target, hits, ms of its first tick)
+        let mut fights: Vec<(i32, Vec<&Hit>, i64)> = Vec::new();
         for (t, hits) in by_target {
-            let mut cur: Vec<&Hit> = Vec::new();
-            for h in hits {
-                if cur.last().is_some_and(|l| h.ms - l.ms > FIGHT_GAP_MS) {
-                    fights.push((t, std::mem::take(&mut cur)));
-                }
-                cur.push(h);
+            // Ticks before the first hit (a DoT cast before the window, or
+            // by a cast that does no damage) count from the window's start,
+            // else up to TICK_LEAD_MS before; never the fight before's.
+            let mut ticks_end = i64::MIN;
+            for run in hits.chunk_by(|a, b| b.ms - a.ms <= FIGHT_GAP_MS) {
+                let (start, end) = (run[0].ms, run[run.len() - 1].ms);
+                let from = window.0.unwrap_or(start - TICK_LEAD_MS).max(ticks_end.saturating_add(1));
+                ticks_end = end + FIGHT_GAP_MS;
+                fights.push((t, run.to_vec(), from));
             }
-            fights.push((t, cur));
         }
-        fights.sort_by_key(|(_, h)| h[0].ms);
+        fights.sort_by_key(|(_, h, _)| h[0].ms);
         out(format!("\n== timeline: {} fights", fights.len()));
-        for (t, hits) in fights {
+        for (t, hits, ticks_from) in fights {
             let (start, end) = (hits[0].ms, hits[hits.len() - 1].ms);
-            let fight = self.fight(t, start, end, &hits, &dots, &instances, zone, mobs, skills, npcs);
+            let fight = self.fight(t, start, end, ticks_from, &hits, &dots, &instances, zone, mobs, skills, npcs);
             for line in fight.0 {
                 out(line);
             }
@@ -224,6 +234,7 @@ impl Gather {
         target: i32,
         start: i64,
         end: i64,
+        ticks_from: i64,
         hits: &[&Hit],
         dots: &[&Hit],
         instances: &[Instance],
@@ -329,7 +340,7 @@ impl Gather {
         };
         // Ticks go on after the last hit. The next fight on this target
         // starts more than FIGHT_GAP_MS later.
-        let dots = dots.iter().filter(|d| d.target == target && d.ms >= start && d.ms <= end + FIGHT_GAP_MS);
+        let dots = dots.iter().filter(|d| d.target == target && d.ms >= ticks_from && d.ms <= end + FIGHT_GAP_MS);
         let json = json!({
             "target": target,
             "target_name": target_name,
@@ -425,6 +436,23 @@ mod tests {
         assert_eq!(passive["name"], "Fire Spirit");
     }
 
+    /// The timeline JSON of each fight in records of 2026-10-06, replayed
+    /// from `from` (time of day) when given.
+    fn timelines(lines: &[(&str, &str)], from: Option<&str>) -> Vec<serde_json::Value> {
+        let text: String =
+            lines.iter().map(|(t, hex)| format!("2026-10-06T{t}000000-07:00|Client:40000:13328|{hex}\n")).collect();
+        let mut out = Vec::new();
+        let options = Options { timeline: true, from: from.map(str::to_string), ..Default::default() };
+        run(&text, options, &mut |l| out.push(l));
+        out.iter().filter_map(|l| l.strip_prefix("timeline ")).map(|j| serde_json::from_str(j).unwrap()).collect()
+    }
+
+    /// Each fight's ticks: (ms, actor, damage).
+    fn ticks(fight: &serde_json::Value) -> Vec<(i64, i64, i64)> {
+        let dots = fight["dots"].as_array().expect("dots");
+        dots.iter().map(|d| (d["ms"].as_i64().unwrap(), d["actor"].as_i64().unwrap(), d["damage"].as_i64().unwrap())).collect()
+    }
+
     /// Records of 2026-10-06 by the local player 6759, moved onto target
     /// 40171: two own stat records, a hit with two additional hits of 45,
     /// and `more`. The fight's timeline JSON.
@@ -432,15 +460,8 @@ mod tests {
         let own = "294a36e734044100840300004c00000000007b01340800007c01000000000000000000000000";
         let hit = "270438ebb9022600e73430c1f4001202040002cf769b5f01000000e65bf00f022d2d0100";
         let lines = [("21:47:55.000", own), ("21:47:55.100", own), ("21:47:56.170", hit)];
-        let text: String = lines
-            .iter()
-            .chain(more)
-            .map(|(t, hex)| format!("2026-10-06T{t}000000-07:00|Client:40000:13328|{hex}\n"))
-            .collect();
-        let mut out = Vec::new();
-        run(&text, Options { timeline: true, ..Default::default() }, &mut |l| out.push(l));
-        let json = out.iter().find_map(|l| l.strip_prefix("timeline ")).expect("a timeline line");
-        serde_json::from_str(json).unwrap()
+        let lines: Vec<(&str, &str)> = lines.iter().chain(more).copied().collect();
+        timelines(&lines, None).into_iter().next().expect("a timeline line")
     }
 
     #[test]
@@ -468,5 +489,78 @@ mod tests {
             (Some(6759), Some(6759), Some(16_140_000), Some(754))
         );
         assert_eq!(dots[0]["ms"].as_i64(), Some(1_791_348_486_170));
+    }
+
+    /// Records of 2026-10-06 21:16 (Kernon of the West 48776; the local
+    /// player is 15740): the link record to Wind Spirit 25676, an own record
+    /// (twice), a hit, then two Malicious Whirlwind ticks, the spirit's
+    /// `42 36` flag 7 and two more ticks. The game's record counted the two
+    /// before it left, and the list keeps those only.
+    #[test]
+    fn a_spirit_s_ticks_after_it_left_are_not_in_the_list() {
+        let own = "114a36fc7a000000000000000000";
+        let tick = "19053888fd020accc801881241c15f5ff7025828f400";
+        let lines = [
+            ("21:16:20.180", "210438ccc8010400fc7ad1e3ff00eb02affdf46301000000e65be0010100"),
+            ("21:16:20.284", own),
+            ("21:16:20.384", own),
+            ("21:16:21.382", "24043888fd020600fc7a242df900f1020000011ba2556102000000e65bda0f0200"),
+            ("21:16:23.871", tick),
+            ("21:16:24.881", tick),
+            ("21:16:25.876", "0b4236ccc8010007"),
+            ("21:16:25.876", tick),
+            ("21:16:26.879", tick),
+        ];
+        let fights = timelines(&lines, None);
+        assert_eq!(fights.len(), 1);
+        assert_eq!(fights[0]["target"], 48776);
+        assert_eq!(ticks(&fights[0]), [(1_791_346_583_871, 25676, 375), (1_791_346_584_881, 25676, 375)]);
+    }
+
+    /// Records of 2026-10-06 15:47 (the local player is 4525): Melee
+    /// Training Scarecrow 26622's spawn, an own record (twice), a hit, three
+    /// Jointstrike: Corrode ticks of 144 that the dummy holds, and the next
+    /// hit 15 s after the first. The game's record of 15:47:17 starts after
+    /// the first hit (the player restarted the analyzer) and counts the ticks.
+    #[test]
+    fn a_fight_takes_its_ticks_from_the_window_start_but_not_the_fight_before_s() {
+        let spawn = "94014136fecf01042000239f240040026063f1c7fb7dd5c70016c04600d08942003101d3980694a70764000000640000\
+            000000000000000000000000000000000000000000640000000100000000000000000000000000000000000000010601110181\
+            969800ffffffffffffffff8075d52abb030000fecf0101006063f1c7fb7dd5c70016c04601000a000000a495f91800";
+        let own = "174a36ad23012c00000000000000000000000000";
+        let tick = "180538fecf010aad23eb45d5f142609001fa6df600";
+        let lines = [
+            ("15:45:37.214", spawn),
+            ("15:47:14.211", own),
+            ("15:47:15.211", own),
+            ("15:47:15.815", "240438fecf010600ad230159000172020000016fc4226401000000c052c2020100"),
+            ("15:47:16.918", tick),
+            ("15:47:18.914", tick),
+            ("15:47:19.914", tick),
+            ("15:47:30.864", "260438fecf013600ad23104bf40074028000014b526d5f01000000c052a60701140100"),
+        ];
+        let at = |s: i64| 1_791_326_836_918 + s;
+        let held = [(at(0), 4525, 144), (at(1996), 4525, 144), (at(2996), 4525, 144)];
+        // From the record's start: one fight, the ticks before its first hit.
+        let fights = timelines(&lines, Some("15:47:16.500"));
+        assert_eq!(fights.len(), 1);
+        assert_eq!((fights[0]["target"].as_i64(), fights[0]["start_ms"].as_i64()), (Some(26622), Some(at(13_946))));
+        assert_eq!(ticks(&fights[0]), held);
+        // The whole capture: the ticks are in the fight before's 15 s, so
+        // the next fight does not take them.
+        let fights = timelines(&lines, None);
+        assert_eq!(fights.len(), 2);
+        assert_eq!(ticks(&fights[0]), held);
+        assert_eq!(ticks(&fights[1]), []);
+        // With no fight before, they are within 15 s before the first hit.
+        let alone: Vec<(&str, &str)> = lines.iter().filter(|l| l.0 != "15:47:15.815").copied().collect();
+        let fights = timelines(&alone, None);
+        assert_eq!(fights.len(), 1);
+        assert_eq!(ticks(&fights[0]), held);
+        // With no hit after them the meter never counts them (rule 9), but
+        // the game's records do.
+        let fights = timelines(&lines[..lines.len() - 1], None);
+        assert_eq!(fights.len(), 1);
+        assert_eq!(ticks(&fights[0]), held);
     }
 }

@@ -426,7 +426,9 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     if let Some(g) = gather {
         let mobs = storage.get_mob_data();
         let zone = zone.unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
-        g.report(zone, last_ts, storage.get_summon_data(), (window_ms, last_ts), target, &mobs, &skills, &npcs, out);
+        // A fight's ticks start where the window does, when one is given.
+        let window = (from.is_some().then_some(window_ms), last_ts);
+        g.report(zone, last_ts, storage.get_summon_data(), window, target, &mobs, &skills, &npcs, out);
     }
 }
 

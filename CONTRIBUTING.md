@@ -25,7 +25,7 @@ A unit test proves that the code does what the author thinks. A unit test does n
 
    Other variables: `A2_REPLAY_RESET_AT=HH:MM:SS` (press the reset button at that time), `A2_REPLAY_HITS=1` (print every change on the target), `A2_REPLAY_TAKEN=1` (print the damage players took, per player and skill).
 
-   `A2_REPLAY_FLAGS=1` prints every hit as a `hit_flags` line: capture ms, actor, target, skill, `damage`, hit type, layout, the flags and angle bytes, `multi` (additional hits), `multi_dmg` (their damage, which `damage` leaves out), the restored HP and `scalar`. The scalar is the actor's combat speed, 10000 plus the CombatSpeed stat (282); it is `-` when the record has none. `A2_REPLAY_TIMELINE=1` prints each fight of the local player as JSON: the hits with these fields, the DoT ticks (`dots`, up to 15 s after the last hit), the buffs and the stats.
+   `A2_REPLAY_FLAGS=1` prints every hit as a `hit_flags` line: capture ms, actor, target, skill, `damage`, hit type, layout, the flags and angle bytes, `multi` (additional hits), `multi_dmg` (their damage, which `damage` leaves out), the restored HP and `scalar`. The scalar is the actor's combat speed, 10000 plus the CombatSpeed stat (282); it is `-` when the record has none. `A2_REPLAY_TIMELINE=1` prints each fight of the local player as JSON: the hits with these fields, the DoT ticks (`dots`: the ticks the game's records count, so none of a spirit that has left but those a training dummy holds; from the window's start when `A2_REPLAY_FROM` is given, else from 15 s before the first hit, never the fight before's on that target; up to 15 s after the last hit), the buffs and the stats.
 5. Compare the replay with the game's record, skill by skill:
 
    ```
