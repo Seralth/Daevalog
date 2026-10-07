@@ -115,7 +115,9 @@
       "hps": "HPS",
       "healTicks": "Tics de curación",
       "hotTicks": "Tics de HoT",
-      "healSkills": "Habilidades"
+      "healSkills": "Habilidades",
+      "damageReceived": "Daño recibido",
+      "hitsReceived": "Ataques recibidos"
     },
     "fightVs": "Combate contra",
     "all": "Todo",
@@ -125,6 +127,9 @@
     "dpsChart": "Gráfico de DPS",
     "historyBtn": "Historial",
     "timeline": "Cronología",
+    "taken": {
+      "monster": "Monstruo"
+    },
     "mode": {
       "dmg": "DÑO",
       "heal": "CUR"
@@ -174,6 +179,8 @@
     "notCompared": "Solo cifras del juego",
     "damageMeter": "Daño, medidor",
     "damageGame": "Daño, juego",
+    "takenMeter": "Daño recibido, medidor",
+    "takenGame": "Daño recibido, juego",
     "allMatch": "Las {n} habilidades coinciden",
     "someMatch": "{x} de {n} habilidades coinciden",
     "noComparison": "No hay paquetes guardados de este combate, así que solo se muestran las cifras del juego.",

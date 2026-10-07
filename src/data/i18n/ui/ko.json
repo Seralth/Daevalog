@@ -115,7 +115,9 @@
       "hps": "HPS",
       "healTicks": "회복 틱",
       "hotTicks": "HoT 틱",
-      "healSkills": "스킬"
+      "healSkills": "스킬",
+      "damageReceived": "받은 피해",
+      "hitsReceived": "받은 타격 횟수"
     },
     "fightVs": "전투 vs",
     "all": "전체",
@@ -125,6 +127,9 @@
     "dpsChart": "DPS 차트",
     "historyBtn": "기록",
     "timeline": "타임라인",
+    "taken": {
+      "monster": "몬스터"
+    },
     "mode": {
       "dmg": "피해",
       "heal": "회복"
@@ -174,6 +179,8 @@
     "notCompared": "게임 수치만",
     "damageMeter": "피해, 미터",
     "damageGame": "피해, 게임",
+    "takenMeter": "받은 피해, 미터",
+    "takenGame": "받은 피해, 게임",
     "allMatch": "스킬 {n}개 모두 일치",
     "someMatch": "스킬 {n}개 중 {x}개 일치",
     "noComparison": "이 전투의 패킷이 저장되지 않아 게임 수치만 표시합니다.",

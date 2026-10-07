@@ -6435,6 +6435,27 @@ body.isHistoryWindow .historyPanel .historyHeader .closeX {
   color: var(--hud-faint);
 }
 
+/* Damage received: the skill table's look on its own columns, so the skill
+   table's column settings leave it alone. Damage is the white column. */
+.detailsPanel .takenSkills {
+  --scrollbar-w: 10px;
+}
+.detailsPanel .takenSkills .cell.takenMonster span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detailsPanel .takenSkills .skills .skillRow .cell.takenDmg {
+  font-variation-settings: "wght" 700, "wdth" 87.5;
+  font-weight: 700;
+  color: var(--hud-num);
+}
+.detailsPanel .takenSkills .skills .skillRow .cell.takenHits {
+  font-variation-settings: "wght" 600, "wdth" 87.5;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.86);
+}
+
 /* ---------- details: charts ---------- */
 
 .detailsPanel .dpsChartWrap {

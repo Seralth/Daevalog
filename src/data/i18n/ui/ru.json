@@ -115,7 +115,9 @@
       "hps": "HPS",
       "healTicks": "Тики лечения",
       "hotTicks": "Тики HoT",
-      "healSkills": "Умения"
+      "healSkills": "Умения",
+      "damageReceived": "Полученный урон",
+      "hitsReceived": "Кол-во полученных ударов"
     },
     "fightVs": "Бой против",
     "all": "Все",
@@ -125,6 +127,9 @@
     "dpsChart": "График DPS",
     "historyBtn": "История",
     "timeline": "Хронология",
+    "taken": {
+      "monster": "Монстры"
+    },
     "mode": {
       "dmg": "УРН",
       "heal": "ЛЕЧ"
@@ -174,6 +179,8 @@
     "notCompared": "Только числа игры",
     "damageMeter": "Урон, счётчик",
     "damageGame": "Урон, игра",
+    "takenMeter": "Полученный урон, счётчик",
+    "takenGame": "Полученный урон, игра",
     "allMatch": "Все умения совпадают ({n})",
     "someMatch": "Совпадает умений: {x} из {n}",
     "noComparison": "Пакеты этого боя не сохранены, поэтому показаны только числа игры.",

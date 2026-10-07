@@ -1821,6 +1821,13 @@ class DpsApp {
         minDmg: 0, maxDmg: 0, job: v.job ?? "", specs: null, hitTimestamps: [],
       });
     }
+    // Damage received, per player and skill. A saved fight is filtered to the
+    // chosen players here, a live one by the backend. null for a fight saved
+    // before damage received was kept.
+    const takenSkills = Array.isArray(detailObj?.takenSkills)
+      ? detailObj.takenSkills.filter((v) => v && typeof v === "object" && (!attackerIdSet || attackerIdSet.has(Number(v.actorId))))
+      : null;
+
     const healBattleMs = Number.isFinite(battleTimeMsRaw) ? battleTimeMsRaw : 0;
     const healPerSecText = healBattleMs > 0
       ? `${this.formatAbbreviatedNumber(totalHeal / healBattleMs * 1000)}`
@@ -1852,6 +1859,7 @@ class DpsApp {
       // Per-actor/skill healing (DMG/HEAL toggle), filtered to the selected member
       // and name-resolved (see processing above).
       healSkills: healSkillsOut,
+      takenSkills,
       showSkillIcons,
       perActorStats,
       showCombinedTotals: !attackerIds || attackerIds.length === 0,

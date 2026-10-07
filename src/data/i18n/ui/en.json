@@ -115,7 +115,9 @@
       "hps": "HPS",
       "healTicks": "Heal Ticks",
       "hotTicks": "HoT Ticks",
-      "healSkills": "Skills"
+      "healSkills": "Skills",
+      "damageReceived": "Damage Received",
+      "hitsReceived": "Received Hits"
     },
     "fightVs": "Fight vs",
     "all": "All",
@@ -125,6 +127,9 @@
     "dpsChart": "DPS Chart",
     "historyBtn": "History",
     "timeline": "Timeline",
+    "taken": {
+      "monster": "Monster"
+    },
     "mode": {
       "dmg": "DMG",
       "heal": "HEAL"
@@ -174,6 +179,8 @@
     "notCompared": "Game numbers only",
     "damageMeter": "Damage, meter",
     "damageGame": "Damage, game",
+    "takenMeter": "Damage received, meter",
+    "takenGame": "Damage received, game",
     "allMatch": "All {n} skills match",
     "someMatch": "{x} of {n} skills match",
     "noComparison": "No packets saved for this fight, so only the game's numbers are shown.",

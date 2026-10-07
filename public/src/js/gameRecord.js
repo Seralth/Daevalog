@@ -12,6 +12,9 @@ const createGameRecordUI = () => {
   const meterTotalEl = section.querySelector(".gameRecordMeterTotal");
   const gameTotalEl = section.querySelector(".gameRecordGameTotal");
   const meterTotalBox = meterTotalEl?.closest(".gameRecordTotal");
+  const meterTakenEl = section.querySelector(".gameRecordMeterTaken");
+  const gameTakenEl = section.querySelector(".gameRecordGameTaken");
+  const meterTakenBox = meterTakenEl?.closest(".gameRecordTotal");
   const verdictEl = section.querySelector(".gameRecordVerdict");
   const onlyDifferEl = section.querySelector(".gameRecordOnlyDiffer input");
   const onlyDifferLabel = section.querySelector(".gameRecordOnlyDiffer");
@@ -63,6 +66,10 @@ const createGameRecordUI = () => {
     gameTotalEl.textContent = num(c.gameTotal);
     meterTotalBox.hidden = !c.compared;
     meterTotalEl.textContent = num(c.meterTotal);
+    // The damage the player received over the record's window.
+    gameTakenEl.textContent = num(c.gameTaken?.damage);
+    meterTakenBox.hidden = !c.compared;
+    meterTakenEl.textContent = num(c.meterTaken?.damage);
     onlyDifferLabel.hidden = !c.compared || view !== "both";
     footEl.classList.toggle("isHiddenForRecord", !c.compared);
     verdictEl.classList.remove("isMatch", "isDiffer");
@@ -104,6 +111,7 @@ const createGameRecordUI = () => {
       rows: current.rows,
       names: current.names,
       gameTotal: current.gameTotal,
+      taken: both ? current.meterTaken : current.gameTaken,
       onlyDiffer: both && onlyDifferEl.checked,
       ...player(),
     });

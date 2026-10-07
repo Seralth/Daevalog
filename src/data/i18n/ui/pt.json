@@ -115,7 +115,9 @@
       "hps": "HPS",
       "healTicks": "Ticks de cura",
       "hotTicks": "Ticks de HoT",
-      "healSkills": "Habilidades"
+      "healSkills": "Habilidades",
+      "damageReceived": "Dano recebido",
+      "hitsReceived": "Acertos recebidos"
     },
     "fightVs": "Combate contra",
     "all": "Tudo",
@@ -125,6 +127,9 @@
     "dpsChart": "Gráfico de DPS",
     "historyBtn": "Histórico",
     "timeline": "Linha do tempo",
+    "taken": {
+      "monster": "Monstro"
+    },
     "mode": {
       "dmg": "DAN",
       "heal": "CURA"
@@ -174,6 +179,8 @@
     "notCompared": "Só números do jogo",
     "damageMeter": "Dano, medidor",
     "damageGame": "Dano, jogo",
+    "takenMeter": "Dano recebido, medidor",
+    "takenGame": "Dano recebido, jogo",
     "allMatch": "Todas as {n} habilidades batem",
     "someMatch": "{x} de {n} habilidades batem",
     "noComparison": "Nenhum pacote salvo para este combate, então só os números do jogo são exibidos.",

@@ -36,6 +36,38 @@ const foldDotRows = (rows) => {
   return out;
 };
 
+// Attacks on a player as the game counts them (TakenStats::total in the
+// backend): hits with a value, reflects, immunes and misses, never a tick.
+const takenAttacks = (e) => ["hits", "reflects", "immune", "miss"].reduce((n, f) => n + (Number(e?.[f]) || 0), 0);
+
+// The hit results a player turned a monster's hit into, each a column of the
+// damage received list where any is not zero.
+const TAKEN_RESULTS = ["shieldBlock", "parry", "perfectBlock", "ironWall", "regeneration"];
+
+// A fight's damage received and the attacks behind it. null for a fight saved
+// before damage received was kept.
+const takenTotals = (entries) => (Array.isArray(entries)
+  ? { damage: entries.reduce((n, e) => n + (Number(e?.damage) || 0), 0), attacks: entries.reduce((n, e) => n + takenAttacks(e), 0) }
+  : null);
+
+// The damage received entries (one per player and skill) added up per skill
+// name, as the skill table does, and monster, most damage first.
+const takenRows = (entries) => {
+  const rows = new Map();
+  for (const e of Array.isArray(entries) ? entries : []) {
+    if (!e || typeof e !== "object") continue;
+    const sourceCode = Number(e.sourceCode) || 0;
+    const key = `${e.name || e.code}:${sourceCode}`;
+    const row = rows.get(key) || { code: Number(e.code) || 0, name: String(e.name ?? ""), sourceCode, damage: 0, attacks: 0, hits: 0 };
+    row.damage += Number(e.damage) || 0;
+    row.attacks += takenAttacks(e);
+    row.hits += Number(e.hits) || 0;
+    for (const f of TAKEN_RESULTS) row[f] = (row[f] || 0) + (Number(e[f]) || 0);
+    rows.set(key, row);
+  }
+  return [...rows.values()].sort((a, b) => b.damage - a.damage || a.code - b.code);
+};
+
 // Wraps an async job for a timer: a tick that comes while the previous run is
 // still going is skipped, so slow backend calls never pile up.
 const skipWhileRunning = (job) => {
@@ -162,6 +194,9 @@ const createDetailsUI = ({
     detailsFightTitleEl.innerHTML = `${fightVs} <span class="fightTitleBossName">${bossName}</span>${tierBadge}${suffix}`;
   };
 
+  // Damage received: the game record's window in its view, else the fight's.
+  const receivedOf = (d) => d?.received ?? takenTotals(d?.takenSkills);
+
   const STATUS = [
     {
       key: "details.stats.totalDamage",
@@ -181,6 +216,13 @@ const createDetailsUI = ({
     { key: "details.stats.perfectRate", fallback: "Perfect Rate", getValue: (d) => pctText(d?.totalPerfectPct) },
     { key: "details.stats.doubleRate", fallback: "Double Rate", getValue: (d) => pctText(d?.totalDoublePct) },
     { key: "details.stats.regen", fallback: "Regen", getValue: (d) => formatDamageCompact(d?.totalRegen) },
+    // In full, as the game's record has them.
+    {
+      key: "details.stats.damageReceived",
+      fallback: "Damage Received",
+      getValue: (d) => formatNum(receivedOf(d)?.damage),
+    },
+    { key: "details.stats.hitsReceived", fallback: "Received Hits", getValue: (d) => formatNum(receivedOf(d)?.attacks) },
   ];
 
   // Stats shown when the DMG/HEAL toggle is on HEAL. Fewer, healing-relevant rows;
@@ -339,8 +381,6 @@ const createDetailsUI = ({
         return formatDamageCompact(data.totalRegen);
       case "details.stats.partyHeal":
         return formatDamageCompact(data.totalPartyHeal);
-      case "details.stats.damageReceived":
-        return formatDamageCompact(data.totalDamageReceived);
       case "details.stats.empty":
         return "";
       case "details.stats.combatTime":
@@ -991,9 +1031,12 @@ const createDetailsUI = ({
       v.counts.forEach((n, i) => { t.counts[i] += n; });
     });
     const pct = (n, d) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
+    const taken = gameView.taken;
     return {
       skills,
       healSkills: [],
+      // The game's TotalCount: the attacks on the player.
+      received: taken ? { damage: Number(taken.damage) || 0, attacks: Number(taken.counts?.[0]) || 0 } : undefined,
       totalDmg: t.dmg,
       totalHits: t.counts[0],
       totalCritPct: pct(t.counts[1], t.counts[0]),
@@ -1360,6 +1403,52 @@ const createDetailsUI = ({
       decorateGameCells(view, skill);
     }
 
+  };
+
+  // ── Damage received: what hit the players shown, by skill and monster ──
+  const takenSection = detailsPanel?.querySelector?.(".takenSection");
+  const takenTable = takenSection?.querySelector?.(".takenSkills");
+  const takenList = takenSection?.querySelector?.(".takenList");
+
+  const renderTaken = (details) => {
+    if (!takenTable || !takenList) return;
+    const rows = takenRows(details?.takenSkills);
+    takenSection.style.display = rows.length ? "" : "none";
+    const shown = TAKEN_RESULTS.filter((f) => rows.some((r) => r[f] > 0));
+    takenTable.querySelectorAll(".skillHeader .cell[data-taken]").forEach((cell) => {
+      cell.style.display = shown.includes(cell.dataset.taken) ? "" : "none";
+    });
+    takenTable.style.setProperty("--skill-grid-cols", [
+      "minmax(90px, 3fr)", "minmax(70px, 2fr)", "minmax(44px, 1fr)", "minmax(30px, 0.75fr)",
+      ...shown.map(() => "minmax(24px, 0.65fr)"),
+    ].join(" "));
+    const total = rows.reduce((n, r) => n + r.damage, 0);
+    takenList.innerHTML = "";
+    rows.forEach((r) => {
+      const rowEl = document.createElement("div");
+      rowEl.className = "skillRow";
+      const fill = document.createElement("div");
+      fill.className = "rowFill";
+      fill.style.transform = `scaleX(${total > 0 ? clamp01(r.damage / total) : 0})`;
+      rowEl.appendChild(fill);
+      const cell = (className, text) => {
+        const el = document.createElement("div");
+        el.className = `cell ${className}`;
+        const span = document.createElement("span");
+        if (className === "name") span.className = "skillNameText";
+        span.textContent = text;
+        el.appendChild(span);
+        rowEl.appendChild(el);
+      };
+      const name = i18n?.getSkillName?.(r.code, r.name) || r.name
+        || (i18n?.format?.("skills.fallback", { code: r.code }, `Skill ${r.code}`) ?? `Skill ${r.code}`);
+      cell("name", name);
+      cell("takenMonster", r.sourceCode > 0 ? i18n?.getNpcName?.(r.sourceCode, "") || `#${r.sourceCode}` : "-");
+      cell("center takenDmg", formatNum(r.damage));
+      cell("center takenHits", `${r.attacks}`);
+      shown.forEach((f) => cell("center", r[f] > 0 && r.hits > 0 ? `${Math.round((r[f] / r.hits) * 100)}%` : ""));
+      takenList.appendChild(rowEl);
+    });
   };
 
   // ── Collapsible section toggle ──
@@ -2017,7 +2106,7 @@ const createDetailsUI = ({
     return [...totals.values()].sort((a, b) => b.totalDmg - a.totalDmg);
   };
 
-  const buildCombinedDetails = (detailsList = [], totalTargetDamage = 0, showSkillIcons = true) => {
+  const buildCombinedDetails = (detailsList = [], totalTargetDamage = 0, showSkillIcons = true, attackerIds = null) => {
     const skills = detailsList.flatMap((details) => (Array.isArray(details?.skills) ? details.skills : []));
     let totalDmg = 0;
     let totalTimes = 0;
@@ -2073,15 +2162,11 @@ const createDetailsUI = ({
         });
         return sum;
       })(),
-      totalDamageReceived: (() => {
-        let sum = 0;
-        const ids = selectedAttackerIds || [...detailsActors.keys()];
-        (Array.isArray(ids) ? ids : []).forEach((id) => {
-          const actor = detailsActors.get(Number(id));
-          if (actor) sum += Number(actor.damageReceived) || 0;
-        });
-        return sum;
-      })(),
+      // Each target's list would count a hit taken during two fights twice;
+      // the context's counts each hit once.
+      takenSkills: Array.isArray(detailsContext?.takenSkills)
+        ? detailsContext.takenSkills.filter((e) => !attackerIds?.length || attackerIds.includes(Number(e?.actorId)))
+        : null,
       combatTime: formatBattleTime(battleTimeMs),
       battleTimeMs,
       skills,
@@ -2161,7 +2246,7 @@ const createDetailsUI = ({
         (sum, target) => sum + (Number(target?.totalDamage) || 0),
         0
       );
-      const mergedDetails = buildCombinedDetails(allTargetDetails, totalTargetDamage, showSkillIcons);
+      const mergedDetails = buildCombinedDetails(allTargetDetails, totalTargetDamage, showSkillIcons, selectedAttackerIds);
       if (typeof seq === "number" && seq !== openSeq) return;
       render(mergedDetails, row);
       return;
@@ -2243,6 +2328,7 @@ const createDetailsUI = ({
     renderPartyBars(partyBarCtx?.stats || details?.perActorStats, partyBarCtx?.battleTimeMs || details?.battleTimeMs);
     renderStats(details, { compact: activeCompactMode });
     renderSkills(details, { compact: activeCompactMode });
+    renderTaken(details);
     renderDpsChart(details);
     renderTimeline(details);
     lastRow = row;

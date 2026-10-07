@@ -109,7 +109,7 @@ test("every language file has every English string, with the same placeholders",
 });
 
 // Ids that look like keys but are never shown as text (stat slots in details.js).
-const NOT_TEXT = new Set(["details.stats.empty", "details.stats.partyHeal", "details.stats.damageReceived"]);
+const NOT_TEXT = new Set(["details.stats.empty", "details.stats.partyHeal"]);
 const pageFiles = (dir) =>
   readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
     entry.isDirectory() ? pageFiles(new URL(`${entry.name}/`, dir))

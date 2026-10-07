@@ -115,7 +115,9 @@
       "hps": "HPS",
       "healTicks": "Heilticks",
       "hotTicks": "HoT-Ticks",
-      "healSkills": "Skills"
+      "healSkills": "Skills",
+      "damageReceived": "Erhaltener Schaden",
+      "hitsReceived": "Gesamtschläge (Erhalten)"
     },
     "fightVs": "Kampf gegen",
     "all": "Alle",
@@ -125,6 +127,9 @@
     "dpsChart": "DPS-Diagramm",
     "historyBtn": "Verlauf",
     "timeline": "Zeitleiste",
+    "taken": {
+      "monster": "Monster"
+    },
     "mode": {
       "dmg": "SCH",
       "heal": "HEIL"
@@ -174,6 +179,8 @@
     "notCompared": "Nur Werte des Spiels",
     "damageMeter": "Schaden, Meter",
     "damageGame": "Schaden, Spiel",
+    "takenMeter": "Erhaltener Schaden, Meter",
+    "takenGame": "Erhaltener Schaden, Spiel",
     "allMatch": "Alle {n} Skills stimmen überein",
     "someMatch": "{x} von {n} Skills stimmen überein",
     "noComparison": "Für diesen Kampf sind keine Pakete gespeichert, daher werden nur die Werte des Spiels gezeigt.",

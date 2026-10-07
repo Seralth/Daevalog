@@ -360,6 +360,14 @@
                   <span data-i18n="gameRecord.damageGame">Damage, game</span>
                   <strong class="gameRecordGameTotal"></strong>
                 </div>
+                <div class="gameRecordTotal">
+                  <span data-i18n="gameRecord.takenMeter">Damage received, meter</span>
+                  <strong class="gameRecordMeterTaken"></strong>
+                </div>
+                <div class="gameRecordTotal">
+                  <span data-i18n="gameRecord.takenGame">Damage received, game</span>
+                  <strong class="gameRecordGameTaken"></strong>
+                </div>
                 <div class="gameRecordVerdict"></div>
                 <label class="gameRecordOnlyDiffer">
                   <input type="checkbox" /> <span data-i18n="gameRecord.onlyDiffer">Only rows that differ</span>
@@ -423,6 +431,29 @@
                     Damage over time hits are not included in total crit, double, perfect or back attack
                     ratios.
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detailsSection takenSection">
+              <div class="detailsSectionHeader" data-section="taken">
+                <span class="detailsSectionArrow"></span>
+                <span class="detailsSectionTitle" data-i18n="details.stats.damageReceived">Damage Received</span>
+              </div>
+              <div class="detailsSectionContent">
+                <div class="detailsSkills takenSkills">
+                  <div class="skillHeader">
+                    <div class="cell name" data-i18n="details.skills.skill">Skill</div>
+                    <div class="cell takenMonster" data-i18n="details.taken.monster">Monster</div>
+                    <div class="cell center takenDmg" data-i18n="details.skills.dmg">Dmg</div>
+                    <div class="cell center takenHits" data-i18n="details.stats.hits">Hits</div>
+                    <div class="cell center" data-taken="shieldBlock" data-i18n="details.skills.shieldBlock" data-tip="Shield Block %" data-i18n-tip="details.skills.shieldBlockTooltip">Blk</div>
+                    <div class="cell center" data-taken="parry" data-i18n="details.skills.parry" data-tip="Parry %" data-i18n-tip="details.skills.parryTooltip">Par</div>
+                    <div class="cell center" data-taken="perfectBlock" data-i18n="details.skills.perfectBlock" data-tip="Perfect Block %" data-i18n-tip="details.skills.perfectBlockTooltip">PBlk</div>
+                    <div class="cell center" data-taken="ironWall" data-i18n="details.skills.ironWall" data-tip="Endurance %" data-i18n-tip="details.skills.ironWallTooltip">Endr</div>
+                    <div class="cell center" data-taken="regeneration" data-i18n="details.skills.regeneration" data-tip="Regeneration %" data-i18n-tip="details.skills.regenerationTooltip">Rgn</div>
+                  </div>
+                  <div class="skills takenList"></div>
                 </div>
               </div>
             </div>
