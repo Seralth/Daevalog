@@ -63,7 +63,7 @@ class El {
   get className() { return [...this.classes].join(" "); }
   set textContent(v) { this.children = []; this.text = String(v); }
   get textContent() { return this.text + this.children.map((c) => c.textContent).join(""); }
-  set innerHTML(_) { this.children = []; this.text = ""; }
+  set innerHTML(v) { this.children = []; this.text = String(v).replace(/<[^>]*>/g, ""); }
   get parentElement() { return this.parentNode; }
   get nextSibling() { const s = this.parentNode?.children ?? []; return s[s.indexOf(this) + 1] ?? null; }
   setAttribute(k, v) { if (k === "class") this.className = v; else this.attrs.set(k, String(v)); }
@@ -147,6 +147,7 @@ const fightContext = (healSkills = heal(1400)) => ({
 async function openEveryTarget(ctx, given = answers) {
   const root = new El();
   root.className = "detailsPanel";
+  const title = el(root, "detailsFightTitle");
   for (const mode of ["dmg", "heal"]) el(root, "detailsModeBtn", "button").dataset.mode = mode;
   const party = el(root, "detailsPartyList");
   const stats = el(root, "detailsStats");
@@ -183,7 +184,7 @@ async function openEveryTarget(ctx, given = answers) {
   const app = vm.runInContext("Object.create(DpsApp.prototype)", page);
   Object.assign(app, { dpsFormatter: new Intl.NumberFormat("en-US"), i18n: window.i18n });
   const ui = vm.runInContext("createDetailsUI", page)({
-    detailsPanel: root, detailsPartyListEl: party, detailsStatsEl: stats, skillsListEl: list,
+    detailsPanel: root, detailsFightTitleEl: title, detailsPartyListEl: party, detailsStatsEl: stats, skillsListEl: list,
     dpsFormatter: app.dpsFormatter,
     getDetails: (row, options) => app.getDetails(row, options),
     getDetailsContext: () => ctx,
@@ -191,6 +192,8 @@ async function openEveryTarget(ctx, given = answers) {
   await ui.open(null, { pin: true, force: true, defaultTargetAll: true });
   const stat = (key) => stats.children.find((s) => s.style.display !== "none" && s.children[0].textContent === lookup(key))?.children[1].textContent;
   const bars = () => party.children.slice(1).map((bar) => bar.children[1].children.map((c) => c.textContent));
+  // Each bar's class icon.
+  const icons = () => party.children.slice(1).map((bar) => bar.children[1].children.find((c) => c.tagName === "IMG")?.alt ?? "");
   const tab = (mode) => root.children.find((c) => c.dataset.mode === mode).click();
   // The timeline's casts in seconds from its left edge, as drawn.
   const casts = () => {
@@ -198,7 +201,7 @@ async function openEveryTarget(ctx, given = answers) {
     const seconds = Number(timeline.style.width && chartAxis.children.at(-1)?.textContent.split(":").reduce((m, s) => m * 60 + Number(s), 0));
     return timeline.drawn.arcs.map((x) => Math.round((x / width) * seconds));
   };
-  return { stat, bars, tab, casts, chartAxis };
+  return { stat, bars, icons, tab, casts, chartAxis, title: () => title.textContent, ui };
 }
 
 test("every target: the combat time is the fight's, a boss and its adds once, the gap between pulls left out", async () => {
@@ -238,4 +241,47 @@ test("HEAL in a fight with no healing shows no bars, not the damage bars", async
   view.tab("heal");
   assert.deepEqual(view.bars(), []);
   assert.equal(view.stat("details.stats.totalHealing"), "0");
+});
+
+// The date part of a title, as details.js writes it in English.
+const titleDate = (ms) => {
+  const d = new Date(ms);
+  const h = d.getHours();
+  const two = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} @ ${h % 12 || 12}:${two(d.getMinutes())} ${h < 12 ? "AM" : "PM"}`;
+};
+
+test("every target: the title names the target with the most damage and the fight's first hit, whatever order the targets come in", async () => {
+  const ctx = fightContext();
+  for (const targets of [ctx.targets, [...ctx.targets].reverse(), [ctx.targets[2], ctx.targets[0], ctx.targets[1]]]) {
+    const view = await openEveryTarget({ ...ctx, targets });
+    // The boss took 8,000 of 9,900; the next pull began 100 s after it.
+    assert.equal(view.title(), `Fight vs Mob 800 - ${titleDate(T0)}`);
+  }
+});
+
+test("every target: the title names the target the meter follows, as its header does in BOSS", async () => {
+  const view = await openEveryTarget({ ...fightContext(), currentTargetId: 801 });
+  assert.equal(view.title(), `Fight vs Mob 801 - ${titleDate(T0)}`);
+});
+
+test("every target: the combat time is the context's, the time the meter counts", async () => {
+  // TRAIN: your own 60 s on the dummies, not their 90 s.
+  const view = await openEveryTarget({ ...fightContext(), battleTime: 60_000 });
+  assert.equal(view.stat("details.stats.combatTime"), "01:00");
+  assert.deepEqual(view.bars()[0].slice(1), ["150/s", "9.00k", "90.9%"]);
+});
+
+test("the party bars take each player's class from the context, not from whichever skill came last", async () => {
+  // A Templar's skill rows: one Gladiator-coded skill among them.
+  const mixed = {
+    ...answers,
+    800: { ...answers[800], skills: [{ ...skill(1, 12010000, "Shield Bash", 7000, [0, 80_000]), job: "수호성" },
+      { ...skill(1, 11340000, "Lifestealing Blade", 1000, [40_000]), job: "검성" }] },
+  };
+  const ctx = { ...fightContext(), actors: [{ actorId: 1, nickname: "One", job: "수호성" }, { actorId: 2, nickname: "Two", job: "" }] };
+  for (const order of [mixed[800].skills, [...mixed[800].skills].reverse()]) {
+    const view = await openEveryTarget(ctx, { ...mixed, 800: { ...mixed[800], skills: order } });
+    assert.equal(view.icons()[0], "수호성");
+  }
 });

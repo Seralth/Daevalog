@@ -231,11 +231,38 @@ const createDetailsUI = ({
     return `${yr}-${mo}-${day} @ ${h12}:${mm} ${period}`;
   };
 
+  // The target the title names: the one picked; on every target the one the
+  // meter follows, which BOSS names in the meter's header; else the one that
+  // took the most damage, the lower id on a tie. It was the first target
+  // listed, and the list came in a new hash-map order on every read: one
+  // Kasia fight read Garden Papis, Thin Agrint and Wandering Earth Spirit.
+  const titleTarget = () => {
+    const picked = getTargetById(selectedTargetId);
+    if (picked) return picked;
+    const followed = getTargetById(detailsContext?.currentTargetId);
+    if (Number(followed?.targetId) > 0) return followed;
+    return detailsTargets.filter((t) => Number(t?.targetId) > 0).reduce((best, t) => {
+      if (!best) return t;
+      const more = (Number(t.totalDamage) || 0) - (Number(best.totalDamage) || 0);
+      return more > 0 || (more === 0 && Number(t.targetId) < Number(best.targetId)) ? t : best;
+    }, null);
+  };
+
+  // When the fight began: a saved fight's start, the picked target's first
+  // hit, or on every target the first hit on any of them.
+  const fightStartAt = () => {
+    if (historyRecord) return fightStartMs;
+    const picked = getTargetById(selectedTargetId);
+    const spans = targetSpans(picked ? [picked] : detailsTargets);
+    return spans.length ? Math.max(0, Math.min(...spans.map((sp) => sp[0]))) : 0;
+  };
+
   const renderFightTitle = () => {
     if (!detailsFightTitleEl) return;
-    const target = getTargetById(selectedTargetId) || detailsTargets[0];
+    const target = titleTarget();
     const bossName = (fightPlayer ? escapeHtml(playerLabel(fightPlayer)) : "") || (target ? getTargetLabel(target) : "");
-    const dateStr = fightStartMs > 0 ? formatFightDateTime(fightStartMs) : "";
+    const startMs = fightStartAt();
+    const dateStr = startMs > 0 ? formatFightDateTime(startMs) : "";
     if (!bossName) { detailsFightTitleEl.innerHTML = ""; return; }
     const fightVs = labelText("details.fightVs", "Fight vs");
     const suffix = dateStr ? ` - ${dateStr}` : "";
@@ -327,6 +354,13 @@ const createDetailsUI = ({
   // Labels in a web font that loads late are measured again.
   document.fonts?.addEventListener?.("loadingdone", fitStatColumns);
 
+  // The fight's time on every target: the context's, as the meter counts it
+  // (in TRAIN your own time on the dummies, not the dummies' whole time);
+  // with no context, the time any of `spans` was being fought.
+  const fightTimeMs = (spans) => (Number(detailsContext?.battleTime) > 0
+    ? Number(detailsContext.battleTime)
+    : activeTime(spans));
+
   const getTargetById = (targetId) =>
     detailsTargets.find((target) => Number(target?.targetId) === Number(targetId));
 
@@ -368,6 +402,10 @@ const createDetailsUI = ({
     });
   };
 
+  // A player's class: the backend's, from all their skills (a saved fight's
+  // own), before one read off a skill row. The party bars and the chart took
+  // the class of whichever skill came last, and a Templar who also used a
+  // Gladiator-coded skill showed as Gladiator in some reads.
   const getActorJob = (actorId) => {
     const numericId = Number(actorId);
     if (!Number.isFinite(numericId) || numericId <= 0) return "";
@@ -550,7 +588,7 @@ const createDetailsUI = ({
         stats: [...combined.entries()]
           .map(([actorId, heal]) => ({
             actorId,
-            job: detectedJobByActorId.get(actorId) || detailsActors.get(actorId)?.job || "",
+            job: getActorJob(actorId),
             totalDmg: heal,
             contributionPct: (heal / total) * 100,
           }))
@@ -578,13 +616,13 @@ const createDetailsUI = ({
       stats: [...combined.entries()]
         .map(([actorId, dmg]) => ({
           actorId,
-          job: detectedJobByActorId.get(actorId) || detailsActors.get(actorId)?.job || "",
+          job: getActorJob(actorId),
           totalDmg: dmg,
           contributionPct: (dmg / total) * 100,
         }))
         .sort((a, b) => b.totalDmg - a.totalDmg),
       // The fight's time over these targets, as the overview counts it.
-      battleTimeMs: activeTime(targetSpans(targets)),
+      battleTimeMs: targets === allTargets ? fightTimeMs(targetSpans(targets)) : activeTime(targetSpans(targets)),
     };
   };
 
@@ -1723,7 +1761,7 @@ const createDetailsUI = ({
         actorId,
         hits,
         totalDmg: hits.reduce((s, h) => s + h.dmg, 0),
-        job: detectedJobByActorId.get(actorId) || detailsActors.get(actorId)?.job || "",
+        job: getActorJob(actorId),
       }))
       .sort((a, b) => b.totalDmg - a.totalDmg);
 
@@ -2286,7 +2324,7 @@ const createDetailsUI = ({
     const pct = (num, den) => (den > 0 ? Math.round((num / den) * 1000) / 10 : 0);
     // The fight's time as the meter counts several targets; a boss and its
     // adds fought at once count once.
-    const battleTimeMs = activeTime(spans);
+    const battleTimeMs = fightTimeMs(spans);
     // The charts run from the fight's first hit to its last.
     const spanMs = spans.length ? Math.max(...spans.map((sp) => sp[1])) - fightStart : 0;
     // The fight's healing, each tick once (the context's list): each target's
@@ -2578,12 +2616,8 @@ const createDetailsUI = ({
     if (selectedAttackerIds && selectedAttackerIds.length === 1) {
       selectedAttackerLabel = resolveActorLabel(selectedAttackerIds[0]);
     }
-    // Compute fight start time from target context
-    const firstTarget = getTargetById(selectedTargetId) || detailsTargets[0];
-    fightStartMs = firstTarget
-      ? Math.max(0, (Number(firstTarget.lastDamageTime) || 0) - (Number(firstTarget.battleTime) || 0))
-      : 0;
-    fightPlayer = firstTarget || !row ? null : row;
+    // No target at all: the title names the player.
+    fightPlayer = detailsTargets.some((t) => Number(t?.targetId) > 0) || !row ? null : row;
     fightDungeonId = Number(getDungeonId?.()) || 0;
     updateHeaderText();
     detailsPanel.classList.add("open");
