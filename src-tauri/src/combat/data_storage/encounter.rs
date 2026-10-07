@@ -5,6 +5,7 @@ use std::sync::atomic::Ordering;
 
 use super::damage::is_ours;
 use super::heal::fight_heals;
+use super::taken::taken_in;
 use super::{
     DataStorage, Encounter, EndedSegment, Inner, SegmentIdentity, TargetCombatData, BOSS_HOLD_MAX_MS,
     IDLE_RESET_MS, MAX_ENDED_SEGMENTS, MIN_SAVED_FIGHT_MS,
@@ -68,13 +69,14 @@ pub(super) fn retire_segment(inner: &mut Inner, data: TargetCombatData) {
     }
     let max_hp = inner.mob_hp_data.get(&tid).copied().unwrap_or(0);
     let heals = fight_heals(inner, &data);
+    let taken = taken_in(inner, &[&data], i64::MIN);
     let identity = SegmentIdentity {
         summons: super::entities::owners_in(inner, std::iter::once(&data)),
         nicknames: inner.nickname_storage.clone(),
         local_player_id: inner.local_player_id,
         dungeon_id: inner.current_dungeon_id,
     };
-    inner.ended_segments.push(EndedSegment { data, max_hp, heals, identity });
+    inner.ended_segments.push(EndedSegment { data, max_hp, heals, taken, identity });
 }
 
 /// Put the open encounter's carry back into `out`, merged with any live data

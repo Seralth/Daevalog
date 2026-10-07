@@ -53,6 +53,7 @@ mod identity;
 mod names;
 mod numbers;
 mod roster;
+mod taken;
 
 pub use aggregates::{
     ActorCombatData, Encounter, EndedSegment, HealSkillData, HealTick, LocalProfile, NoDamageHit, PartyMember, SecondStats,
@@ -61,6 +62,7 @@ pub use aggregates::{
 pub use damage::is_player_skill;
 pub use entities::UNATTRIBUTED_ID;
 pub use roster::is_open_world_map;
+pub use taken::{add_tick, TakenBy, TakenSkillData, TakenTick};
 
 use encounter::{retire_all, with_carry};
 use identity::{LootIdentity, OwnRecords};
@@ -77,6 +79,8 @@ pub struct DataStorage {
     inner: RwLock<Inner>,
     encounter_timeout_ms: AtomicI64,
     damage_generation: AtomicI64,
+    /// Counts the hits taken. See `taken_generation`.
+    taken_generation: AtomicI64,
     /// Wall-clock ms of the last damage record — gates the zone-change lull check.
     last_damage_ms: AtomicI64,
     /// Wall-clock ms of the last honored zone-change reset — debounce.
@@ -109,6 +113,13 @@ struct Inner {
     mob_storage: HashMap<i32, i32>,
     /// Healing done, tick by tick, so each fight takes only its own.
     heal_ticks: VecDeque<HealTick>,
+    /// Damage taken, hit by hit, so each fight takes only its own. See `taken`.
+    taken: VecDeque<taken::TakenTick>,
+    /// The number of the last hit taken.
+    taken_seq: u64,
+    /// The monster each live skill-effect entity (spawn kind `0x1C`) belongs
+    /// to, from its spawn. See `note_effect_parent`.
+    effect_parents: HashMap<i32, i32>,
     /// Spawn-time / observed-peak MAX HP per entity (denominator for the HP bar).
     mob_hp_data: HashMap<i32, i32>,
     /// Live CURRENT HP per entity, from the in-place `8D <id> 02 01 00 <u32>` feed.
@@ -222,6 +233,9 @@ impl DataStorage {
                 summon_storage: HashMap::new(),
                 mob_storage: HashMap::new(),
                 heal_ticks: VecDeque::new(),
+                taken: VecDeque::new(),
+                taken_seq: 0,
+                effect_parents: HashMap::new(),
                 mob_hp_data: HashMap::new(),
                 mob_current_hp: HashMap::new(),
                 known_player_ids: HashSet::new(),
@@ -257,6 +271,7 @@ impl DataStorage {
                 self_profile: None,
             }),
             damage_generation: AtomicI64::new(0),
+            taken_generation: AtomicI64::new(0),
             last_damage_ms: AtomicI64::new(NEVER_MS),
             last_zone_reset_ms: AtomicI64::new(NEVER_MS),
             combat_reset_requested: AtomicBool::new(false),
@@ -387,6 +402,7 @@ impl DataStorage {
         inner.mob_hp_data.clear();
         inner.mob_current_hp.clear();
         inner.heal_ticks.clear();
+        inner.taken.clear();
         inner.current_target = 0;
         drop(inner);
         self.clear_player_numbers();
@@ -408,6 +424,7 @@ impl DataStorage {
         inner.mob_hp_data.clear();
         inner.mob_current_hp.clear();
         inner.heal_ticks.clear();
+        inner.taken.clear();
         inner.current_target = 0;
         drop(inner);
         self.clear_player_numbers();

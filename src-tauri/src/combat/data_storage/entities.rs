@@ -415,6 +415,7 @@ fn forget_entity(inner: &mut Inner, id: i32) {
     inner.summon_spawn_ids.remove(&id);
     inner.actor_jobs.remove(&id);
     inner.hostile_target_ids.remove(&id);
+    inner.effect_parents.remove(&id);
     let Some(owner) = inner.summon_storage.remove(&id) else { return };
     // Only a linked actor's skills go. A spawn followed an unlinked actor's
     // first hit by 100 ms in a scarecrow capture (2026-10-05), most likely

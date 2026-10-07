@@ -7,4 +7,5 @@ pub mod special_damage;
 pub mod fight_record;
 pub mod summon_resolver;
 pub mod details_context;
+pub mod taken;
 pub mod skill_group;
