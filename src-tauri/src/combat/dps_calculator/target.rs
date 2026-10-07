@@ -1,5 +1,6 @@
 //! Target selection: the modes, and which targets each one puts on the meter.
 
+use std::cmp::Reverse;
 use std::collections::{HashMap, HashSet};
 
 use crate::clock::now_ms;
@@ -10,6 +11,47 @@ use super::DpsCalculator;
 
 /// How often idle targets are retired. See `retire_idle_targets`.
 const RETIRE_EVERY_MS: i64 = 5_000;
+
+/// BOSS mode weighs bosses by your and your party's damage over this long,
+/// the meter's shortest "last N s" window.
+const RECENT_MS: i64 = 10_000;
+/// Another boss takes the meter from the one on screen only with more than
+/// this many times its recent damage from you and your party.
+const TAKE_OVER_FACTOR: i64 = 2;
+
+/// The boss BOSS mode shows: the one you and your party hit hardest lately,
+/// then the one you hit last, then the lowest id. The boss on screen stays
+/// until another clearly took over. Newest hit by anyone used to win, so
+/// two boss-flagged scarecrows flipped several times a second: your spirit's
+/// spill-over and a stranger's hits on the next one made it newest, and hits
+/// in the same ms fell to map order (Krao capture 2026-10-05, 17:35-17:38).
+fn steady_boss(
+    candidates: &[i32],
+    shown: i32,
+    combat_data: &HashMap<i32, TargetCombatData>,
+    is_ours_actor: impl Fn(i32) -> bool,
+    now: i64,
+) -> Option<i32> {
+    let weigh = |tid: i32| {
+        let mut recent = 0i64;
+        let mut last = i64::MIN;
+        if let Some(td) = combat_data.get(&tid) {
+            for (_, a) in td.actors.iter().filter(|(id, _)| is_ours_actor(**id)) {
+                recent += a.damage_since(now - RECENT_MS);
+                last = last.max(a.last_damage_time);
+            }
+        }
+        (recent, last)
+    };
+    let best = candidates.iter().copied().max_by_key(|&tid| {
+        let (recent, last) = weigh(tid);
+        (recent, last, Reverse(tid))
+    })?;
+    if best != shown && candidates.contains(&shown) && weigh(best).0 <= TAKE_OVER_FACTOR * weigh(shown).0 {
+        return Some(shown);
+    }
+    Some(best)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TargetSelectionMode {
@@ -153,8 +195,8 @@ impl DpsCalculator {
                 // Once you are identified, only what you or your party hit:
                 // a stranger's field boss nearby took the meter over.
                 let ours = self.ours_ids(nickname_data, summon_data);
-                let is_ours = |td: &TargetCombatData| ours.as_ref().is_none_or(|ids| td.actors.keys()
-                    .any(|&a| ids.contains(&summon_resolver::resolve(a, summon_data))));
+                let is_ours_actor = |a: i32| ours.as_ref().is_none_or(|ids| ids.contains(&summon_resolver::resolve(a, summon_data)));
+                let is_ours = |td: &TargetCombatData| td.actors.keys().any(|&a| is_ours_actor(a));
                 let newest_hit = combat_data.values()
                     .filter(|td| is_ours(*td))
                     .map(|td| td.last_damage_time)
@@ -171,9 +213,7 @@ impl DpsCalculator {
                     .map(|(&tid, _)| tid)
                     .collect();
 
-                if let Some(&best) = boss_targets.iter()
-                    .max_by_key(|&&tid| combat_data.get(&tid).map(|td| td.last_damage_time).unwrap_or(0))
-                {
+                if let Some(best) = steady_boss(&boss_targets, self.current_target, combat_data, &is_ours_actor, now_ms()) {
                     let name = self.resolve_target_name(best);
                     (HashSet::from([best]), name, best)
                 } else if self.data_storage.current_dungeon_id() > 0 {
@@ -192,9 +232,12 @@ impl DpsCalculator {
                     // entering a zone, before you were identified
                     // (taengu/A2Tools-DPS-Meter db1079f).
                     // Any boss here is one that gave way above.
+                    // Equal damage keeps the mob on screen, then the lowest id:
+                    // map order broke the tie differently on every update.
+                    let shown = self.current_target;
                     let best = combat_data.iter()
                         .filter(|(tid, td)| !is_boss(**tid) && ours.is_some() && is_ours(*td))
-                        .max_by_key(|(_, td)| td.total_damage);
+                        .max_by_key(|(tid, td)| (td.total_damage, **tid == shown, Reverse(**tid)));
                     match best {
                         Some((&id, _)) => {
                             let name = self.resolve_target_name(id);

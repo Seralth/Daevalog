@@ -18,6 +18,7 @@ Writes, under src/data:
   zh-Hant keep their names and get the English words.
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
+- player_summon_npcs.json: the NPCs a player's skill spawns (spirits and the like).
 - open_world_maps.json: overworld maps and their world layers (not the Daeva
   Hunter recon sites).
 - instance_maps.json: the dungeon of each instance map a fight is filed under
@@ -286,6 +287,14 @@ def main():
         "source": f"{source}: Skill and SkillEffect tables, skills whose every effect restores "
                   "MP, SP, DP, OP, FP or AP (none restores HP)",
         "skills": sorted(restores),
+    }) + "\n", encoding="utf-8")
+
+    # NPCs a player's skill spawns. A monster's summon can name a player in
+    # its spawn record too (Blazing Totem names the player it burns), but it
+    # is never that player's.
+    (DATA / "player_summon_npcs.json").write_text(json.dumps({
+        "source": f"{source}: NpcData table, NPCs whose RelationshipEntity is PC_Summon",
+        "npcs": sorted(n["ID"]["Value"] for n in npcs if enum(n["RelationshipEntity"]) == "PC_Summon"),
     }) + "\n", encoding="utf-8")
 
     # Not in the global client: their names stay, the rest is the English.

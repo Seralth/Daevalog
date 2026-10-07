@@ -617,6 +617,49 @@ mod tests {
     }
 
     #[test]
+    fn a_monsters_summon_is_not_the_player_its_spawn_names() {
+        let storage = Arc::new(DataStorage::new());
+        let npcs = NpcLookup::new();
+        npcs.load_from_json(r#"{"2920063":{"name":"Blazing Totem","isBoss":false},"2920149":{"name":"Wind Spirit","isBoss":false}}"#);
+        let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(npcs));
+        // A player, the one the totem burns.
+        storage.append_nickname_authoritative(3640, "Abcd");
+        let mut hit = ParsedDamagePacket::new();
+        hit.set_actor_id(3640);
+        hit.set_target_id(900);
+        hit.set_skill_code(11_010_000);
+        hit.set_damage(100);
+        storage.append_damage(hit);
+        // Blazing Totem 51395 (2920063) from the scarecrow capture of
+        // 2026-10-05, the name it carries made up: kind 0x1C, the u16 mask's
+        // name field naming the player, then the NPC code.
+        let spawn = |id: &str, code: &str| {
+            let mut b = hex("4136");
+            b.extend(hex(id));
+            b.extend(hex("1c00010441626364"));
+            b.extend(hex(code));
+            b.extend(hex("0000020e6ccdc607af014800089b46a0411d43d46f0103030000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000006011101819698"));
+            b.extend(hex("00ffffffffffffffff8075d52abb030000c3910301020e6ccdc607af014800089b460676700000001e00000000"));
+            b
+        };
+        assert!(!p.parse_summon_spawn_at(&spawn("c39103", "7f8e2c"), 2));
+        assert!(!storage.is_summon(51395));
+        let mut burn = ParsedDamagePacket::new();
+        burn.set_actor_id(51395);
+        burn.set_target_id(3640);
+        burn.set_skill_code(1_200_012);
+        burn.set_damage(1);
+        burn.set_dot(true);
+        burn.set_timestamp(2_000);
+        storage.append_damage(burn);
+        assert!(storage.heals_between(0, 10_000).is_empty(), "its Burn on the player is no healing");
+
+        // A spirit's spawn naming its player still links.
+        assert!(p.parse_summon_spawn_at(&spawn("c49103", "d58e2c"), 2));
+        assert_eq!(storage.get_summon_data().get(&51396), Some(&3640));
+    }
+
+    #[test]
     fn a_sorcerers_ground_spell_is_linked_to_its_caster() {
         let storage = Arc::new(DataStorage::new());
         let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));

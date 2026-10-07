@@ -64,5 +64,5 @@ Each rule below fixed a real fault. Do not break a rule without a test that show
 |---|---|---|
 | TARGET | The enemy the local player or the local player's summons hit last. Nothing until the local player is known. | That target's span. |
 | ALL | Every target, damage from every actor. Optional window: the last N minutes, or Off (since the zone change). | Union of active spans. |
-| BOSS | The boss that the local player, the summons or the party hit. | That boss's span. |
+| BOSS | The boss that the local player, the summons or the party hit hardest over the last 10 s. The boss on screen stays until another takes more than twice its damage from them, or it dies and they fight something newer. No boss: in the open world, their mob with the most damage. | That boss's span. |
 | TRAIN | Training dummies that the local player or the summons hit. | Union of the local player's spans on those dummies. |
