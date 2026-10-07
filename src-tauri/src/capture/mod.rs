@@ -13,6 +13,8 @@ pub mod varint;
 
 #[cfg(test)]
 mod replay_report;
+#[cfg(test)]
+mod replay_timeline;
 #[cfg(all(test, feature = "backend"))]
 mod record_check;
 

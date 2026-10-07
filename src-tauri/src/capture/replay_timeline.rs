@@ -1,0 +1,354 @@
+//! `A2_REPLAY_TIMELINE`: each fight of the local player with its hits, the
+//! buffs and debuffs on you, your summons and the target, and your stats.
+//!
+//! A fight is the local player's and their summons' hits on one target, cut
+//! where they stop for more than 15 s. Times are capture ms, as in the
+//! `hit_flags` lines. Per fight one `fight` line, one `buff` line per timed
+//! buff or debuff of yours (times from the fight's start, uptime in the
+//! fight), then the whole fight as one `timeline {json}` line, other
+//! players' debuffs on the target and passives included.
+
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::{Arc, Mutex};
+
+use serde_json::{json, Map, Value};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::Layer;
+
+use super::abnormal::{self, Instance, StatEvent, Timeline};
+use crate::entity::summon_resolver;
+use crate::i18n::lookup::{NpcLookup, SkillLookup};
+
+/// The gap that ends a fight, as the encounter mode's default.
+const FIGHT_GAP_MS: i64 = 15_000;
+
+/// The `hit_flags` trace lines, kept instead of printed.
+#[derive(Clone, Default)]
+pub(crate) struct HitTap(Arc<Mutex<Vec<String>>>);
+
+impl HitTap {
+    /// Collect the lines while the guard lives (this thread only).
+    pub(crate) fn install(&self) -> tracing::subscriber::DefaultGuard {
+        let filter = tracing_subscriber::filter::filter_fn(|m| m.target() == "hit_flags");
+        tracing::subscriber::set_default(tracing_subscriber::registry().with(self.clone().with_filter(filter)))
+    }
+    fn take(&self) -> Vec<String> {
+        std::mem::take(&mut *self.0.lock().unwrap())
+    }
+}
+
+impl<S: tracing::Subscriber> Layer<S> for HitTap {
+    fn on_event(&self, event: &tracing::Event<'_>, _: tracing_subscriber::layer::Context<'_, S>) {
+        struct Message(String);
+        impl tracing::field::Visit for Message {
+            fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+                if field.name() == "message" {
+                    self.0 = format!("{value:?}");
+                }
+            }
+        }
+        let mut m = Message(String::new());
+        event.record(&mut m);
+        self.0.lock().unwrap().push(m.0);
+    }
+}
+
+/// One `hit_flags` line: `<ms> key=value ...`.
+struct Hit {
+    ms: i64,
+    actor: i32,
+    target: i32,
+    fields: Map<String, Value>,
+}
+
+fn read_hit(line: &str) -> Option<Hit> {
+    let mut words = line.split_whitespace();
+    let ms = words.next()?.parse().ok()?;
+    let mut fields = Map::new();
+    for w in words {
+        let (k, v) = w.split_once('=')?;
+        let v = v.parse::<i64>().map(Value::from).unwrap_or_else(|_| Value::from(v));
+        fields.insert(k.to_string(), v);
+    }
+    let id = |k: &str| fields.get(k).and_then(Value::as_i64).map(|v| v as i32);
+    Some(Hit { ms, actor: id("actor")?, target: id("target")?, fields })
+}
+
+/// What the replay gathers for the timeline while it runs.
+#[derive(Default)]
+pub(crate) struct Gather {
+    pub tap: HitTap,
+    pub timeline: Timeline,
+    hits: Vec<Hit>,
+    /// (from ms, entity) each time the local player's id changed.
+    local: Vec<(i64, i32)>,
+    /// (ms, summon links) at each map load and at the end: a link holds
+    /// from the snapshot before it up to this one.
+    links: Vec<(i64, HashMap<i32, i32>)>,
+    map_loads: usize,
+}
+
+impl Gather {
+    /// After each capture line: the hits it made, who you are, and the
+    /// summon links before a map load makes the entities anew.
+    pub(crate) fn after_line(&mut self, ms: i64, local: Option<i32>, links: impl FnOnce() -> HashMap<i32, i32>) {
+        self.hits.extend(self.tap.take().iter().filter_map(|l| read_hit(l)));
+        if let Some(id) = local
+            && self.local.last().is_none_or(|l| l.1 != id)
+        {
+            self.local.push((ms, id));
+        }
+        let loads = self.timeline.map_loads();
+        if loads != self.map_loads {
+            self.map_loads = loads;
+            self.links.push((ms, links()));
+        }
+    }
+
+    fn local_at(&self, from: i64, to: i64) -> HashSet<i32> {
+        let mut out = HashSet::new();
+        for (i, &(since, id)) in self.local.iter().enumerate() {
+            let until = self.local.get(i + 1).map_or(i64::MAX, |n| n.0);
+            if since <= to && until >= from {
+                out.insert(id);
+            }
+        }
+        out
+    }
+
+    fn links_at(&self, ms: i64) -> &HashMap<i32, i32> {
+        &self.links.iter().find(|(at, _)| *at >= ms).or(self.links.last()).expect("links at the end").1
+    }
+
+    /// Print every fight in `window` (capture ms), only `target`'s if given.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn report(
+        mut self,
+        zone: chrono::FixedOffset,
+        end_ms: i64,
+        final_links: HashMap<i32, i32>,
+        window: (i64, i64),
+        target: Option<i32>,
+        mobs: &HashMap<i32, i32>,
+        skills: &SkillLookup,
+        npcs: &NpcLookup,
+        out: &mut dyn FnMut(String),
+    ) {
+        self.hits.extend(self.tap.take().iter().filter_map(|l| read_hit(l)));
+        self.links.push((end_ms, final_links));
+        let instances = self.timeline.all_instances();
+        let mut fights: Vec<(i32, Vec<&Hit>)> = Vec::new();
+        let mut by_target: BTreeMap<i32, Vec<&Hit>> = BTreeMap::new();
+        for h in &self.hits {
+            if h.ms < window.0 || h.ms > window.1 || target.is_some_and(|t| t != h.target) {
+                continue;
+            }
+            let links = self.links_at(h.ms);
+            let local = self.local_at(h.ms, h.ms);
+            // Heals on you and your spirits are not a fight.
+            let friendly = local.contains(&summon_resolver::resolve(h.target, links));
+            if local.contains(&summon_resolver::resolve(h.actor, links)) && !friendly {
+                by_target.entry(h.target).or_default().push(h);
+            }
+        }
+        for (t, hits) in by_target {
+            let mut cur: Vec<&Hit> = Vec::new();
+            for h in hits {
+                if cur.last().is_some_and(|l| h.ms - l.ms > FIGHT_GAP_MS) {
+                    fights.push((t, std::mem::take(&mut cur)));
+                }
+                cur.push(h);
+            }
+            fights.push((t, cur));
+        }
+        fights.sort_by_key(|(_, h)| h[0].ms);
+        out(format!("\n== timeline: {} fights", fights.len()));
+        for (t, hits) in fights {
+            let (start, end) = (hits[0].ms, hits[hits.len() - 1].ms);
+            let fight = self.fight(t, start, end, &hits, &instances, zone, mobs, skills, npcs);
+            for line in fight.0 {
+                out(line);
+            }
+            out(format!("timeline {}", fight.1));
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn fight(
+        &self,
+        target: i32,
+        start: i64,
+        end: i64,
+        hits: &[&Hit],
+        instances: &[Instance],
+        zone: chrono::FixedOffset,
+        mobs: &HashMap<i32, i32>,
+        skills: &SkillLookup,
+        npcs: &NpcLookup,
+    ) -> (Vec<String>, Value) {
+        let local = self.local_at(start, end);
+        let mut local_ids: Vec<i32> = local.iter().copied().collect();
+        local_ids.sort();
+        let links = self.links_at(end);
+        let owner = |id: i32| summon_resolver::resolve(id, links);
+        let who = |entity: i32| {
+            if entity == target {
+                Some("target")
+            } else if local.contains(&entity) {
+                Some("self")
+            } else if local.contains(&owner(entity)) {
+                Some("summon")
+            } else {
+                None
+            }
+        };
+        let near: Vec<Instance> = instances
+            .iter()
+            .filter(|i| who(i.entity).is_some() && i.start_ms <= end && i.end_ms.is_none_or(|e| e >= start))
+            .cloned()
+            .collect();
+        let tracks = abnormal::tracks(&near, owner);
+        let target_name = mobs.get(&target).map(|&c| npcs.get_npc_name(c)).unwrap_or_default();
+        let length = (end - start).max(1);
+        let tod = |ms: i64| {
+            chrono::DateTime::from_timestamp_millis(ms)
+                .map(|t| t.with_timezone(&zone).format("%H:%M:%S%.3f").to_string())
+                .unwrap_or_default()
+        };
+        let mut lines = vec![format!(
+            "\nfight target {target} {target_name} {} .. {} ({:.1} s): {} hits, {} buffs, local {local_ids:?}",
+            tod(start),
+            tod(end),
+            length as f64 / 1000.0,
+            hits.len(),
+            tracks.len(),
+        )];
+        let mut buffs = Vec::new();
+        for t in &tracks {
+            let source = if local.contains(&t.owner) { "self" } else if t.owner == target { "target" } else { "other" };
+            let name = t.skills.first().map(|&s| skills.get_skill_name(s as i32)).unwrap_or_default();
+            // Time on in the fight, and the stack count weighted by it.
+            let (mut on, mut weighted) = (0i64, 0i64);
+            for (k, &(at, n)) in t.stacks.iter().enumerate() {
+                let next = t.stacks.get(k + 1).map_or(t.end_ms.unwrap_or(end), |s| s.0);
+                let span = next.min(end) - at.max(start);
+                if n > 0 && span > 0 {
+                    on += span;
+                    weighted += span * n as i64;
+                }
+            }
+            if !t.endless && source == "self" {
+                lines.push(format!(
+                    "buff {} {} {} via {name:?} from {source} lv {} {:+.1} .. {} s, {}, uptime {:.0}%, stacks {:.1} avg {} max",
+                    who(t.entity).unwrap_or("-"),
+                    t.entity,
+                    t.abnormal,
+                    t.level,
+                    (t.start_ms - start) as f64 / 1000.0,
+                    t.end_ms.map_or("-".to_string(), |e| format!("{:+.1}", (e - start) as f64 / 1000.0)),
+                    t.end.label(),
+                    100.0 * on as f64 / length as f64,
+                    if on > 0 { weighted as f64 / on as f64 } else { 0.0 },
+                    t.stacks.iter().map(|s| s.1).max().unwrap_or(0),
+                ));
+            }
+            buffs.push(json!({
+                "on": who(t.entity),
+                "entity": t.entity,
+                "abnormal": t.abnormal,
+                "source": source,
+                "source_entity": t.owner,
+                "skills": t.skills,
+                "skill_name": name,
+                "level": t.level,
+                "endless": t.endless,
+                "start_ms": t.start_ms,
+                "end_ms": t.end_ms,
+                "end": t.end.label(),
+                "uptime_ms": on,
+                "stacks": t.stacks,
+            }));
+        }
+        let (at_start, changes) = stats_in(&self.timeline.stats, &local, start, end);
+        let json = json!({
+            "target": target,
+            "target_name": target_name,
+            "start_ms": start,
+            "end_ms": end,
+            "local_ids": local_ids,
+            "hits": hits.iter().map(|h| {
+                let mut f = h.fields.clone();
+                f.insert("ms".into(), h.ms.into());
+                f.insert("owner".into(), owner(h.actor).into());
+                Value::Object(f)
+            }).collect::<Vec<_>>(),
+            "buffs": buffs,
+            "stats": { "at_start": at_start, "changes": changes },
+        });
+        (lines, json)
+    }
+}
+
+/// Your stat sheet when the fight starts, and each change during it.
+fn stats_in(events: &[StatEvent], local: &HashSet<i32>, start: i64, end: i64) -> (BTreeMap<u16, i32>, Vec<Value>) {
+    let mut sheet = BTreeMap::new();
+    let mut changes = Vec::new();
+    for e in events {
+        if e.ms > end {
+            break;
+        }
+        if e.entity.is_some_and(|id| !local.contains(&id)) {
+            continue;
+        }
+        if e.ms <= start {
+            if e.whole_sheet {
+                sheet.clear();
+            }
+            sheet.extend(e.values.iter().copied());
+        } else {
+            for &(stat, value) in &e.values {
+                changes.push(json!({ "ms": e.ms, "stat": stat, "value": value }));
+            }
+        }
+    }
+    (sheet, changes)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::replay_report::{run, Options};
+
+    /// Records of 2026-10-06 (the local player is entity 6759): two own stat
+    /// records, Spirit's Benediction on and its stats, two hits on 40171,
+    /// the buff and its stats off.
+    #[test]
+    fn a_fight_lists_the_buffs_and_stats_around_its_hits() {
+        let stats_off = "294a36e734044100840300004c00000000007b01340800007c01000000000000000000000000";
+        let lines = [
+            ("21:58:29.300", stats_off),
+            ("21:58:29.400", stats_off),
+            ("21:58:30.225", "342a38e73401138202e165a6091027000000000000bc5cba14a1010000e73403300af7000047e44c47b46a22c700e85a46"),
+            ("21:58:30.225", "294a36e7340441006c0700004c00e80300007b01041000007c01d00700000000000000000000"),
+            ("21:58:32.217", "240438ebb9020600e73451c9f9006902000001afa3926101000000e65b8a090100"),
+            ("21:58:32.277", "240438ebb9020600e734feb7f800660200000143df276101000000e65bec490100"),
+            ("21:58:40.267", "0d2c38e7340100820201"),
+            ("21:58:40.267", stats_off),
+        ];
+        let text: String =
+            lines.iter().map(|(t, hex)| format!("2026-10-06T{t}000000-07:00|Client:40000:13328|{hex}\n")).collect();
+        let mut out = Vec::new();
+        run(&text, Options { timeline: true, ..Default::default() }, &mut |l| out.push(l));
+        assert!(out.iter().any(|l| l.trim_start().starts_with("fight target 40171 ") && l.contains("2 hits")), "{out:#?}");
+        let json = out.iter().find_map(|l| l.strip_prefix("timeline ")).expect("a timeline line");
+        let fight: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert_eq!(fight["hits"].as_array().map(Vec::len), Some(2));
+        let buff = fight["buffs"].as_array().unwrap().iter().find(|b| b["abnormal"] == 161_900_001).expect("the buff");
+        let (on, off) = (1_791_349_110_225i64, 1_791_349_120_267i64);
+        assert_eq!(
+            (buff["on"].as_str(), buff["source"].as_str(), buff["start_ms"].as_i64(), buff["end_ms"].as_i64()),
+            (Some("self"), Some("self"), Some(on), Some(off))
+        );
+        assert_eq!(buff["stacks"], serde_json::json!([[on, 1], [off, 0]]));
+        assert_eq!(fight["stats"]["at_start"]["379"], 4100);
+    }
+}
