@@ -582,6 +582,25 @@ mod tests {
         assert_eq!(storage.current_dungeon_id(), 0);
     }
 
+    /// Live captures of a sealed dungeon (2026-10-06: Seal 310057, a boss,
+    /// then the teleport out) and a quest instance (2026-10-05: 840010): the
+    /// load out names World_L_A, the same record as out of a party dungeon.
+    #[test]
+    fn leaving_a_sealed_or_quest_dungeon_loads_the_open_world() {
+        let storage = Arc::new(DataStorage::new());
+        let p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let load = |s: &str| p.parse_map_load_packet(&hex(s));
+        load("3421360800000029bb0400d7795600000000000050afc50080a74500c01bc40000000002000000000000000000001e0000");
+        assert_eq!(storage.current_dungeon_id(), 310057);
+        load("34213609000000f203000041bf5b00000000003aeb1c4896639ec7003c3e46a76fb0430200000000000000000000000000");
+        assert_eq!(storage.current_dungeon_id(), 0);
+        load("342136020000004ad10c0017a24800000000000068904500201dc500000a45da1041c102000000000000000000001e0000");
+        assert_eq!(storage.current_dungeon_id(), 840010);
+        load("34213603000000f20300002e8a4a00000000006b716cc719d70ec7005c2f46e7a182430200000000000000000000000000");
+        assert_eq!(storage.current_dungeon_id(), 0);
+    }
+
     /// A Daeva Hunter recon site is a boss arena of its own, though the Map
     /// table puts it on World_L_A as a layer. A live capture (2026-10-06):
     /// into Watcher Krache's Recon Site (151010), then back to World_L_A.
