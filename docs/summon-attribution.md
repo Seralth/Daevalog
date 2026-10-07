@@ -77,7 +77,10 @@ the monster, and its hits on players count as damage taken from that monster
 table as no player's summon; the other carried neither code nor name. 117
 carried the name of a player the meter knew. 36 of them hit a player, 35 of
 those the named one (the other, a Gas Rock, hit another player). The NPC code
-check below keeps every one of them from linking to the named player.
+check below keeps every one of them from linking to the named player. A `0x1C` spawn
+uses its name only when its code is on the game data's list of player summons,
+so an effect whose code no table lists yet (a monster new since the last data
+update) links to no one.
 
 **Code:** `parse_summon_spawn_at`, the `spawn_name` fallback.
 
