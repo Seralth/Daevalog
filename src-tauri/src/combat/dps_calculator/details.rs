@@ -129,12 +129,14 @@ impl DpsCalculator {
             })
             .collect();
 
+        let numbers = self.player_numbers(actors.iter().map(|a| (a.actor_id, a.nickname.as_str())));
         DetailsContext {
             // From storage, which the meter keeps in step: a details reader
             // has no target of its own.
             current_target_id: self.data_storage.current_target(),
             targets,
             actors,
+            numbers,
         }
     }
 

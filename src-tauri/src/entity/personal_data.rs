@@ -37,6 +37,10 @@ pub struct PersonalData {
     pub crit_hits: i64,
     #[serde(default)]
     pub max_hit: i64,
+    /// Another player's number, which the page shows with their class when
+    /// names are hidden; 0 for you and the unattributed row.
+    #[serde(default)]
+    pub number: u32,
 }
 
 impl PersonalData {
@@ -56,6 +60,7 @@ impl PersonalData {
             hits: 0,
             crit_hits: 0,
             max_hit: 0,
+            number: 0,
         }
     }
 
@@ -75,6 +80,7 @@ impl PersonalData {
             hits: 0,
             crit_hits: 0,
             max_hit: 0,
+            number: 0,
         }
     }
 

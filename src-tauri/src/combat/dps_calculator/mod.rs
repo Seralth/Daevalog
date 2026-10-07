@@ -1109,6 +1109,27 @@ mod tests {
     }
 
     #[test]
+    fn other_players_have_one_number_on_the_meter_and_in_details() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(100));
+        s.append_nickname_authoritative(100, "Me");
+        s.append_nickname_authoritative(200, "Second");
+        s.append_nickname_authoritative(300, "First");
+        s.append_damage(skill_hit(100, 900, 1_000, 15_010_000, 1_000));
+        s.append_damage(skill_hit(300, 900, 1_000, 17_010_000, 500));
+        let mut calc = meter(&s);
+        let shown = calc.get_dps();
+        assert_eq!(shown.map[&100].number, 0, "you are shown by name");
+        assert_eq!(shown.map[&300].number, 1);
+        s.append_damage(skill_hit(200, 900, 1_500, 16_010_000, 700));
+        let shown = calc.get_dps();
+        assert_eq!((shown.map[&300].number, shown.map[&200].number), (1, 2), "the later player gets the next number");
+        let context = calc.get_details_context();
+        assert_eq!((context.numbers.get(&300), context.numbers.get(&200)), (Some(&1), Some(&2)));
+        assert!(!context.numbers.contains_key(&100));
+    }
+
+    #[test]
     fn a_link_brings_earlier_damage_and_live_and_saved_agree() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(100));
