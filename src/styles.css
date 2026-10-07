@@ -3559,15 +3559,22 @@ body.mainPlayerNamesBold .settingsPanel .themeDropdownMenu .settingsDropdownItem
   font-variant-numeric: tabular-nums;
   text-shadow: var(--text-shadow);
 }
+/* Each figure as wide as its widest text (--bar-*-w, from fitPartyBars in
+   details.js); figures that do not fit give way from the right end. */
 .detailsPanel .detailsPartyBarDps {
-  width: 62px;
+  width: var(--bar-dps-w, 62px);
 }
 .detailsPanel .detailsPartyBarDmg {
-  width: 56px;
+  width: var(--bar-dmg-w, 56px);
 }
 .detailsPanel .detailsPartyBarPct {
-  width: 40px;
+  width: var(--bar-pct-w, 40px);
   opacity: 0.6;
+}
+.detailsPanel .detailsPartyList.drop-bar-dps .detailsPartyBarDps,
+.detailsPanel .detailsPartyList.drop-bar-dmg .detailsPartyBarDmg,
+.detailsPanel .detailsPartyList.drop-bar-pct .detailsPartyBarPct {
+  display: none;
 }
 
 .detailsPanel .detailsBody {
