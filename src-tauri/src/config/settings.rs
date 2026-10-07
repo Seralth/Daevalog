@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -47,13 +47,20 @@ struct Pending {
     writes: usize,
 }
 
+/// settings.json as the meter reads it: an object of strings. A file that is
+/// missing or does not read that way counts as empty. Everything that reads
+/// the file uses this, so no two readers can see different values.
+pub fn read_file(file_path: &Path) -> HashMap<String, String> {
+    std::fs::read_to_string(file_path)
+        .ok()
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
+}
+
 impl Settings {
     pub fn new(app_data_dir: PathBuf) -> Self {
         let file_path = app_data_dir.join("settings.json");
-        let mut values: HashMap<String, String> = std::fs::read_to_string(&file_path)
-            .ok()
-            .and_then(|text| serde_json::from_str(&text).ok())
-            .unwrap_or_default();
+        let mut values = read_file(&file_path);
         if values.is_empty() {
             if let Some(migrated) = Self::try_migrate_from_kotlin() {
                 values = migrated;
@@ -100,6 +107,26 @@ impl Settings {
         }
         self.schedule_save();
         true
+    }
+
+    /// Stores the values whose keys have none yet; a stored value stays.
+    /// Returns the keys it stored, sorted.
+    pub fn insert_missing(&self, values: impl IntoIterator<Item = (String, String)>) -> Vec<String> {
+        let mut inserted = Vec::new();
+        {
+            let mut stored = self.shared.values.write();
+            for (key, value) in values {
+                if !stored.contains_key(&key) {
+                    stored.insert(key.clone(), value);
+                    inserted.push(key);
+                }
+            }
+        }
+        if !inserted.is_empty() {
+            self.schedule_save();
+        }
+        inserted.sort();
+        inserted
     }
 
     pub fn remove(&self, key: &str) {
@@ -352,6 +379,35 @@ mod tests {
         settings.clear();
         settings.flush().unwrap();
         assert!(dir.read().is_empty());
+    }
+
+    #[test]
+    fn insert_missing_keeps_stored_values_and_saves_the_new_ones() {
+        let dir = Directory::new();
+        let settings = Settings::new(dir.0.clone());
+        settings.set("kept", "file");
+        let inserted = settings.insert_missing([
+            ("kept".to_string(), "page".to_string()),
+            ("new".to_string(), "page".to_string()),
+        ]);
+        assert_eq!(inserted, ["new"]);
+        settings.flush().unwrap();
+        let file = dir.read();
+        assert_eq!(file.get("kept").map(String::as_str), Some("file"));
+        assert_eq!(file.get("new").map(String::as_str), Some("page"));
+        assert!(settings.insert_missing([("new".to_string(), "again".to_string())]).is_empty());
+        assert_eq!(settings.get("new").as_deref(), Some("page"));
+    }
+
+    #[test]
+    fn a_file_that_is_not_an_object_of_strings_reads_as_empty() {
+        let dir = Directory::new();
+        let path = dir.0.join("settings.json");
+        std::fs::write(&path, r#"{"a": "1", "b": true}"#).unwrap();
+        assert!(read_file(&path).is_empty());
+        std::fs::write(&path, r#"{"a": "1"}"#).unwrap();
+        assert_eq!(read_file(&path).get("a").map(String::as_str), Some("1"));
+        assert!(read_file(&dir.0.join("missing.json")).is_empty());
     }
 
     #[test]

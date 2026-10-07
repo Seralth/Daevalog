@@ -184,12 +184,12 @@ fn plan(env: Env, setting: Option<&str>, layer_ready: bool) -> Plan {
     plan
 }
 
-/// The layer setting as saved, read before Tauri opens the settings.
+/// The layer setting as saved, read before Tauri opens the settings. Read the
+/// way the settings store reads the file, so the Settings switch shows what
+/// this chose.
 fn saved_layer_setting() -> Option<String> {
     let path = dirs::data_dir()?.join(crate::migrate::IDENTIFIER).join("settings.json");
-    let text = std::fs::read_to_string(path).ok()?;
-    let values: serde_json::Value = serde_json::from_str(&text).ok()?;
-    values.get(LAYER_KEY)?.as_str().map(str::to_string)
+    crate::config::settings::read_file(&path).remove(LAYER_KEY)
 }
 
 /// Whether the Wayland compositor offers zwlr_layer_shell_v1. Asks its
