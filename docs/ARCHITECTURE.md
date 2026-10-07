@@ -31,6 +31,7 @@ The user interface asks layer 6 for a snapshot every 500 ms (`app/tasks.rs`, eve
 | Sharing | Build the name-blinded packet slice of a fight and upload the slice to a2tools.app. | `capture/evidence_slice.rs`, `share/mod.rs`, `share/ring.rs` |
 | Re-derivation | The code the log service runs on an uploaded slice. The same parser, compiled to WebAssembly. | `rederive.rs` |
 | Game records | Read the game's own Damage Analyzer records (read only), match them to saved fights, and compare them skill by skill with a replay of each fight's slice. | `game_record/`, `public/src/js/gameRecord.js` |
+| Buffs and stats | Read the buff, debuff and stat records into a timeline. Only the replay tool uses it so far (`A2_REPLAY_TIMELINE`: each fight's hits, buffs and stats). | `capture/abnormal.rs`, `capture/replay_timeline.rs` |
 | Account | Sign in to a2tools.app. The token is kept in the system keyring. | `account/mod.rs`, `account/secret.rs` |
 | Platform | Code that differs per operating system: Linux, Windows, and a fallback. | `platform/` |
 | Logging | `debug.log` and the optional raw packet log `packets_*.txt`. | `logging/logger.rs` |

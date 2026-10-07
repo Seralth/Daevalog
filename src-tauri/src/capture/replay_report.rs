@@ -12,6 +12,9 @@
 //! A2_REPLAY_RESET_AT=04:48:00      clear combat data there, as the reset button does
 //! A2_REPLAY_FLAGS=1                print every hit's raw type, flag and direction
 //!                                  bytes (`hit_flags` lines, capture ms first)
+//! A2_REPLAY_TIMELINE=1             print each fight of the local player in the
+//!                                  window with its hits, buffs and stats (see
+//!                                  `replay_timeline`); takes the `hit_flags` lines
 //! cargo test --lib replay_report -- --ignored --nocapture
 //! ```
 
@@ -103,6 +106,7 @@ pub(crate) struct Options {
     pub show_hits: bool,
     pub reset_at: Option<String>,
     pub dump_op: Option<[u8; 2]>,
+    pub timeline: bool,
 }
 
 #[test]
@@ -119,6 +123,7 @@ fn replay_report() {
         show_hits: env("A2_REPLAY_HITS").is_some(),
         reset_at: env("A2_REPLAY_RESET_AT"),
         dump_op: env("A2_REPLAY_DUMP").and_then(|h| decode_hex(&h)).and_then(|v| v.try_into().ok()),
+        timeline: env("A2_REPLAY_TIMELINE").is_some(),
     };
     let _flags = env("A2_REPLAY_FLAGS").map(|_| {
         tracing::subscriber::set_default(
@@ -137,7 +142,7 @@ fn replay_report() {
 
 /// Replay a capture's text and hand each line of the report to `out`.
 pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
-    let Options { target, from, to, show_hits, mut reset_at, dump_op } = options;
+    let Options { target, from, to, show_hits, mut reset_at, dump_op, timeline } = options;
     let data_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
     let skills = Arc::new(SkillLookup::new());
     let npcs = Arc::new(NpcLookup::new());
@@ -160,6 +165,10 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let mut last_ts = 0i64;
     let mut first_tod = String::new();
     let mut last_tod = String::new();
+    let mut gather = timeline.then(super::replay_timeline::Gather::default);
+    let mut zone = None;
+    let _tap = gather.as_ref().map(|g| g.tap.install());
+    let mut window_ms = 0i64;
 
     for line in text.lines() {
         if line.is_empty() || line.starts_with('#') {
@@ -170,6 +179,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
         let Some(bytes) = decode_hex(hex) else { continue };
         let Ok(when) = chrono::DateTime::parse_from_rfc3339(ts) else { continue };
         let ts_ms = when.timestamp_millis();
+        zone.get_or_insert(*when.offset());
         let tod = ts.get(11..).unwrap_or("").to_string();
         if let Some(to) = &to {
             if tod.get(..to.len()).unwrap_or(&tod) > to.as_str() {
@@ -186,6 +196,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             window_started = true;
             prev = storage.get_combat_snapshot_light();
             first_tod = tod.clone();
+            window_ms = ts_ms;
         }
 
         let (assembler, processor) = streams.entry(key.to_string()).or_insert_with(|| {
@@ -201,7 +212,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
         }
         last_ts = ts_ms;
 
-        if let (true, Some(op)) = (in_window, dump_op) {
+        if (in_window && dump_op.is_some()) || gather.is_some() {
             let acc = walks.entry(key.to_string()).or_insert_with(PacketAccumulator::new);
             acc.append(&bytes);
             let consumed = framing::walk(acc.snapshot()).consumed;
@@ -209,6 +220,10 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             frames_of(&acc.snapshot()[..consumed], true, &mut packets, 0);
             acc.discard_bytes(consumed);
             for p in packets {
+                if let Some(g) = &mut gather {
+                    g.timeline.note(ts_ms, &p);
+                }
+                let Some(op) = dump_op.filter(|_| in_window) else { continue };
                 let o = read_varint(&p, 0).length.max(0) as usize;
                 if p.get(o..o + 2) != Some(&op[..]) {
                     continue;
@@ -221,6 +236,9 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
                 let hex: String = p.iter().map(|b| format!("{b:02x}")).collect();
                 out(format!("dump {tod} {hex}"));
             }
+        }
+        if let Some(g) = &mut gather {
+            g.after_line(ts_ms, storage.local_player_id().map(|v| v as i32), || storage.get_summon_data());
         }
 
         if window_started {
@@ -331,5 +349,10 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             ));
         }
         crate::clock::set_override(None);
+    }
+    if let Some(g) = gather {
+        let mobs = storage.get_mob_data();
+        let zone = zone.unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
+        g.report(zone, last_ts, storage.get_summon_data(), (window_ms, last_ts), target, &mobs, &skills, &npcs, out);
     }
 }
