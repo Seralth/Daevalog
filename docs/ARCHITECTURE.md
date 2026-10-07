@@ -8,7 +8,7 @@ Daevalog is its own meter. It started as a fork of A2Tools DPS Meter v2.0.44 (ht
 
 ## Layers
 
-The data moves through six layers, in this order, and only forward. A layer reads from the layer before it and hands its result to the next one; the parser writes straight into fight storage. No layer reads from a later one. Five parts still sit in the wrong folder and are listed in fork issue #30.
+The data moves through six layers, in this order, and only forward. A layer reads from the layer before it and hands its result to the next one; the parser writes straight into fight storage. No layer reads from a later one.
 
 | Layer | Job | Main files |
 |---|---|---|
