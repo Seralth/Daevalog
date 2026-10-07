@@ -5,11 +5,13 @@ use std::sync::Arc;
 use crate::combat::data_storage::DataStorage;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
+pub use fields::{name_fields, name_fields_unframed, NameField, NameRecord};
 pub use super::varint::{
     can_read_varint, find_pattern, parse_u32_le, read_varint, try_read_varint, varint_ending_at, VarIntResult,
 };
 
 mod damage;
+mod fields;
 mod identity;
 mod roster;
 mod spawn;
@@ -126,35 +128,46 @@ impl StreamProcessor {
         // read it again on every TCP segment until it completed (a party
         // roster was read 18 times in one millisecond).
         let buffer = &buffer[..offset];
+        let regions = super::framing::regions(&framing.frames, offset);
+        self.scan_records(buffer, &regions);
 
-        // Scan for embedded 04 8D ownership sub-packets
-        if buffer.len() >= 4 {
-            self.scan_for_embedded_04_8d(buffer);
-            self.scan_for_entity_hp(buffer);
+        offset
+    }
+
+    /// The scans for records that sit anywhere in a packet, each run over one
+    /// frame (or stretch between frames) at a time, so no record borrows the
+    /// next frame's bytes: a `2a 37` record ending `44 36 33 ..`, read on into
+    /// the next frame's length `8f 01` and spawn `41 36`, named entity 51 "A"
+    /// (2026-10-06). Each scan still runs over all of `data` before the next.
+    fn scan_records(&mut self, data: &[u8], regions: &[std::ops::Range<usize>]) {
+        // Embedded 04 8D ownership and loot records.
+        for r in regions {
+            self.scan_for_embedded_04_8d(&data[r.clone()]);
         }
-
-        // Scan for embedded spawn opcodes (40/41/44/45 36) in the raw buffer.
-        // The bundle path does this on the decompressed stream (see unwrap_bundle),
-        // but standalone (non-bundle) packets never got this scan — so player-spawn
-        // names (45 36) that sit mid-packet, rather than at the packet front where
-        // parse_summon_packet looks, were never extracted. This is why party members
-        // announced only via a mid-packet 45 36 stayed unnamed (#id) while the local
-        // player resolved through other anchors.
-        if buffer.len() >= 6 {
-            self.scan_for_embedded_40_36(buffer);
+        if data.len() >= 4 {
+            self.scan_for_entity_hp(data);
         }
-
+        // Embedded spawn opcodes (40/41/44/45 36). Player spawns (45 36) also
+        // sit mid-packet, where parse_summon_packet at the packet front never
+        // looks: party members announced only that way stayed unnamed (#id).
+        for r in regions {
+            self.scan_for_embedded_40_36(&data[r.clone()]);
+        }
         // Bind the local player from the account character-select list, which
         // arrives as plaintext (uncompressed) and can land in a standalone packet.
-        self.scan_char_list_self(buffer);
+        for r in regions {
+            self.scan_char_list_self(&data[r.clone()]);
+        }
         // Mask-driven id↔name records: the self record (33 36) and every other
         // player's record (45 36). This is the primary naming source — it covers
         // the already-loaded case where no login char-list is in the capture.
-        self.scan_masked_identity(buffer);
+        for r in regions {
+            self.scan_masked_identity(&data[r.clone()]);
+        }
         // Party roster (names, levels, gear score, combat power).
-        self.scan_party_roster(buffer);
-
-        offset
+        for r in regions {
+            self.scan_party_roster(&data[r.clone()]);
+        }
     }
 
     /// Who you are, from compressed bundles that sit inside another packet.
@@ -168,8 +181,14 @@ impl StreamProcessor {
     /// these: what else they hold is left as it was, so no fight changes.
     fn scan_embedded_bundles_for_identity(&self, packet: &[u8]) {
         for bundle in super::framing::embedded_bundles(packet) {
-            self.scan_masked_identity(&bundle.data);
-            self.scan_party_roster(&bundle.data);
+            let walk = super::framing::walk_inner(&bundle.data);
+            let regions = super::framing::regions(&walk.frames, bundle.data.len());
+            for r in &regions {
+                self.scan_masked_identity(&bundle.data[r.clone()]);
+            }
+            for r in &regions {
+                self.scan_party_roster(&bundle.data[r.clone()]);
+            }
         }
     }
 
@@ -192,7 +211,8 @@ impl StreamProcessor {
         // exactly the way this does.
         self.pending_compact_skill_context = None;
 
-        for frame in &super::framing::walk_inner(&decompressed).frames {
+        let walk = super::framing::walk_inner(&decompressed);
+        for frame in &walk.frames {
             match frame.kind {
                 super::framing::FrameKind::Bundle => {
                     self.unwrap_bundle(frame.payload(&decompressed), depth + 1);
@@ -207,13 +227,9 @@ impl StreamProcessor {
             }
         }
 
-        // Scan for embedded 04 8D and 40 36 in decompressed data
-        self.scan_for_embedded_04_8d(&decompressed);
-        self.scan_for_entity_hp(&decompressed);
-        self.scan_for_embedded_40_36(&decompressed);
-        self.scan_char_list_self(&decompressed);
-        self.scan_masked_identity(&decompressed);
-        self.scan_party_roster(&decompressed);
+        // The same record scans as a stream gets, over the decompressed data.
+        let regions = super::framing::regions(&walk.frames, decompressed.len());
+        self.scan_records(&decompressed, &regions);
 
         self.pending_compact_skill_context = None;
     }
@@ -815,6 +831,38 @@ mod tests {
         assert_eq!(me.name.as_deref(), Some("Naicha"));
         assert_eq!(storage.local_player_id(), Some(14957));
         assert_eq!((me.server_id, me.class, me.level), (1304, Some(crate::entity::job_class::JobClass::Cleric), Some(28)));
+    }
+
+    /// Two frames from a capture (2026-10-06 18:12:55): a `2a 37` record that
+    /// ends `44 36 33 7c 42 17 40`, then a mob spawn whose length is `8f 01`.
+    /// Read on across the frame end, that is a player record for entity 51
+    /// (`33`) with mask2 `8f` and the one-byte name `01 41`, "A".
+    fn record_cut_by_its_frame() -> Vec<u8> {
+        hex(concat!(
+            "1b2a37e880011d034a065afad1bff9d53a4436337c421740",
+            "8f014136efb4031c000064902c0000026b519247339aa5c700540a4600d78b3fc7000107076400000064",
+            "000000000000000000000000000000000000006400000064000000010000000000000000000000000000",
+            "00000000000601110181969800ffffffffffffffff8075d52abb030000efb40301026b519247339aa5c7",
+            "00540a46063ed40000002900000000",
+        ))
+    }
+
+    #[test]
+    fn a_record_ends_with_its_frame() {
+        let stream = record_cut_by_its_frame();
+        let mut bundle = vec![0xFF, 0xFF];
+        bundle.extend_from_slice(&(stream.len() as u32).to_le_bytes());
+        bundle.extend_from_slice(&lz4_flex::compress(&stream));
+        let len = crate::capture::framing::length_value(bundle.len());
+        let mut bundled = vec![(len as u8) | 0x80, (len >> 7) as u8];
+        bundled.extend_from_slice(&bundle);
+        for (how, bytes) in [("in the stream", stream), ("in a bundle", bundled)] {
+            let (storage, mut p) = processor();
+            p.consume_stream(&bytes);
+            assert_eq!(storage.get_nickname(51), None, "{how}");
+            // The spawn after it is still read: a mob, code 2920548.
+            assert_eq!(storage.mob_code(55919), Some(2_920_548), "{how}");
+        }
     }
 
     /// Four `1d 37` records from a capture (2026-10-05 17:42:14). The second

@@ -196,6 +196,29 @@ pub fn walk_inner(buffer: &[u8]) -> Framing {
     out
 }
 
+/// The stretches of `buffer[..end]` a record can sit in: each packet, and each
+/// run of bytes between frames (padding, a walk resynchronising, the end of a
+/// bundle that does not frame). A record never runs on into the next frame.
+/// Bundles are left out: their records are read from the bundle opened, and
+/// LZ4 keeps the bytes of two packets side by side in its literals.
+pub fn regions(frames: &[Frame], end: usize) -> Vec<std::ops::Range<usize>> {
+    let mut out = Vec::with_capacity(frames.len() * 2 + 1);
+    let mut at = 0;
+    for frame in frames {
+        if frame.start > at {
+            out.push(at..frame.start);
+        }
+        if frame.kind == FrameKind::Packet {
+            out.push(frame.start..frame.end);
+        }
+        at = frame.end;
+    }
+    if end > at {
+        out.push(at..end);
+    }
+    out
+}
+
 /// Bytes a frame occupies, given its length varint's value and width. `None`
 /// when that is shorter than the varint itself.
 pub fn frame_size(value: i32, varint_bytes: i32) -> Option<usize> {
