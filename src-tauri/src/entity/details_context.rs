@@ -82,6 +82,9 @@ pub struct DetailsContext {
     /// the ticks of that target's span, so targets fought at once overlap.
     #[serde(default)]
     pub heal_skills: Vec<DetailSkillEntry>,
+    /// The deaths of you and your party over every live fight, each once.
+    #[serde(default)]
+    pub deaths: Option<Vec<super::deaths::DeathEntry>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -158,6 +161,10 @@ pub struct TargetDetailsResponse {
     /// Damage taken in this fight, per player and skill. Empty for old files.
     #[serde(default)]
     pub taken_skills: Vec<super::taken::TakenSkillEntry>,
+    /// Deaths in this fight: you and each party member whose HP the game
+    /// sent during it. `None` in files saved before deaths were counted.
+    #[serde(default)]
+    pub deaths: Option<Vec<super::deaths::DeathEntry>>,
 }
 
 #[cfg(test)]

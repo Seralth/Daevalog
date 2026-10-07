@@ -47,7 +47,7 @@ impl DpsCalculator {
             if !self.is_saved_fight_target(&mob_data, td) || self.saved_fights.get(&(td.target_id, td.first_damage_time)) == Some(&td.last_damage_time) {
                 continue;
             }
-            let details = self.details_for(td, seg.max_hp, &seg.heals, &seg.taken, None, Some(&seg.identity));
+            let details = self.details_for(td, seg.max_hp, &seg.heals, &seg.taken, Some(&seg.deaths), None, Some(&seg.identity));
             let stats = actor_stats([td].into_iter());
             records.push(self.build_record(td, details, &stats, &mob_data, Some(&seg.identity)));
             self.saved_fights.insert((td.target_id, td.first_damage_time), td.last_damage_time);

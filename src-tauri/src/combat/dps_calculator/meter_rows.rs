@@ -8,6 +8,7 @@ use crate::entity::dps_data::DpsData;
 use crate::entity::job_class::JobClass;
 use crate::entity::personal_data::PersonalData;
 use crate::entity::summon_resolver;
+use crate::entity::deaths::DeathRow;
 use crate::entity::taken::{TakenRow, TakenStats};
 
 use super::rows::{build_nickname_canonical_map_from_aggregates, resolve_nickname};
@@ -315,13 +316,7 @@ impl DpsCalculator {
     /// nothing names is left out, as on the damage rows.
     pub(super) fn taken_rows(&mut self, dps: &DpsData) -> Vec<TakenRow> {
         let encounter_mode = self.target_selection_mode == TargetSelectionMode::Encounter;
-        let since = self.window_since().or_else(|| {
-            encounter_mode
-                .then(|| self.data_storage.current_encounter())
-                .flatten()
-                .filter(|e| !e.blind)
-                .map(|e| e.start)
-        });
+        let since = self.rows_since();
         let key: super::TakenKey = (
             self.data_storage.damage_generation(),
             self.data_storage.taken_generation(),
@@ -363,6 +358,57 @@ impl DpsCalculator {
         let mut out: Vec<TakenRow> = rows.into_values().collect();
         out.sort_by_key(|r| (std::cmp::Reverse(r.stats.damage), r.actor_id));
         self.taken_cache = Some((key, out.clone()));
+        out
+    }
+
+    /// Where the fights behind the rows start: the window's start, or in
+    /// ENC the encounter's.
+    fn rows_since(&self) -> Option<i64> {
+        let encounter_mode = self.target_selection_mode == TargetSelectionMode::Encounter;
+        self.window_since().or_else(|| {
+            encounter_mode
+                .then(|| self.data_storage.current_encounter())
+                .flatten()
+                .filter(|e| !e.blind)
+                .map(|e| e.start)
+        })
+    }
+
+    /// Deaths over the fights behind the rows, one row for you and each
+    /// party member, on the rows' ids where they have one. `None` for a
+    /// member whose HP the game did not send during them.
+    pub(super) fn death_rows(&self, dps: &DpsData) -> Vec<DeathRow> {
+        if self.displayed_targets.is_empty() {
+            return Vec::new();
+        }
+        let encounter_mode = self.target_selection_mode == TargetSelectionMode::Encounter;
+        let deaths = self.data_storage.deaths_on(&self.displayed_targets, encounter_mode, self.rows_since());
+        let nicknames = self.data_storage.get_nicknames();
+        let party = self.data_storage.get_party_members();
+        let by_name: HashMap<&str, i32> = dps.map.iter().map(|(&id, d)| (d.nickname.trim(), id)).collect();
+        let mut ids: Vec<i32> = deaths.keys().copied().chain(self.data_storage.party_ids()).collect();
+        ids.sort_unstable();
+        ids.dedup();
+        // One row per name: a player gets a new id on every zone load.
+        let mut rows: HashMap<String, DeathRow> = HashMap::new();
+        for player in ids {
+            let nickname = nicknames.get(&player).cloned().unwrap_or_else(|| player.to_string());
+            let row = rows.entry(nickname.trim().to_string()).or_insert_with(|| {
+                let uid = by_name.get(nickname.trim()).copied().unwrap_or(player);
+                let shown = dps.map.get(&uid);
+                let job = shown
+                    .map(|d| d.job.clone())
+                    .or_else(|| self.cached_job(&nickname))
+                    .or_else(|| party.get(&nickname).and_then(|m| m.job).map(|j| j.class_name().to_string()))
+                    .unwrap_or_default();
+                DeathRow { actor_id: uid, nickname: nickname.clone(), job, number: shown.map_or(0, |d| d.number), deaths: None }
+            });
+            if let Some(&n) = deaths.get(&player) {
+                row.deaths = Some(row.deaths.unwrap_or(0) + n);
+            }
+        }
+        let mut out: Vec<DeathRow> = rows.into_values().collect();
+        out.sort_by_key(|r| r.actor_id);
         out
     }
 }

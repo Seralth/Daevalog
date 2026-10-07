@@ -44,6 +44,7 @@ fn record_spanning(start_ms: i64, duration_ms: i64) -> FightRecord {
             ping_history: Vec::new(),
             heal_skills: Vec::new(),
             taken_skills: Vec::new(),
+            deaths: None,
         },
         actors: Vec::new(),
         is_train: false,

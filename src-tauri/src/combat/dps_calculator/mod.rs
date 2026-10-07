@@ -128,6 +128,7 @@ impl DpsCalculator {
     pub fn get_dps(&mut self) -> DpsData {
         let mut dps = self.compute_dps();
         dps.taken = self.taken_rows(&dps);
+        dps.deaths = self.death_rows(&dps);
         // After the rows: a mode just switched to has picked its targets.
         self.retire_idle_targets();
         self.publish_view();
@@ -1133,6 +1134,44 @@ mod tests {
     }
 
     #[test]
+    fn a_saved_fight_keeps_its_deaths_and_the_meter_shows_them() {
+        use crate::combat::data_storage::PartyMember;
+        use crate::entity::deaths::{DeathEntry, DeathRow};
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        s.append_nickname_authoritative(3000, "Healer");
+        s.append_nickname_authoritative(4000, "Away");
+        s.set_party_roster(vec![("Healer".into(), PartyMember::default()), ("Away".into(), PartyMember::default())], true);
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        let hp = |t: i64, id: i32, value: i64| {
+            crate::clock::set_override(Some(t));
+            s.note_hp(id, value);
+        };
+        hits(&s, 2259, 800, 1_000, 8_000);
+        hp(2_000, 2259, 600);
+        hp(2_000, 3000, 900);
+        hp(3_000, 2259, 0);
+        hp(4_000, 2259, 6000);
+        let rows = calc.get_dps().deaths;
+        let row = |id: i32| rows.iter().find(|r: &&DeathRow| r.actor_id == id).map(|r| r.deaths);
+        assert_eq!((row(2259), row(3000), row(4000)), (Some(Some(1)), Some(Some(0)), Some(None)), "Away sent no HP");
+        let saved = snapshot_at(&mut calc, 30_000);
+        assert_eq!(
+            saved[0].details.deaths,
+            Some(vec![DeathEntry { actor_id: 2259, deaths: 1 }, DeathEntry { actor_id: 3000, deaths: 0 }])
+        );
+        let json = serde_json::to_string(&saved[0]).unwrap();
+        let back: FightRecord = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.details.deaths, saved[0].details.deaths);
+        // A fight saved before deaths were counted: not known, not 0.
+        let old = json.replace(r#","deaths":[{"actorId":2259,"deaths":1},{"actorId":3000,"deaths":0}]"#, "");
+        assert_ne!(old, json);
+        assert_eq!(serde_json::from_str::<FightRecord>(&old).unwrap().details.deaths, None);
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn the_meter_lists_damage_taken_by_players_who_dealt_none() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));
@@ -1725,15 +1764,17 @@ mod tests {
         assert!(pulls > 0);
     }
 
-    /// The hover summary is the full details without hit timelines, healing
-    /// and ping.
+    /// The hover summary is the full details without hit timelines, healing,
+    /// ping and deaths.
     fn assert_hover_matches_full(full: TargetDetailsResponse, summary: TargetDetailsResponse) {
         let (mut full, mut summary) = (full, summary);
         assert!(summary.skills.iter().all(|s| s.hit_timestamps.is_empty()));
         assert!(summary.heal_skills.is_empty());
         assert!(summary.ping_history.is_empty());
+        assert!(summary.deaths.is_none());
         full.heal_skills.clear();
         full.ping_history.clear();
+        full.deaths = None;
         for skill in &mut full.skills { skill.hit_timestamps.clear(); }
         full.skills.sort_by_key(|s| (s.actor_id, s.code, s.is_dot));
         summary.skills.sort_by_key(|s| (s.actor_id, s.code, s.is_dot));

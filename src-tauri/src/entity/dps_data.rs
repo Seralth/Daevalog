@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use super::deaths::DeathRow;
 use super::personal_data::PersonalData;
 use super::taken::TakenRow;
 
@@ -32,6 +33,10 @@ pub struct DpsData {
     /// first. Players who dealt no damage are here too.
     #[serde(default)]
     pub taken: Vec<TakenRow>,
+    /// Deaths of you and your party over the same fights. Nobody else is
+    /// here: deaths are counted for you and your party only.
+    #[serde(default)]
+    pub deaths: Vec<DeathRow>,
 }
 
 impl DpsData {
@@ -49,6 +54,7 @@ impl DpsData {
             target_current_hp: -1,
             dungeon_id: 0,
             taken: Vec::new(),
+            deaths: Vec::new(),
         }
     }
 }

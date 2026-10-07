@@ -2,7 +2,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::combat::data_storage::{HealSkillData, SegmentIdentity, TakenBy, TargetCombatData, UNATTRIBUTED_ID};
+use crate::combat::data_storage::{DeathsBy, HealSkillData, SegmentIdentity, TakenBy, TargetCombatData, UNATTRIBUTED_ID};
+use crate::entity::deaths::DeathEntry;
 use crate::entity::details_context::*;
 use crate::entity::job_class::JobClass;
 use crate::entity::taken::{TakenSkillEntry, TakenStats};
@@ -110,6 +111,11 @@ impl DpsCalculator {
         }
         let mut taken_skills: Vec<TakenSkillEntry> = taken_skills.into_values().collect();
         taken_skills.sort_by_key(|e| (e.actor_id, e.code));
+        let deaths = self.data_storage.deaths_on(&all_targets, false, None);
+        let deaths = death_entries(&deaths, |player| {
+            let nick = resolve_nickname(player, &nickname_data, &summon_data);
+            by_name.get(nick.as_str()).copied().unwrap_or(player)
+        });
 
         // Healing over the listed fights, on the actor of the same name: each
         // target's own list holds the ticks of its span, so targets fought at
@@ -182,6 +188,7 @@ impl DpsCalculator {
             numbers,
             taken_skills,
             heal_skills,
+            deaths: Some(deaths),
         }
     }
 
@@ -208,7 +215,8 @@ impl DpsCalculator {
         let heals = if summary_only { HashMap::new() } else { self.fight_heals(&merged) };
         let encounter = self.target_selection_mode == TargetSelectionMode::Encounter;
         let taken = if summary_only { TakenBy::new() } else { self.data_storage.taken_on(&self.displayed_targets, encounter, None) };
-        let mut details = self.details_for(&merged, 0, &heals, &taken, actor_ids, None);
+        let deaths = (!summary_only).then(|| self.data_storage.deaths_on(&self.displayed_targets, encounter, None));
+        let mut details = self.details_for(&merged, 0, &heals, &taken, deaths.as_ref(), actor_ids, None);
         if summary_only {
             details.ping_history.clear();
         }
@@ -252,17 +260,19 @@ impl DpsCalculator {
                 ping_history: Vec::new(),
                 heal_skills: Vec::new(),
                 taken_skills: Vec::new(),
+                deaths: None,
             },
         };
         let max_hp = self.data_storage.get_mob_hp(target_id).unwrap_or(0);
         if summary_only {
-            let mut details = self.details_for(target_data, max_hp, &HashMap::new(), &TakenBy::new(), actor_ids, None);
+            let mut details = self.details_for(target_data, max_hp, &HashMap::new(), &TakenBy::new(), None, actor_ids, None);
             details.ping_history.clear();
             return details;
         }
         let heals = self.fight_heals(target_data);
         let taken = self.data_storage.fight_taken(target_data);
-        self.details_for(target_data, max_hp, &heals, &taken, actor_ids, None)
+        let deaths = self.data_storage.fight_deaths(target_data);
+        self.details_for(target_data, max_hp, &heals, &taken, Some(&deaths), actor_ids, None)
     }
 
     /// Adds one healer's ticks of one skill to a heal list, as Details lists
@@ -325,6 +335,7 @@ impl DpsCalculator {
         max_hp: i32,
         heals: &HashMap<i32, HashMap<(i32, bool), HealSkillData>>,
         taken: &TakenBy,
+        deaths: Option<&DeathsBy>,
         actor_ids: Option<&[i32]>,
         identity: Option<&SegmentIdentity>,
     ) -> TargetDetailsResponse {
@@ -500,6 +511,15 @@ impl DpsCalculator {
         }
         let mut taken_skills: Vec<TakenSkillEntry> = taken_map.into_values().collect();
         taken_skills.sort_by_key(|e| (e.actor_id, e.code));
+        let deaths = deaths.map(|d| {
+            death_entries(d, |player| {
+                let nickname = resolve_nickname(player, &nickname_data, &summon_data);
+                *canonical.get(&nickname).unwrap_or(&player)
+            })
+            .into_iter()
+            .filter(|e| filter_uids.as_ref().is_none_or(|f| f.contains(&e.actor_id)))
+            .collect()
+        });
 
         let battle_time = (target_data.last_damage_time - target_data.first_damage_time).max(0);
 
@@ -519,6 +539,19 @@ impl DpsCalculator {
             ping_history,
             heal_skills: heal_map.into_values().collect(),
             taken_skills,
+            deaths,
         }
     }
+}
+
+/// Deaths per player on the id `uid_of` gives each, the deaths of two ids of
+/// one player added up, by id.
+fn death_entries(deaths: &DeathsBy, uid_of: impl Fn(i32) -> i32) -> Vec<DeathEntry> {
+    let mut by_uid: HashMap<i32, u32> = HashMap::new();
+    for (&player, &n) in deaths {
+        *by_uid.entry(uid_of(player)).or_default() += n;
+    }
+    let mut out: Vec<DeathEntry> = by_uid.into_iter().map(|(actor_id, deaths)| DeathEntry { actor_id, deaths }).collect();
+    out.sort_by_key(|e| e.actor_id);
+    out
 }
