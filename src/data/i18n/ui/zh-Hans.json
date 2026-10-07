@@ -196,6 +196,8 @@
     "characterName": "Name#ID",
     "characterNamePlaceholder": "输入你的角色名称",
     "pinMeToTop": "将我置顶",
+    "hideOtherNames": "隐藏其他玩家的名字",
+    "hideOtherNamesHint": "其他玩家显示为职业和编号，截图中不会出现任何名字。已保存的战斗仍保留名字。",
     "slimMode": "精简模式",
     "meterLayout": {
       "label": "仪表布局",
@@ -443,6 +445,8 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
+    "hiddenPlayer": "{class} {n}",
+    "hiddenPlayerNoClass": "玩家 {n}",
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/秒",
     "columns": {

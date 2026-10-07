@@ -108,7 +108,7 @@ function setup() {
   const statsEl = new El("div");
 
   const window = { i18n: { t: (key, fallback) => lookup(key) ?? fallback } };
-  const context = loadScripts(["shared/format.js", "shared/jobs.js", "details.js"], {
+  const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/players.js", "details.js"], {
     window, console,
     document: { createElement: (tag) => new El(tag), documentElement: new El("html") },
     getComputedStyle: () => ({ getPropertyValue: () => "36", fontSize: "14px", fontFamily: "sans-serif" }),

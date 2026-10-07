@@ -14,7 +14,7 @@ function columns() {
 
 function app(MeterColumns) {
   const window = { addEventListener() {}, MeterColumns };
-  const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/targetModes.js", "core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
+  const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/players.js", "shared/targetModes.js", "core.js"], { window, console, document: { readyState: "loading", addEventListener() {} } });
   return vm.runInContext("Object.create(DpsApp.prototype)", context);
 }
 

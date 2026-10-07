@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 
 use crate::entity::damage_packet::ParsedDamagePacket;
 use crate::entity::job_class::JobClass;
@@ -51,6 +51,7 @@ mod entities;
 mod heal;
 mod identity;
 mod names;
+mod numbers;
 mod roster;
 
 pub use aggregates::{
@@ -83,6 +84,8 @@ pub struct DataStorage {
     /// Set when a zone change clears combat; the dps calculator consumes it to
     /// drop its cached snapshot / saved-target state on the next cycle.
     combat_reset_requested: AtomicBool,
+    /// Who is which number when names are hidden. See `numbers`.
+    player_numbers: Mutex<numbers::PlayerNumbers>,
 }
 
 struct Inner {
@@ -251,6 +254,7 @@ impl DataStorage {
             last_damage_ms: AtomicI64::new(NEVER_MS),
             last_zone_reset_ms: AtomicI64::new(NEVER_MS),
             combat_reset_requested: AtomicBool::new(false),
+            player_numbers: Mutex::new(numbers::PlayerNumbers::default()),
             encounter_timeout_ms: AtomicI64::new(DEFAULT_ENCOUNTER_TIMEOUT_MS),
         }
     }
@@ -378,6 +382,8 @@ impl DataStorage {
         inner.mob_current_hp.clear();
         inner.heal_ticks.clear();
         inner.current_target = 0;
+        drop(inner);
+        self.clear_player_numbers();
     }
 
     /// Clear only the per-segment combat/damage aggregates, preserving player
@@ -397,6 +403,8 @@ impl DataStorage {
         inner.mob_current_hp.clear();
         inner.heal_ticks.clear();
         inner.current_target = 0;
+        drop(inner);
+        self.clear_player_numbers();
     }
 }
 

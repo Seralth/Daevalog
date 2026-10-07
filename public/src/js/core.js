@@ -10,6 +10,7 @@ const REMOTE_APPLIED_SETTING_CONTROLS = {
   "dpsMeter.bossNameSize": ".bossNameSizeInput",
   "dpsMeter.showSuspendBtn": ".showSuspendBtnCheckbox",
   "dpsMeter.showLockBtn": ".showLockBtnCheckbox",
+  "dpsMeter.hideOtherNames": ".hideOtherNamesCheckbox",
 };
 
 class DpsApp {
@@ -53,6 +54,7 @@ class DpsApp {
       pinMeToTop: "dpsMeter.pinMeToTop",
       mainPlayerNamesBold: "dpsMeter.mainPlayerNamesBold",
       mainPlayerDpsBold: "dpsMeter.mainPlayerDpsBold",
+      hideOtherNames: "dpsMeter.hideOtherNames",
       showPing: "dpsMeter.showPing",
       showTotalDps: "dpsMeter.showTotalDps",
       roundDps: "dpsMeter.roundDps",
@@ -279,6 +281,8 @@ class DpsApp {
               id: pinnedId,
               name: row?.name ?? "",
               job: row?.job ?? "",
+              number: row?.number ?? 0,
+              isUser: !!row?.isUser,
               isIdentifying: !!row?.isIdentifying,
             },
             defaultTargetAll: !!options.defaultTargetAll,
@@ -374,6 +378,13 @@ class DpsApp {
       getDetails: (row, options) => this.getDetails(row, options),
       getDetailsContext: () => this.getDetailsContext(),
       getDungeonId: () => this.lastDungeonId,
+      // You by the backend's id, or by your name, which a saved fight keeps
+      // unmasked. A saved fight's ids are from its own session, so only the
+      // name counts there.
+      isUser: (id, name, { saved = false } = {}) =>
+        (!saved && Number(id) > 0 && Number(id) === Number(this.localPlayerId)) ||
+        (!!name && String(name).trim() === String(this.USER_NAME || "").trim()),
+      getLiveNumber: (id) => this.latestRowsById?.get?.(String(id))?.number,
       onPinnedRowChange: (rowId) => {
         const nextId = Number(rowId);
         this.pinnedDetailsRowId = Number.isFinite(nextId) && nextId > 0 ? nextId : null;
@@ -784,7 +795,7 @@ class DpsApp {
       })
       .join("");
 
-    const tooltipName = String(row?.name || "-").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const tooltipName = playerLabel(row).replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const tooltipClassIcon = row?.job ? `<img class="hoverDetailsTooltipClassIcon" src="./assets/${row.job}.png" alt="" onerror="this.style.display='none'">` : "";
     this.hoverTooltipEl.innerHTML = `
       <div class="hoverDetailsTooltipHeader">${tooltipClassIcon}${tooltipName}</div>
@@ -1248,6 +1259,8 @@ class DpsApp {
         hits: num(value?.hits),
         critHits: num(value?.critHits),
         maxHit: num(value?.maxHit),
+        // Shown with the class when other players' names are hidden.
+        number: num(value?.number),
         isUser: name === this.USER_NAME || numericId === localId,
         isIdentifying,
       });

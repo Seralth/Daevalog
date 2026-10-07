@@ -196,6 +196,8 @@
     "characterName": "Name#ID",
     "characterNamePlaceholder": "캐릭터 이름 입력",
     "pinMeToTop": "내 캐릭터를 맨 위에 고정",
+    "hideOtherNames": "다른 플레이어 이름 숨기기",
+    "hideOtherNamesHint": "다른 플레이어는 클래스와 번호로 표시되어 스크린샷에 이름이 남지 않습니다. 저장된 전투에는 이름이 그대로 남습니다.",
     "slimMode": "슬림 모드",
     "meterLayout": {
       "label": "미터 레이아웃",
@@ -443,6 +445,8 @@
   },
   "meter": {
     "identifyingPlayer": "#{id}",
+    "hiddenPlayer": "{class} {n}",
+    "hiddenPlayerNoClass": "플레이어 {n}",
     "unattributed": "Unattributed summons and effects",
     "dpsSuffix": "/초",
     "columns": {

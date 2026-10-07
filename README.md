@@ -156,6 +156,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - A packet replay reads only files in the meter's data folder.
 - Screenshots go only to the folder you chose in the meter, or the default folder, and never over an existing file.
 - Signing in tells a2tools.app the system (Linux or Windows), not your computer's name.
+- **Hide other players' names** in Settings > Appearance. Other players show as their class and a number, on the meter, in Details, History and tooltips, so a screenshot names no one. A player keeps one number for the whole fight. You keep your own name. Saved fights and uploads are not changed.
 
 ### Left out
 - Guessing who an unnamed actor is from its class.

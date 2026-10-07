@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use crate::combat::data_storage::UNATTRIBUTED_ID;
 use crate::entity::dps_data::DpsData;
 use crate::entity::personal_data::PersonalData;
 use crate::entity::summon_resolver;
@@ -27,6 +28,24 @@ impl DpsCalculator {
     /// in one place so a new return path cannot quietly skip half of it.
     pub(super) fn finalize_rows(&self, dps_data: &mut DpsData) {
         self.add_party_rows(dps_data);
+        let numbers = self.player_numbers(dps_data.map.iter().map(|(&id, d)| (id, d.nickname.as_str())));
+        for (id, data) in dps_data.map.iter_mut() {
+            data.number = numbers.get(id).copied().unwrap_or(0);
+        }
+    }
+
+    /// The numbers of the other players among `players`: not you, and not the
+    /// unattributed row. New ones are numbered by id, for a fixed order.
+    pub(super) fn player_numbers<'a>(&self, players: impl Iterator<Item = (i32, &'a str)>) -> HashMap<i32, u32> {
+        let local_id = self.data_storage.local_player_id().map(|v| v as i32);
+        let local_name = self.data_storage.local_character_name().filter(|n| !n.trim().is_empty());
+        let mut others: Vec<(i32, &str)> = players
+            .filter(|&(id, name)| {
+                id != UNATTRIBUTED_ID && Some(id) != local_id && local_name.as_deref().map(str::trim) != Some(name.trim())
+            })
+            .collect();
+        others.sort_unstable_by_key(|&(id, _)| id);
+        self.data_storage.player_numbers(others)
     }
 
     fn add_party_rows(&self, dps_data: &mut DpsData) {

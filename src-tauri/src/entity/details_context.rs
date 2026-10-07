@@ -67,6 +67,9 @@ pub struct DetailsContext {
     pub current_target_id: i32,
     pub targets: Vec<DetailsTargetSummary>,
     pub actors: Vec<DetailsActorSummary>,
+    /// Each other player's number, as on the meter. See `PersonalData::number`.
+    #[serde(default)]
+    pub numbers: std::collections::HashMap<i32, u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

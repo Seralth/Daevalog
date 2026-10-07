@@ -62,6 +62,8 @@ const createDetailsUI = ({
   getDetails,
   getDetailsContext,
   getDungeonId,
+  isUser,
+  getLiveNumber,
   onPinnedRowChange,
   onBack,
 }) => {
@@ -89,7 +91,11 @@ const createDetailsUI = ({
   // (gameRecord.js picks what to show). null: the meter's own numbers.
   let gameView = null;
   let fightStartMs = 0;
-  let fightBossName = "";
+  // The player a fight with no target is titled after.
+  let fightPlayer = null;
+  // Each other player's number for "Hide other players' names": the
+  // backend's in a live fight, by first hit in a saved one.
+  let actorNumbers = new Map();
   // The instance the fight was in (0 in the open world), for its difficulty.
   let fightDungeonId = 0;
   let lastUnfilteredDetails = null;
@@ -144,7 +150,7 @@ const createDetailsUI = ({
   const renderFightTitle = () => {
     if (!detailsFightTitleEl) return;
     const target = getTargetById(selectedTargetId) || detailsTargets[0];
-    const bossName = fightBossName || (target ? getTargetLabel(target) : "");
+    const bossName = (fightPlayer ? escapeHtml(playerLabel(fightPlayer)) : "") || (target ? getTargetLabel(target) : "");
     const dateStr = fightStartMs > 0 ? formatFightDateTime(fightStartMs) : "";
     if (!bossName) { detailsFightTitleEl.innerHTML = ""; return; }
     const fightVs = labelText("details.fightVs", "Fight vs");
@@ -237,6 +243,23 @@ const createDetailsUI = ({
   };
 
   const getJobColor = (job) => jobColorMap[job] || "";
+
+  const escapeHtml = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // A player as Details shows them. Always through playerLabel, which hides
+  // other players' names when the setting is on.
+  const actorLabel = (actorId, job = "") => {
+    const id = Number(actorId);
+    const actor = detailsActors.get(id);
+    const name = actor?.nickname ?? "";
+    return playerLabel({
+      id,
+      name,
+      job: job || actor?.job || getActorJob(id),
+      number: actorNumbers.get(id) ?? getLiveNumber?.(id),
+      isUser: !!isUser?.(id, name, { saved: !!historyRecord }),
+    });
+  };
 
   const getActorJob = (actorId) => {
     const numericId = Number(actorId);
@@ -491,9 +514,11 @@ const createDetailsUI = ({
     actors.forEach((actor) => {
       const actorId = Number(actor.actorId);
       const job = actor.job || getActorJob(actorId);
-      const name = isUnattributedActor(actorId)
+      // Matched to the actors again on refresh, so the real name; never shown.
+      const matchLabel = isUnattributedActor(actorId)
         ? unattributedLabel()
         : detailsActors.get(actorId)?.nickname || resolveActorLabel(actorId);
+      const name = actorLabel(actorId, job);
       const dmg = Number(actor.totalDmg) || 0;
       const pct = Number(actor.contributionPct) || 0;
       const ratio = topDmg > 0 ? dmg / topDmg : 0;
@@ -552,7 +577,7 @@ const createDetailsUI = ({
           selectedAttackerLabel = labelText("details.all", "All");
         } else {
           selectedAttackerIds = [actorId];
-          selectedAttackerLabel = name;
+          selectedAttackerLabel = matchLabel;
         }
         rerender();
         await refreshDetailsView();
@@ -1860,12 +1885,16 @@ const createDetailsUI = ({
     if (!nextContext) {
       detailsContext = null;
       detailsActors = new Map();
+      actorNumbers = new Map();
       detailsTargets = [];
       selectedTargetId = null;
       return null;
     }
     detailsContext = nextContext;
     detailsActors = new Map();
+    actorNumbers = new Map(
+      Object.entries(nextContext.numbers || {}).map(([id, n]) => [Number(id), Number(n)])
+    );
     detailsTargets = Array.isArray(nextContext.targets) ? nextContext.targets : [];
     const actorList = Array.isArray(nextContext.actors) ? nextContext.actors : [];
     actorList.forEach((actor) => {
@@ -2263,6 +2292,7 @@ const createDetailsUI = ({
     if (activeCompactMode) {
       detailsContext = null;
       detailsActors = new Map();
+      actorNumbers = new Map();
       detailsTargets = [];
     } else {
       loadDetailsContext();
@@ -2287,7 +2317,7 @@ const createDetailsUI = ({
     fightStartMs = firstTarget
       ? Math.max(0, (Number(firstTarget.lastDamageTime) || 0) - (Number(firstTarget.battleTime) || 0))
       : 0;
-    fightBossName = firstTarget ? "" : (row?.name ?? "");
+    fightPlayer = firstTarget || !row ? null : row;
     fightDungeonId = Number(getDungeonId?.()) || 0;
     updateHeaderText();
     detailsPanel.classList.add("open");
@@ -2351,7 +2381,7 @@ const createDetailsUI = ({
     historyRecord = null;
     window._historyDetailsOverride = null;
     fightStartMs = 0;
-    fightBossName = "";
+    fightPlayer = null;
     fightDungeonId = 0;
     window._resumeFpsMonitor?.();
   };
@@ -2386,6 +2416,7 @@ const createDetailsUI = ({
         if (actor.job) detectedJobByActorId.set(numericId, actor.job);
       }
     });
+    actorNumbers = savedFightNumbers(record, (id) => !!isUser?.(id, detailsActors.get(id)?.nickname, { saved: true }));
 
     // Build actorDamage from stored skills so player filtering works on history fights
     const historyActorDamage = {};
@@ -2415,7 +2446,7 @@ const createDetailsUI = ({
 
     fightStartMs = Number(record.startTimeMs) || 0;
     // Named from the target each time the title is drawn, so it follows the language.
-    fightBossName = "";
+    fightPlayer = null;
     fightDungeonId = Number(record.dungeonId) || 0;
     updateHeaderText();
     detailsPanel.classList.add("open");
