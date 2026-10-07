@@ -95,6 +95,13 @@ const takenTotals = (entries) => (Array.isArray(entries)
   ? { damage: entries.reduce((n, e) => n + (Number(e?.damage) || 0), 0), attacks: entries.reduce((n, e) => n + takenAttacks(e), 0) }
   : null);
 
+// The deaths of the players shown: one entry per player whose HP the game
+// sent, you and your party only. null when none has one, or for a fight
+// saved before deaths were counted.
+const deathTotal = (entries) => (Array.isArray(entries) && entries.length
+  ? entries.reduce((n, e) => n + (Number(e?.deaths) || 0), 0)
+  : null);
+
 // The damage received entries (one per player and skill) added up per skill
 // name, as the skill table does, and monster, most damage first.
 const takenRows = (entries) => {
@@ -268,6 +275,7 @@ const createDetailsUI = ({
       getValue: (d) => formatNum(receivedOf(d)?.damage),
     },
     { key: "details.stats.hitsReceived", fallback: "Received Hits", getValue: (d) => formatNum(receivedOf(d)?.attacks) },
+    { key: "details.stats.deaths", fallback: "Deaths", getValue: (d) => formatNum(deathTotal(d?.deaths) ?? undefined) },
   ];
 
   // Stats shown when the DMG/HEAL toggle is on HEAL. Fewer, healing-relevant rows;
@@ -1106,6 +1114,7 @@ const createDetailsUI = ({
     "details.stats.combatTime",
     "details.stats.multiHitDamage",
     "details.stats.regen",
+    "details.stats.deaths",
   ]);
   const GAME_EMPTY_CELLS = ["multiHitDamageEl", "minDmgEl", "avgDmgEl", "maxDmgEl"];
   const GAME_TAGGED_CELLS = ["hitEl", "dmgEl", "dmgPctEl", "multiHitEl", "critEl", "perfectEl", "doubleEl", "backEl", "frontalEl", "parryEl"];
@@ -2316,6 +2325,9 @@ const createDetailsUI = ({
       // the context's counts each hit once.
       takenSkills: Array.isArray(detailsContext?.takenSkills)
         ? detailsContext.takenSkills.filter((e) => !attackerIds?.length || attackerIds.includes(Number(e?.actorId)))
+        : null,
+      deaths: Array.isArray(detailsContext?.deaths)
+        ? detailsContext.deaths.filter((e) => !attackerIds?.length || attackerIds.includes(Number(e?.actorId)))
         : null,
       combatTime: formatBattleTime(battleTimeMs),
       battleTimeMs,

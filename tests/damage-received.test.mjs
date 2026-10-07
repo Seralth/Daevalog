@@ -178,3 +178,30 @@ test("Details shows the damage received in full, and what hit the player", () =>
   assert.equal(stat("Damage Received"), "-");
   assert.equal(section.style.display, "none");
 });
+
+test("Details shows the deaths of you and your party", async () => {
+  const { ui, stat } = setup();
+  const deaths = [{ actorId: 9200, deaths: 2 }, { actorId: 9300, deaths: 0 }];
+  ui.render({ skills: [], takenSkills: [], deaths }, { id: null, name: "" });
+  assert.equal(stat("Deaths"), "2");
+  ui.render({ skills: [], takenSkills: [], deaths: deaths.slice(1) }, { id: 9300, name: "Healer" });
+  assert.equal(stat("Deaths"), "0");
+  // No HP from the game for the players shown, or a fight saved before
+  // deaths were counted: not known, not 0.
+  ui.render({ skills: [], takenSkills: [], deaths: [] }, { id: 9400, name: "Stranger" });
+  assert.equal(stat("Deaths"), "-");
+  ui.render({ skills: [], takenSkills: [], deaths: null }, { id: 9200, name: "Me" });
+  assert.equal(stat("Deaths"), "-");
+
+  // A saved fight's deaths follow the chosen player.
+  const saved = async (list, attackerIds) => {
+    const window = { addEventListener() {}, _historyDetailsOverride: { skills: [], battleTime: 1000, deaths: list } };
+    const context = loadScripts(["shared/format.js", "shared/jobs.js", "shared/players.js", "shared/targetModes.js", "details.js", "core.js"],
+      { window, console, document: { readyState: "loading", addEventListener() {} } });
+    const app = vm.runInContext("Object.create(DpsApp.prototype)", context);
+    app.dpsFormatter = new Intl.NumberFormat("en-US");
+    return app.getDetails({ id: null }, { targetId: 1, attackerIds });
+  };
+  assert.deepEqual((await saved(deaths, [9200])).deaths.map((e) => e.deaths), [2]);
+  assert.equal((await saved(undefined, null)).deaths, null, "saved before deaths were counted");
+});

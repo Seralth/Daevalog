@@ -117,7 +117,8 @@
       "hotTicks": "HoTティック",
       "healSkills": "スキル",
       "damageReceived": "受けた総ダメージ量",
-      "hitsReceived": "受けた打撃数"
+      "hitsReceived": "受けた打撃数",
+      "deaths": "死亡回数"
     },
     "fightVs": "戦闘相手",
     "all": "すべて",

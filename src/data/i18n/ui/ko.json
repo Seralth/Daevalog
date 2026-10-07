@@ -117,7 +117,8 @@
       "hotTicks": "HoT 틱",
       "healSkills": "스킬",
       "damageReceived": "받은 총 피해량",
-      "hitsReceived": "받은 타격 횟수"
+      "hitsReceived": "받은 타격 횟수",
+      "deaths": "사망 횟수"
     },
     "fightVs": "전투 vs",
     "all": "전체",

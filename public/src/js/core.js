@@ -1773,6 +1773,11 @@ class DpsApp {
     const takenSkills = Array.isArray(detailObj?.takenSkills)
       ? detailObj.takenSkills.filter((v) => v && typeof v === "object" && (!attackerIdSet || attackerIdSet.has(Number(v.actorId))))
       : null;
+    // Deaths of you and your party, the same way; null for a fight saved
+    // before deaths were counted.
+    const deaths = Array.isArray(detailObj?.deaths)
+      ? detailObj.deaths.filter((v) => v && typeof v === "object" && (!attackerIdSet || attackerIdSet.has(Number(v.actorId))))
+      : null;
 
     const healBattleMs = Number.isFinite(battleTimeMsRaw) ? battleTimeMsRaw : 0;
 
@@ -1805,6 +1810,7 @@ class DpsApp {
       // and name-resolved (see processing above).
       healSkills: heals.healSkills,
       takenSkills,
+      deaths,
       showSkillIcons,
       perActorStats,
       showCombinedTotals: !attackerIds || attackerIds.length === 0,

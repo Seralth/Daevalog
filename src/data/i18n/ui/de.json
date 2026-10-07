@@ -117,7 +117,8 @@
       "hotTicks": "HoT-Ticks",
       "healSkills": "Skills",
       "damageReceived": "Gesamtschaden (Erhalten)",
-      "hitsReceived": "Gesamtschläge (Erhalten)"
+      "hitsReceived": "Gesamtschläge (Erhalten)",
+      "deaths": "Tode"
     },
     "fightVs": "Kampf gegen",
     "all": "Alle",

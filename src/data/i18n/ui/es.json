@@ -117,7 +117,8 @@
       "hotTicks": "Tics de HoT",
       "healSkills": "Habilidades",
       "damageReceived": "Daño total recibido",
-      "hitsReceived": "Ataques recibidos"
+      "hitsReceived": "Ataques recibidos",
+      "deaths": "Muertes"
     },
     "fightVs": "Combate contra",
     "all": "Todo",

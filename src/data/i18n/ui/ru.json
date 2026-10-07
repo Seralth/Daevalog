@@ -117,7 +117,8 @@
       "hotTicks": "Тики HoT",
       "healSkills": "Умения",
       "damageReceived": "Общий полученный урон",
-      "hitsReceived": "Кол-во полученных ударов"
+      "hitsReceived": "Кол-во полученных ударов",
+      "deaths": "Кол-во смертей"
     },
     "fightVs": "Бой против",
     "all": "Все",

@@ -117,7 +117,8 @@
       "hotTicks": "持续治疗跳数",
       "healSkills": "技能",
       "damageReceived": "承受的总伤害",
-      "hitsReceived": "受到的攻击次数"
+      "hitsReceived": "受到的攻击次数",
+      "deaths": "死亡次数"
     },
     "fightVs": "战斗 vs",
     "all": "全部",
