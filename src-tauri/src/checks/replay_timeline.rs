@@ -9,10 +9,10 @@
 //! players' debuffs on the target and passives included, with the game's
 //! English names of the abnormals and stats. The JSON keeps your and your
 //! summons' DoT ticks on the target (`dot_ticks` lines: the ticks the game's
-//! records count, so none of a spirit that has left, but those a training
-//! dummy holds) apart from the hits: from the window's start when one is
-//! given, else from 15 s before the first hit, never the ticks of the fight
-//! before on that target, up to 15 s after the last hit.
+//! records count, so none of a spirit that has left) apart from the hits:
+//! from the window's start when one is given, else from 15 s before the first
+//! hit, never the ticks of the fight before on that target, up to 15 s after
+//! the last hit.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
@@ -519,9 +519,9 @@ mod tests {
 
     /// Records of 2026-10-06 15:47 (the local player is 4525): Melee
     /// Training Scarecrow 26622's spawn, an own record (twice), a hit, three
-    /// Jointstrike: Corrode ticks of 144 that the dummy holds, and the next
-    /// hit 15 s after the first. The game's record of 15:47:17 starts after
-    /// the first hit (the player restarted the analyzer) and counts the ticks.
+    /// Jointstrike: Corrode ticks of 144, and the next hit 15 s after the
+    /// first. The game's record of 15:47:17 starts after the first hit (the
+    /// player restarted the analyzer) and counts the ticks.
     #[test]
     fn a_fight_takes_its_ticks_from_the_window_start_but_not_the_fight_before_s() {
         let spawn = "94014136fecf01042000239f240040026063f1c7fb7dd5c70016c04600d08942003101d3980694a70764000000640000\
@@ -540,27 +540,27 @@ mod tests {
             ("15:47:30.864", "260438fecf013600ad23104bf40074028000014b526d5f01000000c052a60701140100"),
         ];
         let at = |s: i64| 1_791_326_836_918 + s;
-        let held = [(at(0), 4525, 144), (at(1996), 4525, 144), (at(2996), 4525, 144)];
+        let corrode = [(at(0), 4525, 144), (at(1996), 4525, 144), (at(2996), 4525, 144)];
         // From the record's start: one fight, the ticks before its first hit.
         let fights = timelines(&lines, Some("15:47:16.500"));
         assert_eq!(fights.len(), 1);
         assert_eq!((fights[0]["target"].as_i64(), fights[0]["start_ms"].as_i64()), (Some(26622), Some(at(13_946))));
-        assert_eq!(ticks(&fights[0]), held);
+        assert_eq!(ticks(&fights[0]), corrode);
         // The whole capture: the ticks are in the fight before's 15 s, so
         // the next fight does not take them.
         let fights = timelines(&lines, None);
         assert_eq!(fights.len(), 2);
-        assert_eq!(ticks(&fights[0]), held);
+        assert_eq!(ticks(&fights[0]), corrode);
         assert_eq!(ticks(&fights[1]), []);
         // With no fight before, they are within 15 s before the first hit.
         let alone: Vec<(&str, &str)> = lines.iter().filter(|l| l.0 != "15:47:15.815").copied().collect();
         let fights = timelines(&alone, None);
         assert_eq!(fights.len(), 1);
-        assert_eq!(ticks(&fights[0]), held);
-        // With no hit after them the meter never counts them (rule 9), but
-        // the game's records do.
+        assert_eq!(ticks(&fights[0]), corrode);
+        // With no hit after them they count all the same, as in the game's
+        // records.
         let fights = timelines(&lines[..lines.len() - 1], None);
         assert_eq!(fights.len(), 1);
-        assert_eq!(ticks(&fights[0]), held);
+        assert_eq!(ticks(&fights[0]), corrode);
     }
 }

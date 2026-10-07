@@ -59,7 +59,7 @@ impl DataStorage {
         self.inner.write().boss_entity_ids.insert(entity_id);
     }
 
-    /// An entity the NPC table calls a training dummy. See `held_dot_ticks`.
+    /// An entity the NPC table calls a training dummy: its fights are saved.
     pub fn register_training_dummy(&self, entity_id: i32) {
         self.inner.write().training_dummy_ids.insert(entity_id);
     }
@@ -432,13 +432,5 @@ fn forget_entity(inner: &mut Inner, id: i32) {
     }
     for tick in inner.heal_ticks.iter_mut().filter(|t| t.actor == id) {
         tick.actor = owner;
-    }
-    let held: Vec<(i32, i32)> = inner.held_dot_ticks.keys().filter(|k| k.1 == id).copied().collect();
-    for key in held {
-        let mut ticks = inner.held_dot_ticks.remove(&key).unwrap_or_default();
-        for t in &mut ticks {
-            t.set_actor_id(owner);
-        }
-        inner.held_dot_ticks.entry((key.0, owner)).or_default().extend(ticks);
     }
 }

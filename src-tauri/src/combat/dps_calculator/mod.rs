@@ -1488,8 +1488,7 @@ mod tests {
                 }
                 let calc = meter(s);
                 eprintln!("scarecrow 36734 rows {rows:?}, saved {:?}", saved_totals(&calc, 36734));
-                // 138,109 dealt; the training-dummy rule holds back the 429 of
-                // DoT ticks after the last direct hit.
+                // The game's record of this fight (04:45:57-04:46:49) has 137,680.
                 assert_eq!(rows, HashMap::from([(13600, 137_680)]));
                 assert_eq!(saved_totals(&calc, 36734), rows);
             }

@@ -176,16 +176,8 @@ struct Inner {
     /// Boss entity IDs identified from NPC DB boss flags
     boss_entity_ids: HashSet<i32>,
     /// Training dummies (scarecrows, punching bags) among the entities spawned,
-    /// from the NPC table. Damage on them follows `held_dot_ticks`.
+    /// from the NPC table. Their fights are saved like a boss's.
     training_dummy_ids: HashSet<i32>,
-    /// On a training dummy, DoT ticks that landed after their actor's latest
-    /// direct hit, keyed (target, actor). They are counted when that actor
-    /// hits directly again; if the player has stopped attacking, they never
-    /// are, and the fight's time ends at the last direct hit. A player asked
-    /// for this (issue #6): DoTs ticking on after you stop dragged a training
-    /// fight's DPS down. Bosses keep every tick, since there players stop
-    /// attacking to dodge.
-    held_dot_ticks: HashMap<(i32, i32), Vec<ParsedDamagePacket>>,
     /// Whether the current combat segment has any boss damage
     has_boss_in_segment: bool,
     current_target: i32,
@@ -257,7 +249,6 @@ impl DataStorage {
                 despawned_summon_ids: HashSet::new(),
                 boss_entity_ids: HashSet::new(),
                 training_dummy_ids: HashSet::new(),
-                held_dot_ticks: HashMap::new(),
                 has_boss_in_segment: false,
                 current_target: 0,
                 local_player_id: None,
@@ -392,7 +383,6 @@ impl DataStorage {
         retire_all(&mut inner);
         inner.encounter = None;
         inner.encounter_carry.clear();
-        inner.held_dot_ticks.clear();
         inner.actor_jobs.clear();
         inner.actor_skills.clear();
         inner.known_player_ids.clear();
@@ -417,7 +407,6 @@ impl DataStorage {
         retire_all(&mut inner);
         inner.encounter = None;
         inner.encounter_carry.clear();
-        inner.held_dot_ticks.clear();
         inner.hostile_target_ids.clear();
         inner.dead_entity_ids.clear();
         inner.has_boss_in_segment = false;
@@ -896,30 +885,30 @@ mod tests {
 
     #[test]
     fn a_reset_does_not_forget_the_dummy() {
-        // The dummy is known from its spawn, which came before the reset.
+        // The dummy is known from its spawn, which came before the reset, so
+        // its fight after the reset is still saved.
         let s = DataStorage::new();
         s.register_training_dummy(500);
         s.flush();
-        s.append_damage(hit(1454, 500, 1_000, 100, false));
-        s.append_damage(hit(1454, 500, 2_000, 50, true));
-        assert_eq!(totals(&s, 500), (100, 0), "ticks after the last hit still wait");
+        for target in [500, 600] {
+            s.append_damage(hit(1454, target, 1_000, 100, false));
+            s.append_damage(hit(1454, target, 7_000, 100, false));
+        }
+        s.flush();
+        let saved: Vec<i32> = s.take_ended_segments().iter().map(|e| e.data.target_id).collect();
+        assert_eq!(saved, [500]);
     }
 
     #[test]
-    fn on_a_training_dummy_dot_after_the_last_direct_hit_does_not_count() {
+    fn on_a_training_dummy_dot_after_the_last_direct_hit_counts() {
+        // As in the game's records of 2026-10-06: Jointstrike: Corrode ticks
+        // of 148 on a scarecrow after the player's last direct hit.
         let s = DataStorage::new();
         s.register_training_dummy(500);
         s.append_damage(hit(1454, 500, 1_000, 100, false));
-        s.append_damage(hit(1454, 500, 2_000, 50, true));
-        assert_eq!(totals(&s, 500), (100, 0), "the tick waits for the next direct hit");
-
-        s.append_damage(hit(1454, 500, 3_000, 100, false));
-        assert_eq!(totals(&s, 500), (250, 2_000), "a direct hit brings the tick in");
-
-        // The player stops; their DoT ticks on.
-        s.append_damage(hit(1454, 500, 4_000, 50, true));
-        s.append_damage(hit(1454, 500, 5_000, 50, true));
-        assert_eq!(totals(&s, 500), (250, 2_000), "time ends at the last direct hit");
+        s.append_damage(hit(1454, 500, 2_000, 148, true));
+        s.append_damage(hit(1454, 500, 3_000, 148, true));
+        assert_eq!(totals(&s, 500), (396, 2_000), "the ticks and their time count");
     }
 
     #[test]

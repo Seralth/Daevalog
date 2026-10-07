@@ -504,6 +504,62 @@ pub(crate) mod tests {
         assert_eq!(r.counts[7..], [2, 1, 0, 1, 1]);
     }
 
+    /// Packets of 2026-10-06 on Melee Training Scarecrow 26622: its spawn
+    /// (15:45:37.214), two own records of the player 4525, the player's last
+    /// direct hit (15:48:19.614), then Jointstrike: Corrode ticks of 148 each
+    /// second. The game's Damage Analyzer restarted on a tick; its record of
+    /// 15:48:24.192-15:48:26.402 holds Corrode only: 444, three ticks after
+    /// the last direct hit.
+    #[test]
+    fn a_dummy_s_ticks_after_the_last_direct_hit_match_the_game() {
+        let spawn = "94014136fecf01042000239f240040026063f1c7fb7dd5c70016c04600d08942003101d3980694a70764000000640000\
+            000000000000000000000000000000000000000000640000000100000000000000000000000000000000000000010601110181\
+            969800ffffffffffffffff8075d52abb030000fecf0101006063f1c7fb7dd5c70016c04601000a000000a495f91800";
+        let own = "174a36ad23012c00000000000000000000000000";
+        let hit = "240438fecf011600ad23104bf40003028400014b526d5f01000000c052fe070100";
+        let corrode = "180538fecf010aad23b246d5f142609401fa6df600";
+        let ms = |t: &str| {
+            let at = chrono::DateTime::parse_from_rfc3339(&format!("2026-10-06T{t}-07:00")).unwrap();
+            at.timestamp_millis()
+        };
+        let start = ms("15:45:37.214");
+        let lines = [
+            ("15:45:37.214", spawn),
+            ("15:47:14.211", own),
+            ("15:47:15.211", own),
+            ("15:48:19.614", hit),
+            ("15:48:24.119", corrode),
+            ("15:48:25.110", corrode),
+            ("15:48:26.114", corrode),
+            ("15:48:27.114", corrode),
+        ];
+        let records: Vec<(i32, Vec<u8>)> = lines
+            .iter()
+            .map(|(t, hex)| ((ms(t) - start) as i32, (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()).collect()))
+            .collect();
+        let bytes = record_bytes("2026-10-06T15:48:24.192Z", "2026-10-06T15:48:26.402Z", "Melee Training Scarecrow", &[(16150000, 444, &[])]);
+        let record = decode(&bytes).unwrap();
+        let (from, until) = record.window_in(&chrono::FixedOffset::west_opt(7 * 3600).unwrap()).unwrap();
+        let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
+        let dot_ids: Vec<i32> = serde_json::from_str(&std::fs::read_to_string(data.join("dot_skill_ids.json")).unwrap()).unwrap();
+        let w = SliceWindow {
+            records: &records,
+            fight_start_ms: start,
+            target_id: 26622,
+            from: from - SLACK_MS,
+            until: until + SLACK_MS,
+            owner: Some(4525),
+            game_total: record.total,
+            taken: (from, until),
+        };
+        let (skills, npcs) = (Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        crate::i18n::lookup::load_language(&skills, &npcs, &data, "en");
+        let replay = replay_slice_window(&w, &skills, &npcs, &dot_ids.into_iter().collect());
+        let rows = compare(&record.skills, &replay.rows);
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0].same, "game {:?}, meter {:?}", rows[0].game, rows[0].meter);
+    }
+
     #[test]
     fn the_closest_owner_is_the_player() {
         let rows: HashMap<(i32, i32), Row> = [

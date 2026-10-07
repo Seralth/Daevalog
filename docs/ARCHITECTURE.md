@@ -59,7 +59,7 @@ Each rule below fixed a real fault. Do not break a rule without a test that show
 6. **Only the backend decides who the local player is.** The source is the game's self record. A window never sends an id back to the backend, except when the user types an id in Settings. Party placeholder ids (90,000,000 and higher) are never the local player.
 7. **No fight is lost.** Before any reset (zone change, party end, reset button, idle reset, exit), the meter saves every boss and training-dummy segment of 5 s or longer.
 8. **Each fight segment is saved once per change.** A segment is keyed by target id and start time. A second run on the same target is a new segment.
-9. **Training dummies.** On a training dummy, DoT ticks after the actor's last direct hit do not count. The game's own meter does the same. The dummy list survives a reset.
+9. **Training dummies count every tick.** On a training dummy, DoT ticks after the actor's last direct hit count, as on any other target. The game's own meter counts them too: two scarecrow records of 2026-10-06 (15:48:24 and 15:48:27) hold only Corrode ticks, and on 16 scarecrow records every DoT row equals the ticks inside the record's window, moved 0.1 s earlier to fit the capture's times. The dummy list survives a reset, so a dummy fight after a reset is still saved (rule 7).
 10. **Fight time is active time.** In modes with several targets, fight time is the union of the targets' active spans, not the longest span.
 11. **A spirit's ticks end with the spirit.** When a linked summon leaves the world (`42 36` flag 7), its DoT ticks after that do not count. The game's own meter does the same: four records of 2026-10-06 (Malicious Whirlwind) counted every tick before the spirit left and none after.
 

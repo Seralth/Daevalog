@@ -118,17 +118,13 @@ impl DataStorage {
                     carry_encounter(&mut inner);
                 }
                 retire_all(&mut inner);
-                inner.held_dot_ticks.clear();
                 inner.dead_entity_ids.clear();
             }
             inner.has_boss_in_segment = true;
         }
 
-        // For `A2_REPLAY_TIMELINE` in the replay report: the ticks the game's
-        // records count. A tick held on a training dummy is in: the records
-        // count ticks after the actor's last direct hit (2026-10-06, the
-        // scarecrow records of 15:48:21, 15:48:24 and 15:48:27; the last two
-        // hold ticks only).
+        // For `A2_REPLAY_TIMELINE` in the replay report: the ticks the meter
+        // counts.
         if pdp.is_dot() {
             tracing::trace!(
                 target: "dot_ticks",
@@ -137,17 +133,9 @@ impl DataStorage {
                 pdp.damage(),
             );
         }
-        if inner.training_dummy_ids.contains(&target_id) {
-            let key = (target_id, actor_id);
-            if pdp.is_dot() {
-                inner.held_dot_ticks.entry(key).or_default().push(pdp);
-                return;
-            }
-            // A direct hit: the DoT ticks since the last one count after all.
-            for tick in inner.held_dot_ticks.remove(&key).unwrap_or_default() {
-                apply_damage(&mut inner, &tick);
-            }
-        }
+        // A tick after the actor's last direct hit counts, on a training
+        // dummy too: the game's records count them (2026-10-06, the scarecrow
+        // records of 15:48:24 and 15:48:27 hold Corrode ticks only).
         apply_damage(&mut inner, &pdp);
         let ours = is_ours(&inner, actor_id);
         let timeout = self.encounter_timeout_ms.load(Ordering::Relaxed);
