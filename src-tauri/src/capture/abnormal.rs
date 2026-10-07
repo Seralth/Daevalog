@@ -54,7 +54,8 @@ pub const ALL_STATS: [u8; 2] = [0x49, 0x36];
 /// The `end` of an abnormal that never ends: 2100-01-01 00:00 in Korea
 /// (UTC+9), in all 7,815 such records of 29 captures.
 const NEVER: i64 = 4_102_412_400_000;
-/// Bytes after the skill: one byte, then the entity's position.
+/// Bytes after the skill: one byte, then the caster's position (x, y, z
+/// floats; 26-96 units from the caster's own track, far from the target's).
 const ADD_TAIL: usize = 13;
 /// The field after the abnormal list of a spawn record, and of a player's.
 const AFTER_SPAWN_LIST: &[u8] = &[0x07, 0x02];
