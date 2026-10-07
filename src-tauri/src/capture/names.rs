@@ -27,6 +27,17 @@ pub(super) fn exact_name(field: &[u8]) -> Option<String> {
     valid.then(|| name.to_string())
 }
 
+/// The name `sanitize_nickname` reads from `packet[start..start + len]`, and
+/// where its bytes sit: the field's first run of letters and digits.
+pub(super) fn sanitized_at(packet: &[u8], start: usize, len: usize) -> Option<(String, std::ops::Range<usize>)> {
+    let field = std::str::from_utf8(packet.get(start..start.checked_add(len)?)?).ok()?;
+    let name = sanitize_nickname(field)?;
+    let head = field.split('\0').next().unwrap_or("");
+    let at = start + head.len() - head.trim_start().len();
+    let end = at + name.len();
+    (packet.get(at..end)? == name.as_bytes()).then_some((name, at..end))
+}
+
 pub(super) fn sanitize_nickname(nickname: &str) -> Option<String> {
     let trimmed = nickname.split('\0').next().unwrap_or("").trim();
     if trimmed.is_empty() {

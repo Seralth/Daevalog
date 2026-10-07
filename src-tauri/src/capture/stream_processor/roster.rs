@@ -4,6 +4,8 @@ use super::StreamProcessor;
 use crate::capture::opcodes::PARTY_ROSTER;
 use crate::capture::varint::{parse_u32_le, read_varint};
 
+use std::ops::Range;
+
 impl StreamProcessor {
     // ===== PARTY ROSTER (02 97) =====
 
@@ -41,31 +43,49 @@ impl StreamProcessor {
     /// Empty slots are encoded with a zero mask and an empty name; parsing stops
     /// there because their short form would desync the walk.
     pub(super) fn scan_party_roster(&self, data: &[u8]) {
-        if data.len() < 32 {
-            return;
-        }
-        let mut i = 0;
-        while i + 24 < data.len() {
-            if data[i..i + 2] != PARTY_ROSTER {
-                i += 1;
-                continue;
-            }
-            match parse_party_roster_at(data, i + 2) {
-                Some((members, complete, dungeon_id)) => {
-                    tracing::debug!(
-                        "Party roster: {} members (complete={}, dungeon={})",
-                        members.len(),
-                        complete,
-                        dungeon_id
-                    );
-                    self.data_storage.set_current_dungeon(dungeon_id);
-                    self.data_storage.set_party_roster(members, complete);
-                    i += 2;
-                }
-                None => i += 1,
-            }
+        for roster in rosters(data) {
+            tracing::debug!(
+                "Party roster: {} members (complete={}, dungeon={})",
+                roster.members.len(),
+                roster.complete,
+                roster.dungeon_id
+            );
+            self.data_storage.set_current_dungeon(roster.dungeon_id);
+            self.data_storage.set_party_roster(roster.members, roster.complete);
         }
     }
+}
+
+/// A party roster as `StreamProcessor::scan_party_roster` reads it.
+pub(super) struct Roster {
+    pub members: Vec<(String, crate::combat::data_storage::PartyMember)>,
+    pub complete: bool,
+    pub dungeon_id: i32,
+    /// Each member's name field, in member order.
+    pub name_fields: Vec<Range<usize>>,
+}
+
+/// Every party roster in `data`.
+pub(super) fn rosters(data: &[u8]) -> Vec<Roster> {
+    let mut out = Vec::new();
+    if data.len() < 32 {
+        return out;
+    }
+    let mut i = 0;
+    while i + 24 < data.len() {
+        if data[i..i + 2] != PARTY_ROSTER {
+            i += 1;
+            continue;
+        }
+        match parse_party_roster_at(data, i + 2) {
+            Some(roster) => {
+                out.push(roster);
+                i += 2;
+            }
+            None => i += 1,
+        }
+    }
+    out
 }
 
 /// Decode the body of a `02 97` party roster packet. `at` is the first byte
@@ -73,11 +93,7 @@ impl StreamProcessor {
 /// header does not look like a roster (the opcode is scanned for in raw byte
 /// streams, so the header checks double as the false-positive filter).
 /// See `StreamProcessor::scan_party_roster` for the layout.
-#[allow(clippy::type_complexity)]
-fn parse_party_roster_at(
-    data: &[u8],
-    at: usize,
-) -> Option<(Vec<(String, crate::combat::data_storage::PartyMember)>, bool, i32)> {
+fn parse_party_roster_at(data: &[u8], at: usize) -> Option<Roster> {
     use crate::combat::data_storage::PartyMember;
 
     let mut o = at.checked_add(4)?; // party_key u32
@@ -106,6 +122,7 @@ fn parse_party_roster_at(
     o += count_info.length as usize;
 
     let mut members = Vec::new();
+    let mut name_fields = Vec::new();
     let mut complete = false;
     for index in 0..count_info.value {
         if o + 20 > data.len() {
@@ -131,6 +148,7 @@ fn parse_party_roster_at(
             Ok(s) => s.to_string(),
             Err(_) => break,
         };
+        let name_field = o..o + nick_len;
         o += nick_len;
         if o + 12 > data.len() {
             break;
@@ -164,6 +182,7 @@ fn parse_party_roster_at(
             break;
         }
 
+        name_fields.push(name_field);
         members.push((
             nickname,
             PartyMember {
@@ -192,7 +211,7 @@ fn parse_party_roster_at(
     if members.is_empty() {
         return None;
     }
-    Some((members, complete, dungeon_id))
+    Some(Roster { members, complete, dungeon_id, name_fields })
 }
 
 /// Find a little-endian `u16` equal to `wanted` in `data[from..to]`.

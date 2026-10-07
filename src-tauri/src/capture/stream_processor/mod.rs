@@ -5,11 +5,13 @@ use std::sync::Arc;
 use crate::combat::data_storage::DataStorage;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
+pub use fields::{name_fields, name_fields_unframed, NameField, NameRecord};
 pub use super::varint::{
     can_read_varint, find_pattern, parse_u32_le, read_varint, try_read_varint, varint_ending_at, VarIntResult,
 };
 
 mod damage;
+mod fields;
 mod identity;
 mod roster;
 mod spawn;

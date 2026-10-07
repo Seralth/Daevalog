@@ -39,6 +39,7 @@ use sha2::{Digest, Sha256};
 use super::framing::{self, FrameKind, MAX_BUNDLE_DEPTH};
 use super::opcodes;
 use super::packet_accumulator::PacketAccumulator;
+use super::stream_processor::{name_fields, name_fields_unframed, NameField};
 
 /// How far before the fight to keep packets. The party roster (`02 97`) and the
 /// identity records that name each entity arrive on party changes and zone
@@ -369,14 +370,27 @@ const MAX_NAME_BYTES: usize = 40;
 /// by that many bytes of plausible text — and blinds that too. Pass two is what
 /// makes the guarantee "no character names", rather than "none of the names we
 /// happened to recognise".
+///
+/// Before both, the name fields: every place a record the parser reads holds
+/// a name (`stream_processor::name_fields`), blinded whether or not the name
+/// is known. That is the only pass for a name of one byte: searched for, its
+/// byte is everywhere. A false record named "A" (2026-10-06) blinded every
+/// `41` byte in the slice, spawn opcodes too, and the slice derived nothing.
 pub(super) struct Blinder {
-    /// name bytes -> token bytes, longest first.
+    /// Pass one: name bytes -> token bytes, longest first, for names of
+    /// `MIN_NAME_BYTES` or more.
     known: Vec<(Vec<u8>, Vec<u8>)>,
-    /// Tokens produced by pass one, so pass two does not blind them again.
+    /// Every known name, of any length -> its token: what a name field gets.
+    tokens: HashMap<Vec<u8>, Vec<u8>>,
+    /// Every token written, so pass two does not blind one again.
     known_tokens: HashSet<Vec<u8>>,
-    /// Tokens minted in pass two, for the blind map. These have no roster id —
-    /// we never learned who they were, which is the point.
+    /// Tokens minted for names nobody resolved, found in a name field or by
+    /// shape, for the blind map. These have no roster id — we never learned
+    /// who they were, which is the point.
     discovered: HashMap<String, u64>,
+    /// One-byte names and the one-byte tokens given (see `one_byte_token`).
+    one_byte_taken: HashSet<u8>,
+    one_byte_given: HashMap<(String, u64), String>,
     spelling: Spelling,
 }
 
@@ -441,8 +455,11 @@ impl Blinder {
     fn with_spelling(ordered: &[(&String, &u64)], spelling: Spelling) -> Self {
         let mut blinder = Self {
             known: Vec::with_capacity(ordered.len()),
+            tokens: HashMap::with_capacity(ordered.len()),
             known_tokens: HashSet::new(),
             discovered: HashMap::new(),
+            one_byte_taken: ordered.iter().filter(|(n, _)| n.len() == 1).map(|(n, _)| n.as_bytes()[0]).collect(),
+            one_byte_given: HashMap::new(),
             spelling,
         };
         for (name, dbid) in ordered {
@@ -453,9 +470,17 @@ impl Blinder {
             let token = blinder.token(name, **dbid, 0);
             debug_assert_eq!(token.len(), raw.len(), "token must not change byte length");
             blinder.known_tokens.insert(token.as_bytes().to_vec());
-            blinder.known.push((raw.to_vec(), token.into_bytes()));
+            blinder.tokens.insert(raw.to_vec(), token.clone().into_bytes());
+            if raw.len() >= MIN_NAME_BYTES {
+                blinder.known.push((raw.to_vec(), token.into_bytes()));
+            }
         }
         blinder
+    }
+
+    /// The token a known name got.
+    fn token_of(&self, name: &str) -> Option<&[u8]> {
+        self.tokens.get(name.as_bytes()).map(Vec::as_slice)
     }
 
     /// The token for `name`. `salt` above 0 asks for another one (see
@@ -463,6 +488,18 @@ impl Blinder {
     fn token(&mut self, name: &str, dbid: u64, salt: u32) -> String {
         let len = name.len();
         match &mut self.spelling {
+            Spelling::Hex if len == 1 => {
+                let key = (name.to_string(), dbid);
+                if salt == 0 && let Some(token) = self.one_byte_given.get(&key) {
+                    return token.clone();
+                }
+                let token = one_byte_token(name, dbid, salt, &self.one_byte_taken);
+                self.one_byte_taken.insert(token.as_bytes()[0]);
+                if salt == 0 {
+                    self.one_byte_given.insert(key, token.clone());
+                }
+                token
+            }
             Spelling::Hex => match salt {
                 0 => token_for(name, dbid, len),
                 _ => token_for(&format!("{name}\0{salt}"), 0, len),
@@ -492,21 +529,75 @@ impl Blinder {
 
     /// Blind one framed packet.
     pub(super) fn blind(&mut self, buf: &mut [u8]) -> usize {
-        let mut replaced = self.blind_known(buf);
+        let mut replaced = 0;
+        if !is_event(buf) {
+            let fields = name_fields(buf);
+            replaced += self.blind_fields(buf, &fields);
+        }
+        replaced += self.blind_known(buf);
         replaced += self.blind_name_shaped(buf);
         replaced
     }
 
     /// Blind bytes that are not one framed packet (the stretch between two
-    /// packets, or the end of a bundle that does not frame): both passes, from
+    /// packets, or the end of a bundle that does not frame): every pass, from
     /// the first byte.
     pub(super) fn blind_unframed(&mut self, buf: &mut [u8]) -> usize {
-        let mut replaced = self.blind_known(buf);
+        let fields = name_fields_unframed(buf);
+        let mut replaced = self.blind_fields(buf, &fields);
+        replaced += self.blind_known(buf);
         replaced += self.blind_name_shaped_from(buf, 0);
         replaced
     }
 
-    /// Pass one: every known name, wherever it appears, length-prefixed or not.
+    /// Pass zero: every name field, at any length. A known name gets its
+    /// token, any other name one of its own. Nothing else in the packet
+    /// changes.
+    fn blind_fields(&mut self, buf: &mut [u8], fields: &[NameField]) -> usize {
+        let mut replaced = 0;
+        let mut done_to = 0;
+        for field in fields {
+            let range = field.range.clone();
+            if range.is_empty() || range.start < done_to || range.end > buf.len() {
+                continue;
+            }
+            let name = &buf[range.clone()];
+            let token = match self.tokens.get(name) {
+                Some(token) => token.clone(),
+                None => {
+                    let Ok(text) = std::str::from_utf8(name).map(str::to_string) else { continue };
+                    let token = self.mint(buf, range.clone(), &text);
+                    self.known_tokens.insert(token.clone().into_bytes());
+                    self.discovered.insert(token.clone(), 0);
+                    token.into_bytes()
+                }
+            };
+            buf[range.clone()].copy_from_slice(&token);
+            done_to = range.end;
+            replaced += 1;
+        }
+        replaced
+    }
+
+    /// Write a token for `text`, a name nobody resolved, over `buf[range]`,
+    /// and return it. A token must not spell a known name with the bytes
+    /// around it: "13b87050fe08" before a `44` byte spelled the player name
+    /// "8D".
+    fn mint(&mut self, buf: &mut [u8], range: std::ops::Range<usize>, text: &str) -> String {
+        let mut salt = 0u32;
+        loop {
+            let token = self.token(text, 0, salt);
+            buf[range.clone()].copy_from_slice(token.as_bytes());
+            if salt == 15 || !self.spells_known_name(buf, range.start, range.end) {
+                return token;
+            }
+            salt += 1;
+        }
+    }
+
+    /// Pass one: every known name of `MIN_NAME_BYTES` or more, wherever it
+    /// appears, length-prefixed or not. A name of one byte is left to the
+    /// name fields.
     ///
     /// In a bug-report copy, a name of one or two bytes only where it is a
     /// field of its own (`<len> name`): two bytes turn up inside other fields
@@ -548,14 +639,8 @@ impl Blinder {
         // Every buffer handed to the blinder is one framed packet: skip its
         // length and opcode.
         let header = super::varint::read_varint(buf, 0);
-        // Damage, damage over time and HP updates are ids and numbers only.
-        // Scanning them for names blinded skill ids that read as text:
-        // `02 | 50 77 f6 00` (Water Spirit: Ice Chain) is "Pw".
-        if header.length > 0 {
-            let o = header.length as usize;
-            if buf.len() >= o + 2 && EVENT_OPCODES.contains(&[buf[o], buf[o + 1]]) {
-                return 0;
-            }
+        if is_event(buf) {
+            return 0;
         }
         let start = if header.length > 0 { header.length as usize + 2 } else { 0 };
         self.blind_name_shaped_from(buf, start)
@@ -577,17 +662,7 @@ impl Blinder {
             }
             // Safe: `looks_like_text` already required valid UTF-8.
             let text = std::str::from_utf8(span).unwrap().to_string();
-            // A token must not spell a known name with the bytes around it:
-            // "13b87050fe08" before a `44` byte spelled the player name "8D".
-            let mut salt = 0u32;
-            let token = loop {
-                let token = self.token(&text, 0, salt);
-                buf[i + 1..i + 1 + len].copy_from_slice(token.as_bytes());
-                if salt == 15 || !self.spells_known_name(buf, i + 1, i + 1 + len) {
-                    break token;
-                }
-                salt += 1;
-            };
+            let token = self.mint(buf, i + 1..i + 1 + len, &text);
             self.discovered.insert(token, 0);
             replaced += 1;
             i += 1 + len;
@@ -604,6 +679,35 @@ impl Blinder {
             end >= start + n && buf[start..end].windows(n).any(|w| w == name.as_slice())
         })
     }
+}
+
+/// Damage, damage over time and HP updates are ids and numbers only: no
+/// pass looks in them for names. Scanning them blinded skill ids that read as
+/// text: `02 | 50 77 f6 00` (Water Spirit: Ice Chain) is "Pw".
+fn is_event(packet: &[u8]) -> bool {
+    let header = super::varint::read_varint(packet, 0);
+    let o = header.length.max(0) as usize;
+    header.length > 0 && packet.len() >= o + 2 && EVENT_OPCODES.contains(&[packet[o], packet[o + 1]])
+}
+
+/// A one-byte token: a letter, so the parser still reads it as a name and
+/// joins the player's records by it (a hex digit is no name to it). Never
+/// the name itself, another one-byte name, or a token already given, so two
+/// players never share one.
+fn one_byte_token(name: &str, dbid: u64, salt: u32, taken: &HashSet<u8>) -> String {
+    const LETTERS: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let mut hasher = Sha256::new();
+    hasher.update(b"a2es-one\x00");
+    match dbid {
+        0 => hasher.update(name.as_bytes()),
+        _ => hasher.update(dbid.to_le_bytes()),
+    }
+    hasher.update(salt.to_le_bytes());
+    let digest = hasher.finalize();
+    let free = |b: &u8| !taken.contains(b) && name.as_bytes() != [*b];
+    let pick = digest.iter().map(|d| LETTERS[*d as usize % LETTERS.len()]).find(free);
+    let pick = pick.or_else(|| LETTERS.iter().copied().find(free)).unwrap_or(b'q');
+    (pick as char).to_string()
 }
 
 /// Is `buf[i]` the last byte of an embedded packet's length, followed by a
@@ -678,6 +782,30 @@ pub fn expand(record: &[u8]) -> Vec<u8> {
         }
     }
     let mut out = Vec::with_capacity(record.len() * 2);
+    walk_into(record, &mut out, 0, true);
+    out
+}
+
+/// Each packet of a record, bundles opened: what the parser reads one at a
+/// time.
+fn packets_in(record: &[u8]) -> Vec<Vec<u8>> {
+    fn walk_into(buffer: &[u8], out: &mut Vec<Vec<u8>>, depth: usize, top: bool) {
+        if depth > MAX_BUNDLE_DEPTH {
+            return;
+        }
+        let frames = if top { framing::walk(buffer).frames } else { framing::walk_inner(buffer).frames };
+        for frame in frames {
+            match frame.kind {
+                FrameKind::Packet => out.push(frame.bytes(buffer).to_vec()),
+                FrameKind::Bundle => {
+                    if let Some(inner) = framing::decompress_bundle(frame.payload(buffer)) {
+                        walk_into(&inner, out, depth + 1, false);
+                    }
+                }
+            }
+        }
+    }
+    let mut out = Vec::new();
     walk_into(record, &mut out, 0, true);
     out
 }
@@ -849,15 +977,13 @@ pub fn build(
     let to = fight_end_ms + TAIL_MS;
 
     let ordered = longest_first(names);
-
+    let mut blinder = Blinder::new(&ordered);
     let mut blind_map: HashMap<String, u64> = HashMap::new();
     for (name, dbid) in ordered.iter().copied() {
-        if name.as_bytes().is_empty() {
-            continue;
+        if let Some(token) = blinder.token_of(name) {
+            blind_map.insert(String::from_utf8_lossy(token).into_owned(), *dbid);
         }
-        blind_map.insert(token_for(name, *dbid, name.as_bytes().len()), *dbid);
     }
-    let mut blinder = Blinder::new(&ordered);
 
     let mut stats = SliceStats::default();
     let mut records: Vec<(i32, Vec<u8>)> = Vec::new();
@@ -906,12 +1032,24 @@ pub fn build(
     let plaintext: Vec<Vec<u8>> = records.iter().map(|(_, p)| expand(p)).collect();
     for (name, _) in &ordered {
         let needle = name.as_bytes();
-        if needle.is_empty() {
+        if needle.len() < MIN_NAME_BYTES {
             continue;
         }
         for buf in &plaintext {
             if buf.len() >= needle.len() && buf.windows(needle.len()).any(|w| w == needle) {
                 return Err(SliceError::NameLeaked(needle.len()));
+            }
+        }
+    }
+    // Every name, a one-byte name too, where a record holds one.
+    let known: HashSet<&[u8]> = ordered.iter().map(|(name, _)| name.as_bytes()).collect();
+    for (_, record) in &records {
+        for packet in packets_in(record) {
+            if is_event(&packet) {
+                continue;
+            }
+            if let Some(field) = name_fields(&packet).into_iter().find(|f| known.contains(&packet[f.range.clone()])) {
+                return Err(SliceError::NameLeaked(field.range.len()));
             }
         }
     }
@@ -1308,6 +1446,114 @@ mod tests {
 
     fn hex(s: &str) -> Vec<u8> {
         (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+    }
+
+    /// A mob spawn from a capture (2026-10-06 18:12:55): its length is
+    /// `8f 01`, so its frame starts `8f 01 41 36`, the bytes a one-letter
+    /// name "A" has after its length byte.
+    fn spawn_after_8f_01() -> Vec<u8> {
+        hex(concat!(
+            "8f014136efb4031c000064902c0000026b519247339aa5c700540a4600d78b3fc7000107076400000064",
+            "000000000000000000000000000000000000006400000064000000010000000000000000000000000000",
+            "00000000000601110181969800ffffffffffffffff8075d52abb030000efb40301026b519247339aa5c7",
+            "00540a46063ed40000002900000000",
+        ))
+    }
+
+    /// Frame a record whose body is under 124 bytes: one length byte.
+    fn small_frame(body: &str) -> Vec<u8> {
+        let packet = frame_packet(&hex(body)).unwrap();
+        assert!(packet.len() < 128);
+        packet
+    }
+
+    /// Each record, and where its names are. The bodies are records the
+    /// parser reads, with made-up names: a self record ("Xy"), a player
+    /// spawn ("A"), a spawn naming its caster ("B"), a summon owner record
+    /// ("Cd"), a party roster ("Ef"), and the spawn above.
+    fn records_with_names() -> Vec<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
+        vec![
+            (small_frame("3336ed745e91c1283702587918051e000000011c000000"), vec![11..13]),
+            (small_frame("4536d74800000000070141000000000000000000"), vec![11..12]),
+            (small_frame("4136c391031c0001014264902c0000026b5192473300"), vec![10..11]),
+            (small_frame("048dece6027228e900ae0b19050243640001000000"), vec![15..17]),
+            (
+                small_frame(concat!(
+                    "029701000000012e0600000000000000000000000000000000000101010100000000001905",
+                    "0245661e0000002d0000006400000019050000000102030000000000000000",
+                )),
+                vec![39..41],
+            ),
+            (spawn_after_8f_01(), vec![]),
+        ]
+    }
+
+    fn slice_of(packets: &[Vec<u8>], names: &NameMap) -> EvidenceSlice {
+        let at = CapturedPacket { captured_at_ms: 0, stream: "Client:1".into(), bytes: packets.concat() };
+        build(&[at], 0, 10, names).unwrap()
+    }
+
+    /// `blinded` is `source` but for its names: the name fields given, and
+    /// the runs a blinder that knows no names changes (text shaped like a
+    /// name, which the log service also counts as one).
+    fn only_names_changed(source: &[u8], blinded: &[u8], fields: &[std::ops::Range<usize>]) {
+        assert_eq!(blinded.len(), source.len());
+        let mut shaped = source.to_vec();
+        Blinder::new(&[]).blind(&mut shaped);
+        for (i, (b, s)) in blinded.iter().zip(source).enumerate() {
+            if !fields.iter().any(|f| f.contains(&i)) && shaped[i] == *s {
+                assert_eq!(b, s, "byte {i} of {source:02x?}");
+            }
+        }
+        for field in fields {
+            assert_ne!(blinded[field.clone()], source[field.clone()], "a name was left in {source:02x?}");
+        }
+    }
+
+    #[test]
+    fn a_one_letter_name_is_blinded_where_its_record_holds_it() {
+        // A player named "A" (a one-letter name is allowed), then the spawn
+        // whose frame starts `8f 01 41 36`.
+        let player = small_frame("4536d74800000000070141000000000000000000");
+        let spawn = spawn_after_8f_01();
+        let mut names = NameMap::new();
+        names.insert("A".into(), 0);
+        let slice = slice_of(&[player.clone(), spawn.clone()], &names);
+        assert_eq!(slice.records.len(), 2);
+        only_names_changed(&player, &slice.records[0].1, &[11..12]);
+        only_names_changed(&spawn, &slice.records[1].1, &[]);
+        let token = slice.records[0].1[11];
+        assert!(token.is_ascii_alphabetic(), "{token:02x}");
+        assert!(slice.blind_map.contains_key(&(token as char).to_string()));
+
+        // The slice still names the player and still spawns the mob.
+        let storage = Arc::new(crate::combat::data_storage::DataStorage::new());
+        let mut processor = crate::capture::stream_processor::StreamProcessor::new(
+            storage.clone(),
+            Arc::new(crate::i18n::lookup::SkillLookup::new()),
+            Arc::new(crate::i18n::lookup::NpcLookup::new()),
+        );
+        for (_, record) in &slice.records {
+            processor.consume_stream(record);
+        }
+        assert_eq!(storage.get_nickname(9303), Some((token as char).to_string()));
+        assert_eq!(storage.mob_code(55919), Some(2_920_548));
+    }
+
+    #[test]
+    fn blinding_changes_nothing_but_the_names() {
+        let records = records_with_names();
+        let mut names = NameMap::new();
+        names.insert("Xy".into(), 7);
+        names.insert("A".into(), 0);
+        names.insert("Ef".into(), 0x0519_0000_0000_0001);
+        // "B" and "Cd" are names the meter never resolved.
+        let packets: Vec<Vec<u8>> = records.iter().map(|(p, _)| p.clone()).collect();
+        let slice = slice_of(&packets, &names);
+        assert_eq!(slice.records.len(), records.len());
+        for ((_, blinded), (source, fields)) in slice.records.iter().zip(&records) {
+            only_names_changed(source, blinded, fields);
+        }
     }
 
     #[test]

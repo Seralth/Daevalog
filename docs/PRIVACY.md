@@ -237,6 +237,20 @@ from the capture itself asserts that none of its 449 length-prefixed strings
 survive. That fix cost nothing in accuracy: the damage figures above are
 unchanged to the digit.
 
+**Names where a record holds them, at any length.** Before both passes, the
+blinder finds every place where a record the parser reads holds a character
+name: your own record and other players' records and spawns, spawns that name
+their caster, the party roster, summon and loot owners, and the parser's other
+name patterns. It replaces the name there, known or not. That is the only way
+to blind a one-letter name, which the game allows: searched for, its one byte
+turns up all through the packets. On 2026-10-06 a misread record named "A",
+and replacing every `41` byte turned every spawn record (`41 36`) into
+something the parser does not know, so the slice derived nothing. The search
+over the whole slice still runs for names of two bytes or more, and the leak
+check looks for every name in the name fields. The misread record itself is
+gone too: the parser now reads each record within its own packet, and that "A"
+was read on into the next one.
+
 ### What these rules do not protect against
 
 Stated plainly, because a privacy document that only lists strengths is

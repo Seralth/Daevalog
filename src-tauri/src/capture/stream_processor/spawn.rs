@@ -5,46 +5,15 @@ use crate::capture::opcodes::{PLAYER_SPAWN, PLAYER_SPAWN_OLD, SPAWN, SPAWN_OLD, 
 use crate::capture::names::{exact_name, NAME_FIELD_BYTES};
 use crate::capture::varint::{find_pattern, parse_u32_le, read_varint, varint_ending_at};
 
+use std::ops::Range;
+
 impl StreamProcessor {
     // ===== SUMMON OWNERSHIP (04 8D) =====
 
     pub(super) fn parse_summon_ownership_packet(&self, packet: &[u8]) -> bool {
-        let length_info = read_varint(packet, 0);
-        if length_info.length < 0 {
+        let Some((summon_id, owner_id, name)) = ownership_at_front(packet) else {
             return false;
-        }
-        let offset = length_info.length as usize;
-        if offset + 1 >= packet.len() {
-            return false;
-        }
-        if packet[offset..offset + 2] != SUMMON_OWNERSHIP {
-            return false;
-        }
-
-        let mut pos = offset + 2;
-        let summon_info = read_varint(packet, pos);
-        if summon_info.length <= 0 || summon_info.value < 100 {
-            return false;
-        }
-        let summon_id = summon_info.value;
-        pos += summon_info.length as usize;
-
-        // Skip 4-byte fixed field
-        if pos + 4 > packet.len() {
-            return false;
-        }
-        pos += 4;
-
-        let owner_info = read_varint(packet, pos);
-        if owner_info.length <= 0 || owner_info.value < 100 {
-            return false;
-        }
-        let owner_id = owner_info.value;
-        pos += owner_info.length as usize;
-
-        if owner_id == summon_id {
-            return false;
-        }
+        };
 
         // Only link confirmed summons
         if self.data_storage.is_confirmed_summon(summon_id) {
@@ -52,15 +21,8 @@ impl StreamProcessor {
         }
 
         // Name field after owner ID
-        let meta_info = read_varint(packet, pos);
-        if meta_info.length > 0 {
-            pos += meta_info.length as usize;
-            if pos < packet.len() {
-                let name_len = packet[pos] as usize;
-                if (1..=36).contains(&name_len) && pos + 1 + name_len <= packet.len() {
-                    self.register_utf8_nickname(packet, owner_id, pos + 1, name_len);
-                }
-            }
+        if let Some((start, len)) = name {
+            self.register_utf8_nickname(packet, owner_id, start, len);
         }
 
         true
@@ -69,130 +31,42 @@ impl StreamProcessor {
     // ===== EMBEDDED 04 8D SCAN =====
 
     pub(super) fn scan_for_embedded_04_8d(&self, data: &[u8]) -> bool {
-        let mut found_any = false;
-        let mut search_offset = 0;
-        let pattern: [u8; 2] = SUMMON_OWNERSHIP;
-
-        while search_offset + 1 < data.len() {
-            let idx = find_pattern(data, search_offset, &pattern);
-            if idx.is_none() {
-                break;
-            }
-            let idx = idx.unwrap();
-
-            search_offset = idx + 2;
-            if search_offset >= data.len() {
-                break;
-            }
-
-            let summon_info = read_varint(data, search_offset);
-            if summon_info.length <= 0 || !(100..=9_999_999).contains(&summon_info.value) {
-                continue;
-            }
-            let summon_id = summon_info.value;
-
-            let fixed_field_start = search_offset + summon_info.length as usize;
-            if fixed_field_start + 4 > data.len() {
-                continue;
-            }
-
-            // The owner follows: `<owner varint> <server id u16 LE> <len><name>`.
-            // The server id was once matched as the literal bytes `E0 07` /
-            // `E2 07` (servers 2016 and 2018), which skipped every other server:
-            // a Sorcerer on Ventus (1305, bytes `19 05`) never got a name. Any id
-            // in the servers' 1000–2999 range is accepted now, and a candidate
-            // only counts when the owner id sits wholly after the fixed field and
-            // the whole name field is a name.
-            let after_fixed = fixed_field_start + 4;
-            // A zero there is no owner: the record a summon gets as it
-            // despawns, all zeros. The scan below then ran on into whatever
-            // followed, and found an "owner" in the next damage records: a
-            // Cleric's Divine Aura went to entity 10210, named "M", and showed
-            // as its own row (2026-10-04, Divine Auldor).
-            if data.get(after_fixed).is_none_or(|&b| b == 0) {
-                continue;
-            }
-            let scan_end = std::cmp::min(data.len().saturating_sub(2), after_fixed + 128);
-            let mut found = None;
-            for server_idx in after_fixed + 1..scan_end {
-                let server_id = u16::from_le_bytes([data[server_idx], data[server_idx + 1]]);
-                if !(1000..=2999).contains(&server_id) {
-                    continue;
-                }
-                // The owner `ed 74` (14957) ends in a byte that alone reads as
-                // an id too (`74`, 116); see `varint_ending_at`.
-                let owner_id = varint_ending_at(data, server_idx, after_fixed, 100..=99_999);
-                let Some(owner_id) = owner_id.filter(|&id| id != summon_id) else {
-                    continue;
-                };
-                let name_len_idx = server_idx + 2;
-                let name_len = data[name_len_idx] as usize;
-                let name_end = name_len_idx + 1 + name_len;
-                if !NAME_FIELD_BYTES.contains(&name_len) || name_end > data.len() {
-                    continue;
-                }
-                if let Some(name) = exact_name(&data[name_len_idx + 1..name_end]) {
-                    found = Some((owner_id, server_id, name, name_end));
-                    break;
-                }
-            }
-            let Some((owner_id, server_id, name, name_end)) = found else {
-                continue;
-            };
-
+        let records = ownership_records(data);
+        for r in &records {
+            let (summon_id, owner_id, name) = (r.summon_id, r.owner_id, &r.name);
             if self.data_storage.is_confirmed_summon(summon_id) {
                 self.data_storage.append_summon(owner_id, summon_id);
             }
-            self.data_storage.append_nickname(owner_id, &name);
-            self.data_storage.note_player_server(&name, server_id);
+            self.data_storage.append_nickname(owner_id, name);
+            self.data_storage.note_player_server(name, r.server_id);
             // For a mob that was fought (it follows the mob's `35 38` despawn)
             // this is the loot owner, which so far has always been you.
             if !self.data_storage.is_confirmed_summon(summon_id)
                 && self.data_storage.is_damage_target(summon_id)
-                && self.data_storage.note_loot_owner(summon_id, owner_id, &name)
+                && self.data_storage.note_loot_owner(summon_id, owner_id, name)
             {
                 tracing::info!("loot record: local player '{}' -> entity {}", name, owner_id);
             }
-            found_any = true;
-
-            search_offset = name_end;
         }
-
-        found_any
+        !records.is_empty()
     }
 
     // ===== EMBEDDED 40 36 SCAN =====
 
     pub(super) fn scan_for_embedded_40_36(&mut self, data: &[u8]) {
-        let mut i = 0;
-        while i + 5 < data.len() {
-            // Spawn family shifted +1 in June 2026: mob/summon 0x40->0x41,
-            // player 0x44->0x45. Accept both old and new leading bytes.
-            let opcode = [data[i], data[i + 1]];
-            if [SPAWN_OLD, SPAWN, PLAYER_SPAWN_OLD, PLAYER_SPAWN].contains(&opcode) {
-                if i > 0 && data[i - 1] == 0x00 {
-                    i += 2;
-                    continue;
-                }
-                let target_info = read_varint(data, i + 2);
-                if target_info.length > 0 && (100..=9_999_999).contains(&target_info.value) {
-                    if opcode == PLAYER_SPAWN_OLD || opcode == PLAYER_SPAWN {
-                        // 44/45 36 = player spawn — extract name
-                        self.parse_player_spawn_name(data, i + 2);
-                    } else {
-                        // 40/41 36 = summon/mob spawn
-                        let mut real_id = target_info.value;
-                        if real_id > 1_000_000 {
-                            real_id = (real_id & 0x3FFF) | 0x4000;
-                        }
-                        if !self.data_storage.is_mob(real_id) {
-                            self.parse_summon_spawn_at(data, i + 2);
-                        }
-                    }
-                }
-                i += 2 + target_info.length.max(0) as usize;
+        for (i, opcode, id) in embedded_spawns(data) {
+            if opcode == PLAYER_SPAWN_OLD || opcode == PLAYER_SPAWN {
+                // 44/45 36 = player spawn — extract name
+                self.parse_player_spawn_name(data, i + 2);
             } else {
-                i += 1;
+                // 40/41 36 = summon/mob spawn
+                let mut real_id = id;
+                if real_id > 1_000_000 {
+                    real_id = (real_id & 0x3FFF) | 0x4000;
+                }
+                if !self.data_storage.is_mob(real_id) {
+                    self.parse_summon_spawn_at(data, i + 2);
+                }
             }
         }
     }
@@ -285,30 +159,8 @@ impl StreamProcessor {
         // *owner's* character name, and it is the fallback that attributes a pet's
         // damage to its player when no parent_key is present. A silently
         // mispositioned gate shows up as summons drifting back into their own rows.
-        const MASK_U16_SUBTREE: usize = 2;
-        const MASK_U32_SUBTREE: usize = 4;
-
-        let read_name_at = |sub_offset: usize| -> Option<(String, usize)> {
-            let gate = *packet.get(offset + sub_offset)?;
-            if gate & 0x01 == 0 {
-                return None;
-            }
-            let cursor = offset + sub_offset + 1;
-            let name_len = *packet.get(cursor)? as usize;
-            if !NAME_FIELD_BYTES.contains(&name_len) || cursor + 1 + name_len > packet.len() {
-                return None;
-            }
-            // The whole field must be a name. This check is what makes trying
-            // two positions safe: a wrong guess almost never decodes cleanly.
-            let name = exact_name(&packet[cursor + 1..cursor + 1 + name_len])?;
-            Some((name, cursor + 1 + name_len))
-        };
-
-        // Current format first, so a live stream never depends on the fallback.
-        let (spawn_name, cursor) = match read_name_at(MASK_U32_SUBTREE)
-            .or_else(|| read_name_at(MASK_U16_SUBTREE))
-        {
-            Some((name, next)) => (Some(name), next),
+        let (spawn_name, cursor) = match spawn_name_at(packet, offset) {
+            Some((name, field)) => (Some(name), field.end),
             None => (None, offset + MASK_U32_SUBTREE + 1),
         };
 
@@ -503,6 +355,206 @@ impl StreamProcessor {
         }
         None
     }
+}
+
+/// The `04 8D` record at the front of a packet, as
+/// `StreamProcessor::parse_summon_ownership_packet` reads it: the summon, its
+/// owner, and the owner's name field (start, length) if one follows.
+pub(super) fn ownership_at_front(packet: &[u8]) -> Option<(i32, i32, Option<(usize, usize)>)> {
+    let length_info = read_varint(packet, 0);
+    if length_info.length < 0 {
+        return None;
+    }
+    let offset = length_info.length as usize;
+    if offset + 1 >= packet.len() {
+        return None;
+    }
+    if packet[offset..offset + 2] != SUMMON_OWNERSHIP {
+        return None;
+    }
+
+    let mut pos = offset + 2;
+    let summon_info = read_varint(packet, pos);
+    if summon_info.length <= 0 || summon_info.value < 100 {
+        return None;
+    }
+    let summon_id = summon_info.value;
+    pos += summon_info.length as usize;
+
+    // Skip 4-byte fixed field
+    if pos + 4 > packet.len() {
+        return None;
+    }
+    pos += 4;
+
+    let owner_info = read_varint(packet, pos);
+    if owner_info.length <= 0 || owner_info.value < 100 {
+        return None;
+    }
+    let owner_id = owner_info.value;
+    pos += owner_info.length as usize;
+
+    if owner_id == summon_id {
+        return None;
+    }
+
+    // Name field after owner ID
+    let mut name = None;
+    let meta_info = read_varint(packet, pos);
+    if meta_info.length > 0 {
+        pos += meta_info.length as usize;
+        if pos < packet.len() {
+            let name_len = packet[pos] as usize;
+            if (1..=36).contains(&name_len) && pos + 1 + name_len <= packet.len() {
+                name = Some((pos + 1, name_len));
+            }
+        }
+    }
+    Some((summon_id, owner_id, name))
+}
+
+/// A `04 8D` ownership or loot record found anywhere in `data`.
+pub(super) struct Ownership {
+    pub summon_id: i32,
+    pub owner_id: i32,
+    pub server_id: u16,
+    pub name: String,
+    pub field: Range<usize>,
+}
+
+/// Every `04 8D` record in `data` that names its owner, as
+/// `StreamProcessor::scan_for_embedded_04_8d` reads them.
+pub(super) fn ownership_records(data: &[u8]) -> Vec<Ownership> {
+    let mut out = Vec::new();
+    let mut search_offset = 0;
+    let pattern: [u8; 2] = SUMMON_OWNERSHIP;
+
+    while search_offset + 1 < data.len() {
+        let idx = find_pattern(data, search_offset, &pattern);
+        if idx.is_none() {
+            break;
+        }
+        let idx = idx.unwrap();
+
+        search_offset = idx + 2;
+        if search_offset >= data.len() {
+            break;
+        }
+
+        let summon_info = read_varint(data, search_offset);
+        if summon_info.length <= 0 || !(100..=9_999_999).contains(&summon_info.value) {
+            continue;
+        }
+        let summon_id = summon_info.value;
+
+        let fixed_field_start = search_offset + summon_info.length as usize;
+        if fixed_field_start + 4 > data.len() {
+            continue;
+        }
+
+        // The owner follows: `<owner varint> <server id u16 LE> <len><name>`.
+        // The server id was once matched as the literal bytes `E0 07` /
+        // `E2 07` (servers 2016 and 2018), which skipped every other server:
+        // a Sorcerer on Ventus (1305, bytes `19 05`) never got a name. Any id
+        // in the servers' 1000–2999 range is accepted now, and a candidate
+        // only counts when the owner id sits wholly after the fixed field and
+        // the whole name field is a name.
+        let after_fixed = fixed_field_start + 4;
+        // A zero there is no owner: the record a summon gets as it
+        // despawns, all zeros. The scan below then ran on into whatever
+        // followed, and found an "owner" in the next damage records: a
+        // Cleric's Divine Aura went to entity 10210, named "M", and showed
+        // as its own row (2026-10-04, Divine Auldor).
+        if data.get(after_fixed).is_none_or(|&b| b == 0) {
+            continue;
+        }
+        let scan_end = std::cmp::min(data.len().saturating_sub(2), after_fixed + 128);
+        let mut found = None;
+        for server_idx in after_fixed + 1..scan_end {
+            let server_id = u16::from_le_bytes([data[server_idx], data[server_idx + 1]]);
+            if !(1000..=2999).contains(&server_id) {
+                continue;
+            }
+            // The owner `ed 74` (14957) ends in a byte that alone reads as
+            // an id too (`74`, 116); see `varint_ending_at`.
+            let owner_id = varint_ending_at(data, server_idx, after_fixed, 100..=99_999);
+            let Some(owner_id) = owner_id.filter(|&id| id != summon_id) else {
+                continue;
+            };
+            let name_len_idx = server_idx + 2;
+            let name_len = data[name_len_idx] as usize;
+            let name_end = name_len_idx + 1 + name_len;
+            if !NAME_FIELD_BYTES.contains(&name_len) || name_end > data.len() {
+                continue;
+            }
+            if let Some(name) = exact_name(&data[name_len_idx + 1..name_end]) {
+                found = Some(Ownership { summon_id, owner_id, server_id, name, field: name_len_idx + 1..name_end });
+                break;
+            }
+        }
+        let Some(record) = found else {
+            continue;
+        };
+        search_offset = record.field.end;
+        out.push(record);
+    }
+    out
+}
+
+/// Every spawn opcode (40/41/44/45 36) in `data` that
+/// `StreamProcessor::scan_for_embedded_40_36` reads: (where, opcode, entity id).
+pub(super) fn embedded_spawns(data: &[u8]) -> Vec<(usize, [u8; 2], i32)> {
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i + 5 < data.len() {
+        // Spawn family shifted +1 in June 2026: mob/summon 0x40->0x41,
+        // player 0x44->0x45. Accept both old and new leading bytes.
+        let opcode = [data[i], data[i + 1]];
+        if [SPAWN_OLD, SPAWN, PLAYER_SPAWN_OLD, PLAYER_SPAWN].contains(&opcode) {
+            if i > 0 && data[i - 1] == 0x00 {
+                i += 2;
+                continue;
+            }
+            let target_info = read_varint(data, i + 2);
+            if target_info.length > 0 && (100..=9_999_999).contains(&target_info.value) {
+                out.push((i, opcode, target_info.value));
+            }
+            i += 2 + target_info.length.max(0) as usize;
+        } else {
+            i += 1;
+        }
+    }
+    out
+}
+
+/// Where a spawn's mask sits relative to `offset` (just past its entity id),
+/// in the u16 and u32 formats: the subtree byte that gates the inline name.
+const MASK_U16_SUBTREE: usize = 2;
+const MASK_U32_SUBTREE: usize = 4;
+
+/// The inline name of a `40/41 36` spawn (its owner's or caster's), and the
+/// name field's bytes. `offset` is just past the entity id.
+///
+/// The mask width changed from u16 to u32, which moves the subtree byte
+/// that gates the inline name, so both positions are tried, the current
+/// format first so a live stream never depends on the fallback.
+pub(super) fn spawn_name_at(packet: &[u8], offset: usize) -> Option<(String, Range<usize>)> {
+    let read_name_at = |sub_offset: usize| -> Option<(String, Range<usize>)> {
+        let gate = *packet.get(offset + sub_offset)?;
+        if gate & 0x01 == 0 {
+            return None;
+        }
+        let cursor = offset + sub_offset + 1;
+        let name_len = *packet.get(cursor)? as usize;
+        if !NAME_FIELD_BYTES.contains(&name_len) || cursor + 1 + name_len > packet.len() {
+            return None;
+        }
+        // The whole field must be a name. This check is what makes trying
+        // two positions safe: a wrong guess almost never decodes cleanly.
+        let name = exact_name(&packet[cursor + 1..cursor + 1 + name_len])?;
+        Some((name, cursor + 1..cursor + 1 + name_len))
+    };
+    read_name_at(MASK_U32_SUBTREE).or_else(|| read_name_at(MASK_U16_SUBTREE))
 }
 
 /// Validate the owner block that follows a spawn's `parent_key` and return the
