@@ -9,6 +9,9 @@
 //!             [kind 7: <by entity> <skill u32> <skill effect u32>])*                      removed
 //! <len> 4a 36 <entity> <n u8> (<stat u16> <value i32>)* <8 bytes>                         stats changed
 //! <len> 49 36 <2 bytes> <n u8> (<stat u16> <value i32>)* <8 bytes>                        all stats
+//! <len> 41 36 | 45 36 | 33 36 <entity> ... <n u8> (<entry>)* 07 02 | 0f ...              on at spawn
+//!   entry: <flags u8> <instance> <abnormal u32> <length i64> <end i64>
+//!          [flags & 1: <caster>] <level u8> [flags & 2: <skill u32>] [<u8>] <x f32> <y f32> <z f32>
 //! ```
 //!
 //! - `abnormal` is a `SkillAbnormal` id; `skill` the skill that applied it;
@@ -28,6 +31,10 @@
 //!   level at login. Other reasons are not decoded.
 //! - Stats are `EStat` ids; percent stats in hundredths. `4a 36` comes for
 //!   your own character only, with the new value of each stat that changed.
+//! - A spawn record (`41 36` a summon or monster, `45 36` another player) and
+//!   your self record (`33 36`, at each map load) list every abnormal the
+//!   entity has on, in the add layout. A spirit's list holds its passive at
+//!   the level of its summon skill. See `listed`.
 //!
 //! Every add, change and removal record in 19 captures of 2026-10-04 to
 //! 2026-10-06 (336,702 adds and changes, 57,886 removals) reads to its last
@@ -35,6 +42,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
+use super::opcodes::{PLAYER_SPAWN, SELF_IDENTITY, SPAWN};
 use super::varint::read_varint;
 
 pub const ADDED: [u8; 2] = [0x2A, 0x38];
@@ -48,6 +56,13 @@ pub const ALL_STATS: [u8; 2] = [0x49, 0x36];
 const NEVER: i64 = 4_102_412_400_000;
 /// Bytes after the skill: one byte, then the entity's position.
 const ADD_TAIL: usize = 13;
+/// The field after the abnormal list of a spawn record, and of a player's.
+const AFTER_SPAWN_LIST: &[u8] = &[0x07, 0x02];
+const AFTER_PLAYER_LIST: &[u8] = &[0x0F];
+/// 2024-01-01, before any timed abnormal in a list started.
+const EARLIEST: i64 = 1_704_067_200_000;
+/// Longer than any timed abnormal in a list lasts (the longest seen: 73 days).
+const LONGEST: i64 = 400 * 86_400_000;
 const STATS_TAIL: usize = 8;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -80,6 +95,9 @@ pub enum Record {
     Removed { entity: i32, list: Vec<Removal> },
     /// `entity` is `None` for the whole sheet, which names nobody: it is yours.
     Stats { entity: Option<i32>, values: Vec<(u16, i32)> },
+    /// Every abnormal on `entity` as it comes into view; `own` for your self
+    /// record. A caster of 0 is one the entry does not name.
+    Listed { entity: i32, own: bool, list: Vec<Applied> },
 }
 
 struct Reader<'a> {
@@ -183,8 +201,93 @@ pub fn parse(packet: &[u8]) -> Option<Record> {
             }
             (r.left() == STATS_TAIL).then_some(Record::Stats { entity, values })
         }
+        SPAWN | PLAYER_SPAWN | SELF_IDENTITY => {
+            let entity = r.varint()?;
+            let after = if op == SPAWN { AFTER_SPAWN_LIST } else { AFTER_PLAYER_LIST };
+            let list = (r.at..packet.len()).find_map(|at| listed(packet, at, entity, after))?;
+            Some(Record::Listed { entity, own: op == SELF_IDENTITY, list })
+        }
         _ => None,
     }
+}
+
+/// The abnormal list at `at`, if one is there: a count, then that many
+/// entries in the add layout from the flags on. The caster is left out when
+/// flags bit 0 is clear (only in `45 36`), and the byte before the position
+/// is there in some entries and not in others; what decides it is not
+/// known (the first entry always has it). The list sits behind fields of
+/// varying length, so it is found by trying each start and both entry
+/// lengths, and kept only when exactly one reading has every entry well
+/// formed and ends where `after` follows.
+///
+/// Over 29 captures of 2026-10-04 to 2026-10-06 this found one list with
+/// one reading in 7,455 `41 36`, 19,496 `45 36` and 178 `33 36` records;
+/// all 223,795 entries are `SkillAbnormal` ids. Where the same instance was
+/// seen in an add or change before, its caster and level agree every time
+/// (5,183 entries), and in a self record every field agrees (2,116).
+fn listed(b: &[u8], at: usize, entity: i32, after: &[u8]) -> Option<Vec<Applied>> {
+    let n = *b.get(at)? as usize;
+    if n == 0 || listed_entry(b, at + 1, entity).is_none() {
+        return None;
+    }
+    let mut readings = vec![(Vec::with_capacity(n), at + 1)];
+    for k in 0..n {
+        let mut next = Vec::new();
+        for (list, i) in &readings {
+            let Some((entry, position)) = listed_entry(b, *i, entity) else { continue };
+            for end in [position + 12, position + 13] {
+                let fits = if k + 1 < n {
+                    listed_entry(b, end, entity).is_some()
+                } else {
+                    b.get(end..end + after.len()) == Some(after)
+                };
+                if fits {
+                    let mut list = list.clone();
+                    list.push(entry.clone());
+                    next.push((list, end));
+                }
+            }
+        }
+        if next.is_empty() || next.len() > 4 {
+            return None;
+        }
+        readings = next;
+    }
+    (readings.len() == 1).then(|| readings.remove(0).0)
+}
+
+/// One list entry up to its position, and where the optional byte or the
+/// position starts.
+fn listed_entry(b: &[u8], at: usize, entity: i32) -> Option<(Applied, usize)> {
+    let mut r = Reader { b, at };
+    let flags = r.u8()?;
+    if !matches!(flags, 0x10 | 0x11 | 0x13) {
+        return None;
+    }
+    let instance = r.varint()?;
+    let abnormal = u32::from_le_bytes(r.bytes()?);
+    let length = i64::from_le_bytes(r.bytes()?);
+    let end = i64::from_le_bytes(r.bytes()?);
+    let endless = length == -1 && end == NEVER;
+    let timed = (0..=LONGEST).contains(&length) && (EARLIEST..NEVER).contains(&end) && end - length >= EARLIEST;
+    if !(1..1_000_000_000).contains(&abnormal) || !(endless || timed) {
+        return None;
+    }
+    let caster = if flags & 0x01 != 0 { r.varint()? } else { 0 };
+    let level = r.u8()?;
+    let skill = if flags & 0x02 != 0 { Some(u32::from_le_bytes(r.bytes()?)) } else { None };
+    let applied = Applied {
+        entity,
+        instance,
+        abnormal,
+        length_ms: timed.then_some(length),
+        end_ms: timed.then_some(end),
+        caster,
+        level,
+        skill,
+        restarted: false,
+    };
+    Some((applied, r.at))
 }
 
 /// Why an abnormal ended.
@@ -203,6 +306,10 @@ pub enum End {
     Gone,
     /// A map load: every entity but you is gone (`21 36`).
     MapLoad,
+    /// Left out of a later list of everything on its entity (a spawn or
+    /// self record) before its timer ran out: it ended unseen. Of 980
+    /// instances ended so in 29 captures, 3 had a record later.
+    NotListed,
     /// A newer stack went past the abnormal's stack limit and pushed this,
     /// the oldest, out. For Element no record says so.
     PushedOut,
@@ -223,6 +330,7 @@ impl End {
             End::Gone => "entity gone".into(),
             End::MapLoad => "map load".into(),
             End::PushedOut => "pushed out past the stack limit".into(),
+            End::NotListed => "not in a later spawn record".into(),
             End::Unseen => "no end seen, closed at its timer".into(),
             End::Open => "open".into(),
         }
@@ -360,20 +468,38 @@ impl Timeline {
                     next.start_ms = ms;
                     self.live.insert(key, next);
                 }
-                // On since before the capture: it started `length` before its end.
-                if !self.live.contains_key(&key) {
-                    let start = match (a.length_ms, a.end_ms) {
-                        (Some(length), Some(end)) => (end - length + self.lag_ms).min(ms),
-                        _ => ms,
-                    };
-                    self.live.insert(key, Instance::from(&a, start));
+                self.seen(ms, &a);
+            }
+            Some(Record::Listed { entity, own, list }) => {
+                if own {
+                    self.own = Some(entity);
                 }
-                if let Some(live) = self.live.get_mut(&key) {
-                    live.level = a.level;
-                    live.server_end_ms = a.end_ms;
-                    if a.skill.is_some() {
-                        live.skill = a.skill;
+                // The list is all the entity has on: the rest ended unseen,
+                // at its timer if that ran out already.
+                let gone: Vec<_> = self
+                    .live
+                    .keys()
+                    .filter(|k| k.0 == entity && !list.iter().any(|a| a.instance == k.1))
+                    .copied()
+                    .collect();
+                for k in gone {
+                    let i = self.live.remove(&k).unwrap();
+                    match i.server_end_ms.map(|e| e + self.lag_ms).filter(|&e| e <= ms) {
+                        Some(at) => {
+                            let at = at.max(i.start_ms);
+                            self.close(i, at, End::Unseen);
+                        }
+                        None => self.close(i, ms, End::NotListed),
                     }
+                }
+                for a in &list {
+                    // A number now used by another abnormal ends the old one.
+                    let key = (entity, a.instance);
+                    if self.live.get(&key).is_some_and(|l| l.abnormal != a.abnormal) {
+                        let old = self.live.remove(&key).unwrap();
+                        self.close(old, ms, End::Removed(0));
+                    }
+                    self.seen(ms, a);
                 }
             }
             Some(Record::Removed { entity, list }) => {
@@ -399,6 +525,27 @@ impl Timeline {
                 }
             }
             None => {}
+        }
+    }
+
+    /// An instance a change or a list names. One not seen yet has been on
+    /// since before the capture (or before it came into view): it started
+    /// `length` before its end.
+    fn seen(&mut self, ms: i64, a: &Applied) {
+        let key = (a.entity, a.instance);
+        if !self.live.contains_key(&key) {
+            let start = match (a.length_ms, a.end_ms) {
+                (Some(length), Some(end)) => (end - length + self.lag_ms).min(ms),
+                _ => ms,
+            };
+            self.live.insert(key, Instance::from(a, start));
+        }
+        if let Some(live) = self.live.get_mut(&key) {
+            live.level = a.level;
+            live.server_end_ms = a.end_ms;
+            if a.skill.is_some() {
+                live.skill = a.skill;
+            }
         }
     }
 
@@ -802,6 +949,82 @@ mod tests {
         }
         let ends: Vec<_> = t.all_instances().iter().map(|i| (i.instance, i.level, i.end_ms, i.end)).collect();
         assert_eq!(ends, [(6, 1, Some(795), End::Removed(5)), (16, 4, Some(895), End::Removed(5)), (25, 5, None, End::Open)]);
+    }
+
+    /// 2026-10-06 21:58:28.121: the Fire Spirit 28113 spawns (`41 36`; the
+    /// legion name in its owner block replaced by x's).
+    const SPIRIT_SPAWN: &str = "c9014136d1db015f1000b18e2c00400200394b47000f20c700c05b465c5a3943ce8301985598554f0a00004f0a000000\
+        0000000000000000000000f837020064000000f04902000100000000000000a08601000000000000e204000101011101\
+        40b39809ffffffffffffffff8075d52abb030000e7340d02705c4c47ab1020c79cf25a46070206671a00006c00000000\
+        00b1040b787878787878787878787801000200000000000000000000000000000002cd008c000000d000500100002d00\
+        0000dd1d030000";
+
+    #[test]
+    fn a_spirit_spawn_lists_its_passive_at_the_summon_level() {
+        // Fire Spirit (161002304) from the player 6759 at level 13: Summon:
+        // Fire Spirit was 10 + 3 from the board on the character page that
+        // evening. Water, Wind, Earth and the Ancient Spirit spawned at 13,
+        // 13, 12 and 10, also their skills' levels there.
+        let Some(Record::Listed { entity, own, list }) = parse(&hex(SPIRIT_SPAWN)) else { panic!() };
+        assert_eq!((entity, own), (28113, false));
+        let passive = Applied {
+            entity: 28113,
+            instance: 1,
+            abnormal: 161_002_304,
+            length_ms: None,
+            end_ms: None,
+            caster: 6759,
+            level: 13,
+            skill: None,
+            restarted: false,
+        };
+        assert_eq!(list, [passive]);
+    }
+
+    #[test]
+    fn a_player_record_lists_buffs_with_and_without_a_caster() {
+        // 2026-10-06 21:17:16.025: player 15988's record (`45 36`) cut to its
+        // entity and its list: passives, two 5-minute scrolls that name no
+        // caster, and a 30 s buff from a skill. The first entry has the byte
+        // before the position, the second has none.
+        let player = "b3024536f47c08110581db8f0affffffffffffffff8075d52abb030000f47c01008b73d6c7ab544ac7004c0a46110861\
+            6f940affffffffffffffff8075d52abb030000f47c018b73d6c7ab544ac7004c0a461009273c5101e093040000000000\
+            ae239614a101000001ffff7f7fffff7f7fffff7f7f100a3b3c5101e0930400000000008ecf9614a101000001ffff7f7f\
+            ffff7f7fffff7f7f110be1548e0affffffffffffffff8075d52abb030000f47c068b73d6c7ab544ac7004c0a46110c21\
+            62910affffffffffffffff8075d52abb030000f47c038b73d6c7ab544ac7004c0a46110dc1e8920affffffffffffffff\
+            8075d52abb030000f47c038b73d6c7ab544ac7004c0a46131021ba2f0a307500000000000014df9414a1010000f47c04\
+            d0c5040195f3c0c73ad236c71ba628460f";
+        let Some(Record::Listed { entity, own, list }) = parse(&hex(player)) else { panic!() };
+        assert_eq!((entity, own), (15988, false));
+        let got: Vec<_> = list.iter().map(|a| (a.instance, a.abnormal, a.length_ms, a.caster, a.level, a.skill)).collect();
+        assert_eq!(
+            got,
+            [
+                (5, 177_200_001, None, 15988, 1, None),
+                (8, 177_500_001, None, 15988, 1, None),
+                (9, 22_101_031, Some(300_000), 0, 1, None),
+                (10, 22_101_051, Some(300_000), 0, 1, None),
+                (11, 177_100_001, None, 15988, 6, None),
+                (12, 177_300_001, None, 15988, 3, None),
+                (13, 177_400_001, None, 15988, 3, None),
+                (16, 170_900_001, Some(30_000), 15988, 4, Some(17_090_000)),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_spawn_record_starts_what_it_lists_and_ends_what_it_leaves_out() {
+        // Spirit's Benediction on the spirit 28113 (21:58:30.225), then its
+        // spawn record (21:58:28.121), here out of their real order: the
+        // record lists only the passive, so the buff ends there.
+        let mut t = Timeline::default();
+        t.note(1_000, &hex("342a38d1db01011303e165a6091027000000000000bc5cba14a1010000e73403300af7000047e44c47b46a22c700e85a46"));
+        t.note(3_000, &hex(SPIRIT_SPAWN));
+        let got: Vec<_> = t.all_instances().iter().map(|i| (i.instance, i.abnormal, i.level, i.start_ms, i.end_ms, i.end)).collect();
+        assert_eq!(got, [(3, 161_900_001, 3, 1_000, Some(3_000), End::NotListed), (1, 161_002_304, 13, 3_000, None, End::Open)]);
+        // A record that lists the same again keeps the start.
+        t.note(4_000, &hex(SPIRIT_SPAWN));
+        assert_eq!(t.all_instances().last().map(|i| (i.start_ms, i.end)), Some((3_000, End::Open)));
     }
 
     #[test]

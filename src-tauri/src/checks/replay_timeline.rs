@@ -335,13 +335,20 @@ fn stats_in(events: &[StatEvent], local: &HashSet<i32>, start: i64, end: i64) ->
 mod tests {
     use super::super::replay_report::{run, Options};
 
-    /// Records of 2026-10-06 (the local player is entity 6759): two own stat
+    /// Records of 2026-10-06 (the local player is entity 6759): the Fire
+    /// Spirit's spawn (its legion name replaced by x's), two own stat
     /// records, Spirit's Benediction on and its stats, two hits on 40171,
     /// the buff and its stats off.
     #[test]
     fn a_fight_lists_the_buffs_and_stats_around_its_hits() {
         let stats_off = "294a36e734044100840300004c00000000007b01340800007c01000000000000000000000000";
+        let spirit = "c9014136d1db015f1000b18e2c00400200394b47000f20c700c05b465c5a3943ce8301985598554f0a00004f0a000000\
+            0000000000000000000000f837020064000000f04902000100000000000000a08601000000000000e204000101011101\
+            40b39809ffffffffffffffff8075d52abb030000e7340d02705c4c47ab1020c79cf25a46070206671a00006c00000000\
+            00b1040b787878787878787878787801000200000000000000000000000000000002cd008c000000d000500100002d00\
+            0000dd1d030000";
         let lines = [
+            ("21:58:28.121", spirit),
             ("21:58:29.300", stats_off),
             ("21:58:29.400", stats_off),
             ("21:58:30.225", "342a38e73401138202e165a6091027000000000000bc5cba14a1010000e73403300af7000047e44c47b46a22c700e85a46"),
@@ -367,5 +374,11 @@ mod tests {
         );
         assert_eq!(buff["stacks"], serde_json::json!([[on, 1], [off, 0]]));
         assert_eq!(fight["stats"]["at_start"]["379"], 4100);
+        // The spirit's passive from its spawn, at its summon's level.
+        let passive = fight["buffs"].as_array().unwrap().iter().find(|b| b["abnormal"] == 161_002_304).expect("the passive");
+        assert_eq!(
+            (passive["on"].as_str(), passive["entity"].as_i64(), passive["level"].as_i64(), passive["endless"].as_bool()),
+            (Some("summon"), Some(28113), Some(13), Some(true))
+        );
     }
 }
