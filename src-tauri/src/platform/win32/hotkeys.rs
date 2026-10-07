@@ -119,8 +119,3 @@ impl HotkeyManager {
         self.running.store(false, Ordering::SeqCst);
     }
 }
-
-/// No hotkey helper process on this platform.
-pub fn run_helper_if_asked() -> bool {
-    false
-}

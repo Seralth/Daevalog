@@ -30,10 +30,6 @@ use super::{commands, drag_resize, overlay_lock, screenshots, tasks, tool_window
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Started as the Linux hotkey helper: that is all this process does.
-    if platform::hotkeys::run_helper_if_asked() {
-        return;
-    }
     // Before Tauri or WebKit opens anything in the data folders, and before
     // `prepare` reads the saved settings.
     let moved = crate::migrate::from_a2tools();

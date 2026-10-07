@@ -151,7 +151,7 @@ ashpd = { version = "0.13", default-features = false, features = ["async-io", "g
 # The launchers Tauri's opener uses (xdg-open and others), started by the
 # meter so it can wait for them. Already in the tree through the opener.
 open = { version = "5", optional = true }
-# Starting that hotkey's helper without the capture capability.
+# The double fork that starts the desktop's link and folder opener.
 libc = { version = "0.2", optional = true }
 
 [dev-dependencies]

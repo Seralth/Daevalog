@@ -5,21 +5,15 @@
 //! shortcut settings. Without the portal (Sway, most X11 sessions) there is no
 //! hotkey, and the tray menu locks and unlocks the meter instead.
 //!
-//! The portal will not serve the meter itself: the packet-capture capability
-//! hides the process from it ("Unable to open /proc/<pid>/root"). So the meter
-//! starts itself again as a small helper without any capability, which talks
-//! to the portal and reports each key press on its standard output.
+//! The meter holds no capability since capture moved to its own helper
+//! (issue #11), so the portal serves it directly; it talks to the portal from
+//! a thread of its own.
 
-use std::io::{BufRead, BufReader, Write};
-use std::os::unix::process::CommandExt;
-use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use ashpd::desktop::global_shortcuts::{GlobalShortcuts, NewShortcut};
 use futures_util::StreamExt;
 
-/// The first argument that starts this binary as the helper.
-const HELPER_ARG: &str = "--hotkey-portal";
 /// The name of the packaged .desktop file. The portal needs it to know the app.
 const APP_ID: &str = "daevalog-dps-meter";
 const LOCK_ID: &str = "toggle-lock";
@@ -52,112 +46,30 @@ impl HotkeyManager {
         if self.started.swap(true, Ordering::SeqCst) {
             return;
         }
-        let preferred = portal_trigger(lock_mods, lock_vk).unwrap_or_default();
-        // The helper is started from this thread and ends with the meter.
+        let preferred = portal_trigger(lock_mods, lock_vk);
+        // The thread waits for key presses until the meter quits.
         let _ = std::thread::Builder::new().name("hotkey-portal".into()).spawn(move || {
-            if let Err(e) = watch_helper(&preferred, on_lock) {
+            let result = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .map_err(|e| e.to_string())
+                .and_then(|rt| rt.block_on(serve(preferred.as_deref(), on_lock)).map_err(|e| e.to_string()));
+            if let Err(e) = result {
                 tracing::info!("No lock hotkey (GlobalShortcuts portal: {e}); the tray menu locks the meter");
             }
         });
     }
 
-    /// The helper ends with the meter.
+    /// The portal session ends with the meter.
     pub fn stop(&self) {}
 }
 
-fn watch_helper(preferred: &str, on_lock: impl Fn()) -> Result<(), String> {
-    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-    let mut command = Command::new(exe);
-    command.arg(HELPER_ARG).arg(preferred).stdin(Stdio::piped()).stdout(Stdio::piped());
-    // SAFETY: only prctl and capset run between fork and exec.
-    unsafe { command.pre_exec(drop_capabilities) };
-    let mut helper = command.spawn().map_err(|e| e.to_string())?;
-    // Held open: the helper quits when it reads the end of it.
-    let _stdin = helper.stdin.take();
-    let Some(stdout) = helper.stdout.take() else { return Err("no helper output".into()) };
-    for line in BufReader::new(stdout).lines() {
-        let Ok(line) = line else { break };
-        match line.split_once('\t') {
-            Some(("pressed", LOCK_ID)) => on_lock(),
-            Some(("bound", "")) => {
-                tracing::info!("Lock hotkey offered; it has no key until one is set in the desktop's shortcut settings")
-            }
-            Some(("bound", keys)) => tracing::info!("Lock hotkey: {keys}"),
-            Some(("error", e)) => {
-                let _ = helper.wait();
-                return Err(e.to_string());
-            }
-            _ => {}
-        }
-    }
-    let _ = helper.wait();
-    Ok(())
-}
-
-/// Between fork and exec: give up every capability, and with no-new-privs
-/// the exec cannot take the binary's file capabilities back.
-fn drop_capabilities() -> std::io::Result<()> {
-    #[repr(C)]
-    struct Header {
-        version: u32,
-        pid: i32,
-    }
-    #[repr(C)]
-    struct Data {
-        effective: u32,
-        permitted: u32,
-        inheritable: u32,
-    }
-    const VERSION_3: u32 = 0x2008_0522;
-    let header = Header { version: VERSION_3, pid: 0 };
-    let data = [Data { effective: 0, permitted: 0, inheritable: 0 }, Data { effective: 0, permitted: 0, inheritable: 0 }];
-    // SAFETY: plain syscalls on memory that outlives them.
-    unsafe {
-        if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0
-            || libc::syscall(libc::SYS_capset, &header, data.as_ptr()) != 0
-        {
-            return Err(std::io::Error::last_os_error());
-        }
-    }
-    Ok(())
-}
-
-/// When this process was started as the helper, serve the portal until the
-/// meter quits and return true. Otherwise return false at once.
-pub fn run_helper_if_asked() -> bool {
-    let mut args = std::env::args().skip(1);
-    if args.next().as_deref() != Some(HELPER_ARG) {
-        return false;
-    }
-    let preferred = args.next().filter(|s| !s.is_empty());
-    std::thread::spawn(|| {
-        let _ = std::io::copy(&mut std::io::stdin(), &mut std::io::sink());
-        std::process::exit(0);
-    });
-    let result = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| e.to_string())
-        .and_then(|rt| rt.block_on(serve(preferred.as_deref())).map_err(|e| e.to_string()));
-    if let Err(e) = result {
-        say("error", &e);
-    }
-    true
-}
-
-/// One line to the meter. The meter is gone when it cannot be written.
-fn say(what: &str, detail: &str) {
-    let mut out = std::io::stdout().lock();
-    if writeln!(out, "{what}\t{detail}").and_then(|_| out.flush()).is_err() {
-        std::process::exit(0);
-    }
-}
-
-async fn serve(preferred: Option<&str>) -> ashpd::Result<()> {
+async fn serve(preferred: Option<&str>, on_lock: impl Fn()) -> ashpd::Result<()> {
     let connection = ashpd::zbus::Connection::session().await?;
     // Started from a terminal or by a launcher that gives it no app scope, the
     // portal cannot tell which app this is. Naming it must come before any
-    // other portal call, and fails harmlessly where the portal is too old.
+    // other portal call on this connection, and fails harmlessly where the
+    // portal is too old.
     let _ = connection
         .call_method(
             Some("org.freedesktop.portal.Desktop"),
@@ -175,10 +87,14 @@ async fn serve(preferred: Option<&str>) -> ashpd::Result<()> {
         .bind_shortcuts(&session, &[shortcut], None, Default::default())
         .await?
         .response()?;
-    let keys = bound.shortcuts().iter().find(|s| s.id() == LOCK_ID).map_or("", |s| s.trigger_description());
-    say("bound", keys);
+    match bound.shortcuts().iter().find(|s| s.id() == LOCK_ID).map_or("", |s| s.trigger_description()) {
+        "" => tracing::info!("Lock hotkey offered; it has no key until one is set in the desktop's shortcut settings"),
+        keys => tracing::info!("Lock hotkey: {keys}"),
+    }
     while let Some(event) = pressed.next().await {
-        say("pressed", event.shortcut_id());
+        if event.shortcut_id() == LOCK_ID {
+            on_lock();
+        }
     }
     Ok(())
 }
