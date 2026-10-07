@@ -23,7 +23,7 @@ A unit test proves that the code does what the author thinks. A unit test does n
    cargo test --lib replay_report -- --ignored --nocapture
    ```
 
-   Other variables: `A2_REPLAY_RESET_AT=HH:MM:SS` (press the reset button at that time), `A2_REPLAY_HITS=1` (print every change on the target).
+   Other variables: `A2_REPLAY_RESET_AT=HH:MM:SS` (press the reset button at that time), `A2_REPLAY_HITS=1` (print every change on the target), `A2_REPLAY_TAKEN=1` (print the damage players took, per player and skill).
 5. Compare the replay with the game's record, skill by skill:
 
    ```
@@ -31,7 +31,7 @@ A unit test proves that the code does what the author thinks. A unit test does n
    cargo test --lib checks::record_check::record_check -- --exact --ignored --nocapture
    ```
 
-   The game shows a DoT inside its skill and joins summon attacks of one name. The replay shows separate rows. The totals must match.
+   The game shows a DoT inside its skill and joins summon attacks of one name. The replay shows separate rows. The totals must match. After the rows, the check sets the record's damage taken beside the meter's, over the record's own window; every number must match.
 
 Do not commit captures. A capture contains chat and the names of other players.
 

@@ -15,9 +15,9 @@ The data moves through six layers, in this order, and only forward. A layer read
 | 1. Capture | Read packets from the network card with libpcap. On Linux a helper process (`daevalog-capture`) holds the capture permission and pipes TCP payloads to the meter. Find the game connection and lock onto its port. | `capture-helper/` (libpcap, the helper, its pipe), `capture/live.rs`, `capture/helper_process.rs`, `capture/pcap_capturer.rs`, `capture/dispatcher.rs`, `capture/combat_port_detector.rs` |
 | 2. Stream | Join TCP payloads into one byte stream per connection. | `capture/stream_assembler.rs`, `capture/packet_accumulator.rs` |
 | 3. Framing | Cut the byte stream into game packets. Open compressed bundles. | `capture/framing.rs` |
-| 4. Parsing | Read each game packet: damage, damage over time (DoT), heals, spawns, names, party roster, zone change, map load (which map a load enters, to tell an instance from the open world). | `capture/stream_processor/`, `entity/damage_packet.rs` |
-| 5. Storage | Keep the fight data: damage per target and per actor, names, summon owners, the local player. | `combat/data_storage/`, `entity/summon_resolver.rs` |
-| 6. Calculation | Choose the targets for the meter mode, add up damage per player, compute fight time, save fights. | `combat/dps_calculator/`, `history/fight_history.rs` |
+| 4. Parsing | Read each game packet: damage, damage over time (DoT), heals, spawns, names, party roster, zone change, map load (which map a load enters, to tell an instance from the open world). Damage taken: a monster skill's hit on a player (with its block, parry, endurance, regeneration, crit and front or back), a monster's DoT tick on a player, damage reflected onto a player, and an immune. A monster's skill-effect entity (spawn kind `0x1C`) names its monster at the end of its spawn record, so its hits count for that monster. | `capture/stream_processor/`, `entity/damage_packet.rs`, `entity/taken.rs` |
+| 5. Storage | Keep the fight data: damage per target and per actor, names, summon owners, the local player. Healing and damage taken are kept hit by hit: a fight takes the hits taken during it by the people in it, per player and skill. A fight cleared before it is saved keeps its damage taken. | `combat/data_storage/` (damage taken in `taken.rs`), `entity/summon_resolver.rs` |
+| 6. Calculation | Choose the targets for the meter mode, add up damage per player, compute fight time, save fights. Add up damage taken per player over the same fights (`DpsData::taken`), and per player and skill for Details and saved fights (`taken_skills`). | `combat/dps_calculator/`, `history/fight_history.rs` |
 
 The user interface asks layer 6 for a snapshot every 500 ms (`app/tasks.rs`, event `dps-update`) and draws the snapshot (`public/src/js/core.js`, `public/src/js/meter.js`).
 
@@ -37,7 +37,7 @@ The user interface asks layer 6 for a snapshot every 500 ms (`app/tasks.rs`, eve
 | Logging | `debug.log` and the optional raw packet log `packets_*.txt`. | `logging/logger.rs` |
 | Bug report copy | A copy of a packet log for a bug report, with every character name blinded the way a slice blinds them. | `share/report_log.rs`, `app/report.rs` |
 | Ping | The ping to the game server, read from the client's own ping frames. | `capture/ping_tracker.rs` |
-| Check tools | Replay a capture through the live parser and storage and report what was counted; set a game Damage Analyzer record beside the replay, skill by skill; prove the log service's derivation (`a2t-derive`); show what an uploaded slice holds (`a2t-inspect`); decode a capture for packet work (`a2t-probe`). | `checks/replay_report.rs`, `checks/record_check.rs`, `tools/` |
+| Check tools | Replay a capture through the live parser and storage and report what was counted; set a game Damage Analyzer record beside the replay, skill by skill, and its damage taken beside the meter's; prove the log service's derivation (`a2t-derive`); show what an uploaded slice holds (`a2t-inspect`); decode a capture for packet work (`a2t-probe`). | `checks/replay_report.rs`, `checks/replay_taken.rs`, `checks/record_check.rs`, `tools/` |
 
 ## Windows
 
