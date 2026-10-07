@@ -498,6 +498,23 @@ pub(crate) fn decode_skills(p: &[u8], is_skill: impl Fn(u32) -> bool) -> Vec<Ski
     out
 }
 
+/// A `00 51` at login lists every skill (72 on 2026-10-06), but later ones
+/// can list only a few: 1 skill at 20:37, 6 at a zone load at 21:40. A short
+/// list updates those skills; a list at least half as long as the one held
+/// replaces it.
+pub(crate) fn merge_skills(held: &mut Vec<SkillLevel>, new: Vec<SkillLevel>) {
+    if new.len() * 2 >= held.len() {
+        *held = new;
+        return;
+    }
+    for s in new {
+        match held.iter_mut().find(|h| h.id == s.id) {
+            Some(h) => *h = s,
+            None => held.push(s),
+        }
+    }
+}
+
 /// `00 39`: per skill, the specialty part in each slot (0: none).
 pub(crate) fn decode_specialties(p: &[u8]) -> Vec<(u32, Vec<(u8, u32)>)> {
     let mut out = Vec::new();
@@ -687,7 +704,7 @@ impl Character {
             [0x00, 0x51] => {
                 let list = decode_skills(p, |id| names.is_skill(id));
                 if !list.is_empty() {
-                    self.skills = list;
+                    merge_skills(&mut self.skills, list);
                     self.skills_as_of = Some(when.clone());
                 }
             }
@@ -1061,6 +1078,17 @@ mod tests {
         assert_eq!(list.len(), 3);
         assert_eq!((list[0].level, list[0].base, list[0].board, list[0].gear), (13, 10, 2, 1));
         assert_eq!((list[2].id, list[2].level), (16_150_000, 6));
+    }
+
+    #[test]
+    fn a_short_skill_list_updates_the_full_one() {
+        let s = |id, level| SkillLevel { id, level, base: level, board: 0, unknown: 0, gear: 0 };
+        let mut held = vec![s(1, 1), s(2, 2), s(3, 3), s(4, 4), s(5, 5)];
+        merge_skills(&mut held, vec![s(2, 9)]);
+        assert_eq!(held.len(), 5);
+        assert_eq!(held[1].level, 9);
+        merge_skills(&mut held, vec![s(1, 1), s(2, 2), s(6, 6)]);
+        assert_eq!(held.iter().map(|h| h.id).collect::<Vec<_>>(), vec![1, 2, 6]);
     }
 
     #[test]
