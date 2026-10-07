@@ -597,6 +597,40 @@ mod tests {
         assert_eq!(storage.current_dungeon_id(), 0);
     }
 
+    /// A roster from a live capture (2026-10-06, names and ids replaced):
+    /// five slots, 1 and 5 filled, 2 to 4 vacant. Slot 5 was never read, so
+    /// its item level and combat power stayed at an older roster's 855 and
+    /// 44,315.
+    #[test]
+    fn a_roster_is_read_past_vacant_slots() {
+        let storage = Arc::new(DataStorage::new());
+        let p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));
+        let hex = |s: &str| (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect::<Vec<u8>>();
+        let stale = |slot| crate::combat::data_storage::PartyMember { slot, gear_score: 855, combat_power: 44_315, ..Default::default() };
+        storage.set_party_roster(
+            ["Aaaaaaa", "Cc", "Dd", "Ee", "Bbbbbb"].iter().zip(1..).map(|(n, slot)| (n.to_string(), stale(slot))).collect(),
+            true,
+        );
+        let roster = [
+            "800202974dfb00000c5061727479206e616d65203105df2709000003010001000000b104630103051c01010001000000",
+            "b1040741616161616161160000002d0000003f030000b1046a10046f9e000000000000008e0000000000000001010002",
+            "000000000000000000000000000000000000000000040000000000000000000000000300000000000000000000000000",
+            "000000000000000004000000000000000000000000040000000000000000000000000000000000000000000400000000",
+            "000000000000001e05050001000000b104064262626262621a0000002d00000059030000b1046a1004d9ad0000000000",
+            "0000530000000000000001010009",
+        ]
+        .concat();
+        p.scan_party_roster(&hex(&roster));
+        let members = storage.get_party_members();
+        let mut names: Vec<&str> = members.keys().map(String::as_str).collect();
+        names.sort();
+        assert_eq!(names, ["Aaaaaaa", "Bbbbbb"], "the vacant slots' members have left");
+        let (first, fifth) = (&members["Aaaaaaa"], &members["Bbbbbb"]);
+        assert_eq!((first.slot, first.level, first.gear_score, first.combat_power), (1, 45, 831, 40_559));
+        assert_eq!((fifth.slot, fifth.level, fifth.gear_score, fifth.combat_power), (5, 45, 857, 44_505));
+        assert_eq!(fifth.job, Some(crate::entity::job_class::JobClass::Sorcerer));
+    }
+
     #[test]
     fn another_players_spirit_is_linked_at_spawn_by_its_caster() {
         let storage = Arc::new(DataStorage::new());
