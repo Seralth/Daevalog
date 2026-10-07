@@ -14,9 +14,10 @@
 //! - `abnormal` is a `SkillAbnormal` id; `skill` the skill that applied it;
 //!   `level` that skill's level (a passive's base + board + gear level).
 //! - `instance` is numbered per entity. A stacking buff is one instance per
-//!   stack: Element Unification at 5 stacks is 5 live instances. A debuff
-//!   that several players keep up is one instance; a change names whoever
-//!   applied it last.
+//!   stack: Element Unification at 5 stacks is 5 live instances. A stack
+//!   past the limit (SkillAbnormal `AbnormalOverlapCount`) pushes out the
+//!   oldest, which for Element no record ends. A debuff that several players
+//!   keep up is one instance; a change names whoever applied it last.
 //! - `end` is the server's clock in ms since the epoch (2100-01-01 00:00 in
 //!   Korea when the abnormal never ends, length -1); `length` runs from the
 //!   instance's start to `end`. A change that renews a stack keeps the start;
@@ -202,9 +203,10 @@ pub enum End {
     Gone,
     /// A map load: every entity but you is gone (`21 36`).
     MapLoad,
-    /// No record ended it: closed at its timer. A stack pushed out by a
-    /// newer one past the stack limit ends this way (Element, twice on
-    /// 2026-10-05), earlier than its timer.
+    /// A newer stack went past the abnormal's stack limit and pushed this,
+    /// the oldest, out. For Element no record says so.
+    PushedOut,
+    /// No record ended it: closed at its timer.
     Unseen,
     /// Still on when the capture ended.
     Open,
@@ -220,6 +222,7 @@ impl End {
             End::Recast => "applied again by another caster".into(),
             End::Gone => "entity gone".into(),
             End::MapLoad => "map load".into(),
+            End::PushedOut => "pushed out past the stack limit".into(),
             End::Unseen => "no end seen, closed at its timer".into(),
             End::Open => "open".into(),
         }
@@ -284,9 +287,21 @@ pub struct Timeline {
     /// Capture time minus server time at the last add: about 25-120 ms.
     lag_ms: i64,
     swept_ms: i64,
+    /// Abnormal id -> the stacks one entity can hold, where more than one.
+    stack_limits: HashMap<u32, u32>,
+    /// Stacks pushed out at the time of the last read, as (entity,
+    /// instance) and index in `instances`: a removal read at the same time
+    /// says why instead.
+    pushed: Vec<((i32, i32), usize)>,
+    pushed_ms: i64,
 }
 
 impl Timeline {
+    /// The stack limit of each abnormal that stacks (`abnormals.json`).
+    pub fn set_stack_limits(&mut self, limits: HashMap<u32, u32>) {
+        self.stack_limits = limits;
+    }
+
     /// Read one framed packet received at `ms`.
     pub fn note(&mut self, ms: i64, packet: &[u8]) {
         let len = read_varint(packet, 0);
@@ -297,6 +312,10 @@ impl Timeline {
         if ms >= self.swept_ms + 1_000 {
             self.swept_ms = ms;
             self.close_unseen(ms);
+        }
+        if ms != self.pushed_ms {
+            self.pushed.clear();
+            self.pushed_ms = ms;
         }
         match packet.get(o..o + 2) {
             // Your entity keeps its abnormals over a load; no record ends
@@ -327,6 +346,9 @@ impl Timeline {
                 if let (Some(length), Some(end)) = (a.length_ms, a.end_ms) {
                     self.lag_ms = (ms - (end - length)).clamp(0, 1_000);
                 }
+                if let Some(&limit) = self.stack_limits.get(&a.abnormal) {
+                    self.push_out(ms, a.entity, a.abnormal, limit);
+                }
                 self.live.insert((a.entity, a.instance), Instance::from(&a, ms));
             }
             Some(Record::Changed(a)) => {
@@ -356,13 +378,15 @@ impl Timeline {
             }
             Some(Record::Removed { entity, list }) => {
                 for r in list {
+                    let end = match (r.reason, r.by) {
+                        (_, Some((_, skill, _))) => End::TakenOff { skill },
+                        (1, None) => End::Expired,
+                        (reason, None) => End::Removed(reason),
+                    };
                     if let Some(live) = self.live.remove(&(entity, r.instance)) {
-                        let end = match (r.reason, r.by) {
-                            (_, Some((_, skill, _))) => End::TakenOff { skill },
-                            (1, None) => End::Expired,
-                            (reason, None) => End::Removed(reason),
-                        };
                         self.close(live, ms, end);
+                    } else if let Some(&(_, at)) = self.pushed.iter().find(|p| p.0 == (entity, r.instance)) {
+                        self.instances[at].end = end;
                     }
                 }
             }
@@ -389,6 +413,30 @@ impl Timeline {
         for k in keys {
             if let Some(i) = self.live.remove(&k) {
                 self.close(i, ms, end);
+            }
+        }
+    }
+
+    /// End the oldest stacks of `abnormal` on `entity` that a new one would
+    /// take past `limit`. Element (4 stacks) loses its oldest with no
+    /// record: in 29 captures (2026-10-04 to 2026-10-06) 19 Elements were
+    /// pushed out this way and none was named by a record again, and the 6
+    /// Elemental Fusions that came while one of them would still have been
+    /// on took 4 Elements, never it. A limit one lower is wrong 1,421
+    /// times: the stack it would push out gets records later.
+    fn push_out(&mut self, ms: i64, entity: i32, abnormal: u32, limit: u32) {
+        let mut stacks: Vec<(i64, i32)> = self
+            .live
+            .iter()
+            .filter(|(k, i)| k.0 == entity && i.abnormal == abnormal)
+            .map(|(k, i)| (i.start_ms, k.1))
+            .collect();
+        stacks.sort();
+        let over = (stacks.len() + 1).saturating_sub(limit as usize);
+        for &(_, instance) in &stacks[..over] {
+            if let Some(i) = self.live.remove(&(entity, instance)) {
+                self.pushed.push(((entity, instance), self.instances.len()));
+                self.close(i, ms, End::PushedOut);
             }
         }
     }
@@ -694,6 +742,66 @@ mod tests {
         let i = &t.all_instances()[0];
         // Its server end, 14:59:19.288, plus the 107 ms the add came late.
         assert_eq!((i.instance, i.end_ms, i.end), (114, Some(1_791_237_559_395), End::Unseen));
+    }
+
+    #[test]
+    fn a_fifth_element_pushes_out_the_oldest() {
+        // 2026-10-05 14:58:49 to 14:59:16, entity 11297: six Elements
+        // (163000003, 4 stacks), then Elemental Fusion takes the four newest.
+        let records = [
+            (1_791_237_529_395, "342a38a158011372c32eb7093075000000000000f813140ea1010000919e0101f8c5f5000080f1f1c78035d6c700ccc046"),
+            (1_791_237_534_795, "342a38a158011376c32eb70930750000000000004229140ea1010000919e0101f8c5f5000080f1f1c78035d6c700ccc046"),
+            (1_791_237_545_595, "352a38a15801139001c32eb70930750000000000003f53140ea1010000e3bd0301f8c5f5000080f1f1c78035d6c700ccc046"),
+            (1_791_237_548_695, "352a38a15801139401c32eb70930750000000000005b5f140ea1010000e3bd0301f8c5f5000080f1f1c78035d6c700ccc046"),
+            (1_791_237_555_695, "352a38a15801139a01c32eb7093075000000000000e57a140ea101000097b60201f8c5f500008029f1c780ead5c70068c046"),
+            (1_791_237_556_495, "352a38a15801139f01c32eb7093075000000000000057e140ea1010000ffa50101f8c5f500008074f1c78035d6c70098c046"),
+            (1_791_237_556_595, "412c38a15804079f010ba158e2b7f8005dd427610790010ba158e2b7f8005dd42761079a010ba158e2b7f8005dd427610794010ba158e2b7f8005dd42761"),
+        ];
+        let read = |limits: HashMap<u32, u32>| {
+            let mut t = Timeline::default();
+            t.set_stack_limits(limits);
+            for (ms, hex_text) in records {
+                t.note(ms, &hex(hex_text));
+            }
+            t.note(1_791_237_600_000, &hex(BENEDICTION_OFF));
+            t.all_instances().iter().map(|i| (i.instance, i.end_ms.unwrap(), i.end)).collect::<Vec<_>>()
+        };
+        let fusion = End::TakenOff { skill: 16_300_002 };
+        assert_eq!(
+            read(HashMap::from([(163_000_003, 4)])),
+            [
+                (114, 1_791_237_555_695, End::PushedOut),
+                (118, 1_791_237_556_495, End::PushedOut),
+                (144, 1_791_237_556_595, fusion),
+                (148, 1_791_237_556_595, fusion),
+                (154, 1_791_237_556_595, fusion),
+                (159, 1_791_237_556_595, fusion),
+            ]
+        );
+        // Without the limit the two oldest stay on to their timers (plus the
+        // 58 ms the last add came late).
+        let unlimited = read(HashMap::new());
+        assert_eq!(unlimited[..2], [(114, 1_791_237_559_346, End::Unseen), (118, 1_791_237_564_796, End::Unseen)]);
+    }
+
+    #[test]
+    fn a_removal_read_with_the_push_says_why() {
+        // 2026-10-05 14:57:00 at login, entity 11297: Spirit Strike
+        // (167100001) at level 1, 4 and 5; each new level comes with a
+        // removal of the last, reason 5, in the same read.
+        let mut t = Timeline::default();
+        t.set_stack_limits(HashMap::from([(167_100_001, 1)]));
+        for (ms, hex_text) in [
+            (695, "2f2a38a15801110661bef509ffffffffffffffff8075d52abb030000a15801005e71f0c7196dd6c700dcbf46"),
+            (795, "2f2a38a15801111061bef509ffffffffffffffff8075d52abb030000a15804005e71f0c7196dd6c700dcbf46"),
+            (795, "152c38a15804000f05000a05000805000605"),
+            (895, "2f2a38a15801111961bef509ffffffffffffffff8075d52abb030000a15805005e71f0c7196dd6c700dcbf46"),
+            (895, "182c38a15805000d05000c05000905001105001005"),
+        ] {
+            t.note(ms, &hex(hex_text));
+        }
+        let ends: Vec<_> = t.all_instances().iter().map(|i| (i.instance, i.level, i.end_ms, i.end)).collect();
+        assert_eq!(ends, [(6, 1, Some(795), End::Removed(5)), (16, 4, Some(895), End::Removed(5)), (25, 5, None, End::Open)]);
     }
 
     #[test]

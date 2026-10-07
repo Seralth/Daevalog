@@ -165,7 +165,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let mut last_ts = 0i64;
     let mut first_tod = String::new();
     let mut last_tod = String::new();
-    let mut gather = timeline.then(super::replay_timeline::Gather::default);
+    let mut gather = timeline.then(|| super::replay_timeline::Gather::new(&data_dir));
     let mut zone = None;
     let _tap = gather.as_ref().map(|g| g.tap.install());
     let mut window_ms = 0i64;

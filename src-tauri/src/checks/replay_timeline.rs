@@ -89,6 +89,23 @@ pub(crate) struct Gather {
 }
 
 impl Gather {
+    /// With the game data in `data_dir`: each abnormal's stack limit.
+    pub(crate) fn new(data_dir: &std::path::Path) -> Gather {
+        let mut g = Gather::default();
+        let table: Value = std::fs::read_to_string(data_dir.join("abnormals.json"))
+            .ok()
+            .and_then(|t| serde_json::from_str(&t).ok())
+            .unwrap_or_default();
+        let limits = table["abnormals"]
+            .as_object()
+            .into_iter()
+            .flatten()
+            .filter_map(|(id, a)| Some((id.parse().ok()?, a["stacks"].as_u64()? as u32)))
+            .collect();
+        g.timeline.set_stack_limits(limits);
+        g
+    }
+
     /// After each capture line: the hits it made, who you are, and the
     /// summon links before a map load makes the entities anew.
     pub(crate) fn after_line(&mut self, ms: i64, local: Option<i32>, links: impl FnOnce() -> HashMap<i32, i32>) {
