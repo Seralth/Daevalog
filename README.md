@@ -99,7 +99,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - Daevalog keeps reading A2Tools DPS Meter's settings and saved fights where practical. This is not promised: a later version may stop reading them.
 
 ### Meter
-- **Encounter mode (ENC).** An encounter ends after a set time without combat by you or your party: 15 seconds by default, 5 to 300 seconds in Settings. A boss you hit keeps the encounter open while it lives. You choose what each row shows: ENCDPS, DPS over your own active time, damage share, total, crit rate, the last 10, 30 or 60 seconds, biggest hit and hits.
+- **Encounter mode (ENC).** An encounter ends after a set time without combat by you or your party: 15 seconds by default, 5 to 300 seconds in Settings. A boss you hit keeps the encounter open while it lives, for up to 5 minutes without combat. You choose what each row shows: ENCDPS, DPS over your own active time, damage share, total, crit rate, the last 10, 30 or 60 seconds, biggest hit and hits.
 - **The game's own record.** The meter reads the records of the game's Damage Analyzer (Ctrl+X in the game) and matches them to saved fights. History and Details show the meter's numbers, the game's numbers, or both side by side, and mark every difference.
 - **Skill rows as in the game.** Skills are grouped the way the game's Damage Analyzer groups them. Additional hits are read from the damage record, the spirits' hits included.
 - **Hit results.** Details can show Shield Block, Parry, Perfect Block, Endurance, Regeneration, Miss and Resist for each skill. Hit types carry the game's names.

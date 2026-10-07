@@ -8,7 +8,7 @@ Daevalog is its own meter. It started as a fork of A2Tools DPS Meter v2.0.44 (ht
 
 ## Layers
 
-The data moves through six layers, in this order. Each layer uses only the layer before it.
+The data moves through six layers, in this order, and only forward. A layer reads from the layer before it and hands its result to the next one; the parser writes straight into fight storage. No layer reads from a later one. Five parts still sit in the wrong folder and are listed in fork issue #30.
 
 | Layer | Job | Main files |
 |---|---|---|
@@ -34,6 +34,9 @@ The user interface asks layer 6 for a snapshot every 500 ms (`app/tasks.rs`, eve
 | Account | Sign in to a2tools.app. The token is kept in the system keyring. | `account/mod.rs`, `account/secret.rs` |
 | Platform | Code that differs per operating system: Linux, Windows, and a fallback. | `platform/` |
 | Logging | `debug.log` and the optional raw packet log `packets_*.txt`. | `logging/logger.rs` |
+| Bug report copy | A copy of a packet log for a bug report, with every character name blinded the way a slice blinds them. | `capture/report_log.rs`, `app/report.rs` |
+| Ping | The ping to the game server, read from the client's own ping frames. | `combat/ping_tracker.rs` |
+| Check tools | Replay a capture through the live parser and storage and report what was counted; set a game Damage Analyzer record beside the replay, skill by skill; prove the log service's derivation (`a2t-derive`); show what an uploaded slice holds (`a2t-inspect`); decode a capture for packet work (`a2t-probe`). | `capture/replay_report.rs`, `capture/record_check.rs`, `tools/` |
 
 ## Windows
 
@@ -67,3 +70,4 @@ Each rule below fixed a real fault. Do not break a rule without a test that show
 | ALL | Every target, damage from every actor. Optional window: the last N minutes, or Off (since the zone change). | Union of active spans. |
 | BOSS | The boss that the local player, the summons or the party hit hardest over the last 10 s. The boss on screen stays until another takes more than twice its damage from them, or it dies and they fight something newer. No boss: in the open world, their mob with the most damage. | That boss's span. |
 | TRAIN | Training dummies that the local player or the summons hit. | Union of the local player's spans on those dummies. |
+| ENC | The enemies of the current encounter. A hit by the local player or a party member (their summons count as them), or an enemy's hit on one of them, starts an encounter, and that enemy joins it. Other players' hits count only on enemies already in it. Until the meter knows the local player, every nearby fight counts. The encounter ends after a quiet time with no combat by the local player or the party: 15 s by default, 5 to 300 s in Settings. A living boss keeps it open for up to 5 minutes of quiet. | From the encounter's first hit to its last hit. |

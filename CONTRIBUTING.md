@@ -14,7 +14,7 @@ A unit test proves that the code does what the author thinks. A unit test does n
 
 1. Turn on Settings, Diagnostics, "Save raw packets".
 2. Fight a training dummy alone. Note the clock time at the start and at the end.
-3. Open the game's own meter (Ctrl+X) and take screenshots of the per-skill table.
+3. Turn on the game's own meter (Ctrl+X) before the first hit. The game saves each result as a file, `record_<ticks>.dat`, in `AppData/Local/AION2/Saved_Steam/PersistentDownloadDir/DamageAnalyzer/<account>/` (on Linux inside the game's Proton prefix).
 4. Run the replay report on the capture:
 
    ```
@@ -24,7 +24,14 @@ A unit test proves that the code does what the author thinks. A unit test does n
    ```
 
    Other variables: `A2_REPLAY_RESET_AT=HH:MM:SS` (press the reset button at that time), `A2_REPLAY_HITS=1` (print every change on the target).
-5. Compare the replay with the game skill by skill. The game shows a DoT inside its skill and joins summon attacks of one name. The replay shows separate rows. The totals must match.
+5. Compare the replay with the game's record, skill by skill:
+
+   ```
+   A2_RECORD=<record_*.dat> A2_REPLAY_FILE=<capture> \
+   cargo test --lib capture::record_check::record_check -- --exact --ignored --nocapture
+   ```
+
+   The game shows a DoT inside its skill and joins summon attacks of one name. The replay shows separate rows. The totals must match.
 
 Do not commit captures. A capture contains chat and the names of other players.
 
