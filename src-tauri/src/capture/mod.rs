@@ -14,6 +14,9 @@ pub mod varint;
 // and the file replay drives them both — none of which exist on wasm32.
 #[cfg(feature = "backend")]
 pub mod combat_port_detector;
+// Owns the capture threads and the tokio channel they feed.
+#[cfg(feature = "backend")]
+pub mod dispatcher;
 #[cfg(feature = "backend")]
 pub mod file_replay;
 #[cfg(feature = "backend")]

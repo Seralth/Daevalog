@@ -14,7 +14,7 @@ use tokio::sync::mpsc;
 
 use crate::capture::captured_payload::CapturedPayload;
 use crate::capture::combat_port_detector::CombatPortDetector;
-use crate::combat::capture_dispatcher::CaptureDispatcher;
+use crate::capture::dispatcher::CaptureDispatcher;
 use crate::combat::data_storage::DataStorage;
 use crate::combat::dps_calculator::DpsCalculator;
 use crate::combat::ping_tracker::PingTracker;

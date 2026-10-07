@@ -12,7 +12,7 @@ use a2tools_dps_meter_lib::capture::stream_processor::StreamProcessor;
 use a2tools_dps_meter_lib::combat::data_storage::DataStorage;
 use a2tools_dps_meter_lib::i18n::lookup::{NpcLookup, SkillLookup};
 
-// Pre-lock signature gate (mirrors capture_dispatcher::COMBAT_SIGNATURES).
+// Pre-lock signature gate (mirrors capture::dispatcher::COMBAT_SIGNATURES).
 const SIGS: &[&[u8]] = &[&[0x0E, 0x00, 0x36], &[0x06, 0x00, 0x36]];
 const LOOPBACK_GRACE_MS: i64 = 2500;
 
