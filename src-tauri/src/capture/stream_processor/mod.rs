@@ -776,6 +776,34 @@ mod tests {
         assert_eq!(storage.local_player_id(), None);
     }
 
+    /// A Wind Spirit's Malicious Whirlwind ticks on after the spirit is
+    /// unsummoned (2026-10-06 21:16, spirit 25676 of player 15740 on target
+    /// 48776). The game's Damage Analyzer counted the two ticks before the
+    /// spirit's `42 36` flag 7 and neither after it; so does the meter.
+    #[test]
+    fn a_spirit_s_ticks_stop_counting_when_it_leaves() {
+        let (storage, mut p) = processor();
+        p.set_dot_skill_ids(HashSet::from([16_001_109]));
+        let tick = hex("19053888fd020accc801881241c15f5ff7025828f400");
+        // The owner's link record to the spirit (16770001).
+        let link = "ccc8010400fc7ad1e3ff000102affdf46301000000e65bf4010100";
+        feed(&mut p, link);
+        assert_eq!(storage.get_summon_data().get(&25676), Some(&15740));
+        p.parse_dot_packet(&tick);
+        p.parse_dot_packet(&tick);
+        p.parse_death_packet(&hex("0b4236ccc8010007"));
+        p.parse_dot_packet(&tick);
+        p.parse_dot_packet(&tick);
+        let ticks = &storage.get_combat_snapshot()[&48776].actors[&25676].skills[&(16_001_109, true)];
+        assert_eq!((ticks.hit_count, ticks.total_damage), (2, 750));
+
+        // A spirit back under the same id (its link records resume) counts again.
+        feed(&mut p, link);
+        p.parse_dot_packet(&tick);
+        let ticks = &storage.get_combat_snapshot()[&48776].actors[&25676].skills[&(16_001_109, true)];
+        assert_eq!(ticks.hit_count, 3);
+    }
+
     /// A Sorcerer on Ventus (server 1305) killing a mob, from a player's log
     /// (2026-10-01): `04 8d <mob> <4 bytes> <owner 1454> <server 1305> <name>
     /// <server name>`. The server id used to be matched only as `E0 07` /

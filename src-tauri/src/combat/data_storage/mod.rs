@@ -157,6 +157,11 @@ struct Inner {
     queued_dungeon_id: i32,
     hostile_target_ids: HashSet<i32>,
     dead_entity_ids: HashSet<i32>,
+    /// Linked summons that left the world (`42 36` flag 7). Their damage over
+    /// time ticks on, but the game's Damage Analyzer counts no tick after the
+    /// spirit is gone, so the meter does not either. Kept through a reset, like
+    /// the links; cleared when the id comes back.
+    despawned_summon_ids: HashSet<i32>,
     /// Boss entity IDs identified from NPC DB boss flags
     boss_entity_ids: HashSet<i32>,
     /// Training dummies (scarecrows, punching bags) among the entities spawned,
@@ -235,6 +240,7 @@ impl DataStorage {
                 queued_dungeon_id: 0,
                 hostile_target_ids: HashSet::new(),
                 dead_entity_ids: HashSet::new(),
+                despawned_summon_ids: HashSet::new(),
                 boss_entity_ids: HashSet::new(),
                 training_dummy_ids: HashSet::new(),
                 held_dot_ticks: HashMap::new(),

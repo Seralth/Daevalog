@@ -42,6 +42,15 @@ impl DataStorage {
         }
     }
 
+    /// `id` left the world. Only a linked summon is marked: see
+    /// `Inner::despawned_summon_ids`.
+    pub fn note_despawn(&self, id: i32) {
+        let mut inner = self.inner.write();
+        if inner.summon_storage.contains_key(&id) {
+            inner.despawned_summon_ids.insert(id);
+        }
+    }
+
     pub fn is_entity_dead(&self, entity_id: i32) -> bool {
         self.inner.read().dead_entity_ids.contains(&entity_id)
     }
@@ -211,6 +220,7 @@ impl DataStorage {
         inner.summon_storage.clear();
         inner.confirmed_summon_ids.clear();
         inner.summon_spawn_ids.clear();
+        inner.despawned_summon_ids.clear();
         inner.player_spawn_ids.clear();
         inner.actor_skills.clear();
     }
@@ -400,6 +410,7 @@ pub(super) fn link_summon(inner: &mut Inner, summon: i32, owner: i32) -> bool {
 /// What a linked summon did moves onto its owner, where it was shown anyway,
 /// so the new entity's owner does not inherit it.
 fn forget_entity(inner: &mut Inner, id: i32) {
+    inner.despawned_summon_ids.remove(&id);
     inner.confirmed_summon_ids.remove(&id);
     inner.summon_spawn_ids.remove(&id);
     inner.actor_jobs.remove(&id);
