@@ -26,6 +26,9 @@
 //!                                  party finder or legion list stated (`gear`
 //!                                  lines, capture ms and list first; see
 //!                                  `replay_players`)
+//! A2_REPLAY_PACKETS=1              print every framed packet (`pkt`) and every
+//!                                  bundle opened inside one (`bun`) as hex,
+//!                                  capture ms first, in the window
 //! cargo test --lib replay_report -- --ignored --nocapture
 //! ```
 
@@ -121,6 +124,11 @@ pub(crate) struct Options {
     pub timeline: bool,
     pub taken: bool,
     pub players: bool,
+    pub packets: bool,
+}
+
+fn to_hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 #[test]
@@ -140,6 +148,7 @@ fn replay_report() {
         timeline: env("A2_REPLAY_TIMELINE").is_some(),
         taken: env("A2_REPLAY_TAKEN").is_some(),
         players: env("A2_REPLAY_PLAYERS").is_some(),
+        packets: env("A2_REPLAY_PACKETS").is_some(),
     };
     let _flags = env("A2_REPLAY_FLAGS").map(|_| {
         tracing::subscriber::set_default(
@@ -158,7 +167,9 @@ fn replay_report() {
 
 /// Replay a capture's text and hand each line of the report to `out`.
 pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
-    let Options { target, from, to, show_hits, mut reset_at, dump_op, timeline, taken, players: list_players } = options;
+    let Options {
+        target, from, to, show_hits, mut reset_at, dump_op, timeline, taken, players: list_players, packets: list_packets,
+    } = options;
     let data_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
     let skills = Arc::new(SkillLookup::new());
     let npcs = Arc::new(NpcLookup::new());
@@ -232,7 +243,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
         last_ts = ts_ms;
         first_ts.get_or_insert(ts_ms);
 
-        if (in_window && dump_op.is_some()) || gather.is_some() || met.is_some() {
+        if (in_window && (dump_op.is_some() || list_packets)) || gather.is_some() || met.is_some() {
             let acc = walks.entry(key.to_string()).or_insert_with(PacketAccumulator::new);
             acc.append(&bytes);
             let consumed = framing::walk(acc.snapshot()).consumed;
@@ -255,6 +266,12 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
                 met.roster_and_self(&storage, ts_ms);
             }
             for p in packets {
+                if list_packets && in_window {
+                    out(format!("pkt {ts_ms} {}", to_hex(&p)));
+                    for bundle in framing::embedded_bundles(&p) {
+                        out(format!("bun {ts_ms} {}", to_hex(&bundle.data)));
+                    }
+                }
                 if let Some(g) = &mut gather {
                     g.timeline.note(ts_ms, &p);
                 }
@@ -268,8 +285,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
                         continue;
                     }
                 }
-                let hex: String = p.iter().map(|b| format!("{b:02x}")).collect();
-                out(format!("dump {tod} {hex}"));
+                out(format!("dump {tod} {}", to_hex(&p)));
             }
         }
         if let Some(t) = &mut taken {
@@ -406,4 +422,33 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
         let zone = zone.unwrap_or_else(|| chrono::FixedOffset::east_opt(0).unwrap());
         g.report(zone, last_ts, storage.get_summon_data(), (window_ms, last_ts), target, &mobs, &skills, &npcs, out);
     }
+}
+
+/// A packet carrying a compressed bundle prints as itself, then the bundle's
+/// contents opened.
+#[test]
+fn packets_prints_each_packet_and_the_bundles_inside() {
+    let frame = |body: &[u8]| {
+        let mut out = vec![framing::length_value(body.len()) as u8];
+        out.extend(body);
+        out
+    };
+    let inner = frame(&[0x45, 0x36, 0x05, 0x00]);
+    let mut bundle = vec![0xff, 0xff];
+    bundle.extend((inner.len() as u32).to_le_bytes());
+    bundle.extend(lz4_flex::compress(&inner));
+    let mut body = vec![0x12, 0x34];
+    body.extend(frame(&bundle));
+    let outer = frame(&body);
+    let text = format!("2026-10-06T12:00:00.000-07:00|Client:50000:13328|{}", to_hex(&outer));
+    let at = chrono::DateTime::parse_from_rfc3339("2026-10-06T12:00:00-07:00").unwrap().timestamp_millis();
+
+    let mut lines = Vec::new();
+    run(&text, Options { packets: true, ..Default::default() }, &mut |l| lines.push(l));
+    let got: Vec<&String> = lines.iter().filter(|l| l.starts_with("pkt ") || l.starts_with("bun ")).collect();
+    assert_eq!(got, [&format!("pkt {at} {}", to_hex(&outer)), &format!("bun {at} {}", to_hex(&inner))]);
+
+    let mut lines = Vec::new();
+    run(&text, Options::default(), &mut |l| lines.push(l));
+    assert!(!lines.iter().any(|l| l.starts_with("pkt ") || l.starts_with("bun ")));
 }
