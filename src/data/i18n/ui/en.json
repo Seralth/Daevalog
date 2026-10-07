@@ -342,7 +342,7 @@
       "title": "A2 Tools Account",
       "signedOut": "Not signed in",
       "signedIn": "Signed in as {name}",
-      "hint": "Sign in to sync characters and settings with a2tools.app. a2tools.app and its accounts are run by the A2Tools developer, not by Daevalog.",
+      "hint": "Sign in to upload fights to your a2tools.app account. Daevalog only asks a2tools.app who you are and sends the fights you upload. a2tools.app and its accounts are run by the A2Tools developer, not by Daevalog.",
       "connect": "Sign in",
       "signOut": "Sign out",
       "codePrompt": "Approve this code in your browser:",

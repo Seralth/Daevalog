@@ -342,7 +342,7 @@
       "title": "Cuenta de A2 Tools",
       "signedOut": "No has iniciado sesión",
       "signedIn": "Sesión iniciada como {name}",
-      "hint": "Inicia sesión para sincronizar personajes y ajustes con a2tools.app. a2tools.app y sus cuentas los gestiona el desarrollador de A2Tools, no Daevalog.",
+      "hint": "Inicia sesión para subir combates a tu cuenta de a2tools.app. Daevalog solo pregunta a a2tools.app quién eres y envía los combates que subes. a2tools.app y sus cuentas los gestiona el desarrollador de A2Tools, no Daevalog.",
       "connect": "Iniciar sesión",
       "signOut": "Cerrar sesión",
       "codePrompt": "Aprueba este código en tu navegador:",

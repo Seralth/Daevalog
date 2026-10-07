@@ -342,7 +342,7 @@
       "title": "A2 Tools 帳號",
       "signedOut": "尚未登入",
       "signedIn": "已登入：{name}",
-      "hint": "登入後可與 a2tools.app 同步角色和設定。a2tools.app 及其帳戶由 A2Tools 開發者營運，而非 Daevalog。",
+      "hint": "登入後可以把戰鬥上傳到你的 a2tools.app 帳戶。Daevalog 只向 a2tools.app 查詢你是誰，並傳送你上傳的戰鬥。a2tools.app 及其帳戶由 A2Tools 開發者營運，而非 Daevalog。",
       "connect": "登入",
       "signOut": "登出",
       "codePrompt": "請在瀏覽器中確認此代碼：",

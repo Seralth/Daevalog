@@ -342,7 +342,7 @@
       "title": "A2 Tools-Konto",
       "signedOut": "Nicht angemeldet",
       "signedIn": "Angemeldet als {name}",
-      "hint": "Melde dich an, um Charaktere und Einstellungen mit a2tools.app abzugleichen. a2tools.app und seine Konten betreibt der A2Tools-Entwickler, nicht Daevalog.",
+      "hint": "Melde dich an, um Kämpfe in dein a2tools.app-Konto hochzuladen. Daevalog fragt a2tools.app nur, wer du bist, und sendet die Kämpfe, die du hochlädst. a2tools.app und seine Konten betreibt der A2Tools-Entwickler, nicht Daevalog.",
       "connect": "Anmelden",
       "signOut": "Abmelden",
       "codePrompt": "Bestätige diesen Code im Browser:",

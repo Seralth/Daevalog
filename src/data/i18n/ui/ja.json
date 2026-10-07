@@ -342,7 +342,7 @@
       "title": "A2 Toolsアカウント",
       "signedOut": "サインインしていません",
       "signedIn": "{name} としてサインイン中",
-      "hint": "a2tools.app にサインインすると、キャラクターと設定を同期できます。a2tools.app とそのアカウントは Daevalog ではなく A2Tools の開発者が運営しています。",
+      "hint": "サインインすると、a2tools.app のアカウントに戦闘をアップロードできます。Daevalog が a2tools.app に問い合わせるのはあなたが誰かだけで、送るのはあなたがアップロードする戦闘だけです。a2tools.app とそのアカウントは Daevalog ではなく A2Tools の開発者が運営しています。",
       "connect": "サインイン",
       "signOut": "サインアウト",
       "codePrompt": "ブラウザでこのコードを承認してください:",

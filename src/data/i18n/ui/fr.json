@@ -342,7 +342,7 @@
       "title": "Compte A2 Tools",
       "signedOut": "Non connecté",
       "signedIn": "Connecté en tant que {name}",
-      "hint": "Connectez-vous pour synchroniser vos personnages et paramètres avec a2tools.app. a2tools.app et ses comptes sont gérés par le développeur d'A2Tools, pas par Daevalog.",
+      "hint": "Connectez-vous pour envoyer des combats sur votre compte a2tools.app. Daevalog demande seulement à a2tools.app qui vous êtes et envoie les combats que vous choisissez d'envoyer. a2tools.app et ses comptes sont gérés par le développeur d'A2Tools, pas par Daevalog.",
       "connect": "Se connecter",
       "signOut": "Se déconnecter",
       "codePrompt": "Validez ce code dans votre navigateur :",
