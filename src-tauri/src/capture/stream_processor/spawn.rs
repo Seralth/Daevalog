@@ -207,9 +207,10 @@ impl StreamProcessor {
             return false;
         }
 
-        // A `0x1C` effect entity is parented to the skill's TARGET, not its
-        // caster, so its parent_key must never be treated as an owner. Its name,
-        // when present, IS the caster's — that is the usable link for those.
+        // A `0x1C` effect entity is a monster's skill effect, parented to the
+        // skill's TARGET, so its parent_key is never an owner. Its name, when
+        // present, is a player's too, nearly always the one it hits: never an
+        // owner either (docs/summon-attribution.md).
         let is_summon = kind == 0x5F;
 
         if is_summon
@@ -227,9 +228,12 @@ impl StreamProcessor {
             return true;
         }
 
-        // Fall back to the name the spawn carries: summons and skill-effect
-        // entities are both labelled with their caster's character name.
-        if let Some(name) = &spawn_name
+        // Fall back to the name a summon's spawn carries: its owner's. A
+        // `0x1C` effect names the player it targets, so it uses the name only
+        // when its code is a player summon's: a monster new since the last
+        // table update links to no one.
+        if (kind != 0x1C || code.is_some_and(|c| self.npc_lookup.is_players_summon(c)))
+            && let Some(name) = &spawn_name
             && let Some(owner_id) = self.data_storage.find_id_by_nickname(name)
             && owner_id != real_actor_id
         {

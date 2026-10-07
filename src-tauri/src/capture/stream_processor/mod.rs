@@ -754,6 +754,31 @@ mod tests {
     }
 
     #[test]
+    fn an_effect_with_a_code_the_table_lacks_is_not_the_player_it_names() {
+        let storage = Arc::new(DataStorage::new());
+        let npcs = NpcLookup::new();
+        npcs.load_from_json(r#"{"2920063":{"name":"Blazing Totem","isBoss":false}}"#);
+        let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(npcs));
+        storage.append_nickname_authoritative(3640, "Abcd");
+        let mut hit = ParsedDamagePacket::new();
+        hit.set_actor_id(3640);
+        hit.set_target_id(900);
+        hit.set_skill_code(11_010_000);
+        hit.set_damage(100);
+        storage.append_damage(hit);
+        // The totem's spawn with a code no table lists yet (a monster new
+        // since the last update): kind 0x1C naming the player it targets.
+        let mut b = hex("4136");
+        b.extend(hex("c59103"));
+        b.extend(hex("1c00010441626364"));
+        b.extend(hex("27922c"));
+        b.extend(hex("0000020e6ccdc607af014800089b46a0411d43d46f0103030000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000006011101819698"));
+        b.extend(hex("00ffffffffffffffff8075d52abb030000c3910301020e6ccdc607af014800089b460676700000001e00000000"));
+        assert!(!p.parse_summon_spawn_at(&b, 2));
+        assert!(!storage.is_summon(51397));
+    }
+
+    #[test]
     fn a_sorcerers_ground_spell_is_linked_to_its_caster() {
         let storage = Arc::new(DataStorage::new());
         let mut p = StreamProcessor::new(storage.clone(), Arc::new(SkillLookup::new()), Arc::new(NpcLookup::new()));

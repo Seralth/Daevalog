@@ -114,6 +114,12 @@ impl NpcLookup {
         !PLAYER_SUMMON_NPCS.is_empty() && self.npcs.read().contains_key(&code) && !PLAYER_SUMMON_NPCS.contains(&code)
     }
 
+    /// Whether `code` is an NPC that a player's skill spawns (a spirit, a
+    /// totem): the game data's list of player summons.
+    pub fn is_players_summon(&self, code: i32) -> bool {
+        PLAYER_SUMMON_NPCS.contains(&code)
+    }
+
     /// The instance the table says boss `code` is fought in, if it says.
     pub fn dungeon_of(&self, code: i32) -> Option<i32> {
         self.npcs.read().get(&code).map(|n| n.dungeon_id).filter(|&d| d > 0)
