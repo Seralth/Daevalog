@@ -176,12 +176,20 @@
       }
     });
   };
-  const settingsReady = invoke("get_settings")
-    .then((s) => {
-      if (s && typeof s === "object") settingsCache = s;
-      return adoptPageSettings();
-    })
-    .catch((e) => console.error("[Daevalog] settings", e));
+  // The system's clock, "24h" or "12h" (LC_TIME, read by the backend): times
+  // of day follow it until the player picks Display Time in Settings.
+  let systemTimeFormat = null;
+  const settingsReady = Promise.all([
+    invoke("get_settings")
+      .then((s) => {
+        if (s && typeof s === "object") settingsCache = s;
+        return adoptPageSettings();
+      })
+      .catch((e) => console.error("[Daevalog] settings", e)),
+    Promise.resolve(invoke("system_time_format"))
+      .then((f) => { if (f === "24h" || f === "12h") systemTimeFormat = f; })
+      .catch(() => {}),
+  ]).then(() => {});
 
   // --- DPS data polling via events ---
   // The Rust backend emits "dps-update" every 500ms.
@@ -210,6 +218,11 @@
     if (typeof key !== "string") return;
     settingsCache[key] = String(value);
     window._dpsApp?.applyRemoteSettingChange?.(key, String(value));
+    // Every time of day on the page is written again (CLOCK_FORMAT_EVENT in
+    // shared/format.js).
+    if (key === "dpsMeter.timeFormat") {
+      try { window.dispatchEvent(new Event("clock-format-changed")); } catch {}
+    }
   });
 
   listen("account-changed", (event) => {
@@ -386,6 +399,10 @@
     settingsReady,
     getSetting(key) {
       return settingsCache[key] ?? null;
+    },
+    // "24h", "12h", or null when the system does not say.
+    systemTimeFormat() {
+      return systemTimeFormat;
     },
     setSetting(key, value) {
       settingsCache[key] = String(value);

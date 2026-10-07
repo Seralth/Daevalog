@@ -23,3 +23,8 @@ pub fn system_name() -> String {
 pub fn display_backend() -> Option<String> {
     None
 }
+
+/// Whether the system writes times of day on a 24-hour clock: not read here.
+pub fn clock_24h() -> Option<bool> {
+    None
+}

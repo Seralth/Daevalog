@@ -74,11 +74,17 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     );
   };
 
-  const formatDate = (ms) => {
+  // The day a fight started, 2026-10-07: what the date filter lists.
+  const formatDay = (ms) => {
     const d = new Date(Number(ms));
     if (isNaN(d.getTime())) return "-";
     const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  // Its day and time of day, in Settings' Display Time format.
+  const formatDate = (ms) => {
+    const day = formatDay(ms);
+    return day === "-" ? day : `${day} ${clockText(ms)}`;
   };
 
   const getJobLabel = (job) => {
@@ -169,7 +175,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
       }
     }
 
-    const dates = [...new Set(fights.map((f) => formatDate(f.startTimeMs).slice(0, 10)).filter((d) => d !== "-"))].sort().reverse();
+    const dates = [...new Set(fights.map((f) => formatDay(f.startTimeMs)).filter((d) => d !== "-"))].sort().reverse();
     filterDateEl.innerHTML = allOption(t("history.filterDate", "All dates"));
     dates.forEach((date) => {
       const opt = document.createElement("option");
@@ -188,7 +194,7 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
         const jobs = Array.isArray(f.jobs) ? f.jobs : [];
         if (!jobs.includes(filterPlayer)) return false;
       }
-      if (filterDate && formatDate(f.startTimeMs).slice(0, 10) !== filterDate) return false;
+      if (filterDate && formatDay(f.startTimeMs) !== filterDate) return false;
       if (onlyGameRecords && !gameRecords[f.id]) return false;
       return true;
     });
@@ -759,6 +765,11 @@ const createHistoryUI = ({ onOpenFight } = {}) => {
     populateDropdowns(allFights);
     renderList(allFights);
   };
+
+  // Display Time changed in Settings: every row's time again, at once.
+  window.addEventListener?.(CLOCK_FORMAT_EVENT, () => {
+    if (isOpen()) renderList(allFights);
+  });
 
   return { open, close, isOpen, relabel };
 };

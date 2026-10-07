@@ -206,29 +206,14 @@ const createDetailsUI = ({
   const i18n = window.i18n;
   const labelText = (key, fallback) => i18n?.t?.(key, fallback) ?? fallback;
 
-  const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  // The title's day and time of day, in Settings' Display Time format.
   const formatFightDateTime = (ms) => {
     const d = new Date(Number(ms));
     if (isNaN(d.getTime())) return "";
     const yr = d.getFullYear();
     const mo = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
-    const h24 = d.getHours();
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    const lang = i18n?.lang ?? "en";
-    if (lang === "ko") {
-      const period = h24 < 12 ? "\uC624\uC804" : "\uC624\uD6C4"; // 오전/오후
-      const h12 = h24 % 12 || 12;
-      return `${yr}-${mo}-${day} @ ${period} ${h12}:${mm}`;
-    }
-    if (lang === "zh-Hans" || lang === "zh-Hant") {
-      const period = h24 < 12 ? "\u4E0A\u5348" : "\u4E0B\u5348"; // 上午/下午
-      const h12 = h24 % 12 || 12;
-      return `${yr}-${mo}-${day} @ ${period} ${h12}:${mm}`;
-    }
-    const period = h24 < 12 ? "AM" : "PM";
-    const h12 = h24 % 12 || 12;
-    return `${yr}-${mo}-${day} @ ${h12}:${mm} ${period}`;
+    return `${yr}-${mo}-${day} @ ${clockText(ms)}`;
   };
 
   // The target the title names: the one picked; on every target the one the
@@ -272,6 +257,8 @@ const createDetailsUI = ({
       : "";
     detailsFightTitleEl.innerHTML = `${fightVs} <span class="fightTitleBossName">${bossName}</span>${tierBadge}${suffix}`;
   };
+  // Display Time changed in Settings: the title's time again, at once.
+  window.addEventListener?.(CLOCK_FORMAT_EVENT, () => renderFightTitle());
 
   // Damage received: the game record's window in its view, else the fight's.
   const receivedOf = (d) => d?.received ?? takenTotals(d?.takenSkills);

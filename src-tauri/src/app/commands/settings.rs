@@ -11,6 +11,14 @@ pub(crate) fn get_settings(state: tauri::State<'_, AppState>) -> std::collection
     state.settings.get_all()
 }
 
+/// The system's clock, which times of day follow until the player picks one
+/// in Settings (`dpsMeter.timeFormat`): "24h", "12h", or none when the system
+/// does not say.
+#[tauri::command]
+pub(crate) fn system_time_format() -> Option<&'static str> {
+    crate::platform::process::clock_24h().map(|h24| if h24 { "24h" } else { "12h" })
+}
+
 /// Store a setting and tell every window about it.
 ///
 /// Settings are edited in their own window, so without this broadcast the meter

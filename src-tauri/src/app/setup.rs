@@ -283,6 +283,7 @@ pub fn run() {
             commands::account::account_begin_link,
             commands::account::account_sign_out,
             commands::settings::get_settings,
+            commands::settings::system_time_format,
             commands::settings::update_settings,
             commands::capture::get_capture_status,
             commands::meter::set_target_mode,

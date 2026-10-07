@@ -310,6 +310,46 @@ fn os_release_name(text: &str) -> String {
     }
 }
 
+/// Whether the system writes times of day on a 24-hour clock: the time format
+/// of the locale for times (LC_ALL, else LC_TIME, else LANG, as the C library
+/// picks it; KDE Plasma's Region settings set LC_TIME). `None` without a
+/// locale (C or POSIX) or when that locale is not installed.
+pub fn clock_24h() -> Option<bool> {
+    let name = std::ffi::CString::new(time_locale(&real_env)?).ok()?;
+    locale_clock_24h(&name)
+}
+
+/// Whether the installed locale `name` writes a 24-hour clock.
+fn locale_clock_24h(name: &std::ffi::CStr) -> Option<bool> {
+    // SAFETY: newlocale copies the name and returns a new locale or null;
+    // nl_langinfo_l's text stays valid until freelocale, after the copy.
+    unsafe {
+        let locale = libc::newlocale(libc::LC_TIME_MASK, name.as_ptr(), std::ptr::null_mut());
+        if locale.is_null() {
+            return None;
+        }
+        let format = std::ffi::CStr::from_ptr(libc::nl_langinfo_l(libc::T_FMT, locale))
+            .to_string_lossy()
+            .into_owned();
+        libc::freelocale(locale);
+        Some(writes_24h(&format))
+    }
+}
+
+/// The locale that sets the time format, unless it is C or POSIX: those are
+/// no one's choice.
+fn time_locale(env: Env) -> Option<String> {
+    let name = ["LC_ALL", "LC_TIME", "LANG"].iter().find_map(|var| env(var))?;
+    let language = name.split(['.', '@']).next().unwrap_or_default();
+    (!matches!(language, "C" | "POSIX")).then_some(name)
+}
+
+/// A time format (`T_FMT`, e.g. `%r` in en_US, `%T` in de_DE) writes a
+/// 24-hour clock unless it has a 12-hour field or an AM/PM mark.
+fn writes_24h(format: &str) -> bool {
+    !["%r", "%I", "%l", "%p", "%P"].iter().any(|field| format.contains(field))
+}
+
 /// Whether gtk-layer-shell loads. The layer is the Tauri window's, so without
 /// that window there is none to offer.
 #[cfg(feature = "desktop")]
@@ -354,6 +394,38 @@ mod tests {
         assert_eq!(os_release_name(fedora), "Fedora Linux 40");
         assert_eq!(os_release_name("NAME=\"CachyOS Linux\"\nID=cachyos\nBUILD_ID=rolling\n"), "CachyOS Linux");
         assert_eq!(os_release_name(""), "Linux");
+    }
+
+    #[test]
+    fn the_time_format_tells_a_24_hour_clock() {
+        // glibc's T_FMT: en_US, en_AU, de_DE and en_GB, ja_JP, ko_KR, C.
+        for format in ["%r", "%I:%M:%S %p", "%l:%M:%S %P"] {
+            assert!(!writes_24h(format), "{format}");
+        }
+        for format in ["%T", "%H:%M:%S", "%H時%M分%S秒", "%H시 %M분 %S초", ""] {
+            assert!(writes_24h(format), "{format}");
+        }
+    }
+
+    #[test]
+    fn the_time_locale_is_lc_all_then_lc_time_then_lang() {
+        let locale = |vars: &[(&str, &str)]| time_locale(&env_of(vars));
+        assert_eq!(locale(&[("LANG", "en_US.UTF-8"), ("LC_TIME", "en_GB.UTF-8")]).as_deref(), Some("en_GB.UTF-8"));
+        assert_eq!(locale(&[("LC_ALL", "de_DE.UTF-8"), ("LC_TIME", "en_US.UTF-8")]).as_deref(), Some("de_DE.UTF-8"));
+        assert_eq!(locale(&[("LANG", "ko_KR.UTF-8"), ("LC_TIME", "")]).as_deref(), Some("ko_KR.UTF-8"));
+        assert_eq!(locale(&[("LANG", "C.UTF-8")]), None, "C is no one's choice");
+        assert_eq!(locale(&[("LC_TIME", "POSIX")]), None);
+        assert_eq!(locale(&[]), None);
+    }
+
+    #[test]
+    fn an_installed_locale_gives_its_clock() {
+        // Only the locales the test machine has: C.UTF-8 is in every glibc.
+        assert_eq!(locale_clock_24h(c"C.UTF-8"), Some(true));
+        if let Some(us) = locale_clock_24h(c"en_US.UTF-8") {
+            assert!(!us, "en_US writes 12-hour times");
+        }
+        assert_eq!(locale_clock_24h(c"xx_NOWHERE.UTF-8"), None);
     }
 
     fn env_of<'a>(vars: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {

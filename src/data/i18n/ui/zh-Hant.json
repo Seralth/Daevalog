@@ -280,6 +280,10 @@
     "language": {
       "label": "語言"
     },
+    "timeFormat": {
+      "label": "時間顯示",
+      "hint": "歷史、詳情和遊戲紀錄中時間的顯示方式。"
+    },
     "windowOpacity": {
       "label": "主視窗不透明度"
     },

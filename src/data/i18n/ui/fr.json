@@ -280,6 +280,10 @@
     "language": {
       "label": "Langue"
     },
+    "timeFormat": {
+      "label": "Affichage de l'heure",
+      "hint": "Comment l'historique, les détails et le relevé du jeu affichent l'heure."
+    },
     "windowOpacity": {
       "label": "Opacité de la fenêtre principale"
     },

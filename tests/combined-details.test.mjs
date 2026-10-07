@@ -144,7 +144,7 @@ const fightContext = (healSkills = heal(1400)) => ({
   healSkills,
 });
 
-async function openEveryTarget(ctx, given = answers) {
+async function openEveryTarget(ctx, given = answers, clock = { timeFormat: null }) {
   const root = new El();
   root.className = "detailsPanel";
   const title = el(root, "detailsFightTitle");
@@ -167,11 +167,12 @@ async function openEveryTarget(ctx, given = answers) {
   const timeline = el(viewport, "timelineCanvas", "canvas");
   el(timelineChart, "timelineXAxis");
 
+  const listeners = {};
   const window = {
-    addEventListener() {},
+    addEventListener: (type, fn) => (listeners[type] ||= []).push(fn),
     i18n: { t: (key, fallback) => lookup(key) ?? fallback },
     dpsData: { getTargetDetails: async (id) => JSON.stringify(given[id] ?? {}) },
-    javaBridge: { logToDebug() {} },
+    javaBridge: { logToDebug() {}, getSetting: (key) => (key === "dpsMeter.timeFormat" ? clock.timeFormat : null) },
   };
   const page = loadScripts(["shared/format.js", "shared/jobs.js", "shared/players.js", "shared/targetModes.js", "details.js", "core.js"], {
     window, console,
@@ -201,7 +202,8 @@ async function openEveryTarget(ctx, given = answers) {
     const seconds = Number(timeline.style.width && chartAxis.children.at(-1)?.textContent.split(":").reduce((m, s) => m * 60 + Number(s), 0));
     return timeline.drawn.arcs.map((x) => Math.round((x / width) * seconds));
   };
-  return { stat, bars, icons, tab, casts, chartAxis, title: () => title.textContent, ui };
+  const emit = (type) => (listeners[type] || []).forEach((fn) => fn());
+  return { stat, bars, icons, tab, casts, chartAxis, title: () => title.textContent, ui, emit };
 }
 
 test("every target: the combat time is the fight's, a boss and its adds once, the gap between pulls left out", async () => {
@@ -258,6 +260,18 @@ test("every target: the title names the target with the most damage and the figh
     // The boss took 8,000 of 9,900; the next pull began 100 s after it.
     assert.equal(view.title(), `Fight vs Mob 800 - ${titleDate(T0)}`);
   }
+});
+
+test("the title's time of day follows Display Time, and changes the moment the setting does", async () => {
+  const clock = { timeFormat: "24h" };
+  const view = await openEveryTarget(fightContext(), answers, clock);
+  const d = new Date(T0);
+  const two = (n) => String(n).padStart(2, "0");
+  const day = `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
+  assert.equal(view.title(), `Fight vs Mob 800 - ${day} @ ${two(d.getHours())}:${two(d.getMinutes())}`);
+  clock.timeFormat = "12h";
+  view.emit("clock-format-changed");
+  assert.equal(view.title(), `Fight vs Mob 800 - ${titleDate(T0)}`);
 });
 
 test("every target: the title names the target the meter follows, as its header does in BOSS", async () => {

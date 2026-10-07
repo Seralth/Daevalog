@@ -28,11 +28,8 @@ const createGameRecordUI = () => {
     window.i18n?.format?.(key, vars, fallback) ??
     Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, v), fallback);
   const num = (v) => Number(v || 0).toLocaleString("en-US");
-  const clock = (ms) => {
-    const d = new Date(Number(ms));
-    const p = (n) => String(n).padStart(2, "0");
-    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-  };
+  // A record's start and end, to the second, in Settings' Display Time format.
+  const clock = (ms) => clockText(ms, { seconds: true });
 
   let records = [];
   let current = null;
@@ -190,6 +187,14 @@ const createGameRecordUI = () => {
       copyBtn.textContent = t("gameRecord.copyFailed", "Could not copy");
     }
     setTimeout(() => { copyBtn.textContent = t("gameRecord.copy", "Copy for a bug report"); }, 1500);
+  });
+
+  // Display Time changed in Settings: the record list and its window again.
+  window.addEventListener?.(CLOCK_FORMAT_EVENT, () => {
+    if (!current) return;
+    fillPick();
+    pickEl.value = String(records.indexOf(current));
+    coverage();
   });
 
   hide();

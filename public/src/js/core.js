@@ -50,6 +50,7 @@ class DpsApp {
       targetSelection: "dpsMeter.targetSelection",
       displayMode: "dpsMeter.displayMode",
       language: "dpsMeter.language",
+      timeFormat: "dpsMeter.timeFormat",
       debugLogging: "dpsMeter.debugLoggingEnabled",
       pinMeToTop: "dpsMeter.pinMeToTop",
       mainPlayerNamesBold: "dpsMeter.mainPlayerNamesBold",

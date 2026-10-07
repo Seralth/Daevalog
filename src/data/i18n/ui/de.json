@@ -280,6 +280,10 @@
     "language": {
       "label": "Sprache"
     },
+    "timeFormat": {
+      "label": "Zeitanzeige",
+      "hint": "Wie Verlauf, Details und die Spielaufzeichnung die Uhrzeit anzeigen."
+    },
     "windowOpacity": {
       "label": "Deckkraft des Hauptfensters"
     },

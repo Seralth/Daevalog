@@ -280,6 +280,10 @@
     "language": {
       "label": "言語"
     },
+    "timeFormat": {
+      "label": "時間表示",
+      "hint": "履歴、詳細、ゲームの記録での時刻の表示方法です。"
+    },
     "windowOpacity": {
       "label": "メインウィンドウの不透明度"
     },

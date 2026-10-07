@@ -68,6 +68,8 @@ Object.assign(DpsApp.prototype, {
     this.settingsVersionLink = document.querySelector(".settingsVersionLink");
     this.languageDropdownBtn = document.querySelector(".languageDropdownBtn");
     this.languageDropdownMenu = document.querySelector(".languageDropdownMenu");
+    this.timeFormatDropdownBtn = document.querySelector(".timeFormatDropdownBtn");
+    this.timeFormatDropdownMenu = document.querySelector(".timeFormatDropdownMenu");
     this.themeDropdownBtn = document.querySelector(".themeDropdownBtn");
     this.themeDropdownMenu = document.querySelector(".themeDropdownMenu");
     this.settingsSelections = {
@@ -740,6 +742,24 @@ Object.assign(DpsApp.prototype, {
         if (!value) return;
         this.settingsSelections.language = value;
         this.i18n?.setLanguage?.(value, { persist: true });
+      }
+    );
+
+    // Display Time: each choice shows a time in its format, as the game's own
+    // chat setting does ("15:30"). Until the player picks one, the system's.
+    const exampleTime = new Date(2026, 0, 1, 15, 30).getTime();
+    const timeFormatOptions = ["12h", "24h"].map((value) => ({
+      value,
+      label: formatClock(exampleTime, { hour24: value === "24h", lang: this.i18n?.getLanguage?.() || "en" }),
+    }));
+    setupDropdown(
+      this.timeFormatDropdownBtn,
+      this.timeFormatDropdownMenu,
+      timeFormatOptions,
+      clockIs24h() ? "24h" : "12h",
+      (value) => {
+        if (!value) return;
+        this.safeSetSetting(this.storageKeys.timeFormat, value);
       }
     );
 

@@ -27,20 +27,23 @@ function pageStorage(entries = {}) {
 
 // Loads the whole bridge. `settings` is settings.json; `adopt` answers the
 // hand-over (default: the backend keeps every value it was given).
-function loadBridge({ settings = {}, storage = pageStorage(), adopt, view } = {}) {
+function loadBridge({ settings = {}, storage = pageStorage(), adopt, view, systemTime = null } = {}) {
   const calls = [];
   const listeners = new Map();
   const invoke = (command, args) => {
     calls.push({ command, args });
     if (command === "get_settings") return Promise.resolve({ ...settings });
+    if (command === "system_time_format") return Promise.resolve(systemTime);
     if (command === "adopt_page_settings") {
       return adopt ? adopt(args.values) : Promise.resolve({ ...args.values, ...settings });
     }
     return Promise.resolve(null);
   };
   const classList = { add: noop, remove: noop, toggle: noop };
+  const events = [];
   const window = {
     A2_VIEW: "main", devicePixelRatio: 1, location: { search: "" }, localStorage: storage, addEventListener: noop,
+    dispatchEvent: (event) => events.push(event.type),
     __A2_VIEW__: view,
     __TAURI__: {
       core: { invoke },
@@ -58,9 +61,10 @@ function loadBridge({ settings = {}, storage = pageStorage(), adopt, view } = {}
     console: { log: noop, warn: noop, error: noop },
     setInterval: () => 0, clearInterval: noop, setTimeout: () => 0, clearTimeout: noop,
     requestAnimationFrame: noop, MutationObserver: class { observe() {} }, URLSearchParams,
+    Event: class { constructor(type) { this.type = type; } },
   }), { filename: "tauriBridge.js" });
   const commands = (name) => calls.filter((call) => call.command === name);
-  return { bridge: window.javaBridge, storage, calls, commands, listeners };
+  return { bridge: window.javaBridge, storage, calls, commands, listeners, events };
 }
 
 test("the layer switch case: a value only the page's storage holds is never read", async () => {
@@ -197,4 +201,22 @@ test("no page script uses the page's storage except the one-time hand-over", () 
   assert.deepEqual(users, ["tauriBridge.js"]);
   const uses = bridgeSource.split("\n").filter((line) => line.includes("localStorage"));
   assert.deepEqual(uses.map((line) => line.trim()), ["storage = window.localStorage;"]);
+});
+
+test("the system's clock is read with the settings, before any page code runs", async () => {
+  for (const [answer, expected] of [["24h", "24h"], ["12h", "12h"], [null, null], ["sometimes", null]]) {
+    const { bridge } = loadBridge({ systemTime: answer });
+    await bridge.settingsReady;
+    assert.equal(bridge.systemTimeFormat(), expected, String(answer));
+  }
+});
+
+test("Display Time changed in Settings reaches this window's copy and redraws its times at once", async () => {
+  const { bridge, listeners, events } = loadBridge({ settings: { "dpsMeter.timeFormat": "12h" } });
+  await bridge.settingsReady;
+  listeners.get("setting-changed")({ payload: { key: "dpsMeter.showPing", value: "false" } });
+  assert.deepEqual(events, [], "other settings leave the times alone");
+  listeners.get("setting-changed")({ payload: { key: "dpsMeter.timeFormat", value: "24h" } });
+  assert.equal(bridge.getSetting("dpsMeter.timeFormat"), "24h");
+  assert.deepEqual(events, ["clock-format-changed"]);
 });

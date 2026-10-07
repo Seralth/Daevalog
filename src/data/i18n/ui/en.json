@@ -280,6 +280,10 @@
     "language": {
       "label": "Language"
     },
+    "timeFormat": {
+      "label": "Display Time",
+      "hint": "How History, Details and the game record show the time of day."
+    },
     "windowOpacity": {
       "label": "Main window opacity"
     },

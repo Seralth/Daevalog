@@ -280,6 +280,10 @@
     "language": {
       "label": "언어"
     },
+    "timeFormat": {
+      "label": "시간 표시",
+      "hint": "기록, 상세 정보, 게임 기록에서 시각을 표시하는 방식입니다."
+    },
     "windowOpacity": {
       "label": "메인 창 불투명도"
     },
