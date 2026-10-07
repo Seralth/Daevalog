@@ -19,6 +19,8 @@
 //! three. Turned off, KDE Plasma gets XWayland (KWin keeps an X11 window on
 //! top); Hyprland and Sway keep a normal Wayland window. Other Wayland
 //! desktops keep GTK's default, with the layer only when turned on.
+//! COSMIC's session script exports GDK_BACKEND=wayland,x11 for every app, so
+//! that value on COSMIC is the session's, not the player's.
 
 use std::sync::OnceLock;
 
@@ -52,6 +54,7 @@ enum Desktop {
     Gnome,
     Hyprland,
     Sway,
+    Cosmic,
     Other,
 }
 
@@ -62,6 +65,7 @@ impl Desktop {
             Desktop::Gnome => "GNOME",
             Desktop::Hyprland => "Hyprland",
             Desktop::Sway => "Sway",
+            Desktop::Cosmic => "COSMIC",
             Desktop::Other => "other desktop",
         }
     }
@@ -95,15 +99,28 @@ fn desktop(env: Env) -> Desktop {
         };
     };
     for name in names.split(':') {
-        for (known, desktop) in
-            [("kde", Desktop::Kde), ("gnome", Desktop::Gnome), ("hyprland", Desktop::Hyprland), ("sway", Desktop::Sway)]
-        {
+        for (known, desktop) in [
+            ("kde", Desktop::Kde),
+            ("gnome", Desktop::Gnome),
+            ("hyprland", Desktop::Hyprland),
+            ("sway", Desktop::Sway),
+            ("cosmic", Desktop::Cosmic),
+        ] {
             if name.eq_ignore_ascii_case(known) {
                 return desktop;
             }
         }
     }
     Desktop::Other
+}
+
+/// The GDK_BACKEND a desktop's session sets for every app. COSMIC's
+/// start-cosmic exports `wayland,x11`.
+fn session_backend(desktop: Desktop) -> Option<&'static str> {
+    match desktop {
+        Desktop::Cosmic => Some("wayland,x11"),
+        _ => None,
+    }
 }
 
 /// What the meter does with the display.
@@ -134,12 +151,14 @@ fn plan(env: Env, setting: Option<&str>, layer_ready: bool) -> Plan {
     };
     let name = desktop.name();
     let make = |backend, layer, note: String| Plan { backend, layer, layer_by_default, note };
-    if let Some(backend) = env("GDK_BACKEND") {
+    let gdk_backend = env("GDK_BACKEND");
+    let from_session = gdk_backend.as_deref().is_some_and(|b| Some(b) == session_backend(desktop));
+    if let Some(backend) = gdk_backend.as_ref().filter(|_| !from_session) {
         // GTK tries the listed backends in order; X11 first gets no layer.
         let wayland_first = !backend.trim_start().starts_with("x11");
         return make(None, layer_on && wayland_first, format!("GDK_BACKEND={backend} (set by the player)"));
     }
-    match (session, desktop) {
+    let mut plan = match (session, desktop) {
         (Session::X11, _) => make(Some("x11"), false, "x11 (X11 session)".into()),
         (Session::Unknown, _) => make(None, layer_on, "GTK's choice (no X11 or Wayland session found)".into()),
         (Session::Wayland, Desktop::Gnome) if x11_available => make(Some("x11,wayland"), false, "xwayland (GNOME)".into()),
@@ -154,11 +173,15 @@ fn plan(env: Env, setting: Option<&str>, layer_ready: bool) -> Plan {
                 make(None, false, format!("wayland, normal window ({name}, {why})"))
             }
         }
-        (Session::Wayland, Desktop::Other) => {
-            let note = if layer_on { "wayland + layer overlay if offered (other desktop)" } else { "wayland (other desktop)" };
-            make(None, layer_on, note.into())
+        (Session::Wayland, Desktop::Cosmic | Desktop::Other) => {
+            let note = if layer_on { format!("wayland + layer overlay if offered ({name})") } else { format!("wayland ({name})") };
+            make(None, layer_on, note)
         }
+    };
+    if let (true, Some(backend)) = (from_session, gdk_backend) {
+        plan.note = format!("{} [GDK_BACKEND={backend} is the {name} session's default, not the player's]", plan.note);
     }
+    plan
 }
 
 /// The layer setting as saved, read before Tauri opens the settings.
@@ -383,7 +406,7 @@ mod tests {
         assert_eq!(desktop(&env_of(&[("XDG_CURRENT_DESKTOP", "Hyprland")])), Desktop::Hyprland);
         assert_eq!(desktop(&env_of(&[("XDG_CURRENT_DESKTOP", "sway")])), Desktop::Sway);
         assert_eq!(desktop(&env_of(&[("XDG_CURRENT_DESKTOP", "XFCE")])), Desktop::Other);
-        assert_eq!(desktop(&env_of(&[("XDG_CURRENT_DESKTOP", "COSMIC")])), Desktop::Other);
+        assert_eq!(desktop(&env_of(&[("XDG_CURRENT_DESKTOP", "COSMIC")])), Desktop::Cosmic);
         assert_eq!(desktop(&env_of(&[("SWAYSOCK", "/run/user/1000/sway-ipc.sock")])), Desktop::Sway);
         assert_eq!(desktop(&env_of(&[("HYPRLAND_INSTANCE_SIGNATURE", "abc")])), Desktop::Hyprland);
         // A named desktop wins over a socket variable left over from elsewhere.
@@ -439,6 +462,23 @@ mod tests {
             assert_eq!(decide(&wayland(name), None, true), (None, false, false), "{name}");
             assert_eq!(decide(&wayland(name), Some("true"), true), (None, true, false), "{name}");
         }
+    }
+
+    #[test]
+    fn cosmic_session_backend_is_not_the_players() {
+        // start-cosmic exports GDK_BACKEND=wayland,x11 for every app.
+        let cosmic = with(wayland("COSMIC"), &[("GDK_BACKEND", "wayland,x11")]);
+        let p = plan(&env_of(&cosmic), None, true);
+        assert_eq!((p.backend, p.layer, p.layer_by_default), (None, false, false));
+        assert_eq!(p.note, "wayland (COSMIC) [GDK_BACKEND=wayland,x11 is the COSMIC session's default, not the player's]");
+        let p = plan(&env_of(&cosmic), Some("true"), true);
+        assert_eq!((p.backend, p.layer), (None, true));
+        assert!(p.note.starts_with("wayland + layer overlay if offered (COSMIC) ["), "{}", p.note);
+        // Any other value on COSMIC, or the same value elsewhere, is the player's.
+        let x11 = with(wayland("COSMIC"), &[("GDK_BACKEND", "x11")]);
+        assert_eq!(plan(&env_of(&x11), None, true).note, "GDK_BACKEND=x11 (set by the player)");
+        let niri = with(wayland("niri"), &[("GDK_BACKEND", "wayland,x11")]);
+        assert_eq!(plan(&env_of(&niri), None, true).note, "GDK_BACKEND=wayland,x11 (set by the player)");
     }
 
     #[test]
