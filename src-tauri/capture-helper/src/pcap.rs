@@ -219,6 +219,7 @@ pub struct Live {
     handle: usize,
     label: String,
     link_type: c_int,
+    reads_first: bool,
     applied: Arc<AtomicU32>,
 }
 
@@ -226,6 +227,27 @@ impl Live {
     pub fn label(&self) -> &str {
         &self.label
     }
+
+    /// Read from the start, not after the physical devices' delay.
+    pub fn reads_first(&self) -> bool {
+        self.reads_first
+    }
+}
+
+/// Whether a device is read from the start: loopback, a device named as a
+/// tunnel, or one with no link layer. Linux names a tunnel freely (`wg0`,
+/// `pvpn`, `tun0`) but gives it libpcap's raw IP link type. Through a VPN the
+/// game's TCP stream exists only on the tunnel; the physical device carries
+/// it encrypted, as UDP. A ping reducer's loopback relay still wins: the
+/// meter's port detector locks a loopback flow at once and makes any other
+/// flow wait 2.5 s.
+pub fn reads_first(device: &DeviceInfo, link_type: c_int) -> bool {
+    device.is_virtual() || is_raw_ip(link_type)
+}
+
+/// Link types whose frames start at the IP header.
+fn is_raw_ip(link_type: c_int) -> bool {
+    matches!(link_type, 12 | 14 | 101 | 228)
 }
 
 // ===== Pcap library wrapper =====
@@ -460,13 +482,13 @@ impl PcapLib {
         log(Level::Info, &format!("Capture active on {} (link type {}, filter {}{})", label, link_type, filter, buffer));
         let applied = Arc::new(AtomicU32::new(0));
         live_handles().push(LiveHandle { handle: handle as usize, applied: applied.clone() });
-        Ok(Live { handle: handle as usize, label, link_type, applied })
+        Ok(Live { handle: handle as usize, label, link_type, reads_first: reads_first(device, link_type), applied })
     }
 
     /// Read `live` until `running` turns false or the device fails, then close
     /// it. Packets captured before `skip_before_ms` are dropped.
     pub fn run(&self, live: Live, running: &AtomicBool, skip_before_ms: i64, sink: &mut impl Sink) {
-        let Live { handle, label, link_type, applied } = live;
+        let Live { handle, label, link_type, applied, .. } = live;
         let handle = handle as PcapT;
 
         // A filter change that failed is tried again a second later, and
@@ -636,7 +658,7 @@ fn link_header_len(link_type: c_int, frame: &[u8]) -> Option<usize> {
         // BSD loopback / Npcap loopback: 4-byte address family, AF_INET = 2.
         0 => (frame.get(..4)? == [2, 0, 0, 0]).then_some(4),
         // Raw IP (VPN and tunnel adapters, WireGuard).
-        12 | 14 | 101 | 228 => Some(0),
+        t if is_raw_ip(t) => Some(0),
         // Linux "cooked" capture v1: protocol at bytes 14-15, 16-byte header.
         113 => (be16(14)? == 0x0800).then_some(16),
         // Linux "cooked" capture v2: protocol at bytes 0-1, 20-byte header.
@@ -769,6 +791,23 @@ mod tests {
         check(113, &sll); // Linux cooked v1
         let sll2 = [[0x08u8, 0x00].as_slice(), &[0u8; 18]].concat();
         check(276, &sll2); // Linux cooked v2
+    }
+
+    #[test]
+    fn a_tunnel_is_read_from_the_start_like_loopback() {
+        let device = |name: &str, is_loopback| DeviceInfo {
+            name: name.into(),
+            description: String::new(),
+            has_addresses: true,
+            is_loopback,
+        };
+        // Link types as libpcap gave them on a desktop playing through a
+        // WireGuard VPN (pvpn), with a second WireGuard device (wg0).
+        assert!(reads_first(&device("lo", true), 1), "a ping reducer's relay");
+        assert!(reads_first(&device("pvpn", false), 12), "the tunnel carrying the game");
+        assert!(reads_first(&device("wg0", false), 12));
+        assert!(!reads_first(&device("enp14s0", false), 1));
+        assert!(!reads_first(&device("wlan0", false), 1));
     }
 
     #[test]
