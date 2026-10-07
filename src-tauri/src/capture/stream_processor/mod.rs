@@ -147,6 +147,9 @@ impl StreamProcessor {
         if data.len() >= 4 {
             self.scan_for_entity_hp(data);
         }
+        for r in regions {
+            self.scan_for_hp_records(&data[r.clone()]);
+        }
         // Embedded spawn opcodes (40/41/44/45 36). Player spawns (45 36) also
         // sit mid-packet, where parse_summon_packet at the packet front never
         // looks: party members announced only that way stayed unnamed (#id).
