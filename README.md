@@ -104,6 +104,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - **Skill rows as in the game.** Skills are grouped the way the game's Damage Analyzer groups them. Additional hits are read from the damage record, the spirits' hits included.
 - **Hit results.** Details can show Shield Block, Parry, Perfect Block, Endurance, Regeneration, Miss and Resist for each skill. Hit types carry the game's names.
 - A spirit's damage over time stops counting when the spirit is unsummoned, as in the game's Damage Analyzer (Wind Spirit: Malicious Whirlwind).
+- With the game's record, Details also compares Parry, Miss, Resist, Endurance and Regeneration with the game's counts.
 - **Skill details on hover** in every mode, including the modes that show several targets.
 - BOSS mode stays on the boss you and your party are fighting. Another boss takes its place once it takes more than twice your and your party's damage over the last 10 seconds, or when the boss on screen dies and you fight on. It no longer flips between two bosses or scarecrows several times a second.
 - **Details, History and the hover tooltip never wait on the meter,** and settings are saved in the background (from mazixs's upstream PR #29). Closing the meter window quits the app, even with Settings open, and saves your fights first.
@@ -124,6 +125,8 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - **Display backend per desktop.** At start the meter picks X11, XWayland or native Wayland to fit the desktop, so KDE Plasma needs no `GDK_BACKEND=x11` launcher. A `GDK_BACKEND` you set yourself still wins.
 - **Wayland layer overlay** on KDE Plasma, Hyprland and Sway, on by default there: the meter stays above a fullscreen game. Settings turns it off.
 - Windows behave correctly under KDE Plasma (KWin), and the overlay draws on WebKitGTK 2.54.
+- The meter keeps its place on screen when the tray hides it and shows it again.
+- `debug.log` names the display backend the meter picked at start.
 
 ### Parsing
 - Packets are framed by the real length rule: payload plus 4.
@@ -134,6 +137,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - Spirits are linked to their owners by the game's link records and the spawn caster field. Owners are not guessed by power scalar or class.
 - Fight slices keep skill ids that look like short text. They are no longer blanked out as names.
 - The party roster is read to its end. Members after an empty slot keep their item level and combat power up to date.
+- Each record is read within its own packet, never on into the next one. Records read across a packet's end made false monsters and players, and lost some hits and spirit links.
 
 ### Fights and identity
 - The backend alone decides which player is the local player, from the game's own record of you.
@@ -154,6 +158,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - Packet capture runs in a small helper program, `daevalog-capture`. Only the helper holds `cap_net_raw`, and it gives it up once the network devices are open. The meter itself runs with no capability.
 - The capture helper passes on only your own connections; other users' traffic and system services are never read through it.
 - Packet capture takes TCP only, and only the game server's port once the meter has found it.
+- Fight slices replace a character name wherever a record holds one, one-letter names included.
 - The fonts come with the meter, with Pretendard as the main font, as the stylesheet always intended. A window no longer loads fonts from unpkg.com.
 - Links open only https addresses and the meter's own folders.
 - A packet replay reads only files in the meter's data folder.
