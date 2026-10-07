@@ -117,4 +117,48 @@ impl JobClass {
 
         None
     }
+
+    /// A player's class from the skills they used, as (skill code, hits): the
+    /// class most of the hits are of, the lower class number on a tie. A few
+    /// skills are used by more than one class: in the Kasia capture of
+    /// 2026-10-06 a Templar, a Cleric and a Sorcerer hit with Lifestealing
+    /// Blade (11340000, a Gladiator code). The class of whichever skill a hash
+    /// map gave first named one player Gladiator in one read and Templar in
+    /// the next.
+    pub fn by_hits(skills: impl IntoIterator<Item = (i32, i32)>) -> Option<JobClass> {
+        let mut hits: Vec<(JobClass, i64)> = Vec::new();
+        for (code, n) in skills {
+            let Some(job) = Self::convert_from_skill(code) else { continue };
+            match hits.iter_mut().find(|(j, _)| *j == job) {
+                Some((_, total)) => *total += i64::from(n.max(1)),
+                None => hits.push((job, i64::from(n.max(1)))),
+            }
+        }
+        hits.into_iter()
+            .max_by_key(|&(job, n)| (n, std::cmp::Reverse(job.class_prefix())))
+            .map(|(job, _)| job)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::JobClass;
+
+    #[test]
+    fn a_player_is_the_class_most_hits_are_of_in_any_order() {
+        // A Templar's rotation and one Gladiator-coded skill used 52 times.
+        let skills = [(12_020_000, 300), (12_010_000, 120), (11_340_000, 52), (12_060_000, 40)];
+        for turn in 0..skills.len() {
+            let mut order = skills.to_vec();
+            order.rotate_left(turn);
+            assert_eq!(JobClass::by_hits(order.iter().copied()), Some(JobClass::Templar));
+            order.reverse();
+            assert_eq!(JobClass::by_hits(order), Some(JobClass::Templar));
+        }
+        // A tie goes to the lower class number, whatever the order.
+        assert_eq!(JobClass::by_hits([(12_010_000, 5), (11_340_000, 5)]), Some(JobClass::Gladiator));
+        assert_eq!(JobClass::by_hits([(11_340_000, 5), (12_010_000, 5)]), Some(JobClass::Gladiator));
+        // Mob skills name no class.
+        assert_eq!(JobClass::by_hits([(1_000_100, 9)]), None);
+    }
 }

@@ -1,9 +1,9 @@
 //! The meter rows: damage, DPS and the per-row stats for the targets on screen.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::clock::now_ms;
-use crate::combat::data_storage::{SecondStats, UNATTRIBUTED_ID};
+use crate::combat::data_storage::{SecondStats, TargetCombatData, UNATTRIBUTED_ID};
 use crate::entity::dps_data::DpsData;
 use crate::entity::job_class::JobClass;
 use crate::entity::personal_data::PersonalData;
@@ -151,14 +151,8 @@ impl DpsCalculator {
         } else if self.target_selection_mode == TargetSelectionMode::TrainTargets {
             // Your time on the dummies, not anyone's who hit them before you.
             let mine = self.resolve_local_ids(&summon_data).unwrap_or_default();
-            active_time(target_ids.iter().filter_map(|tid| combat_data.get(tid)).filter_map(|td| {
-                let ours = td.actors.iter()
-                    .filter(|(a, _)| mine.contains(&summon_resolver::resolve(**a, &summon_data)));
-                let (first, last) = ours.fold((i64::MAX, i64::MIN), |(f, l), (_, ad)| {
-                    (f.min(ad.first_damage_time), l.max(ad.last_damage_time))
-                });
-                (first <= last).then_some((first, last))
-            }), i64::MIN)
+            active_time(target_ids.iter().filter_map(|tid| combat_data.get(tid))
+                .filter_map(|td| own_span(td, &mine, &summon_data)), i64::MIN)
         } else if !target_ids.is_empty() {
             // Multi-target: the time anything selected was being fought, gaps
             // between pulls left out. The longest single target made ten
@@ -411,6 +405,18 @@ impl DpsCalculator {
         out.sort_by_key(|r| r.actor_id);
         out
     }
+}
+
+/// Your (first hit, last hit) on a target, your summons' hits included:
+/// `mine` holds your id and your summons'. TRAIN counts this time, not that
+/// of anyone who hit the dummy before or after you.
+pub(super) fn own_span(td: &TargetCombatData, mine: &HashSet<i32>, summon_data: &HashMap<i32, i32>) -> Option<(i64, i64)> {
+    let ours = td.actors.iter()
+        .filter(|(a, _)| mine.contains(&summon_resolver::resolve(**a, summon_data)));
+    let (first, last) = ours.fold((i64::MAX, i64::MIN), |(f, l), (_, ad)| {
+        (f.min(ad.first_damage_time), l.max(ad.last_damage_time))
+    });
+    (first <= last).then_some((first, last))
 }
 
 /// Total time covered by `spans` of (first hit, last hit), overlaps counted
