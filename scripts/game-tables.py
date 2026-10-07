@@ -4,7 +4,10 @@
 The export is the JSON that CUE4Parse writes for AION2/Content/Data/Table and
 AION2/Content/L10N/Text (FModel layout). Run after each game patch:
 
-    scripts/game-tables.py <export dir> <steam build id>
+    scripts/game-tables.py <export dir> <steam build id> [usmap]
+
+The usmap gives the stat ids; without the argument it is the newest *.usmap
+in the mappings folder beside the export dir.
 
 Writes, under src/data:
 - i18n/npcs/<lang>.json: name, isBoss, isDummy for every NPC the game names.
@@ -19,6 +22,12 @@ Writes, under src/data:
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
 - player_summon_npcs.json: the NPCs a player's skill spawns (spirits and the like).
+- i18n/abnormals/<lang>.json: the name of every buff, debuff and passive the
+  game names (SkillAbnormal).
+- abnormals.json: each abnormal's icon, and how many stacks of it an entity
+  can hold where that is more than one (AbnormalOverlapCount).
+- i18n/stats/<lang>.json, stats.json: each stat id's name in the game's words,
+  and the game's own name for it (the EStat enum). Left alone with no usmap.
 - open_world_maps.json: overworld maps and their world layers (not the Daeva
   Hunter recon sites).
 - instance_maps.json: the dungeon of each instance map a fight is filed under
@@ -31,6 +40,7 @@ zh-Hans and zh-Hant are not in the global client and are left alone.
 
 import json
 import re
+import struct
 import sys
 from pathlib import Path
 
@@ -69,6 +79,50 @@ def strings(export, culture):
 
 def value(v):
     return v.get("Value") if isinstance(v, dict) else v
+
+
+# The values of one enum in an uncompressed usmap: {value: name}. Versions
+# 2 (long names) to 4 (explicit values) are read; None for any other file.
+def usmap_enum(path, wanted):
+    data = path.read_bytes()
+    magic, version = struct.unpack_from("<HB", data)
+    if magic != 0x30C4 or not 2 <= version <= 4:
+        print(f"{path}: not a usmap of version 2 to 4", file=sys.stderr)
+        return None
+    # Package versions, when there: two versions, custom versions (a GUID
+    # and a version each) and a changelist.
+    at = 3
+    if struct.unpack_from("<i", data, at)[0]:
+        (count,) = struct.unpack_from("<i", data, at + 12)
+        at += 12 + 4 + count * 20
+    at += 4
+    method, _, size = struct.unpack_from("<BII", data, at)
+    if method != 0:
+        print(f"{path}: compressed usmaps are not read", file=sys.stderr)
+        return None
+    data, at = data[at + 9:at + 9 + size], 0
+
+    def read(fmt):
+        nonlocal at
+        out = struct.unpack_from(fmt, data, at)
+        at += struct.calcsize(fmt)
+        return out[0] if len(out) == 1 else out
+
+    names = []
+    for _ in range(read("<I")):
+        length = read("<H")
+        names.append(data[at:at + length].decode("utf-8"))
+        at += length
+    for _ in range(read("<I")):
+        name = names[read("<I")]
+        entries = {}
+        for index in range(read("<H") if version >= 3 else read("<B")):
+            number = read("<q") if version >= 4 else index
+            entries[number] = names[read("<I")]
+        if name == wanted:
+            return entries
+    print(f"{path}: no enum {wanted}", file=sys.stderr)
+    return None
 
 
 def enum(v):
@@ -116,10 +170,12 @@ def save(path, data):
 
 
 def main():
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         sys.exit(__doc__)
     export, build = Path(sys.argv[1]), sys.argv[2]
     source = f"Game data, Steam build {build}"
+    usmaps = [Path(sys.argv[3])] if len(sys.argv) == 4 else sorted((export.parent / "mappings").glob("*.usmap"))
+    usmap = usmaps[-1] if usmaps else None
 
     npcs = rows(export, "NpcData")
     skills = rows(export, "Skill")
@@ -199,6 +255,15 @@ def main():
             return "player"
         return "test" if DUMMY_INTERNAL.search(npc["Name"]) else None
 
+    # The stat records name each stat by its EStat value; the game's words
+    # for a stat are under its StatCorrectionNumber row's key, which is
+    # StatName_<stat> for all but a few.
+    values = usmap_enum(usmap, "EStat") if usmap else None
+    estat = {n: name for n, name in (values or {}).items() if name not in ("None", "Max")}
+    stat_names = {enum(r["StatName"]): r["Desc"]["Key"] for r in rows(export, "StatCorrectionNumber")}
+    for folder in ("abnormals", "stats"):
+        (DATA / "i18n" / folder).mkdir(exist_ok=True)
+
     english_dungeons = load(DATA / "i18n/dungeons/en.json")
     for culture, lang in LANGS.items():
         text = english if lang == "en" else strings(export, culture)
@@ -262,6 +327,22 @@ def main():
             table.setdefault(key, dict(entry))
         save(path, table)
 
+        # Each level of a passive is an abnormal of its own, so many share a name.
+        names = {}
+        for key, abnormal in abnormals.items():
+            name = text.get(f"SkillAbnormalString_{abnormal['SkillAbnormalString_Key']}_desc_name")
+            if named(name):
+                names[str(key)] = name
+        save(DATA / "i18n/abnormals" / f"{lang}.json", names)
+
+        if estat:
+            names = {}
+            for number, stat in estat.items():
+                name = text.get(f"String_{stat_names.get(stat, 'StatName_' + stat)}_body")
+                if named(name):
+                    names[str(number)] = name
+            save(DATA / "i18n/stats" / f"{lang}.json", names)
+
     groups = {str(s["ID"]["Value"]): value(s["DamageAnalyzerSkillIdOverride"]) for s in skills
               if value(s["DamageAnalyzerSkillIdOverride"]) not in (0, None, s["ID"]["Value"])}
     (DATA / "skill_groups.json").write_text(json.dumps({
@@ -296,6 +377,31 @@ def main():
         "source": f"{source}: NpcData table, NPCs whose RelationshipEntity is PC_Summon",
         "npcs": sorted(n["ID"]["Value"] for n in npcs if enum(n["RelationshipEntity"]) == "PC_Summon"),
     }) + "\n", encoding="utf-8")
+
+    # Icons by file name without the folder, as skill_icons.json has them. A
+    # stack past the limit pushes out the oldest; for Element no record says so.
+    entries = {}
+    for key, abnormal in sorted(abnormals.items()):
+        entry = {}
+        if abnormal["AbnormalIcon"]:
+            entry["icon"] = abnormal["AbnormalIcon"].rsplit("/", 1)[-1]
+        if abnormal["AbnormalOverlapCount"] > 1:
+            entry["stacks"] = abnormal["AbnormalOverlapCount"]
+        if entry:
+            entries[str(key)] = entry
+    (DATA / "abnormals.json").write_text(json.dumps({
+        "source": f"{source}: SkillAbnormal table. icon: AbnormalIcon's file name; "
+                  "stacks: AbnormalOverlapCount, where above 1",
+        "abnormals": entries,
+    }, separators=(",", ":")) + "\n", encoding="utf-8")
+
+    if estat:
+        (DATA / "stats.json").write_text(json.dumps({
+            "source": f"{source}: EStat enum of {usmap.name}, the id of each stat in the stat records",
+            "stats": {str(n): name for n, name in sorted(estat.items())},
+        }, separators=(",", ":")) + "\n", encoding="utf-8")
+    else:
+        print("no EStat enum: stat names left as they are", file=sys.stderr)
 
     # Not in the global client: their names stay, the rest is the English.
     for lang in ("zh-Hans", "zh-Hant"):
