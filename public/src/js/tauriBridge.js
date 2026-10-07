@@ -555,6 +555,10 @@
     setLockButtonRect(x, y, width, height, scale) {
       invoke("set_lock_button_rect", { x, y, width, height, scale }).catch(() => {});
     },
+    // A promise: [x, y] of a Wayland layer overlay on its monitor, else null.
+    getOverlayPlace() {
+      return invoke("overlay_layer_place").catch(() => null);
+    },
     setHotkey(mods, vk) {
       const label = this._buildHotkeyLabel(mods, vk);
       this.setSetting("dpsMeter.hotkey", label);
@@ -938,7 +942,8 @@
       document.querySelector(".historyPanel.isOpen") ||
       document.querySelector(".historyPanel.open")
     );
-    const tooltip = fullPanel ? null : document.querySelector(".hoverDetailsTooltip.isVisible");
+    // The hover tooltip and the mode menu may reach past the meter.
+    const popups = fullPanel ? [] : [...document.querySelectorAll(".hoverDetailsTooltip.isVisible, .targetModeMenu.isOpen")];
 
     // Measure meter width (may be resized by user via drag handle) and height
     const meter = document.querySelector(".meter");
@@ -958,22 +963,18 @@
       contentH = Math.ceil(meterH + pingH) + 10;
     }
 
-    // The tooltip's extra room stops at the screen edge; the meter itself
-    // never shrinks below its content.
-    const tooltipBounds = tooltip?.getBoundingClientRect();
+    // Their extra room stops at the screen edge; the meter itself never
+    // shrinks below its content.
+    const popupBounds = popups.map((el) => el.getBoundingClientRect());
     const room = spaceRightBelow();
-    const tooltipW = tooltipBounds ? Math.ceil(tooltipBounds.right) + 8 : contentW;
-    const tooltipH = tooltipBounds ? Math.ceil(tooltipBounds.bottom) + 8 : contentH;
+    const popupW = Math.max(contentW, ...popupBounds.map((b) => Math.ceil(b.right) + 8));
+    const popupH = Math.max(contentH, ...popupBounds.map((b) => Math.ceil(b.bottom) + 8));
     const w = fullPanel
       ? PANEL_WIDTH
-      : tooltip
-        ? Math.max(contentW, Math.min(tooltipW, room.w))
-        : contentW;
+      : Math.max(contentW, Math.min(popupW, room.w));
     const h = fullPanel
       ? Math.max(PANEL_HEIGHT, contentH)
-      : tooltip
-        ? Math.max(contentH, Math.min(tooltipH, room.h))
-        : contentH;
+      : Math.max(contentH, Math.min(popupH, room.h));
     const sizeKey = `${w}x${h}@${window.devicePixelRatio || 1}`;
     if (sizeKey === lastSizeKey) return;
     lastSizeKey = sizeKey;

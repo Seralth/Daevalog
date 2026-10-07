@@ -334,6 +334,7 @@ pub fn run() {
             drag_resize::start_drag,
             drag_resize::move_overlay,
             drag_resize::end_overlay_drag,
+            drag_resize::overlay_layer_place,
             drag_resize::wayland_layer_state,
             drag_resize::start_tool_drag,
             drag_resize::begin_tool_resize,

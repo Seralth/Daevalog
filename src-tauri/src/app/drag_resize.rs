@@ -58,6 +58,13 @@ pub(super) fn move_overlay(app: tauri::AppHandle, state: tauri::State<'_, AppSta
     platform::window::place_overlay_layer(&app.get_webview_window("main")?, x, y)
 }
 
+/// Where a layer-surface overlay is on its monitor, in logical pixels: the
+/// page cannot see its own place there. `None` for a normal window.
+#[tauri::command]
+pub(super) fn overlay_layer_place(app: tauri::AppHandle) -> Option<(i32, i32)> {
+    platform::window::overlay_layer_position(&app.get_webview_window("main")?)
+}
+
 /// The page saw the end of a layer-overlay drag.
 #[tauri::command]
 pub(super) fn end_overlay_drag(app: tauri::AppHandle) {

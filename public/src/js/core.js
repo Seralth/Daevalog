@@ -225,6 +225,7 @@ class DpsApp {
     this.metricToggleBtn = document.querySelector(".metricToggleBtn");
 
     this.bindHeaderButtons();
+    this.bindTargetModeMenu();
     this.bindDragToMoveWindow();
     this.bindResizeHandle();
     this.initHoverTooltip();
@@ -1884,23 +1885,6 @@ class DpsApp {
     this.lockBtn?.addEventListener("click", () => {
       this._setOverlayLocked(!this._overlayLocked);
     });
-    this.targetModeBtn?.addEventListener("click", () => {
-      const modes = TARGET_MODE_CYCLE;
-      const currentIndex = modes.indexOf(this.targetSelection);
-      const nextMode = modes[(currentIndex + 1) % modes.length];
-      console.log("[Target Mode Toggle]", {
-        from: this.targetSelection,
-        to: nextMode,
-      });
-      this.setTargetSelection(nextMode, {
-        persist: true,
-        syncBackend: true,
-        reason: "header toggle",
-      });
-      if (!this.isCollapse) {
-        this.fetchDps();
-      }
-    });
     this.metricToggleBtn?.addEventListener("click", () => {
       // DPS -> total damage -> both -> DPS.
       const order = ["dps", "totalDamage", "both"];
@@ -2732,7 +2716,7 @@ class DpsApp {
     const isEncounter = this.targetSelection === "encounter";
     this.targetModeBtn.classList.toggle("isAllTargets", isAllTargets || isEncounter);
     this.targetModeBtn.classList.toggle("isTrainTargets", isTrainTargets);
-    this.targetModeBtn.textContent = isBossTargets ? "BOSS" : isAllTargets ? "ALL" : isTrainTargets ? "TRAIN" : isEncounter ? "ENC" : "TARGET";
+    this.targetModeBtn.textContent = TARGET_MODE_LABELS[this.targetSelection] ?? TARGET_MODE_LABELS.lastHitByMe;
     const ariaLabel = isBossTargets
       ? "Boss targets mode"
       : isAllTargets
@@ -2743,6 +2727,7 @@ class DpsApp {
             ? "Encounter mode"
             : "Target mode";
     this.targetModeBtn.setAttribute("aria-label", ariaLabel);
+    this.updateTargetModeMenu?.();
   }
 
   refreshBossLabel() {
