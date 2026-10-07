@@ -265,12 +265,7 @@ pub fn set_packet_log_enabled(enabled: bool, log_dir: &std::path::Path) {
 /// and hides the real spacing between packets.
 fn packet_line(cap: &CapturedPayload) -> String {
     use chrono::TimeZone;
-    // A payload that never came from libpcap (a test, a replay) has no
-    // capture time worth writing.
-    let captured = (1_000_000_000_000..2_000_000_000_000)
-        .contains(&cap.captured_at_ms)
-        .then(|| chrono::Local.timestamp_millis_opt(cap.captured_at_ms).single())
-        .flatten();
+    let captured = cap.capture_time_ms().and_then(|ms| chrono::Local.timestamp_millis_opt(ms).single());
     let ts = captured.unwrap_or_else(chrono::Local::now).format("%Y-%m-%dT%H:%M:%S%.3f%:z");
     let key = crate::capture::captured_payload::stream_key(cap.src_port, cap.dst_port);
     let hex: String = cap.data.iter().map(|b| format!("{:02X}", b)).collect();

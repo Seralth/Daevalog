@@ -504,6 +504,35 @@ mod tests {
         }
     }
 
+    /// A damage tick from a capture (2026-10-05 16:35:12): target 5377 (a
+    /// player), actor 26813 (never seen spawning), effect 120001211, 51. The
+    /// effect is abnormal 12000121, a Burn many monster skills share and no
+    /// skill owns. Its code, 1200012, is no skill but has a name.
+    #[test]
+    fn a_damage_tick_from_no_skill_has_a_name() {
+        let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
+        let skills = Arc::new(SkillLookup::new());
+        let npcs = Arc::new(NpcLookup::new());
+        crate::i18n::lookup::load_language(&skills, &npcs, &data, "en");
+        let storage = Arc::new(DataStorage::new());
+        let mut p = StreamProcessor::new(storage.clone(), skills.clone(), npcs);
+        p.set_dot_skill_ids(HashSet::from([1_200_012]));
+        p.set_override_timestamp(Some(1_000));
+        p.parse_dot_packet(&hex("170538812a0abdd1019002bb1227073332931200"));
+        let tick = &storage.get_combat_snapshot()[&5377].actors[&26813].skills[&(1_200_012, true)];
+        assert_eq!((tick.total_damage, tick.hit_count), (51, 1));
+        assert_eq!(skills.lookup_skill_name(1_200_012), "Burn");
+        // Poison, Bleed and Burn, magic, physical and the rest.
+        for code in [1_200_010, 1_200_011, 1_200_014, 1_200_015, 1_200_016, 1_200_018] {
+            assert!(["Poison", "Bleed", "Burn"].contains(&skills.lookup_skill_name(code).as_str()), "{code}");
+        }
+        for lang in ["de", "es", "fr", "ja", "ko", "pt", "ru"] {
+            let skills = SkillLookup::new();
+            crate::i18n::lookup::load_language(&skills, &NpcLookup::new(), &data, lang);
+            assert!(!skills.lookup_skill_name(1_200_015).is_empty(), "{lang}");
+        }
+    }
+
     /// Hit type 1 (Miss) and 6 (Resist) records have no value. They count on
     /// the skill and leave damage, hits and targets as they were.
     #[test]
