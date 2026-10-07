@@ -314,7 +314,16 @@ impl StreamProcessor {
 
         // Mob type / boss flag / HP still come from the existing scan, which
         // anchors on the model field this cursor now sits on.
-        self.extract_and_register_mob_type(packet, offset, real_actor_id);
+        let code = self.extract_and_register_mob_type(packet, offset, real_actor_id);
+
+        // A monster's summon names a player too, the one it targets: a Blazing
+        // Totem linked to the player it burned, and its Burn ticks on them
+        // counted as their healing (2026-10-05). The NPC table says whose it
+        // can be. Only this record's code: an id keeps the code of the last
+        // entity under it, and a spirit spawns with none.
+        if code.is_some_and(|c| self.npc_lookup.is_no_players_summon(c)) {
+            return false;
+        }
 
         // A `0x1C` effect entity is parented to the skill's TARGET, not its
         // caster, so its parent_key must never be treated as an owner. Its name,
@@ -445,7 +454,8 @@ impl StreamProcessor {
         -1
     }
 
-    fn extract_and_register_mob_type(&self, packet: &[u8], start_offset: usize, real_actor_id: i32) {
+    /// The NPC code this record names, if it names one.
+    fn extract_and_register_mob_type(&self, packet: &[u8], start_offset: usize, real_actor_id: i32) -> Option<i32> {
         let mut scan_offset = start_offset;
         let max_scan = std::cmp::min(packet.len().saturating_sub(2), start_offset + 60);
 
@@ -485,11 +495,13 @@ impl StreamProcessor {
                         }
                         hp_scan += 1;
                     }
+                    return Some(mob_type_id);
                 }
                 break;
             }
             scan_offset += 1;
         }
+        None
     }
 }
 
