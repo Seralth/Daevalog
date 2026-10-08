@@ -31,6 +31,12 @@
 //!                                  capture ms first, in the window
 //! A2_REPLAY_CHARACTER=1            print your own character's latest state as
 //!                                  JSON instead (see `replay_character`)
+//! A2_REPLAY_MODE=encounter         run the meter in this mode (a mode id, as
+//!                                  `TargetSelectionMode::from_id` takes), read
+//!                                  every 500 ms as the live meter does, and
+//!                                  print its rows (`meter` lines: id and
+//!                                  damage, then id and damage taken) each
+//!                                  time they change in the window
 //!
 //! The report always ends with the deaths of you and your party in the
 //! window and in each fight the meter would save (see `replay_deaths`).
@@ -130,6 +136,20 @@ pub(crate) struct Options {
     pub taken: bool,
     pub players: bool,
     pub packets: bool,
+    pub mode: Option<String>,
+}
+
+/// How often the live meter reads its rows.
+const METER_TICK_MS: i64 = 500;
+
+/// The meter's rows as one line: id and damage, most first, then id and
+/// damage taken as the meter orders them.
+fn meter_rows(dps: &crate::entity::dps_data::DpsData) -> String {
+    let mut rows: Vec<(i32, i64)> = dps.map.iter().map(|(&id, d)| (id, d.amount as i64)).collect();
+    rows.sort_by_key(|&(id, amount)| (-amount, id));
+    let rows: Vec<String> = rows.iter().map(|(id, amount)| format!("{id} {amount}")).collect();
+    let taken: Vec<String> = dps.taken.iter().map(|r| format!("{} {}", r.actor_id, r.stats.damage)).collect();
+    format!("{}: {} | taken: {}", dps.target_mode, rows.join(", "), taken.join(", "))
 }
 
 fn to_hex(bytes: &[u8]) -> String {
@@ -158,6 +178,7 @@ fn replay_report() {
         taken: env("A2_REPLAY_TAKEN").is_some(),
         players: env("A2_REPLAY_PLAYERS").is_some(),
         packets: env("A2_REPLAY_PACKETS").is_some(),
+        mode: env("A2_REPLAY_MODE"),
     };
     let _flags = env("A2_REPLAY_FLAGS").map(|_| {
         tracing::subscriber::set_default(
@@ -177,7 +198,7 @@ fn replay_report() {
 /// Replay a capture's text and hand each line of the report to `out`.
 pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let Options {
-        target, from, to, show_hits, mut reset_at, dump_op, timeline, taken, players: list_players, packets: list_packets,
+        target, from, to, show_hits, mut reset_at, dump_op, timeline, taken, players: list_players, packets: list_packets, mode,
     } = options;
     let data_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/data");
     let skills = Arc::new(SkillLookup::new());
@@ -209,6 +230,12 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let mut deaths = super::replay_deaths::Gather::default();
     let mut met = list_players.then(super::replay_players::Players::default);
     let mut first_ts = None;
+    let mut meter = mode.map(|m| {
+        let mut calc = DpsCalculator::new(storage.clone(), skills.clone(), npcs.clone(), Arc::new(PingTracker::new()));
+        calc.set_target_selection_mode(&m);
+        calc
+    });
+    let (mut next_tick, mut shown) = (i64::MIN, String::new());
 
     for line in text.lines() {
         if line.is_empty() || line.starts_with('#') {
@@ -237,6 +264,8 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             prev = storage.get_combat_snapshot_light();
             first_tod = tod.clone();
             window_ms = ts_ms;
+            // The rows the window opens on are printed too.
+            shown.clear();
         }
 
         let (assembler, processor) = streams.entry(key.to_string()).or_insert_with(|| {
@@ -302,6 +331,14 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             t.after_line(&storage);
         }
         deaths.after_line(&storage);
+        if let Some(calc) = meter.as_mut().filter(|_| ts_ms >= next_tick) {
+            next_tick = ts_ms + METER_TICK_MS;
+            let rows = meter_rows(&calc.get_dps());
+            if in_window && rows != shown {
+                out(format!("meter {tod} {rows}"));
+            }
+            shown = rows;
+        }
         if let Some(g) = &mut gather {
             g.after_line(ts_ms, storage.local_player_id().map(|v| v as i32), || storage.get_summon_data());
         }
@@ -466,4 +503,29 @@ fn packets_prints_each_packet_and_the_bundles_inside() {
     let mut lines = Vec::new();
     run(&text, Options::default(), &mut |l| lines.push(l));
     assert!(!lines.iter().any(|l| l.starts_with("pkt ") || l.starts_with("bun ")));
+}
+
+/// With a mode, the meter's rows as the live meter reads them, when the
+/// window opens and each time they change.
+#[test]
+fn mode_prints_the_meter_rows_when_they_change() {
+    // A Cold Shock by 14256 on 19612 (dev capture 2026-10-07, 17:24:35),
+    // twice. One class skill and no name: an effect, on the unattributed row.
+    let hit = "2b04389c99013600b06f2e4bf4005f02840002035e6d5f01000000f060df0a038901890189010100";
+    let text = format!(
+        "2026-10-07T17:24:35.098-07:00|Client:50000:13328|{hit}\n2026-10-07T17:24:36.000-07:00|Client:50000:13328|{hit}"
+    );
+    let row = crate::combat::data_storage::UNATTRIBUTED_ID;
+
+    let mut lines = Vec::new();
+    run(&text, Options { mode: Some("allTargets".into()), ..Default::default() }, &mut |l| lines.push(l));
+    let got: Vec<&String> = lines.iter().filter(|l| l.starts_with("meter ")).collect();
+    assert_eq!(got, [
+        &format!("meter 17:24:35.098-07:00 allTargets: {row} 1375 | taken: "),
+        &format!("meter 17:24:36.000-07:00 allTargets: {row} 2750 | taken: "),
+    ]);
+
+    let mut lines = Vec::new();
+    run(&text, Options::default(), &mut |l| lines.push(l));
+    assert!(!lines.iter().any(|l| l.starts_with("meter ")));
 }
