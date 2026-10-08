@@ -4,6 +4,7 @@ use std::sync::atomic::Ordering;
 
 use crate::entity::damage_packet::ParsedDamagePacket;
 use crate::entity::job_class::JobClass;
+use crate::entity::skill_group;
 use crate::entity::special_damage::SpecialDamage;
 use crate::entity::summon_resolver;
 
@@ -72,8 +73,11 @@ impl DataStorage {
             purge_friendly_damage(&mut inner, actor_id);
         }
 
+        // An attack between players is never healing.
+        let attack = pdp.is_dot() || skill_group::is_attack(pdp.raw_skill_code());
+
         // Party healing: player-on-player damage is actually healing/buffs
-        if is_friendly_action(&inner, actor_id, target_id) {
+        if !attack && is_friendly_action(&inner, actor_id, target_id) {
             let heal_amount = pdp.total_damage();
             if heal_amount > 0 {
                 if let Some(actor_data) = fight_of(&mut inner, actor_id) {

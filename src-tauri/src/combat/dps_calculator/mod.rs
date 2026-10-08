@@ -762,6 +762,37 @@ mod tests {
         crate::clock::set_override(None);
     }
 
+    /// The dev capture of 2026-10-07, 17:05: an enemy Assassin (14587) hit
+    /// you five times, and the meter counted the hits as the enemy's
+    /// healing, and your attack on them as yours.
+    #[test]
+    fn an_attack_on_a_player_is_never_healing() {
+        use crate::combat::data_storage::PartyMember;
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(14256));
+        s.append_nickname_authoritative(14256, "Me");
+        s.append_nickname_authoritative(101, "Cleric");
+        s.set_party_roster(vec![("Me".into(), PartyMember::default()), ("Cleric".into(), PartyMember::default())], true);
+        spawn(&s, 900, DUMMY);
+        s.append_damage(skill_hit(14256, 900, 1_000, 16_010_000, 1_000));
+        s.append_damage(skill_hit(101, 900, 1_000, 17_010_000, 1_000));
+        for (t, skill) in [(2_000, 13_070_000), (2_300, 13_130_000), (2_400, 13_770_000), (2_500, 13_350_000), (3_500, 13_220_000)] {
+            s.append_damage(skill_hit(14587, 14256, t, skill, 2_000));
+        }
+        s.append_damage(skill_hit(14256, 14587, 4_000, 16_010_000, 1_500));
+        // The party's Cleric heals you: still healing.
+        s.append_damage(skill_hit(101, 14256, 4_500, 18_120_000, 700));
+        s.append_damage(skill_hit(14256, 900, 5_000, 16_010_000, 1_000));
+
+        let heals = s.heals_between(0, 10_000);
+        let healers: Vec<i32> = heals.keys().copied().collect();
+        assert_eq!(healers, vec![101]);
+        assert_eq!(heals[&101][&(18_120_000, false)].total_heal, 700);
+        let snap = s.get_combat_snapshot();
+        assert_eq!(snap[&900].actors[&14256].party_heal, 0, "your attack on the enemy");
+        assert_eq!(snap[&900].actors[&101].party_heal, 700);
+    }
+
     #[test]
     fn row_details_cover_every_target_a_multi_target_mode_shows() {
         let s = Arc::new(DataStorage::new());

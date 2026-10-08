@@ -667,6 +667,7 @@ impl StreamProcessor {
                 pdp.set_target_id(target_value);
                 pdp.set_actor_id(actor_value);
                 pdp.set_skill_code(resolved_skill_code);
+                pdp.set_raw_skill_code(raw_for_spec);
                 pdp.set_spec_flags(spec_flags);
                 pdp.set_type(hit_type);
                 pdp.set_specials(specials);

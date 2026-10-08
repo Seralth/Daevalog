@@ -29,10 +29,28 @@ static RESOURCE_RESTORES: std::sync::LazyLock<std::collections::HashSet<i32>> = 
         .unwrap_or_default()
 });
 
+static ATTACKS: std::sync::LazyLock<std::collections::HashSet<i32>> = std::sync::LazyLock::new(|| {
+    #[derive(serde::Deserialize)]
+    struct Table {
+        skills: Vec<i32>,
+    }
+    serde_json::from_str::<Table>(include_str!("../../../src/data/attack_skills.json"))
+        .map(|t| t.skills.into_iter().collect())
+        .unwrap_or_default()
+});
+
 /// Whether a raw skill id restores only MP (or another resource), never HP.
 /// Its records carry the amount like a heal does.
 pub fn restores_resource(raw: i32) -> bool {
     RESOURCE_RESTORES.contains(&raw)
+}
+
+/// Whether a raw skill id attacks: the game's Skill table files it under
+/// Attack. Its records are never healing. Every raw id in the check kit's
+/// captures and the dev capture of 2026-10-07 is a Skill table id, but for
+/// Theostone procs (30M, item ids), which are not counted as attacks.
+pub fn is_attack(raw: i32) -> bool {
+    ATTACKS.contains(&raw)
 }
 
 /// The id a skill's damage is reported under. A skill the game table groups

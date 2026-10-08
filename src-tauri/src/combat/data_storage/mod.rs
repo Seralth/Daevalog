@@ -1209,7 +1209,7 @@ mod tests {
             s.append_damage(hit(100, t, 1_000 + i as i64, 500, false));
             s.append_damage(hit(200, t, 1_000 + i as i64, 500, false));
         }
-        s.append_damage(hit(200, 100, 3_200, 400, false));
+        s.append_damage(with_skill(hit(200, 100, 3_200, 400, false), 18_120_000));
         let snapshot = s.get_combat_snapshot_light();
         assert_eq!(snapshot[&830].actors[&200].party_heal, 400);
         assert_eq!(snapshot.values().map(|t| t.actors[&200].party_heal).sum::<i64>(), 400);

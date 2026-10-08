@@ -21,6 +21,7 @@ Writes, under src/data:
   zh-Hant keep their names and get the English words.
 - skill_groups.json: the id the game's Damage Analyzer reports a skill under.
 - resource_restore_skills.json: skills that restore MP or another resource, never HP.
+- attack_skills.json: skills that attack, which are never healing.
 - player_summon_npcs.json: the NPCs a player's skill spawns (spirits and the like).
 - i18n/abnormals/<lang>.json: the name of every buff, debuff and passive the
   game names (SkillAbnormal).
@@ -369,6 +370,15 @@ def main():
                   "MP, SP, DP, OP, FP or AP (none restores HP)",
         "skills": sorted(restores),
     }) + "\n", encoding="utf-8")
+
+    # Skills that attack. A player's record on another player is healing
+    # unless its skill attacks. By the id the record carries: the row the
+    # meter files it under can be another skill's (a Wind Spirit's heal on
+    # its Spiritmaster goes under its basic attack).
+    (DATA / "attack_skills.json").write_text(json.dumps({
+        "source": f"{source}: Skill table CategoryTypeList, skills filed under Attack",
+        "skills": sorted(s["ID"]["Value"] for s in skills if "ESkillCategoryType::Attack" in s["CategoryTypeList"]),
+    }, separators=(",", ":")) + "\n", encoding="utf-8")
 
     # NPCs a player's skill spawns. A monster's summon can name a player in
     # its spawn record too (Blazing Totem names the player it burns), but it

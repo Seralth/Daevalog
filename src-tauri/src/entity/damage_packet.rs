@@ -17,6 +17,9 @@ pub struct ParsedDamagePacket {
     target_id: i32,
     damage: i64,
     skill_code: i32,
+    /// The skill id the record carried, before it went to its row; 0 when
+    /// it is `skill_code`.
+    raw_skill_code: i32,
     damage_type: i32,
     timestamp: i64,
     specials: Vec<SpecialDamage>,
@@ -35,6 +38,7 @@ impl ParsedDamagePacket {
             target_id: 0,
             damage: 0,
             skill_code: 0,
+            raw_skill_code: 0,
             damage_type: 0,
             timestamp: now_ms(),
             specials: Vec::new(),
@@ -51,6 +55,7 @@ impl ParsedDamagePacket {
     pub fn set_target_id(&mut self, id: i32) { self.target_id = id; }
     pub fn set_damage(&mut self, dmg: impl Into<i64>) { self.damage = dmg.into(); }
     pub fn set_skill_code(&mut self, code: i32) { self.skill_code = code; }
+    pub fn set_raw_skill_code(&mut self, code: i32) { self.raw_skill_code = code; }
     pub fn set_type(&mut self, t: i32) { self.damage_type = t; }
     pub fn set_specials(&mut self, s: Vec<SpecialDamage>) { self.specials = s; }
     pub fn set_dot(&mut self, d: bool) { self.dot = d; }
@@ -66,6 +71,9 @@ impl ParsedDamagePacket {
     pub fn target_id(&self) -> i32 { self.target_id }
     pub fn damage(&self) -> i64 { self.damage }
     pub fn skill_code(&self) -> i32 { self.skill_code }
+    pub fn raw_skill_code(&self) -> i32 {
+        if self.raw_skill_code != 0 { self.raw_skill_code } else { self.skill_code }
+    }
     pub fn damage_type(&self) -> i32 { self.damage_type }
     pub fn timestamp(&self) -> i64 { self.timestamp }
     pub fn specials(&self) -> &[SpecialDamage] { &self.specials }
