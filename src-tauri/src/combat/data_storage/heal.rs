@@ -43,7 +43,8 @@ impl DataStorage {
 /// The healing done during fights by the people in them: you, your party, and
 /// whoever hit one of the fights' targets, their summons included. Players
 /// nearby who only healed are someone else's fight (strangers at the next
-/// training dummy filled a solo dummy fight's HEAL, 2026-10-05). Several
+/// training dummy filled a solo dummy fight's HEAL, 2026-10-05), and an
+/// enemy's healing is no part of any (see `enemies`). Several
 /// fights take the ticks while any of them was being fought, each tick once,
 /// the gaps between pulls left out as the fight time leaves them out.
 pub(super) fn fights_heals(inner: &Inner, fights: &[&TargetCombatData]) -> HashMap<i32, HashMap<(i32, bool), HealSkillData>> {
@@ -55,9 +56,10 @@ pub(super) fn fights_heals(inner: &Inner, fights: &[&TargetCombatData]) -> HashM
     let mut out = heals_within(inner, &spans);
     out.retain(|&actor, _| {
         let owner = summon_resolver::resolve(actor, &inner.summon_storage);
-        fighters.contains(&owner)
+        !inner.enemy_ids.contains(&owner)
+            && (fighters.contains(&owner)
             || inner.local_player_id.is_some_and(|l| l as i32 == owner)
-            || inner.nickname_storage.get(&owner).is_some_and(|n| inner.party_members.contains_key(n.as_str()))
+            || inner.nickname_storage.get(&owner).is_some_and(|n| inner.party_members.contains_key(n.as_str())))
     });
     out
 }

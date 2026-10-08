@@ -47,6 +47,7 @@ mod aggregates;
 mod damage;
 mod deaths;
 mod encounter;
+mod enemies;
 mod entities;
 mod heal;
 mod identity;
@@ -179,6 +180,9 @@ struct Inner {
     /// the one it queued for. It applies at the next load into an instance.
     queued_dungeon_id: i32,
     hostile_target_ids: HashSet<i32>,
+    /// Players fighting you or your party, until you leave the map. See
+    /// `enemies`.
+    enemy_ids: HashSet<i32>,
     dead_entity_ids: HashSet<i32>,
     /// Linked summons that left the world (`42 36` flag 7). Their damage over
     /// time ticks on, but the game's Damage Analyzer counts no tick after the
@@ -262,6 +266,7 @@ impl DataStorage {
                 map_id: 0,
                 queued_dungeon_id: 0,
                 hostile_target_ids: HashSet::new(),
+                enemy_ids: HashSet::new(),
                 dead_entity_ids: HashSet::new(),
                 despawned_summon_ids: HashSet::new(),
                 boss_entity_ids: HashSet::new(),

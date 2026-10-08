@@ -9,6 +9,7 @@ use crate::entity::special_damage::SpecialDamage;
 use crate::entity::summon_resolver;
 
 use super::encounter::{carry_encounter, encounter_ended, note_encounter, retire_all, retire_segment};
+use super::enemies::{is_enemy, note_attack};
 use super::entities::{link_summon, owner_link};
 use super::heal::record_heal;
 use super::names::apply_pending_nickname;
@@ -73,8 +74,16 @@ impl DataStorage {
             purge_friendly_damage(&mut inner, actor_id);
         }
 
-        // An attack between players is never healing.
+        // An attack between players makes an enemy of whichever side is not
+        // you or your party, and is never healing. An enemy's records count
+        // nowhere. See `enemies`.
         let attack = pdp.is_dot() || skill_group::is_attack(pdp.raw_skill_code());
+        if attack && note_attack(&mut inner, actor_id, target_id) {
+            self.damage_generation.fetch_add(1, Ordering::Relaxed);
+        }
+        if is_enemy(&inner, actor_id) {
+            return;
+        }
 
         // Party healing: player-on-player damage is actually healing/buffs
         if !attack && is_friendly_action(&inner, actor_id, target_id) {
@@ -321,7 +330,7 @@ fn fight_of(inner: &mut Inner, actor: i32) -> Option<&mut ActorCombatData> {
 
 /// Whether `id` is a player by any sign: a class skill or a name, a player
 /// record, or you.
-fn is_player(inner: &Inner, id: i32) -> bool {
+pub(super) fn is_player(inner: &Inner, id: i32) -> bool {
     inner.known_player_ids.contains(&id)
         || inner.player_spawn_ids.contains(&id)
         || inner.local_player_id == Some(i64::from(id))

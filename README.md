@@ -162,6 +162,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - A fight saved when the meter closes is never overwritten by an older auto-save.
 - Damage done to a player counts on no damage row in any mode, and a player is never a fight's target, even one the meter has not yet seen use a class skill.
 - A player's attack on another player is never counted as healing. Which skills attack comes from the game's skill table.
+- A player who attacks you or your party, or whom you or your party attack, is left out with all their damage, on monsters too: no row in any mode, nothing in Details, and nothing in a fight saved from then on. This lasts until you leave the map.
 
 ### Privacy
 - The sign-in, upload and webview paths are hardened.

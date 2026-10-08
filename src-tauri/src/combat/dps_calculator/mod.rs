@@ -762,6 +762,62 @@ mod tests {
         crate::clock::set_override(None);
     }
 
+    const MODES: [&str; 7] = ["bossTargets", "mostDamage", "mostRecent", "lastHitByMe", "allTargets", "trainTargets", "encounter"];
+
+    /// The rows with damage in `mode`, by id.
+    fn rows_in(calc: &mut DpsCalculator, mode: &str) -> Vec<(i32, i64)> {
+        calc.set_target_selection_mode(mode);
+        let shown = calc.get_dps();
+        let mut rows: Vec<(i32, i64)> = shown.map.iter().filter(|(_, r)| r.amount > 0.0).map(|(&id, r)| (id, r.amount as i64)).collect();
+        rows.sort();
+        rows
+    }
+
+    /// The dev capture of 2026-10-07, 17:24, in the Abyss: an enemy Ranger
+    /// (16156) fought a monster (16726), then hit you (14256) and a monster
+    /// that had just spawned (19612) with the same area attacks. You hit
+    /// 19612 once. ENC showed 16156 at 42,929 and you at 1,375.
+    #[test]
+    fn an_enemy_who_hit_you_is_on_no_row() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(14256));
+        s.note_player_spawn(16156);
+        s.append_mob(16726, 1);
+        s.append_mob(19612, 2600012);
+        let mut calc = meter_with_npcs(&s);
+        let at = |t: i64, p: ParsedDamagePacket| {
+            crate::clock::set_override(Some(t));
+            s.append_damage(p);
+        };
+        at(10_000, skill_hit(16156, 16726, 10_000, 14_380_000, 1_604));
+        at(10_500, skill_hit(16156, 16726, 10_500, 14_100_000, 3_482));
+        crate::clock::set_override(Some(20_000));
+        assert_eq!(rows_in(&mut calc, "allTargets"), vec![(16156, 5_086)], "a stranger fighting nearby");
+
+        at(32_598, skill_hit(16156, 14256, 32_598, 14_020_000, 379));
+        for (t, skill, on_you, on_it) in [(34_500, 14_140_000, 1_200, 6_035), (34_750, 14_360_000, 1_186, 10_062), (35_098, 14_080_000, 1_794, 11_210)] {
+            at(t, skill_hit(16156, 14256, t, skill, on_you));
+            at(t, skill_hit(16156, 19612, t, skill, on_it));
+        }
+        at(35_098, skill_hit(14256, 19612, 35_098, 16_010_000, 1_375));
+        at(36_000, skill_hit(16156, 19612, 36_000, 14_340_000, 2_002));
+        crate::clock::set_override(Some(38_000));
+
+        assert!(s.is_enemy(16156));
+        for mode in MODES {
+            let rows = rows_in(&mut calc, mode);
+            assert!(!rows.iter().any(|&(id, _)| id == 16156), "{mode}: {rows:?}");
+            let listed: Vec<i32> = calc.get_details_context().targets.iter().map(|t| t.target_id).collect();
+            assert!(!listed.contains(&16726), "{mode}: Details lists no fight of the enemy's alone");
+        }
+        for mode in ["encounter", "allTargets", "mostRecent", "lastHitByMe"] {
+            assert_eq!(rows_in(&mut calc, mode), vec![(14256, 1_375)], "{mode}");
+        }
+        assert_eq!(saved_totals(&calc, 19612), HashMap::from([(14256, 1_375)]));
+        assert!(s.heals_between(0, 40_000).is_empty(), "no attack was healing");
+        crate::clock::set_override(None);
+    }
+
     /// The dev capture of 2026-10-07, 17:05: an enemy Assassin (14587) hit
     /// you five times, and the meter counted the hits as the enemy's
     /// healing, and your attack on them as yours.
@@ -791,6 +847,90 @@ mod tests {
         let snap = s.get_combat_snapshot();
         assert_eq!(snap[&900].actors[&14256].party_heal, 0, "your attack on the enemy");
         assert_eq!(snap[&900].actors[&101].party_heal, 700);
+        assert!(s.is_enemy(14587));
+    }
+
+    #[test]
+    fn a_player_who_becomes_an_enemy_leaves_the_rows_they_were_on() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        s.note_player_spawn(3000);
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        // Only a stranger on the meter. ALL keeps the last rows on screen
+        // when nothing is left to show, but not theirs.
+        s.note_player_spawn(3002);
+        hits(&s, 3002, 801, 1_000, 3_000);
+        crate::clock::set_override(Some(3_500));
+        assert_eq!(rows_in(&mut calc, "allTargets"), vec![(3002, 1_500)]);
+        s.append_damage(skill_hit(3002, 2259, 3_600, 11_010_000, 100));
+        assert_eq!(rows_in(&mut calc, "allTargets"), vec![]);
+        // You and the stranger on your boss, then a teleport: the fight
+        // waits for the auto-save.
+        hits(&s, 2259, 800, 4_000, 12_000);
+        hits(&s, 3000, 800, 2_000, 13_000);
+        s.append_heal(3000, 17_120_000, 300, false, 6_000);
+        crate::clock::set_override(Some(20_000));
+        assert!(s.note_zone_change());
+        hits(&s, 2259, 800, 30_000, 40_000);
+        hits(&s, 3000, 800, 31_000, 41_000);
+        crate::clock::set_override(Some(41_500));
+        assert_eq!(rows_in(&mut calc, "bossTargets"), vec![(2259, 5_500), (3000, 5_500)]);
+
+        crate::clock::set_override(Some(42_000));
+        s.append_damage(skill_hit(3000, 2259, 42_000, 11_010_000, 100));
+        for mode in MODES {
+            assert!(!rows_in(&mut calc, mode).iter().any(|&(id, _)| id == 3000), "{mode}");
+        }
+        assert_eq!(rows_in(&mut calc, "bossTargets"), vec![(2259, 5_500)]);
+        let fight = calc.get_target_details(800, None);
+        assert!(fight.skills.iter().all(|k| k.actor_id == 2259));
+        assert_eq!(fight.battle_time, 10_000, "your time, not the enemy's");
+        let saved = calc.snapshot_boss_fights_force();
+        assert_eq!(ids(&saved), vec!["auto_800_30000", "auto_800_4000"]);
+        for r in &saved {
+            assert!(r.actors.iter().all(|a| a.actor_id == 2259), "{}", r.id);
+            assert!(r.details.heal_skills.is_empty(), "{}: no enemy healing", r.id);
+        }
+        let totals: Vec<(i64, i64)> = saved.iter().map(|r| (r.start_time_ms, r.total_damage)).collect();
+        assert_eq!(totals, vec![(4_000, 4_500), (30_000, 5_500)], "the ended fight first");
+        crate::clock::set_override(None);
+    }
+
+    #[test]
+    fn whoever_attacks_your_party_is_an_enemy() {
+        use crate::combat::data_storage::PartyMember;
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        s.append_nickname_authoritative(2259, "Me");
+        s.append_nickname_authoritative(101, "Mate");
+        s.set_party_roster(vec![("Me".into(), PartyMember::default()), ("Mate".into(), PartyMember::default())], true);
+        s.note_player_spawn(3000);
+        spawn(&s, 800, BOSS);
+        let mut calc = meter_with_npcs(&s);
+        hits(&s, 101, 800, 1_000, 6_000);
+        hits(&s, 3000, 800, 1_000, 6_000);
+        taken(&s, 800, 101, 2_000, 40);
+        taken(&s, 800, 3000, 3_000, 50);
+        crate::clock::set_override(Some(6_500));
+        assert_eq!(rows_in(&mut calc, "bossTargets"), vec![(101, 3_000), (3000, 3_000)]);
+        let taken_ids = |calc: &mut DpsCalculator| calc.get_dps().taken.iter().map(|r| r.actor_id).collect::<Vec<i32>>();
+        assert_eq!(taken_ids(&mut calc), vec![3000, 101]);
+
+        // The stranger attacks your party member; your party member hits back.
+        s.append_damage(skill_hit(3000, 101, 7_000, 11_020_000, 800));
+        crate::clock::set_override(Some(7_500));
+        assert_eq!(rows_in(&mut calc, "bossTargets"), vec![(101, 3_000)]);
+        assert_eq!(taken_ids(&mut calc), vec![101], "the enemy's damage taken goes too");
+        assert!(s.is_enemy(3000));
+
+        // A stranger the party member hits is one too.
+        s.note_player_spawn(3001);
+        hits(&s, 3001, 800, 8_000, 9_000);
+        s.append_damage(skill_hit(101, 3001, 9_500, 11_020_000, 800));
+        crate::clock::set_override(Some(10_000));
+        assert_eq!(rows_in(&mut calc, "bossTargets"), vec![(101, 3_000)]);
+        crate::clock::set_override(None);
     }
 
     #[test]

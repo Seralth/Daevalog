@@ -130,7 +130,8 @@ fn takes_damage(inner: &Inner, id: i32) -> bool {
 /// The damage taken during `fights` (from the first one's first hit to the
 /// last one's last, not before `since`) by the people in them: you, your
 /// party, whoever hit one of the fights' targets, and whoever those targets
-/// hit. Players nearby in another fight are left out, as for healing.
+/// hit. Players nearby in another fight are left out, as for healing, and so
+/// are enemies (see `enemies`).
 pub(super) fn taken_in(inner: &Inner, fights: &[&TargetCombatData], since: i64) -> TakenBy {
     let mut out = TakenBy::new();
     let Some(from) = fights.iter().map(|f| f.first_damage_time).min() else { return out };
@@ -148,7 +149,7 @@ pub(super) fn taken_in(inner: &Inner, fights: &[&TargetCombatData], since: i64) 
             || targets.contains(&t.source)
             || inner.local_player_id.is_some_and(|l| l as i32 == player)
             || inner.nickname_storage.get(&player).is_some_and(|n| inner.party_members.contains_key(n.as_str()));
-        if in_it {
+        if in_it && !inner.enemy_ids.contains(&player) {
             add_tick(&mut out, t);
         }
     }

@@ -7,6 +7,7 @@ use crate::entity::job_class::JobClass;
 use crate::entity::summon_resolver;
 
 use super::damage::purge_friendly_damage;
+use super::enemies::after_link;
 use super::{ActorCombatData, DataStorage, Inner, TargetCombatData};
 
 impl DataStorage {
@@ -100,6 +101,7 @@ impl DataStorage {
             inner.known_player_ids.remove(&id);
         }
         inner.player_spawn_ids.remove(&id);
+        inner.enemy_ids.remove(&id);
         inner.summon_spawn_ids.insert(id);
     }
 
@@ -168,6 +170,7 @@ impl DataStorage {
 
         tracing::debug!("Summon linked: {} owned by {}", summon, summoner);
         inner.summon_storage.insert(summon, summoner);
+        after_link(&mut inner, summoner);
     }
 
     /// Who owns each summon, for the views: the links, and the summons and
@@ -403,6 +406,7 @@ pub(super) fn link_summon(inner: &mut Inner, summon: i32, owner: i32) -> bool {
     inner.known_player_ids.remove(&summon);
     inner.summon_storage.insert(summon, owner);
     purge_friendly_damage(inner, summon);
+    after_link(inner, owner);
     true
 }
 

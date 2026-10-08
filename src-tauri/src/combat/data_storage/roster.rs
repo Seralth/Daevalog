@@ -95,6 +95,13 @@ impl DataStorage {
         inner.own_records.zone_loaded();
         // Ids are handed out again: whose HP is known starts over.
         end_hp_known(&mut inner, now_ms(), |_, _| true);
+        // Enemies last until you leave the map. A respawn or a teleport
+        // loads the same map again and keeps them: in the dev capture of
+        // 2026-10-07 your id stayed the same through two loads of the Abyss
+        // map, one after a death, while another map had given you another.
+        if map_id != inner.map_id {
+            inner.enemy_ids.clear();
+        }
         let kind = if is_open_world_map(map_id) {
             MapKind::OpenWorld
         } else if own_dungeon(map_id) != 0 {

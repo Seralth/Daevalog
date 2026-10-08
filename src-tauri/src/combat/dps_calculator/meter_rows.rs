@@ -172,6 +172,8 @@ impl DpsCalculator {
                 self.last_dps_snapshot = None;
             }
             if let Some(ref mut snapshot) = self.last_dps_snapshot {
+                // A player found to be an enemy since leaves it too.
+                snapshot.map.retain(|&id, _| !self.data_storage.is_enemy(id));
                 snapshot.target_name = dps_data.target_name.clone();
                 snapshot.target_mode = dps_data.target_mode.clone();
                 snapshot.target_id = dps_data.target_id;
