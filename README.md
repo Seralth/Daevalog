@@ -79,7 +79,7 @@ Security problems, anything that could hurt other players or users if posted in 
 
 Daevalog can upload fights to a2tools.app, a site run by the A2Tools developer, where others can view them. To upload, you sign in with an a2tools.app account. Uploading is always your own choice: no upload option is turned on for you. Daevalog is not affiliated with a2tools.app.
 
-Uploads tell a2tools.app they are compatible with A2Tools DPS Meter 2.0.44.
+Uploads tell a2tools.app they come from Daevalog and which version. a2tools.app counts them on its rankings and class statistics.
 
 [docs/PRIVACY.md](docs/PRIVACY.md) says what the meter sends, what it keeps, and what an upload contains.
 

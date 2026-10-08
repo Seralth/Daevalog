@@ -82,7 +82,9 @@ pub async fn send(client: &reqwest::Client, app_data_dir: &Path) -> Result<SendR
         .header("content-type", "application/json")
         .body(
             serde_json::json!({
-                "appVersion": crate::version::UPLOAD_COMPAT_VERSION,
+                "client": crate::version::UPLOAD_CLIENT,
+                "clientVersion": crate::version::upload_version(),
+                "appVersion": crate::version::upload_version(),
                 "files": files,
             })
             .to_string(),

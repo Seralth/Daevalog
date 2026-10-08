@@ -115,7 +115,9 @@ pub async fn upload_detailed(
         "names": names,
         "uploaderActorId": meta.uploader_actor_id,
         "fightStartMs": record.start_time_ms,
-        "appVersion": crate::version::UPLOAD_COMPAT_VERSION,
+        "client": crate::version::UPLOAD_CLIENT,
+        "clientVersion": crate::version::upload_version(),
+        "appVersion": crate::version::upload_version(),
         // Korea and Taiwan number their servers alike (10xx/20xx), so the
         // slice cannot say which a fight was on; these two settle it. See
         // `region_hints`.
