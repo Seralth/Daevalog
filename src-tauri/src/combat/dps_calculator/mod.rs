@@ -733,6 +733,36 @@ mod tests {
     }
 
     #[test]
+    fn damage_on_a_player_is_on_no_row_in_any_mode() {
+        let s = Arc::new(DataStorage::new());
+        s.set_local_player_id(Some(2259));
+        spawn(&s, 800, DUMMY);
+        // An enemy hits you before your first class skill made you a player.
+        hits(&s, 3000, 2259, 1_000, 3_000);
+        hits(&s, 2259, 800, 2_000, 6_000);
+        // You hit an enemy only a player record without a name has shown,
+        // harder and later than the dummy.
+        s.note_player_record(3001);
+        hits(&s, 2259, 3001, 7_000, 14_000);
+        // An effect that spawned and was never linked hits you.
+        s.note_summon_spawn(7000);
+        hits(&s, 7000, 2259, 15_000, 16_000);
+        crate::clock::set_override(Some(16_500));
+        let mut calc = meter_with_npcs(&s);
+        for mode in ["bossTargets", "mostDamage", "mostRecent", "lastHitByMe", "allTargets", "trainTargets", "encounter"] {
+            calc.set_target_selection_mode(mode);
+            let shown = calc.get_dps();
+            let rows: Vec<(i32, f64)> = shown.map.iter().map(|(&id, r)| (id, r.amount)).collect();
+            assert_eq!(rows, vec![(2259, 5.0 * 500.0)], "{mode}");
+            assert_eq!(calc.displayed_targets, vec![800], "{mode}");
+            let listed: Vec<i32> = calc.get_details_context().targets.iter().map(|t| t.target_id).collect();
+            assert_eq!(listed, vec![800], "{mode}: Details lists no player");
+        }
+        assert_eq!(s.current_encounter().map(|e| e.targets), Some(HashSet::from([800])));
+        crate::clock::set_override(None);
+    }
+
+    #[test]
     fn row_details_cover_every_target_a_multi_target_mode_shows() {
         let s = Arc::new(DataStorage::new());
         s.set_local_player_id(Some(2259));

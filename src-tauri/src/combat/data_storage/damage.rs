@@ -93,6 +93,12 @@ impl DataStorage {
             return;
         }
 
+        // Damage on a player is no one's DPS: in the Abyss an enemy who hit
+        // you was a row of the fight, as if you were the monster.
+        if is_player(&inner, target_id) {
+            return;
+        }
+
         // Track hostile targets
         let resolved = summon_resolver::resolve(actor_id, &inner.summon_storage);
         if inner.known_player_ids.contains(&resolved) {
@@ -307,6 +313,14 @@ fn fight_of(inner: &mut Inner, actor: i32) -> Option<&mut ActorCombatData> {
         .max()
         .map(|(_, std::cmp::Reverse(tid))| tid)?;
     inner.target_combat.get_mut(&tid)?.actors.get_mut(&actor)
+}
+
+/// Whether `id` is a player by any sign: a class skill or a name, a player
+/// record, or you.
+fn is_player(inner: &Inner, id: i32) -> bool {
+    inner.known_player_ids.contains(&id)
+        || inner.player_spawn_ids.contains(&id)
+        || inner.local_player_id == Some(i64::from(id))
 }
 
 fn is_friendly_action(inner: &Inner, actor_id: i32, target_id: i32) -> bool {

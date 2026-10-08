@@ -160,6 +160,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - A monster's summon is never taken for the summon of the player it attacks, so its damage on that player is not counted as healing.
 - A fight's healing counts only the people in it: you, your party and whoever hit its target. Players healing nearby are not counted.
 - A fight saved when the meter closes is never overwritten by an older auto-save.
+- Damage done to a player counts on no damage row in any mode, and a player is never a fight's target, even one the meter has not yet seen use a class skill.
 
 ### Privacy
 - The sign-in, upload and webview paths are hardened.
