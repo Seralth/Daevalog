@@ -1,0 +1,16 @@
+name: Something else
+description: Any other problem, a question, or an idea for a new feature.
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What it is about
+      description: For a problem, what you did and what happened. For an idea, what you would like the meter to do.
+    validations:
+      required: true
+  - type: textarea
+    id: report-info
+    attributes:
+      label: Report info
+      description: Filled in by Report a problem in the meter's Settings.
+      render: text

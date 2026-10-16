@@ -1,0 +1,5 @@
+# LF in the working tree on every platform: the tests match source and QML
+# text with "\n".
+* text=auto eol=lf
+# Fonts are shipped byte for byte.
+*.ttf binary

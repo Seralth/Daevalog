@@ -1,0 +1,61 @@
+# The developer build of Daevalog DPS Meter 2.0 (the `dev` feature of
+# src-qml), for local use only: installed next to daevalog-dps-meter
+# without sharing a file, a data folder (~/.local/share/daevalog-dps-meter-dev)
+# or a name with it. Not built by CI and never published. It takes over the
+# package of the same name that the 1.x developer build had.
+
+pkgname=daevalog-dps-meter-dev
+epoch=1
+pkgver=0
+pkgrel=1
+pkgdesc="Daevalog DPS Meter, developer build"
+arch=(x86_64)
+url="https://github.com/Seralth/Daevalog"
+license=('AGPL-3.0-only' 'OFL-1.1')
+depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'gcc-libs' 'glibc' 'libpcap' 'libcap' 'hicolor-icon-theme')
+optdepends=('layer-shell-qt: --layer-shell, the overlay above fullscreen games on KDE Plasma, Hyprland and Sway')
+makedepends=('rust' 'git')
+install=daevalog-dps-meter-dev.install
+options=('!lto' '!debug')
+
+_root() {
+  cd "$startdir/../../.." && pwd
+}
+
+pkgver() {
+  cd "$(_root)"
+  local release count hash
+  release=$(grep -m1 '^version' src-qml/Cargo.toml | cut -d'"' -f2) || return 1
+  count=$(git rev-list --count HEAD) && hash=$(git rev-parse --short HEAD) || return 1
+  printf '%s.r%s.g%s' "$release" "$count" "$hash"
+}
+
+build() {
+  cd "$(_root)/src-qml"
+  cargo build --release --locked --features dev
+  cargo build --release --locked -p daevalog-capture
+}
+
+package() {
+  local root
+  root="$(_root)"
+  install -Dm755 "$root/src-qml/target/release/daevalog-qml" "$pkgdir/usr/bin/daevalog-dps-meter-dev"
+  # The developer build starts the helper by this name from its own folder.
+  install -Dm755 "$root/src-qml/target/release/daevalog-capture" "$pkgdir/usr/bin/daevalog-capture-dev"
+  install -d "$pkgdir/usr/share/daevalog-dps-meter-dev"
+  cp -r "$root/src/data" "$pkgdir/usr/share/daevalog-dps-meter-dev/data"
+  install -Dm644 "$root/src-tauri/icons/128x128.png" \
+    "$pkgdir/usr/share/icons/hicolor/128x128/apps/daevalog-dps-meter-dev.png"
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/daevalog-dps-meter-dev.desktop" <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Daevalog DPS Meter (dev)
+Comment=Real-time DPS overlay for AION 2, developer build
+Exec=daevalog-dps-meter-dev
+Icon=daevalog-dps-meter-dev
+Categories=Game;Utility;
+DESKTOP
+  install -Dm644 -t "$pkgdir/usr/share/licenses/$pkgname" "$root/LICENSE"
+  install -Dm644 "$root/public/vendor/fonts/pretendard/LICENSE" \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE.Pretendard"
+}

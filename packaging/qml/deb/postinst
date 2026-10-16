@@ -1,0 +1,12 @@
+#!/bin/sh
+# Packet capture needs CAP_NET_RAW; only the capture helper gets it, so the
+# meter itself runs with none. A new binary (every upgrade) needs it again.
+# A failed setcap does not fail the install: the meter still starts, and
+# shows that packet capture is not available.
+
+helper=/usr/bin/daevalog-capture
+message="Daevalog DPS Meter may now capture packets."
+setcap cap_net_raw=ep "$helper" 2>/dev/null ||
+  message="The capture helper did not get its permission. To grant it:
+    sudo setcap cap_net_raw=ep $helper"
+echo "$message"

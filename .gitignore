@@ -1,0 +1,14 @@
+# Cargo's builds of the backend workspace (src-qml/ has its own .gitignore).
+src-tauri/target/
+
+# The package recipes' output: makepkg's work folders and packages, the .deb
+# that packaging/qml/deb/build.sh writes into the folder it runs in, and an
+# rpmbuild tree inside the clone (docs/linux.md, openSUSE).
+packaging/qml/arch*/src/
+packaging/qml/arch*/pkg/
+packaging/qml/arch*/*.pkg.tar*
+/*.deb
+/rpmbuild/
+
+# Packet logs hold other players' names and chat; one must never be committed.
+packets_*.txt*

@@ -1,0 +1,350 @@
+# Builds the Linux packages of Daevalog DPS Meter 2.0, then installs each one
+# in a clean container of its system, as a player would from the package
+# site, and starts it there.
+#
+# Each package builds in a container of the system it is for, from the
+# repository's own packaging files. One artifact per system, holding only
+# that package; the package site's publish.sh downloads them by these names:
+#
+#   artifact     built in              package      for
+#   arch         archlinux:base-devel  .pkg.tar.zst Arch and Arch-based
+#   debian13     debian:13             .deb         Debian 13, LMDE 7
+#   ubuntu2404   ubuntu:24.04          .deb         Linux Mint 22, Pop!_OS 24.04
+#   fedora44     fedora:44             .rpm         Fedora 44, Bazzite
+#   tumbleweed   opensuse/tumbleweed   .rpm         openSUSE Tumbleweed
+#
+# The 1.x legacy package is not built here: it no longer changes, and
+# publish.sh keeps it on the site. Nothing here publishes or signs.
+
+name: Linux packages
+
+on:
+  push:
+    # A push that changes only documentation does not build.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+
+# A new push to a branch stops that branch's older run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.system }})
+    # Pinned: ubuntu-latest moves to a new release on its own.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { system: arch, image: 'archlinux:base-devel' }
+          - { system: debian13, image: 'debian:13' }
+          - { system: ubuntu2404, image: 'ubuntu:24.04' }
+          - { system: fedora44, image: 'fedora:44' }
+          - { system: tumbleweed, image: 'opensuse/tumbleweed' }
+    env:
+      CARGO_TERM_COLOR: always
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Git goes in before the checkout: without it, actions/checkout
+      # downloads a tarball with no history.
+      - name: Install the build tools (Arch)
+        if: matrix.system == 'arch'
+        # lld: cxx-qt links with it when it finds it; GNU ld fails.
+        run: pacman -Syu --noconfirm --needed git rust lld qt6-base qt6-declarative qt6-svg libpcap libcap hicolor-icon-theme
+
+      - name: Install the build tools (Debian, Ubuntu)
+        if: matrix.system == 'debian13' || matrix.system == 'ubuntu2404'
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y git ca-certificates curl g++ dpkg-dev qt6-base-dev qt6-declarative-dev
+          # The system's Rust is too old for the crate.
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --no-modify-path
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Install the build tools (Fedora)
+        if: matrix.system == 'fedora44'
+        run: dnf install -y git rpm-build cargo rust gcc-c++ lld qt6-qtbase-devel qt6-qtdeclarative-devel
+
+      - name: Install the build tools (Tumbleweed)
+        if: matrix.system == 'tumbleweed'
+        run: zypper --non-interactive install git rpm-build cargo rust gcc-c++ lld qt6-base-devel qt6-declarative-devel
+
+      - uses: actions/checkout@v4
+        with:
+          # The Arch version and the .rpm release count commits.
+          fetch-depth: 0
+
+      # The checkout belongs to the runner's user, not the container's root.
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build the package (Arch)
+        if: matrix.system == 'arch'
+        run: |
+          # makepkg does not run as root.
+          useradd -m builder
+          mkdir out
+          chown -R builder: "$GITHUB_WORKSPACE"
+          cd packaging/qml/arch
+          runuser -u builder -- env HOME=/home/builder PKGDEST="$GITHUB_WORKSPACE/out" makepkg --noconfirm -f
+          cd "$GITHUB_WORKSPACE"
+          # The name holds the epoch ("1:"), and artifact file names may not
+          # hold a colon; publish.sh expects "_" in its place.
+          for f in out/*:*; do
+            mv "$f" "${f//:/_}"
+          done
+
+      - name: Build the package (Debian, Ubuntu)
+        if: matrix.system == 'debian13' || matrix.system == 'ubuntu2404'
+        run: |
+          mkdir out
+          sh packaging/qml/deb/build.sh out
+
+      # A recommendation the system cannot meet makes apt keep the package
+      # back on upgrade.
+      - name: Check the recommendations exist
+        if: matrix.system == 'debian13' || matrix.system == 'ubuntu2404'
+        run: |
+          recommends=$(dpkg-deb -f out/*.deb Recommends)
+          echo "Recommends: $recommends"
+          for name in $(echo "$recommends" | tr ',|' '  ' | sed 's/([^)]*)//g'); do
+            if ! apt-cache show "$name" > /dev/null 2>&1; then
+              echo "::error::$name is not in this system's apt"
+              exit 1
+            fi
+          done
+
+      - name: Build the package (Fedora, Tumbleweed)
+        if: matrix.system == 'fedora44' || matrix.system == 'tumbleweed'
+        run: |
+          version=$(grep -m1 '^version' src-qml/Cargo.toml | cut -d'"' -f2)
+          rpmbuild -bb packaging/qml/rpm/daevalog-dps-meter.spec \
+            --define "checkout $GITHUB_WORKSPACE" \
+            --define "pkgversion $version" \
+            --define "pkgrelease $(git rev-list --count HEAD)" \
+            --define "_topdir $RUNNER_TEMP/rpmbuild"
+          mkdir out
+          mv "$RUNNER_TEMP"/rpmbuild/RPMS/x86_64/*.rpm out/
+
+      # Only the capture helper may capture; the meter holds no capability.
+      - name: Check the file capabilities
+        if: matrix.system == 'fedora44' || matrix.system == 'tumbleweed'
+        run: |
+          caps=$(rpm -qp --qf '[%{FILENAMES} %{FILECAPS}\n]' out/*.rpm | grep '^/usr/bin/')
+          echo "$caps"
+          echo "$caps" | grep -qx '/usr/bin/daevalog-capture cap_net_raw=ep'
+          echo "$caps" | grep -qx '/usr/bin/daevalog-dps-meter *'
+
+      - name: Show the package
+        run: |
+          ls -l out
+          test "$(ls out | wc -l)" -eq 1
+
+      - name: Upload the package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.system }}
+          path: out/*
+          if-no-files-found: error
+
+  test:
+    name: Install and start (${{ matrix.system }})
+    needs: build
+    # A system whose build passed is tested even if another's failed.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { system: arch, image: 'archlinux:latest' }
+          - { system: debian13, image: 'debian:13' }
+          - { system: ubuntu2404, image: 'ubuntu:24.04' }
+          - { system: fedora44, image: 'fedora:44' }
+          - { system: tumbleweed, image: 'opensuse/tumbleweed' }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Download the package
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.system }}
+          path: /repo
+
+      # Each install goes through a local repository and the package name,
+      # so the package manager resolves the dependencies as it would from
+      # the package site.
+      - name: Install (Arch)
+        if: matrix.system == 'arch'
+        run: |
+          repo-add /repo/daevalog.db.tar.gz /repo/*.pkg.tar.zst
+          printf '\n[daevalog]\nSigLevel = Optional TrustAll\nServer = file:///repo\n' >> /etc/pacman.conf
+          pacman -Syu --noconfirm daevalog-dps-meter
+
+      - name: Install (Debian, Ubuntu)
+        if: matrix.system == 'debian13' || matrix.system == 'ubuntu2404'
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y apt-utils
+          (cd /repo && apt-ftparchive packages . > Packages)
+          echo 'deb [trusted=yes] file:/repo ./' > /etc/apt/sources.list.d/daevalog.list
+          apt-get update
+          apt-get install -y daevalog-dps-meter
+
+      - name: Install (Fedora)
+        if: matrix.system == 'fedora44'
+        run: |
+          dnf install -y createrepo_c shadow-utils util-linux libcap
+          createrepo_c /repo
+          printf '[daevalog]\nname=daevalog\nbaseurl=file:///repo\ngpgcheck=0\n' > /etc/yum.repos.d/daevalog.repo
+          dnf install -y daevalog-dps-meter
+
+      - name: Install (Tumbleweed)
+        if: matrix.system == 'tumbleweed'
+        run: |
+          zypper --non-interactive install createrepo_c shadow util-linux libcap-progs
+          createrepo_c /repo
+          zypper --non-interactive addrepo --no-gpgcheck dir:///repo daevalog
+          zypper --non-interactive install daevalog-dps-meter
+
+      - name: Check the install
+        run: |
+          getcap /usr/bin/daevalog-capture | tee /dev/stderr | grep -q cap_net_raw
+          if [ -n "$(getcap /usr/bin/daevalog-dps-meter)" ]; then
+            echo "::error::the meter holds a capability"
+            exit 1
+          fi
+          for bin in /usr/bin/daevalog-dps-meter /usr/bin/daevalog-capture; do
+            if ldd "$bin" | grep 'not found'; then
+              echo "::error::$bin is missing a library"
+              exit 1
+            fi
+          done
+          test -f /usr/share/applications/daevalog-dps-meter.desktop
+          test -d /usr/share/daevalog-dps-meter/data
+
+      # As a player: not root, so the helper's capability is what lets it
+      # capture.
+      - name: Take screenshots
+        run: |
+          useradd -m player
+          mkdir -p /tmp/shots
+          chown player /tmp/shots
+          failed=0
+          fail() {
+            echo "::error::$1"
+            failed=1
+          }
+          for view in meter details history settings/meter settings/connection settings/keybinds; do
+            name=${view//\//-}
+            png=/tmp/shots/$name.png
+            log=/tmp/shots/$name.log
+            status=0
+            runuser -u player -- env HOME=/home/player QT_QPA_PLATFORM=offscreen \
+              timeout 120 daevalog-dps-meter --open "$view" --screenshot "$png" > "$log" 2>&1 || status=$?
+            echo "== $view (exit $status)"
+            cat "$log"
+            [ "$status" -eq 0 ] || fail "$view exited with $status"
+            if grep -E '\.qml:[0-9]+|QQmlApplicationEngine failed|is not installed|is not a type' "$log" > /dev/null; then
+              fail "$view printed a QML error"
+            fi
+            if grep -E 'Cannot load font|FT_New_Face failed|QFontDatabase:' "$log" > /dev/null; then
+              fail "$view printed a font error"
+            fi
+            if [ ! -s "$png" ] || [ "$(head -c 4 "$png" | tail -c 3)" != PNG ]; then
+              fail "$view saved no PNG"
+            fi
+            if [ "$view" = meter ] && ! grep -q 'Capture helper opened' "$log"; then
+              fail "the capture helper opened no device"
+            fi
+          done
+          exit "$failed"
+
+      - name: Upload the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.system }}
+          path: /tmp/shots/
+          if-no-files-found: ignore
+
+  bazzite:
+    name: Install on Bazzite
+    needs: build
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      # The Bazzite image is several GB. This job uses none of the SDKs and
+      # Docker images the runner comes with, so they make room for it.
+      - name: Make room for the image
+        run: |
+          for unused in /usr/local/lib/android /opt/hostedtoolcache /usr/share/dotnet /opt/ghc; do
+            sudo rm -rf "$unused"
+          done
+          sudo docker system prune --all --force
+          df -h /
+
+      - name: Download the Fedora package
+        uses: actions/download-artifact@v4
+        with:
+          name: fedora44
+          path: repo/fedora44
+
+      - name: Download the Tumbleweed package
+        uses: actions/download-artifact@v4
+        with:
+          name: tumbleweed
+          path: repo/tumbleweed
+
+      # Both .rpm builds in one repository: rpm-ostree must take the Fedora
+      # one, whose Qt requirements Bazzite meets.
+      - name: Make the repository
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y createrepo-c
+          createrepo_c repo
+
+      # Docker cannot load an image with as many layers as Bazzite's.
+      - name: Install and check
+        run: |
+          sudo podman run --rm -v "$PWD/repo:/repo" ghcr.io/ublue-os/bazzite:stable bash -euo pipefail -c '
+            printf "[daevalog]\nname=daevalog\nbaseurl=file:///repo\ngpgcheck=0\n" > /etc/yum.repos.d/daevalog.repo
+            rpm-ostree install daevalog-dps-meter
+            requires=$(rpm -q --requires daevalog-dps-meter)
+            if ! echo "$requires" | grep -q "Qt_6\.11_PRIVATE_API" || echo "$requires" | grep -q libQt6Svg6; then
+              echo "::error::rpm-ostree took the Tumbleweed build"
+              echo "$requires"
+              exit 1
+            fi
+            getcap /usr/bin/daevalog-capture | tee /dev/stderr | grep -q cap_net_raw
+            if [ -n "$(getcap /usr/bin/daevalog-dps-meter)" ]; then
+              echo "::error::the meter holds a capability"
+              exit 1
+            fi
+            for bin in /usr/bin/daevalog-dps-meter /usr/bin/daevalog-capture; do
+              if ldd "$bin" | grep "not found"; then
+                echo "::error::$bin is missing a library"
+                exit 1
+              fi
+            done
+          '

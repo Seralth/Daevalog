@@ -1,0 +1,71 @@
+# Package of Daevalog DPS Meter 2.0 (src-qml/, the Qt Quick meter) for Arch
+# and derivatives. Builds from the repository this file sits in. The 1.x
+# meter is the package daevalog-dps-meter-legacy, built from the 1.x branch;
+# the two share no files and install side by side.
+
+pkgname=daevalog-dps-meter
+# 1.x's packages have epoch 1, so 2.0 keeps it to come after them.
+epoch=1
+pkgver=0
+pkgrel=1
+pkgdesc="Daevalog DPS Meter: real-time DPS overlay for AION 2 (Linux/Proton)"
+arch=(x86_64)
+url="https://github.com/Seralth/Daevalog"
+# The program is AGPL-3.0-only. The bundled Pretendard font is OFL.
+license=('AGPL-3.0-only' 'OFL-1.1')
+# qt6-base has Widgets (the tray) and, from Qt 6.10, the Wayland client.
+# qt6-declarative has every QML module the meter imports: QtQuick,
+# QtQuick.Layouts, Qt.labs.platform. The QML compiled in by qmlcachegen uses
+# Qt's private API, so rebuild after a Qt minor update.
+# qt6-svg draws the skill icons. libpcap is loaded by the capture helper at
+# run time; setcap (libcap) grants it the capture permission on install.
+depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'gcc-libs' 'glibc' 'libpcap' 'libcap' 'hicolor-icon-theme')
+optdepends=('layer-shell-qt: --layer-shell, the overlay above fullscreen games on KDE Plasma, Hyprland and Sway'
+            'daevalog-dps-meter-legacy: the 1.x meter, beside this one')
+makedepends=('rust' 'git')
+# The 2.0 test packages were daevalog-qml and daevalog-qml-dev; the package
+# was a2tools-dps-meter before the fork was renamed.
+conflicts=('daevalog-qml' 'daevalog-qml-dev' 'a2tools-dps-meter')
+replaces=('daevalog-qml' 'daevalog-qml-dev' 'a2tools-dps-meter')
+install=daevalog-dps-meter.install
+options=('!lto' '!debug')
+
+# The repository root, three levels up from packaging/qml/arch.
+_root() {
+  cd "$startdir/../../.." && pwd
+}
+
+# <crate version>.r<commits>.g<hash>, e.g. 2.0.0.r800.g0123abc.
+pkgver() {
+  cd "$(_root)"
+  local release count hash
+  release=$(grep -m1 '^version' src-qml/Cargo.toml | cut -d'"' -f2) || return 1
+  count=$(git rev-list --count HEAD) && hash=$(git rev-parse --short HEAD) || return 1
+  printf '%s.r%s.g%s' "$release" "$count" "$hash"
+}
+
+build() {
+  cd "$(_root)/src-qml"
+  cargo build --release --locked
+  # The capture helper (src-tauri/capture-helper/), which holds the capture
+  # permission so the meter holds none.
+  cargo build --release --locked -p daevalog-capture
+}
+
+package() {
+  local root
+  root="$(_root)"
+  install -Dm755 "$root/src-qml/target/release/daevalog-qml" "$pkgdir/usr/bin/daevalog-dps-meter"
+  # The meter starts it by this name from its own folder.
+  install -Dm755 "$root/src-qml/target/release/daevalog-capture" "$pkgdir/usr/bin/daevalog-capture"
+  # The game data (skill and NPC names, boss and dummy tables), where the
+  # program looks for it: ../share/daevalog-dps-meter/data from its folder.
+  install -d "$pkgdir/usr/share/daevalog-dps-meter"
+  cp -r "$root/src/data" "$pkgdir/usr/share/daevalog-dps-meter/data"
+  # Named by the app id, so portals and taskbars find the meter.
+  install -Dm644 "$root/packaging/qml/daevalog-dps-meter.desktop" "$pkgdir/usr/share/applications/daevalog-dps-meter.desktop"
+  install -Dm644 "$root/src-tauri/icons/128x128.png" "$pkgdir/usr/share/icons/hicolor/128x128/apps/daevalog-dps-meter.png"
+  install -Dm644 -t "$pkgdir/usr/share/licenses/$pkgname" "$root/LICENSE"
+  install -Dm644 "$root/public/vendor/fonts/pretendard/LICENSE" \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE.Pretendard"
+}

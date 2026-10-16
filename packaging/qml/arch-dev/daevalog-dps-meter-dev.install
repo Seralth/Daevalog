@@ -1,0 +1,13 @@
+# Only the capture helper gets CAP_NET_RAW, as in daevalog-dps-meter.
+
+_allow_capture() {
+  local helper=/usr/bin/daevalog-capture-dev
+  local message="==> Daevalog DPS Meter (dev) may now capture packets."
+  setcap cap_net_raw=ep "$helper" ||
+    message="==> The capture helper did not get its permission. To grant it:
+    sudo setcap cap_net_raw=ep $helper"
+  echo "$message"
+}
+
+post_install() { _allow_capture; }
+post_upgrade() { _allow_capture; }

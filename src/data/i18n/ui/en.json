@@ -1,0 +1,668 @@
+{
+  "header": {
+    "title": "Daevalog DPS Meter"
+  },
+  "details": {
+    "hoverTooltip": {
+      "loading": "Loading...",
+      "empty": "No skill data for this fight"
+    },
+    "tooltip": "Damage over time hits are not included in total crit, double, perfect or back attack ratios.",
+    "settings": {
+      "ariaLabel": "Open details settings",
+      "title": "Details settings"
+    },
+    "fontSize": {
+      "label": "Font size"
+    },
+    "iconSize": {
+      "label": "Icon size"
+    },
+    "screenshots": {
+      "label": "Screenshots",
+      "includeMeter": "Include main DPS meter",
+      "saveToFolder": "Save screenshots to folder",
+      "chooseFolder": "Choose folder"
+    },
+    "columns": {
+      "label": "Skill columns"
+    },
+    "screenshot": {
+      "ariaLabel": "Save screenshot to clipboard",
+      "captured": "Captured Screenshot",
+      "savedToClipboard": "Saved to clipboard",
+      "failed": "Screenshot failed",
+      "savedToBoth": "Saved to clipboard + file",
+      "fileFailed": "Saved to clipboard (file failed)"
+    },
+    "skills": {
+      "skill": "Skill",
+      "skillTooltip": "Skill used",
+      "hits": "HIT",
+      "hitsTooltip": "Total Hits",
+      "dmg": "Damage",
+      "dmgTooltip": "Damage",
+      "dmgPct": "%",
+      "dmgPctTooltip": "Damage %",
+      "crit": "CRIT",
+      "critTooltip": "Critical Hit %",
+      "parry": "BLOC",
+      "parryTooltip": "Parry %",
+      "perfect": "PERF",
+      "perfectTooltip": "Perfect %",
+      "double": "DOUB",
+      "doubleTooltip": "Double %",
+      "back": "BACK",
+      "backTooltip": "Back Attack %",
+      "frontal": "FRNT",
+      "frontalTooltip": "Front Attack %",
+      "shieldBlock": "SBlk",
+      "shieldBlockTooltip": "Shield Block %",
+      "perfectBlock": "PBlk",
+      "perfectBlockTooltip": "Perfect Block %",
+      "ironWall": "ENDR",
+      "ironWallTooltip": "Endurance %",
+      "regeneration": "RSTO",
+      "regenerationTooltip": "Regeneration %",
+      "miss": "Miss",
+      "missTooltip": "Misses",
+      "resist": "Res",
+      "resistTooltip": "Resists",
+      "regen": "Regen",
+      "regenTooltip": "Life-steal Regen",
+      "multiHit": "MULT",
+      "multiHitTooltip": "Multi-Hit %",
+      "multiHitDamage": "MHD",
+      "multiHitDamageTooltip": "Multi-Hit damage",
+      "minDmg": "Min",
+      "minDmgTooltip": "Min Damage",
+      "avgDmg": "Avg",
+      "avgDmgTooltip": "Avg Damage",
+      "ticks": "Ticks",
+      "ticksTooltip": "Heal ticks",
+      "heal": "Heal",
+      "healTooltip": "Total Heal",
+      "healPct": "H%",
+      "healPctTooltip": "Heal %",
+      "avgHealTooltip": "Avg Heal",
+      "maxDmg": "Max",
+      "maxDmgTooltip": "Max Damage",
+      "taken": "Taken",
+      "takenTooltip": "Total Damage Received",
+      "takenPct": "T%",
+      "takenPctTooltip": "Damage taken %",
+      "hitsTaken": "Hits",
+      "hitsTakenTooltip": "Received Hits",
+      "mechanic": "Mechanic",
+      "playersHit": "Players hit",
+      "playersHitTooltip": "How many players this mechanic hit"
+    },
+    "skillTips": {
+      "skill": "Each skill the player used; click one to see its hits.",
+      "healSkill": "Each healing skill the player used.",
+      "takenSkill": "Each monster skill that hit the player.",
+      "mechanic": "Each monster skill that hit players; click one to see whom it hit.",
+      "hits": "How many times this skill hit.",
+      "dmg": "All the damage this skill dealt.",
+      "dmgPct": "This skill's share of the player's damage.",
+      "multiHit": "Share of this skill's hits that dealt extra hits.",
+      "multiHitDamage": "The damage this skill's extra hits dealt.",
+      "crit": "Share of this skill's hits that were critical hits.",
+      "parry": "Share of hits that were parried.",
+      "perfect": "Share of this skill's hits that were Perfect hits.",
+      "double": "Share of this skill's hits that dealt double damage (Korean 강타; some guides call it Smite).",
+      "back": "Share of this skill's hits that struck from behind.",
+      "frontal": "Share of this skill's hits that struck from the front.",
+      "shieldBlock": "Share of hits stopped by Shield Block.",
+      "perfectBlock": "Share of hits stopped by Perfect Block.",
+      "ironWall": "Share of hits where Endurance took effect.",
+      "regeneration": "Share of hits where Regeneration gave HP back.",
+      "miss": "How many times this skill missed.",
+      "resist": "How many times the target resisted this skill.",
+      "regen": "The HP this skill's Regeneration hits gave back.",
+      "minDmg": "The smallest hit of this skill.",
+      "avgDmg": "The damage of one hit, on average.",
+      "maxDmg": "The biggest hit of this skill.",
+      "heal": "All the healing this skill did.",
+      "healPct": "This skill's share of the player's healing.",
+      "ticks": "How many times this skill healed.",
+      "avgHeal": "The healing of one tick, on average.",
+      "taken": "All the damage taken from this skill.",
+      "takenPct": "This skill's share of the damage taken.",
+      "hitsTaken": "How many hits from this skill were taken."
+    },
+    "stats": {
+      "totalDamage": "Total Damage",
+      "contribution": "Contribution",
+      "hits": "Total Hits",
+      "critRate": "Critical Hit Rate",
+      "perfectRate": "Perfect Rate",
+      "doubleRate": "Double Rate",
+      "backRate": "Back Attack Rate",
+      "parryRate": "Parry Rate",
+      "combatTime": "Combat Time",
+      "multiHitDamage": "Multi-Hit Damage",
+      "multiHitHits": "Multi-Hits",
+      "maxHp": "Max HP",
+      "regen": "Regeneration",
+      "totalHealing": "Total Heal",
+      "hps": "HPS",
+      "healTicks": "Heal Ticks",
+      "hotTicks": "HoT Ticks",
+      "healSkills": "Skills",
+      "takenTotal": "Total Damage Received",
+      "dtps": "DTPS",
+      "takenHits": "Received Hits",
+      "damageReceived": "Damage Received",
+      "hitsReceived": "Received Hits",
+      "deaths": "Deaths"
+    },
+    "fightVs": "Fight vs",
+    "all": "All",
+    "history": {
+      "allPlayers": "Everyone"
+    },
+    "dpsChart": "DPS over time",
+    "historyBtn": "History",
+    "timeline": "Timeline",
+    "taken": {
+      "monster": "Monster"
+    },
+    "mode": {
+      "dmg": "DMG",
+      "heal": "HEAL",
+      "taken": "TAKEN"
+    },
+    "title": "Details",
+    "player": "Player",
+    "screenshotButton": "Screenshot",
+    "statsTitle": "Overview",
+    "summary": {
+      "damage": "{amount} damage · {rate} DPS",
+      "heal": "{amount} healing · {rate} HPS",
+      "taken": "{amount} taken · {rate} DTPS",
+      "fight": "{time} on {target}"
+    },
+    "tips": {
+      "targets": "Each target that was hit.",
+      "targetDamage": "The damage dealt to this target.",
+      "targetShare": "This target's share of the damage.",
+      "healTargets": "Each player that was healed.",
+      "targetHeal": "The healing this player got.",
+      "targetHealShare": "This player's share of the healing.",
+      "sources": "Each monster that dealt the damage taken.",
+      "sourceDamage": "The damage this monster dealt.",
+      "sourceShare": "This monster's share of the damage taken.",
+      "mechanicPlayer": "Each player this mechanic hit.",
+      "mechanicHits": "How many times this mechanic hit the player.",
+      "mechanicDamage": "The damage this mechanic dealt to the player."
+    },
+    "targets": {
+      "title": "Target",
+      "sources": "Hit by"
+    },
+    "hits": {
+      "normal": "Normal hits",
+      "critical": "Critical hits",
+      "ticks": "Ticks",
+      "criticalTicks": "Critical ticks",
+      "minAvgMax": "Min / avg / max",
+      "types": "Hit types"
+    },
+    "hitTypes": {
+      "back": "Back Attack",
+      "frontal": "Front Attack",
+      "perfect": "Perfect",
+      "double": "Double",
+      "parry": "Parry"
+    },
+    "chart": {
+      "party": "Party",
+      "hps": "HPS over time",
+      "dtps": "DTPS over time"
+    },
+    "timelineTracks": {
+      "skills": "Skills",
+      "buffs": "Buffs",
+      "debuffs": "Debuffs",
+      "targetDebuffs": "Debuffs on target",
+      "stats": "Stats"
+    }
+  },
+  "history": {
+    "title": "Battle History",
+    "empty": "No boss fights saved yet.",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this fight?",
+    "showTrainingBattles": "Include training fights",
+    "trainBadge": "Training",
+    "liveBadge": "In progress",
+    "viewList": "List view",
+    "viewDungeon": "By dungeon",
+    "viewGrouped": "By boss",
+    "fightCount": "{n} fights",
+    "fightCountOne": "1 fight",
+    "showMore": "Show more",
+    "previewUpload": "See upload data",
+    "previewWorking": "Preparing data…",
+    "previewRequestTip": "Writes the exact request Upload would send to a2tools.app to a file you can read. Your sign-in is not in it. Nothing is sent.",
+    "previewRequestDone": "Wrote {file} ({sent} KB): the exact request Upload would send. Nothing was sent. Saved to {dir}",
+    "uploadTip": "Upload this fight to a2tools.app and copy a link to share",
+    "uploadOpen": "Open this fight's log on a2tools.app",
+    "uploadWorking": "Uploading the fight…",
+    "uploadDonePublic": "Upload done. The link is on the clipboard: {url}",
+    "uploadDonePrivate": "Private upload done. The link is on the clipboard: {url}",
+    "openWorld": "Open world",
+    "allClasses": "All classes",
+    "players": "{n} players",
+    "solo": "Solo",
+    "partyDps": "Party DPS",
+    "yourRank": "you {dps} · #{rank}",
+    "upload": "Upload",
+    "openLog": "Open log",
+    "uploadAgain": "Upload again",
+    "uploadAgainTip": "Upload this fight to a2tools.app again, for example after deleting its log there",
+    "allBosses": "All bosses",
+    "allDays": "All days"
+  },
+  "gameRecord": {
+    "title": "Game record",
+    "switch": "Numbers shown",
+    "meter": "Meter",
+    "game": "Game record",
+    "both": "Both",
+    "filter": "Only fights with a game record",
+    "filterTip": "Game records come from the game's own Combat Analysis (Ctrl+X).",
+    "columnTip": "Game record: the game's own Combat Analysis (Ctrl+X)",
+    "matches": "Matches the game",
+    "differOne": "1 row differs",
+    "differ": "{n} rows differ",
+    "notCompared": "Game numbers only",
+    "damageMeter": "Meter damage",
+    "damageGame": "Game damage",
+    "takenMeter": "Meter damage received",
+    "takenGame": "Game damage received",
+    "allMatch": "All {n} skills match",
+    "someMatch": "{x} of {n} skills match",
+    "noComparison": "No packets saved for this fight, so only the game's numbers are shown.",
+    "window": "Game record from {from} to {to}.",
+    "covers": "Covers {s} s of this fight",
+    "alsoCoversOne": "also covers 1 other fight",
+    "alsoCovers": "also covers {n} other fights",
+    "targetOnly": "Only damage to {target} is compared.",
+    "onlyDiffer": "Only rows that differ",
+    "gameTag": "game {n}",
+    "note": "A difference means the meter read the fight differently from the game. The game's number is the right one.",
+    "copy": "Copy for a bug report",
+    "copied": "Copied"
+  },
+  "settings": {
+    "title": "Settings",
+    "lockedPort": "Detected device/port",
+    "resetDetection": "Reset",
+    "characterName": "Character name",
+    "characterNamePlaceholder": "Your character's name",
+    "pinMeToTop": "Always show me at the top",
+    "hideOtherNames": "Hide other players' names",
+    "hideOtherNamesHint": "Other players show as their class and a number, so a screenshot names no one. Saved fights keep their names.",
+    "meterLayout": {
+      "label": "Meter layout",
+      "normal": "Normal",
+      "slim": "Slim"
+    },
+    "detailsMonitor": {
+      "label": "Show Details on monitor",
+      "off": "Off",
+      "missing": "That display is not connected.",
+      "single": "Only one screen found. Connect a second screen to use this.",
+      "badge": "Monitor",
+      "closeHint": "Closing Details turns this off."
+    },
+    "appearance": "Appearance",
+    "connection": "Capture",
+    "diagnostics": "Diagnostics",
+    "device": {
+      "label": "Capture device",
+      "autoDetect": "Auto-detect",
+      "notFound": "{device} (not found)",
+      "following": "Using {found}: the game is not on {device} right now."
+    },
+    "advanced": "Advanced",
+    "saveRawPackets": "Enable packet logging",
+    "resetAllSettings": "Reset everything",
+    "resetAllConfirm": "Reset all settings?",
+    "bold": {
+      "label": "Bold",
+      "names": "Names",
+      "dps": "DPS"
+    },
+    "showPing": "Show ping",
+    "startInTray": "Start in the tray",
+    "startInTrayHint": "The meter starts hidden. Bring it back through the tray icon's menu. Needs a system tray: without one, the meter shows anyway.",
+    "hideFromTaskbar": "Keep out of the taskbar",
+    "hideFromTaskbarHint": "Every Daevalog window takes no taskbar slot: the meter, Details, History and Settings. The tray icon's menu shows and hides the meter.",
+    "showTotalDps": "Show total DPS/DMG",
+    "roundDps": "Round DPS",
+    "autoHideMeter": "Auto-hide meter",
+    "showSuspendBtn": "Show pause button",
+    "showLockBtn": "Show lock button (click-through)",
+    "waylandLayer": "Overlay: Wayland layer",
+    "playerLimit": {
+      "label": "Player row limit"
+    },
+    "debugLogging": "Enable debug logging",
+    "language": {
+      "label": "Language",
+      "system": "System language"
+    },
+    "timeFormat": {
+      "label": "Display Time",
+      "hint": "How History, Details and the game record show the time of day."
+    },
+    "windowOpacity": {
+      "label": "Main window opacity"
+    },
+    "bossNameSize": {
+      "label": "Target name font size"
+    },
+    "allTargetsWindow": {
+      "label": "All Targets time range",
+      "options": {
+        "off": "Off (since zone change)",
+        "30s": "30 seconds",
+        "1m": "1 minute",
+        "2m": "2 minutes",
+        "3m": "3 minutes",
+        "5m": "5 minutes"
+      }
+    },
+    "keybinds": "Keybinds",
+    "keybind": {
+      "reload": "Save & Clear",
+      "toggle": "Show/Hide window",
+      "pressKeys": "Press keys...",
+      "needModifiers": "Hold two modifier keys or more",
+      "lock": "Lock/unlock overlay",
+      "portalMissing": "This desktop has no global shortcut service (the GlobalShortcuts portal), so the lock has no key. Lock the meter from the tray or the ⋯ menu.",
+      "portalWaiting": "Waiting for the desktop to approve the key.",
+      "portalBound": "The desktop gave the key {key}.",
+      "portalUnbound": "The desktop gave no key. Record a key to ask again, or set one in the desktop's shortcut settings.",
+      "portalRefused": "The desktop's question was closed, so the lock has no key. Record a key to ask again.",
+      "portalFailed": "The global shortcut service did not answer, so the lock has no key.",
+      "windowsBound": "The lock key is {key}.",
+      "windowsTaken": "Another program uses this key, so the lock has no key. Record another key.",
+      "windowsUnbound": "The lock has no key. Record a key to set one.",
+      "desktopSettings": "Desktop shortcut settings"
+    },
+    "defaultMeterMode": {
+      "label": "Default mode",
+      "hint": "Also switches the meter now, and its rows start afresh."
+    },
+    "trainingMode": {
+      "label": "Details from {mode} rows",
+      "options": {
+        "all": "All",
+        "highestDamage": "Highest Damage"
+      },
+      "hint": "In {mode}, which training dummies Details and the Heal and Tank tabs count: all of them, or the one with the most damage. The DPS rows stay as they are."
+    },
+    "account": {
+      "title": "a2tools.app account",
+      "signedOut": "Signed out",
+      "signedIn": "Signed in: {name}",
+      "about": "a2tools.app and its accounts are run by the A2Tools developer, not by Daevalog. When you upload a fight, Daevalog sends a2tools.app the game's network data from that one fight, with every character name in it swapped for a code. It also sends your character name, and the other players' names with the middle letters hidden. a2tools.app works out the numbers from that data and keeps the fight until you delete it.",
+      "rules": "a2tools.app's own {privacy} covers your account and your uploads. For help with your a2tools.app account, {help}.",
+      "privacyLink": "privacy policy",
+      "helpLink": "contact a2tools.app",
+      "signInHint": "Sign in to upload fights to your a2tools.app account. Daevalog only asks a2tools.app who you are and sends the fights you upload.",
+      "connect": "Sign in",
+      "signOut": "Sign out",
+      "codePrompt": "Check that your browser shows this code:",
+      "codeHint": "A browser page should be open now. The code works for 10 minutes.",
+      "working": "Waiting for you to approve…",
+      "failed": "Could not sign in: {error}",
+      "supporter": "Supporter",
+      "autoUpload": "Upload boss fights automatically",
+      "autoUploadHint": "When a boss fight ends, Daevalog uploads it to your account with the visibility you set on a2tools.app. Other players' names stay hidden. Fights on training dummies are never uploaded.",
+      "autoUploadSignIn": "Sign in above to use this.",
+      "autoUploadFailed": "The last automatic upload failed: {error}"
+    },
+    "sendLogs": {
+      "openFolder": "Open log folder",
+      "openFolderTip": "debug.log, the packet logs and prepared copies. For a problem with Daevalog, use Report a problem."
+    },
+    "report": {
+      "button": "Report a problem",
+      "title": "Report a problem",
+      "debugLog": "Prepare debug log",
+      "intro": "Choose what went wrong. The form opens on GitHub in your browser, with the report info below filled in. Nothing is sent until you submit it there.",
+      "kind": {
+        "wrongNumbers": "Wrong numbers",
+        "crash": "Crash or won't start",
+        "other": "Something else",
+        "security": "Security problem"
+      },
+      "hint": {
+        "wrongNumbers": "Attach a prepared packet log of the fight, and the game's Combat Analysis record (Ctrl+X) if you have one.",
+        "crashCopy": "Press Prepare debug log. It saves report_debug.log to the log folder with character names, your home folder and your user name taken out. Issues are public, so look the file over before you attach it. If Enable debug logging is off, turn it on and make the problem happen again first.",
+        "other": "Anything else, ideas for new features too.",
+        "security": "For anything that could hurt other players or users if posted in public. Only the developer sees this report."
+      },
+      "prepare": {
+        "title": "Prepare a packet log",
+        "hint": "Packet logs hold the name of every player you met, and issues are public. Prepare log saves a copy to the log folder with every character name replaced. Its name starts with report_. Attach that copy. Chat messages can stay in it.",
+        "log": "Packet log",
+        "button": "Prepare log",
+        "working": "Preparing...",
+        "done": "Saved {name}. The log folder is open.",
+        "failed": "Could not prepare the log: {error}",
+        "none": "No packet logs yet. Turn on Enable packet logging, play the fight again, then prepare a log."
+      },
+      "recordFolder": "Open Combat Analysis folder",
+      "recordFolderTip": "The game's own records: one record_*.dat file each time you use Combat Analysis (Ctrl+X).",
+      "info": "Report info",
+      "infoHint": "This text goes into the issue. It holds no user name, character names or folder paths.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "open": "Open the form"
+    },
+    "encounterTimeout": {
+      "label": "Encounter ends after (seconds)",
+      "hint": "Seconds without combat by you or your party that end an encounter. A boss you hit that is still alive keeps it open."
+    },
+    "encColumns": {
+      "title": "ENC mode",
+      "hint": "When an encounter ends, and what each row shows in ENC mode. A narrow meter drops columns from the end.",
+      "encDps": "DPS",
+      "dps": "Active DPS",
+      "pct": "Damage %",
+      "total": "Total damage",
+      "crit": "Crit %",
+      "last10": "Last 10 s",
+      "last30": "Last 30 s",
+      "last60": "Last 60 s",
+      "maxHit": "Max hit",
+      "hits": "Hits"
+    },
+    "sections": {
+      "meter": "Meter",
+      "account": "Account"
+    },
+    "colorTheme": {
+      "classic": "Classic",
+      "label": "Colour theme",
+      "system": "System",
+      "hint": "Daevalog is the supported theme. System takes your desktop's colours, with no promise that they read well."
+    },
+    "accent": {
+      "label": "Accent colour",
+      "sky": "Sky",
+      "rose": "Rose",
+      "lemon": "Lemon",
+      "silver": "Silver"
+    },
+    "splitView": {
+      "label": "Split view",
+      "hint": "Healers in a second table under DPS: Clerics and Chanters with 10% or more of the party's healing."
+    },
+    "yourRow": {
+      "label": "Your row shows",
+      "name": "Your name"
+    },
+    "barStrength": {
+      "label": "Bar strength",
+      "hint": "How strongly the class colour fills each row.",
+      "tableHint": "Details and History bars stay at 12% or less, so the names on them stay readable."
+    },
+    "buttonPlaceHint": "On: a button in the meter's header. Off: in the ⋯ menu.",
+    "layerHint": "On: the meter stays above every window, a fullscreen game too. Off: a normal window, below a fullscreen game. On by default on KDE Plasma, Hyprland and Sway. Not on GNOME or X11. Takes effect at the next start.",
+    "columns": {
+      "title": "Columns",
+      "hint": "Any number of columns per tab; the meter widens to fit.",
+      "dps": "Damage per second (DPS)",
+      "healed": "Healing done",
+      "hps": "Healing per second (HPS)",
+      "healPct": "Healing %",
+      "taken": "Damage taken",
+      "dtps": "Damage taken per second (DTPS)",
+      "takenPct": "Damage taken %",
+      "block": "Shield blocks",
+      "parry": "Parries"
+    },
+    "resetAllHint": "Every setting goes back to its default.",
+    "healthText": {
+      "label": "Boss health text",
+      "centred": "Centred",
+      "split": "Split",
+      "hint": "Centred: the percent and the health left in the middle. Split: the percent at the left end, the health in the middle."
+    },
+    "lowShare": {
+      "label": "Low share colour",
+      "off": "Off",
+      "number": "Number",
+      "row": "Row",
+      "hint": "A player under 5% of the damage shown turns amber, under 3% red. Number colours their share (their first number while % is off); Row colours their whole row."
+    },
+    "groupDamage": {
+      "label": "Group damage",
+      "footer": "Footer",
+      "line": "Own line",
+      "hint": "Where the group's damage shows beside its DPS while Show total DPS/DMG is on: in the footer, or with the DPS on a line of its own under the rows."
+    },
+    "characterNameHint": "The game's name replaces this when you next load in.",
+    "modeOnly": "Only in {mode}.",
+    "showTotalHint": "The group's total in the footer, on every tab: DPS, Heal and Tank."
+  },
+  "battleTime": {
+    "suspended": "Paused",
+    "waitingBoss": "No boss yet"
+  },
+  "meter": {
+    "identifyingPlayer": "#{id}",
+    "hiddenPlayer": "{class} {n}",
+    "hiddenPlayerNoClass": "Player {n}",
+    "unattributed": "Unattributed summons and effects",
+    "columns": {
+      "encDps": "DPS",
+      "dps": "Act. DPS",
+      "pct": "%",
+      "share": "Share",
+      "total": "Total",
+      "crit": "CRIT",
+      "last10": "10s",
+      "last30": "30s",
+      "last60": "60s",
+      "maxHit": "Max",
+      "hits": "HIT",
+      "name": "Name",
+      "healed": "Healed",
+      "hps": "HPS",
+      "taken": "Taken",
+      "dtps": "DTPS",
+      "healer": "Healer"
+    },
+    "columnTips": {
+      "name": "Each player in the fight, with their class.",
+      "total": "All the damage the player did in this fight.",
+      "dps": "The player's damage per second, over the fight time in the header.",
+      "activeDps": "The player's damage per second, from their first hit to their last.",
+      "pct": "The player's share of the damage of the players listed.",
+      "crit": "How many of the player's hits were critical hits, in percent.",
+      "last": "The player's damage per second over the last {n} seconds.",
+      "maxHit": "The player's biggest single hit in this fight.",
+      "hits": "How many times the player hit in this fight.",
+      "healed": "All the healing the player did in this fight.",
+      "hps": "The player's healing per second, over the fight time in the header.",
+      "healPct": "The player's share of the healing of the players listed.",
+      "healTaken": "The damage this player took, so healers see who needs heals.",
+      "taken": "All the damage the player took in this fight.",
+      "dtps": "The damage the player took per second, over the fight time in the header.",
+      "takenPct": "The player's share of the damage the players listed took.",
+      "block": "How many hits the player stopped with Shield Block.",
+      "parry": "How many hits the player parried.",
+      "healer": "Clerics and Chanters with 10% or more of the party's healing.",
+      "healerPct": "The healer's share of the party's healing.",
+      "order": "The rows run from the most to the least; ⋯ > {lowest} turns them round."
+    },
+    "you": "YOU",
+    "lock": "Lock",
+    "unlock": "Unlock",
+    "modes": {
+      "lastHitByMe": "TARGET",
+      "bossTargets": "BOSS",
+      "allTargets": "ALL",
+      "trainTargets": "TRAIN",
+      "encounter": "ENC"
+    },
+    "tabs": {
+      "dps": "DPS",
+      "heal": "Heal",
+      "tank": "Tank"
+    },
+    "suspend": "Pause",
+    "resume": "Resume",
+    "sortLowestFirst": "Lowest first",
+    "fitToRows": "Fit to rows",
+    "more": "More options",
+    "hideToTray": "Hide to tray. The meter keeps running; Quit is in the ⋯ menu.",
+    "lockTip": "Clicks go through the meter to the game, and it can't be moved.",
+    "suspendTip": "Holds the numbers on screen. Counting goes on underneath, and Resume shows it all.",
+    "noHealer": "No healer yet",
+    "noHitsTip": "The game sent no hits for this player, only damage over time.",
+    "timeToKillTip": "Time to kill at the current pace. Green ✓: the kill comes before the enrage. Red ✗: the enrage comes first."
+  },
+  "skills": {
+    "fallback": "Unknown skill {code}",
+    "dot": "{name} - DOT"
+  },
+  "connection": {
+    "auto": "Auto",
+    "detecting": "Detecting AION2 connection...",
+    "loopback": "Local Loopback",
+    "captureUnavailable": "Packet capture is not available. Reinstall the package, or see the Linux help at github.com/Seralth/Daevalog.",
+    "npcapMissing": "Packet capture needs Npcap. Click here to open npcap.com, install Npcap, then start the meter again.",
+    "dismiss": "Dismiss"
+  },
+  "target": {
+    "all": "All enemies",
+    "train": "Training Scarecrow",
+    "encounter": "Encounter"
+  },
+  "classes": {
+    "GLADIATOR": "Gladiator",
+    "TEMPLAR": "Templar",
+    "RANGER": "Ranger",
+    "ASSASSIN": "Assassin",
+    "SORCERER": "Sorcerer",
+    "CLERIC": "Cleric",
+    "ELEMENTALIST": "Spiritmaster",
+    "CHANTER": "Chanter",
+    "FIGHTER": "Brawler"
+  },
+  "tray": {
+    "toggle": "Show or hide the meter",
+    "settings": "Settings",
+    "history": "History",
+    "quit": "Quit"
+  }
+}

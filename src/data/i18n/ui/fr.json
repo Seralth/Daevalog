@@ -1,0 +1,668 @@
+{
+  "header": {
+    "title": "Daevalog DPS Meter"
+  },
+  "details": {
+    "hoverTooltip": {
+      "loading": "Chargement…",
+      "empty": "Ce combat n'a pas de données de compétences"
+    },
+    "tooltip": "Les dégâts sur la durée ne sont pas comptés dans les taux globaux de CRIT, coups puissants, coups parfaits, attaque dans le dos ou blocage avec arme.",
+    "settings": {
+      "ariaLabel": "Ouvrir les paramètres des détails",
+      "title": "Paramètres des détails"
+    },
+    "fontSize": {
+      "label": "Taille de police"
+    },
+    "iconSize": {
+      "label": "Taille des icônes"
+    },
+    "screenshots": {
+      "label": "Captures d'écran",
+      "includeMeter": "Inclure le compteur",
+      "saveToFolder": "Enregistrer les captures dans un dossier",
+      "chooseFolder": "Choisir un dossier"
+    },
+    "columns": {
+      "label": "Colonnes du tableau des compétences"
+    },
+    "screenshot": {
+      "ariaLabel": "Copier une capture dans le presse-papiers",
+      "captured": "Capture enregistrée",
+      "savedToClipboard": "Copiée dans le presse-papiers",
+      "failed": "La capture a échoué",
+      "savedToBoth": "Copiée dans le presse-papiers et enregistrée dans un fichier",
+      "fileFailed": "Copiée dans le presse-papiers (échec de l'enregistrement du fichier)"
+    },
+    "skills": {
+      "skill": "Compétence",
+      "skillTooltip": "Compétence utilisée",
+      "hits": "HIT",
+      "hitsTooltip": "Nb total de coups",
+      "dmg": "DGT",
+      "dmgTooltip": "DGT",
+      "dmgPct": "%",
+      "dmgPctTooltip": "Part des dégâts totaux",
+      "crit": "CRIT",
+      "critTooltip": "Coups critiques, % des coups",
+      "parry": "BLOC",
+      "parryTooltip": "Blocage avec arme %",
+      "perfect": "PERF",
+      "perfectTooltip": "Coups parfaits, % des coups",
+      "double": "DOUB",
+      "doubleTooltip": "Coup puissant %",
+      "back": "BACK",
+      "backTooltip": "Coups dans le dos, % des coups",
+      "frontal": "FRNT",
+      "frontalTooltip": "Coups de face, % des coups",
+      "shieldBlock": "BlqB",
+      "shieldBlockTooltip": "Blocage bouclier %",
+      "perfectBlock": "BlqP",
+      "perfectBlockTooltip": "Blocage parfait %",
+      "ironWall": "ENDR",
+      "ironWallTooltip": "Blindage %",
+      "regeneration": "RSTO",
+      "regenerationTooltip": "Restauration %",
+      "miss": "Raté",
+      "missTooltip": "Coups ratés",
+      "resist": "Rés",
+      "resistTooltip": "Résistés",
+      "regen": "Rest",
+      "regenTooltip": "PV regagnés par vol de vie",
+      "multiHit": "MULT",
+      "multiHitTooltip": "Multi-coups, % des coups",
+      "multiHitDamage": "MHD",
+      "multiHitDamageTooltip": "Dégâts des multi-coups",
+      "minDmg": "Min",
+      "minDmgTooltip": "Coup le plus faible",
+      "avgDmg": "Moy.",
+      "avgDmgTooltip": "Dégâts moyens par coup",
+      "ticks": "Ticks",
+      "ticksTooltip": "Ticks de soin",
+      "heal": "Régén",
+      "healTooltip": "Régénération totale",
+      "healPct": "R%",
+      "healPctTooltip": "Régénération %",
+      "avgHealTooltip": "Régénération moyenne",
+      "maxDmg": "Max",
+      "maxDmgTooltip": "Dégâts max.",
+      "taken": "Subis",
+      "takenTooltip": "DGT totaux subis",
+      "takenPct": "S%",
+      "takenPctTooltip": "Dégâts subis %",
+      "hitsTaken": "Coups",
+      "hitsTakenTooltip": "Nb de coups reçus",
+      "mechanic": "Mécanique",
+      "playersHit": "Touchés",
+      "playersHitTooltip": "Nombre de joueurs touchés par cette mécanique"
+    },
+    "skillTips": {
+      "skill": "Chaque compétence utilisée par le joueur ; cliquez sur une pour voir ses coups.",
+      "healSkill": "Chaque compétence de soin utilisée par le joueur.",
+      "takenSkill": "Chaque compétence de monstre qui a touché le joueur.",
+      "mechanic": "Chaque compétence de monstre qui a touché des joueurs ; cliquez sur une pour voir qui elle a touché.",
+      "hits": "Le nombre de coups portés par cette compétence.",
+      "dmg": "Tous les dégâts de cette compétence.",
+      "dmgPct": "La part de cette compétence dans les dégâts du joueur.",
+      "multiHit": "Part des coups de cette compétence qui ont porté des coups en plus.",
+      "multiHitDamage": "Les dégâts des coups en plus de cette compétence.",
+      "crit": "Part des coups de cette compétence qui étaient des CRIT.",
+      "parry": "Part des coups arrêtés par Blocage avec arme.",
+      "perfect": "Part des coups de cette compétence qui étaient des coups parfaits.",
+      "double": "Part des coups de cette compétence qui ont infligé le double de dégâts.",
+      "back": "Part des coups de cette compétence portés dans le dos.",
+      "frontal": "Part des coups de cette compétence portés de face.",
+      "shieldBlock": "Part des coups arrêtés par Blocage bouclier.",
+      "perfectBlock": "Part des coups arrêtés par Blocage parfait.",
+      "ironWall": "Part des coups où Blindage a fait effet.",
+      "regeneration": "Part des coups où Restauration a rendu des PV.",
+      "miss": "Le nombre de fois où cette compétence a raté.",
+      "resist": "Le nombre de fois où la cible a résisté à cette compétence.",
+      "regen": "Les PV rendus par les coups de Restauration de cette compétence.",
+      "minDmg": "Le plus petit coup de cette compétence.",
+      "avgDmg": "Les dégâts d'un coup, en moyenne.",
+      "maxDmg": "Le plus gros coup de cette compétence.",
+      "heal": "Tous les soins de cette compétence.",
+      "healPct": "La part de cette compétence dans les soins du joueur.",
+      "ticks": "Le nombre de fois où cette compétence a soigné.",
+      "avgHeal": "Les soins d'un tick, en moyenne.",
+      "taken": "Tous les dégâts subis de cette compétence.",
+      "takenPct": "La part de cette compétence dans les dégâts subis.",
+      "hitsTaken": "Le nombre de coups subis de cette compétence."
+    },
+    "stats": {
+      "totalDamage": "DGT totaux",
+      "contribution": "Part",
+      "hits": "Nb total de coups",
+      "critRate": "Taux de critiques",
+      "perfectRate": "Taux de coups parfaits",
+      "doubleRate": "Taux de coups puissants",
+      "backRate": "Taux dans le dos",
+      "parryRate": "Taux de blocage avec arme",
+      "combatTime": "Temps de combat total",
+      "multiHitDamage": "Dégâts des multi-coups",
+      "multiHitHits": "Multi-coups",
+      "maxHp": "PV max",
+      "regen": "Restauration",
+      "totalHealing": "Régénération totale",
+      "hps": "HPS",
+      "healTicks": "Ticks de soin",
+      "hotTicks": "Ticks de HoT",
+      "healSkills": "Compétences",
+      "takenTotal": "DGT totaux subis",
+      "dtps": "DTPS",
+      "takenHits": "Nb de coups reçus",
+      "damageReceived": "DGT totaux subis",
+      "hitsReceived": "Nb de coups reçus",
+      "deaths": "Nombre de morts"
+    },
+    "fightVs": "Combat vs",
+    "all": "Tout",
+    "history": {
+      "allPlayers": "Tout le monde"
+    },
+    "dpsChart": "DPS dans le temps",
+    "historyBtn": "Historique",
+    "timeline": "Chronologie",
+    "taken": {
+      "monster": "Monstre"
+    },
+    "mode": {
+      "dmg": "DGT",
+      "heal": "SOINS",
+      "taken": "SUBIS"
+    },
+    "title": "Détails",
+    "player": "Joueur",
+    "screenshotButton": "Capture d'écran",
+    "statsTitle": "Résumé",
+    "summary": {
+      "damage": "{amount} de dégâts · {rate} DPS",
+      "heal": "{amount} de soins · {rate} HPS",
+      "taken": "{amount} subis · {rate} DTPS",
+      "fight": "{time} contre {target}"
+    },
+    "tips": {
+      "targets": "Chaque cible touchée.",
+      "targetDamage": "Les dégâts infligés à cette cible.",
+      "targetShare": "La part de cette cible dans les dégâts.",
+      "healTargets": "Chaque joueur soigné.",
+      "targetHeal": "Les soins reçus par ce joueur.",
+      "targetHealShare": "La part de ce joueur dans les soins.",
+      "sources": "Chaque monstre qui a infligé les dégâts subis.",
+      "sourceDamage": "Les dégâts infligés par ce monstre.",
+      "sourceShare": "La part de ce monstre dans les dégâts subis.",
+      "mechanicPlayer": "Chaque joueur touché par cette mécanique.",
+      "mechanicHits": "Le nombre de fois où cette mécanique a touché le joueur.",
+      "mechanicDamage": "Les dégâts de cette mécanique sur le joueur."
+    },
+    "targets": {
+      "title": "Cible",
+      "sources": "Touché par"
+    },
+    "hits": {
+      "normal": "Coups normaux",
+      "critical": "Coups critiques",
+      "ticks": "Ticks",
+      "criticalTicks": "Ticks critiques",
+      "minAvgMax": "Min / moy. / max",
+      "types": "Types de coup"
+    },
+    "hitTypes": {
+      "back": "Attaque dans le dos",
+      "frontal": "Frontal",
+      "perfect": "Coup parfait",
+      "double": "Coup puissant",
+      "parry": "Blocage avec arme"
+    },
+    "chart": {
+      "party": "Groupe",
+      "hps": "HPS dans le temps",
+      "dtps": "DTPS dans le temps"
+    },
+    "timelineTracks": {
+      "skills": "Compétences",
+      "buffs": "Buffs",
+      "debuffs": "Débuffs",
+      "targetDebuffs": "Débuffs sur la cible",
+      "stats": "Stats"
+    }
+  },
+  "history": {
+    "title": "Historique",
+    "empty": "Aucun combat de boss enregistré pour l'instant.",
+    "delete": "Supprimer",
+    "deleteConfirm": "Supprimer ce combat ?",
+    "showTrainingBattles": "Inclure les combats d'entraînement",
+    "trainBadge": "Entraînement",
+    "liveBadge": "En cours",
+    "viewList": "Liste simple",
+    "viewDungeon": "Par donjon",
+    "viewGrouped": "Par boss",
+    "fightCount": "{n} combats",
+    "fightCountOne": "1 combat",
+    "showMore": "Afficher plus",
+    "previewUpload": "Voir les données d'envoi",
+    "previewWorking": "Préparation des données…",
+    "previewRequestTip": "Écrit dans un fichier lisible la requête exacte qu'« Envoyer » transmettrait à a2tools.app. Votre connexion n'y figure pas. Rien n'est envoyé.",
+    "previewRequestDone": "{file} écrit ({sent} Ko) : la requête exacte qu'« Envoyer » transmettrait. Rien n'a été envoyé. Enregistré dans {dir}",
+    "uploadTip": "Envoyer ce combat sur a2tools.app et copier un lien à partager",
+    "uploadOpen": "Ouvrir ce combat sur a2tools.app",
+    "uploadWorking": "Envoi du combat…",
+    "uploadDonePublic": "Envoi terminé. Le lien est dans le presse-papiers : {url}",
+    "uploadDonePrivate": "Envoi privé terminé. Le lien est dans le presse-papiers : {url}",
+    "openWorld": "Monde ouvert",
+    "allClasses": "Toutes les classes",
+    "players": "{n} joueurs",
+    "solo": "Solo",
+    "partyDps": "DPS du groupe",
+    "yourRank": "vous {dps} · #{rank}",
+    "upload": "Envoyer",
+    "openLog": "Ouvrir le journal",
+    "uploadAgain": "Envoyer à nouveau",
+    "uploadAgainTip": "Envoyer à nouveau ce combat sur a2tools.app, par exemple après avoir supprimé son journal là-bas",
+    "allBosses": "Tous les boss",
+    "allDays": "Tous les jours"
+  },
+  "gameRecord": {
+    "title": "Relevé du jeu",
+    "switch": "Chiffres affichés",
+    "meter": "Meter",
+    "game": "Relevé du jeu",
+    "both": "Les deux",
+    "filter": "Seulement les combats avec un relevé du jeu",
+    "filterTip": "Les relevés du jeu viennent de l'Analyseur de combat du jeu (Ctrl+X).",
+    "columnTip": "Relevé du jeu : l'Analyseur de combat du jeu (Ctrl+X)",
+    "matches": "Identique au jeu",
+    "differOne": "1 ligne diffère",
+    "differ": "{n} lignes diffèrent",
+    "notCompared": "Chiffres du jeu seulement",
+    "damageMeter": "Dégâts selon le meter",
+    "damageGame": "Dégâts selon le jeu",
+    "takenMeter": "Dégâts subis selon le meter",
+    "takenGame": "Dégâts subis selon le jeu",
+    "allMatch": "Les {n} compétences correspondent",
+    "someMatch": "{x} compétences sur {n} correspondent",
+    "noComparison": "Aucun paquet enregistré pour ce combat : seuls les chiffres du jeu sont affichés.",
+    "window": "Relevé du jeu de {from} à {to}.",
+    "covers": "Couvre {s} s de ce combat",
+    "alsoCoversOne": "couvre aussi 1 autre combat",
+    "alsoCovers": "couvre aussi {n} autres combats",
+    "targetOnly": "Seuls les dégâts sur {target} sont comparés.",
+    "onlyDiffer": "Seulement les lignes qui diffèrent",
+    "gameTag": "jeu {n}",
+    "note": "Une différence veut dire que le meter a lu le combat autrement que le jeu. Le chiffre du jeu est le bon.",
+    "copy": "Copier pour un rapport de bug",
+    "copied": "Copié"
+  },
+  "settings": {
+    "title": "Réglages",
+    "lockedPort": "Périphérique et port trouvés",
+    "resetDetection": "Réinitialiser",
+    "characterName": "Nom du personnage",
+    "characterNamePlaceholder": "Nom de votre personnage",
+    "pinMeToTop": "Garder ma ligne en haut",
+    "hideOtherNames": "Masquer le nom des autres joueurs",
+    "hideOtherNamesHint": "Les autres joueurs apparaissent sous leur classe et un numéro : une capture d'écran ne nomme personne. Les combats enregistrés gardent les noms.",
+    "meterLayout": {
+      "label": "Style du compteur",
+      "normal": "Normal",
+      "slim": "Compact"
+    },
+    "detailsMonitor": {
+      "label": "Ouvrir Détails sur l'écran",
+      "off": "Désactivé",
+      "missing": "Cet écran n'est pas branché.",
+      "single": "Un seul écran trouvé. Branchez un second écran pour l'utiliser.",
+      "badge": "Écran",
+      "closeHint": "Fermer Détails le désactive."
+    },
+    "appearance": "Affichage",
+    "connection": "Capture",
+    "diagnostics": "Dépannage",
+    "device": {
+      "label": "Périphérique réseau",
+      "autoDetect": "Détection auto",
+      "notFound": "{device} (introuvable)",
+      "following": "Suit {found} : le jeu ne passe pas par {device}."
+    },
+    "advanced": "Avancé",
+    "saveRawPackets": "Écrire un journal des paquets",
+    "resetAllSettings": "Tout réinitialiser",
+    "resetAllConfirm": "Réinitialiser tous les paramètres ?",
+    "bold": {
+      "label": "Texte en gras",
+      "names": "Noms",
+      "dps": "DPS"
+    },
+    "showPing": "Voir le ping",
+    "startInTray": "Démarrer dans la zone de notification",
+    "startInTrayHint": "Le meter démarre masqué. Faites-le revenir par le menu de l'icône de la zone de notification. Il faut une zone de notification : sans elle, le meter s'affiche quand même.",
+    "hideFromTaskbar": "Ne pas afficher dans la barre des tâches",
+    "hideFromTaskbarHint": "Aucune fenêtre de Daevalog ne prend de place dans la barre des tâches : ni le meter, ni Détails, Historique ou Réglages. Le menu de l'icône de la zone de notification affiche et masque le meter.",
+    "showTotalDps": "Afficher le total du groupe",
+    "roundDps": "Arrondir le DPS à l'entier",
+    "autoHideMeter": "Masquer le compteur automatiquement",
+    "showSuspendBtn": "Afficher le bouton de pause",
+    "showLockBtn": "Afficher le bouton de verrou (les clics passent)",
+    "waylandLayer": "Overlay : couche Wayland",
+    "playerLimit": {
+      "label": "Limite de lignes de joueurs"
+    },
+    "debugLogging": "Écrire un journal de débogage",
+    "language": {
+      "label": "Langue",
+      "system": "Langue du système"
+    },
+    "timeFormat": {
+      "label": "Affichage de l'heure",
+      "hint": "Comment l'historique, les détails et le relevé du jeu affichent l'heure."
+    },
+    "windowOpacity": {
+      "label": "Opacité de la fenêtre"
+    },
+    "bossNameSize": {
+      "label": "Taille de police de la cible"
+    },
+    "allTargetsWindow": {
+      "label": "Période de TOUT",
+      "options": {
+        "off": "Désactivé (depuis le changement de zone)",
+        "30s": "30 secondes",
+        "1m": "1 minute",
+        "2m": "2 minutes",
+        "3m": "3 minutes",
+        "5m": "5 minutes"
+      }
+    },
+    "keybinds": "Raccourcis clavier",
+    "keybind": {
+      "reload": "Enregistrer et effacer",
+      "toggle": "Afficher ou masquer le compteur",
+      "pressKeys": "Appuyez sur les touches…",
+      "needModifiers": "Maintenez au moins deux touches de modification",
+      "lock": "Verrouiller/déverrouiller l'overlay",
+      "portalMissing": "Ce bureau n'a pas de service de raccourcis globaux (le portail GlobalShortcuts), le verrouillage n'a donc pas de touche. Verrouillez le meter depuis la zone de notification ou le menu ⋯.",
+      "portalWaiting": "En attente de l'accord du bureau pour la touche.",
+      "portalBound": "Le bureau a attribué la touche {key}.",
+      "portalUnbound": "Le bureau n'a attribué aucune touche. Enregistrez une touche pour redemander, ou choisissez-la dans les raccourcis du bureau.",
+      "portalRefused": "La question du bureau a été fermée, le verrouillage n'a donc pas de touche. Enregistrez une touche pour redemander.",
+      "portalFailed": "Le service de raccourcis globaux n'a pas répondu, le verrouillage n'a donc pas de touche.",
+      "windowsBound": "La touche de verrouillage est {key}.",
+      "windowsTaken": "Un autre programme utilise cette touche, le verrouillage n'a donc pas de touche. Enregistrez une autre touche.",
+      "windowsUnbound": "Le verrouillage n'a pas de touche. Enregistrez une touche pour en définir une.",
+      "desktopSettings": "Raccourcis du bureau"
+    },
+    "defaultMeterMode": {
+      "label": "Mode au démarrage",
+      "hint": "Change aussi le meter tout de suite, et ses lignes repartent de zéro."
+    },
+    "trainingMode": {
+      "label": "Détails depuis les lignes {mode}",
+      "options": {
+        "all": "Tous les mannequins",
+        "highestDamage": "Mannequin le plus touché"
+      },
+      "hint": "En {mode}, les mannequins que comptent les Détails et les onglets Soins et Défenseur : tous, ou celui qui a subi le plus de dégâts. Les lignes DPS ne changent pas."
+    },
+    "account": {
+      "title": "Compte a2tools.app",
+      "signedOut": "Déconnecté",
+      "signedIn": "Connecté : {name}",
+      "about": "a2tools.app et ses comptes sont gérés par le développeur d'A2Tools, pas par Daevalog. Quand vous envoyez un combat, Daevalog transmet à a2tools.app les données réseau du jeu de ce seul combat, où chaque nom de personnage est remplacé par un code. Il envoie aussi votre nom de personnage, et les noms des autres joueurs avec les lettres du milieu masquées. a2tools.app calcule lui-même les chiffres à partir de ces données et garde le combat jusqu'à ce que vous le supprimiez.",
+      "rules": "La {privacy} d'a2tools.app s'applique à votre compte et à vos envois. Pour de l'aide avec votre compte a2tools.app, {help}.",
+      "privacyLink": "politique de confidentialité",
+      "helpLink": "contactez a2tools.app",
+      "signInHint": "Connectez-vous pour envoyer des combats sur votre compte a2tools.app. Daevalog demande seulement à a2tools.app qui vous êtes et envoie les combats que vous choisissez d'envoyer.",
+      "connect": "Se connecter",
+      "signOut": "Se déconnecter",
+      "codePrompt": "Vérifiez que votre navigateur affiche ce code :",
+      "codeHint": "Une page du navigateur devrait être ouverte. Le code reste valable 10 minutes.",
+      "working": "En attente de votre validation…",
+      "failed": "Connexion impossible : {error}",
+      "supporter": "Soutien",
+      "autoUpload": "Envoyer les combats de boss automatiquement",
+      "autoUploadHint": "À la fin d'un combat de boss, Daevalog l'envoie sur votre compte avec la visibilité choisie sur a2tools.app. Les noms des autres joueurs restent masqués. Les combats contre les épouvantails d'entraînement ne sont jamais envoyés.",
+      "autoUploadSignIn": "Connectez-vous ci-dessus pour l'utiliser.",
+      "autoUploadFailed": "Le dernier envoi automatique a échoué : {error}"
+    },
+    "sendLogs": {
+      "openFolder": "Ouvrir le dossier des journaux",
+      "openFolderTip": "debug.log, les journaux de paquets et les copies préparées. Pour un problème avec Daevalog, utilisez « Signaler un problème »."
+    },
+    "report": {
+      "button": "Signaler un problème",
+      "title": "Signaler un problème",
+      "debugLog": "Préparer le journal de débogage",
+      "intro": "Choisissez ce qui ne va pas. Le formulaire s'ouvre sur GitHub dans votre navigateur, avec les infos du rapport ci-dessous déjà remplies. Rien n'est envoyé avant que vous l'envoyiez là-bas.",
+      "kind": {
+        "wrongNumbers": "Chiffres faux",
+        "crash": "Plantage ou ne démarre pas",
+        "other": "Autre chose",
+        "security": "Problème de sécurité"
+      },
+      "hint": {
+        "wrongNumbers": "Joignez un journal de paquets préparé du combat et, si vous l'avez, le relevé de l'Analyseur de combat du jeu (Ctrl+X).",
+        "crashCopy": "Cliquez sur « Préparer le journal de débogage ». Cela enregistre report_debug.log dans le dossier des journaux, sans noms de personnages, sans votre dossier personnel ni votre nom d'utilisateur. Les tickets sont publics : relisez le fichier avant de le joindre. Si « Activer la journalisation de débogage » est désactivé, activez-le et refaites apparaître le problème.",
+        "other": "Tout le reste, y compris les idées de nouvelles fonctions.",
+        "security": "Pour tout ce qui pourrait nuire à d'autres joueurs ou utilisateurs s'il était publié. Seul le développeur voit ce rapport."
+      },
+      "prepare": {
+        "title": "Préparer un journal de paquets",
+        "hint": "Les journaux de paquets contiennent le nom de chaque joueur que vous avez croisé, et les tickets sont publics. « Préparer le journal » enregistre dans le dossier des journaux une copie où chaque nom de personnage est remplacé. Son nom commence par report_. Joignez cette copie. Les messages de chat peuvent y rester.",
+        "log": "Journal de paquets",
+        "button": "Préparer le journal",
+        "working": "Préparation...",
+        "done": "{name} enregistré. Le dossier des journaux est ouvert.",
+        "failed": "Impossible de préparer le journal : {error}",
+        "none": "Pas encore de journal de paquets. Activez « Activer la journalisation des paquets », rejouez le combat, puis préparez un journal."
+      },
+      "recordFolder": "Ouvrir le dossier de l'Analyseur de combat",
+      "recordFolderTip": "Les relevés du jeu : un fichier record_*.dat pour chaque utilisation de l'Analyseur de combat (Ctrl+X).",
+      "info": "Infos du rapport",
+      "infoHint": "Ce texte va dans le ticket. Il ne contient ni nom d'utilisateur, ni noms de personnages, ni chemins de dossiers.",
+      "copy": "Copier",
+      "copied": "Copié",
+      "open": "Ouvrir le formulaire"
+    },
+    "encounterTimeout": {
+      "label": "Le combat se termine après (secondes)",
+      "hint": "Secondes sans combat de votre part ou de votre groupe qui mettent fin au combat. Un boss que vous avez touché et qui est encore en vie le garde ouvert."
+    },
+    "encColumns": {
+      "title": "Mode COMBAT",
+      "hint": "Quand un combat se termine et ce que chaque ligne affiche en mode COMBAT. Un meter étroit retire les colonnes en partant de la fin.",
+      "encDps": "DPS",
+      "dps": "DPS actif",
+      "pct": "Dégâts %",
+      "total": "Dégâts totaux",
+      "crit": "Crit %",
+      "last10": "10 dernières s",
+      "last30": "30 dernières s",
+      "last60": "60 dernières s",
+      "maxHit": "Coup max.",
+      "hits": "Coups"
+    },
+    "sections": {
+      "meter": "Meter",
+      "account": "Compte"
+    },
+    "colorTheme": {
+      "classic": "Classique",
+      "label": "Thème de couleurs",
+      "system": "Système",
+      "hint": "Daevalog est le thème pris en charge. Système reprend les couleurs de votre bureau, sans garantie qu'elles soient lisibles."
+    },
+    "accent": {
+      "label": "Couleur d'accent",
+      "sky": "Ciel",
+      "rose": "Rose",
+      "lemon": "Citron",
+      "silver": "Argent"
+    },
+    "splitView": {
+      "label": "Vue scindée",
+      "hint": "Les soigneurs dans un second tableau sous le DPS : Clercs et Aèdes avec 10 % ou plus des soins du groupe."
+    },
+    "yourRow": {
+      "label": "Votre ligne affiche",
+      "name": "Votre nom"
+    },
+    "barStrength": {
+      "label": "Intensité des barres",
+      "hint": "Intensité de la couleur de classe dans chaque ligne.",
+      "tableHint": "Les barres des Détails et de l'Historique restent à 12 % au plus, pour que les noms restent lisibles."
+    },
+    "buttonPlaceHint": "Activé : un bouton dans l'en-tête du meter. Désactivé : dans le menu ⋯.",
+    "layerHint": "Activé : le meter reste au-dessus de toutes les fenêtres, même d'un jeu en plein écran. Désactivé : une fenêtre normale, sous un jeu en plein écran. Activé par défaut sous KDE Plasma, Hyprland et Sway. Pas sous GNOME ni X11. Prend effet au prochain démarrage.",
+    "columns": {
+      "title": "Colonnes",
+      "hint": "Autant de colonnes que voulu par onglet ; le meter s'élargit pour les afficher.",
+      "dps": "Dégâts par seconde (DPS)",
+      "healed": "Soins prodigués",
+      "hps": "Soins par seconde (HPS)",
+      "healPct": "Soins %",
+      "taken": "Dégâts subis",
+      "dtps": "Dégâts subis par seconde (DTPS)",
+      "takenPct": "Dégâts subis %",
+      "block": "Blocages bouclier",
+      "parry": "Blocages avec arme"
+    },
+    "resetAllHint": "Tous les paramètres reviennent à leur valeur par défaut.",
+    "healthText": {
+      "label": "Texte des PV du boss",
+      "centred": "Centré",
+      "split": "Séparé",
+      "hint": "Centré : le pourcentage et les PV restants au milieu. Séparé : le pourcentage à gauche, les PV au milieu."
+    },
+    "lowShare": {
+      "label": "Couleur des faibles parts",
+      "off": "Désactivé",
+      "number": "Nombre",
+      "row": "Ligne",
+      "hint": "Un joueur sous 5 % des dégâts affichés passe en ambre, sous 3 % en rouge. Nombre colore sa part (sans la colonne %, son premier nombre) ; Ligne colore toute sa ligne."
+    },
+    "groupDamage": {
+      "label": "Dégâts du groupe",
+      "footer": "Pied",
+      "line": "Ligne à part",
+      "hint": "Où les dégâts du groupe s'affichent à côté de son DPS tant que « Afficher DPS/DGT total » est activé : dans le pied, ou avec le DPS sur une ligne à part sous les lignes."
+    },
+    "characterNameHint": "Le nom donné par le jeu le remplace au prochain chargement.",
+    "modeOnly": "Uniquement en {mode}.",
+    "showTotalHint": "Le total du groupe en bas, sur chaque onglet : DPS, Soins et Défenseur."
+  },
+  "battleTime": {
+    "suspended": "En pause",
+    "waitingBoss": "Pas encore de boss"
+  },
+  "meter": {
+    "identifyingPlayer": "#{id}",
+    "hiddenPlayer": "{class} {n}",
+    "hiddenPlayerNoClass": "Joueur {n}",
+    "unattributed": "Unattributed summons and effects",
+    "columns": {
+      "encDps": "DPS",
+      "dps": "DPS act.",
+      "pct": "%",
+      "share": "Part",
+      "total": "Total",
+      "crit": "CRIT",
+      "last10": "10s",
+      "last30": "30s",
+      "last60": "60s",
+      "maxHit": "Max",
+      "hits": "HIT",
+      "name": "Nom",
+      "healed": "Soins",
+      "hps": "HPS",
+      "taken": "Subis",
+      "dtps": "DTPS",
+      "healer": "Soigneur"
+    },
+    "columnTips": {
+      "name": "Chaque joueur du combat, avec sa classe.",
+      "total": "Tous les dégâts du joueur dans ce combat.",
+      "dps": "Les dégâts par seconde du joueur, sur le temps de combat de l'en-tête.",
+      "activeDps": "Les dégâts par seconde du joueur, de son premier coup à son dernier.",
+      "pct": "La part du joueur dans les dégâts des joueurs listés.",
+      "crit": "La part des coups du joueur qui étaient des CRIT, en pourcentage.",
+      "last": "Les dégâts par seconde du joueur sur les {n} dernières secondes.",
+      "maxHit": "Le plus gros coup du joueur dans ce combat.",
+      "hits": "Le nombre de coups du joueur dans ce combat.",
+      "healed": "Tous les soins du joueur dans ce combat.",
+      "hps": "Les soins par seconde du joueur, sur le temps de combat de l'en-tête.",
+      "healPct": "La part du joueur dans les soins des joueurs listés.",
+      "healTaken": "Les dégâts subis par ce joueur, pour que les soigneurs voient qui a besoin de soins.",
+      "taken": "Tous les dégâts subis par le joueur dans ce combat.",
+      "dtps": "Les dégâts subis par le joueur par seconde, sur le temps de combat de l'en-tête.",
+      "takenPct": "La part du joueur dans les dégâts subis par les joueurs listés.",
+      "block": "Le nombre de coups que le joueur a arrêtés par Blocage bouclier.",
+      "parry": "Le nombre de coups que le joueur a arrêtés par Blocage avec arme.",
+      "healer": "Clercs et Aèdes avec 10 % ou plus des soins du groupe.",
+      "healerPct": "La part du soigneur dans les soins du groupe.",
+      "order": "Les lignes vont du plus au moins ; ⋯ > {lowest} inverse l'ordre."
+    },
+    "you": "VOUS",
+    "lock": "Verrouiller",
+    "unlock": "Déverrouiller",
+    "modes": {
+      "lastHitByMe": "CIBLE",
+      "bossTargets": "BOSS",
+      "allTargets": "TOUT",
+      "trainTargets": "ENTRAÎNEMENT",
+      "encounter": "COMBAT"
+    },
+    "tabs": {
+      "dps": "DPS",
+      "heal": "Soins",
+      "tank": "Défenseur"
+    },
+    "suspend": "Mettre en pause",
+    "resume": "Reprendre",
+    "sortLowestFirst": "Du plus bas au plus haut",
+    "fitToRows": "Ajuster aux lignes",
+    "more": "Plus d'options",
+    "hideToTray": "Masquer dans la zone de notification. Le meter continue de tourner ; Quitter est dans le menu ⋯.",
+    "lockTip": "Les clics traversent le meter vers le jeu, et il ne peut plus être déplacé.",
+    "suspendTip": "Fige les chiffres à l'écran. Le comptage continue en dessous, et Reprendre affiche tout.",
+    "noHealer": "Pas encore de soigneur",
+    "noHitsTip": "Le jeu n'a envoyé aucun coup de ce joueur, seulement des DGT continus.",
+    "timeToKillTip": "Temps avant la mort au rythme actuel. En vert ✓ : la mort arrive avant la fureur. En rouge ✗ : la fureur arrive d'abord."
+  },
+  "skills": {
+    "fallback": "Compétence inconnue {code}",
+    "dot": "{name} - DOT"
+  },
+  "connection": {
+    "auto": "Automatique",
+    "detecting": "Recherche de la connexion au jeu…",
+    "loopback": "Boucle locale",
+    "captureUnavailable": "La capture de paquets n'est pas disponible. Réinstallez le paquet ou consultez l'aide Linux sur github.com/Seralth/Daevalog.",
+    "npcapMissing": "La capture de paquets a besoin de Npcap. Cliquez ici pour ouvrir npcap.com, installez Npcap, puis relancez le meter.",
+    "dismiss": "Fermer"
+  },
+  "target": {
+    "all": "Tous les ennemis",
+    "train": "Épouvantail d'entraînement",
+    "encounter": "Combat"
+  },
+  "classes": {
+    "GLADIATOR": "Gladiateur",
+    "TEMPLAR": "Templier",
+    "RANGER": "Rôdeur",
+    "ASSASSIN": "Assassin",
+    "SORCERER": "Sorcier",
+    "CLERIC": "Clerc",
+    "ELEMENTALIST": "Spiritualiste",
+    "CHANTER": "Aède",
+    "FIGHTER": "Pugiliste"
+  },
+  "tray": {
+    "toggle": "Afficher ou masquer le meter",
+    "settings": "Paramètres",
+    "history": "Historique",
+    "quit": "Quitter"
+  }
+}

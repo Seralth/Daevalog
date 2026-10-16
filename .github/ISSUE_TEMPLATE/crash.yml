@@ -1,0 +1,32 @@
+name: Crash or won't start
+description: The meter crashes, closes, shows an error, or does not open.
+title: "Crash: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a problem in the meter's Settings opens this form with the report info filled in.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, and what the meter did.
+    validations:
+      required: true
+  - type: textarea
+    id: debug-log
+    attributes:
+      label: Debug log
+      description: |
+        In the meter: Settings, Diagnostics, Report a problem, Crash or won't start, Prepare debug log. It saves `report_debug.log` in the log folder (Open log folder) with character names, your home folder and your user name taken out. Attach that copy. If Enable debug logging was off, turn it on and make the problem happen again first.
+        If the meter does not open, attach `debug.log` from its folder: `~/.local/share/daevalog-dps-meter` on Linux, `%APPDATA%\daevalog-dps-meter` on Windows.
+        Look the file over before you attach it, as issues are public: `debug.log` can hold folder paths with your user name in them, and character names.
+      placeholder: Drag report_debug.log here.
+  - type: textarea
+    id: report-info
+    attributes:
+      label: Report info
+      description: Filled in by Report a problem. Without it, give the Daevalog version, your system and your desktop.
+      render: text
+    validations:
+      required: true

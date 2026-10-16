@@ -1,0 +1,668 @@
+{
+  "header": {
+    "title": "Daevalog DPS Meter"
+  },
+  "details": {
+    "hoverTooltip": {
+      "loading": "불러오는 중…",
+      "empty": "이 전투에는 스킬 데이터가 없습니다"
+    },
+    "tooltip": "지속 피해(DOT) 타격은 총 치명타, 강타, 완벽, 후방피해, 무기 막기 비율에 포함되지 않습니다.",
+    "settings": {
+      "ariaLabel": "상세 설정 열기",
+      "title": "상세 설정"
+    },
+    "fontSize": {
+      "label": "글자 크기"
+    },
+    "iconSize": {
+      "label": "아이콘 크기"
+    },
+    "screenshots": {
+      "label": "스크린샷",
+      "includeMeter": "미터 포함",
+      "saveToFolder": "스크린샷을 폴더에 저장",
+      "chooseFolder": "폴더 선택"
+    },
+    "columns": {
+      "label": "스킬 표 열"
+    },
+    "screenshot": {
+      "ariaLabel": "스크린샷을 클립보드에 복사",
+      "captured": "스크린샷 저장됨",
+      "savedToClipboard": "클립보드에 저장됨",
+      "failed": "스크린샷 실패",
+      "savedToBoth": "클립보드와 파일에 저장됨",
+      "fileFailed": "클립보드에 저장됨 (파일 저장 실패)"
+    },
+    "skills": {
+      "skill": "스킬",
+      "skillTooltip": "사용 스킬",
+      "hits": "HIT",
+      "hitsTooltip": "총 타격 횟수",
+      "dmg": "대미지",
+      "dmgTooltip": "대미지",
+      "dmgPct": "%",
+      "dmgPctTooltip": "총 피해 중 비율",
+      "crit": "CRIT",
+      "critTooltip": "치명타 비율(%)",
+      "parry": "BLOC",
+      "parryTooltip": "무기막기 %",
+      "perfect": "PERF",
+      "perfectTooltip": "완벽 비율(%)",
+      "double": "DOUB",
+      "doubleTooltip": "강타 %",
+      "back": "BACK",
+      "backTooltip": "후방 타격 비율(%)",
+      "frontal": "FRNT",
+      "frontalTooltip": "전방 타격 비율(%)",
+      "shieldBlock": "방패",
+      "shieldBlockTooltip": "방패 막기 %",
+      "perfectBlock": "완막",
+      "perfectBlockTooltip": "완벽 막기 %",
+      "ironWall": "ENDR",
+      "ironWallTooltip": "철벽 %",
+      "regeneration": "RSTO",
+      "regenerationTooltip": "재생 %",
+      "miss": "빗나감",
+      "missTooltip": "빗나감",
+      "resist": "저항",
+      "resistTooltip": "저항",
+      "regen": "재생",
+      "regenTooltip": "흡혈로 회복한 생명력",
+      "multiHit": "MULT",
+      "multiHitTooltip": "다단히트 비율(%)",
+      "multiHitDamage": "MHD",
+      "multiHitDamageTooltip": "다단히트 피해",
+      "minDmg": "최소",
+      "minDmgTooltip": "최저 피해",
+      "avgDmg": "평균",
+      "avgDmgTooltip": "타격당 평균 피해",
+      "ticks": "틱",
+      "ticksTooltip": "회복 틱",
+      "heal": "회복",
+      "healTooltip": "총 회복량",
+      "healPct": "회복%",
+      "healPctTooltip": "회복량 %",
+      "avgHealTooltip": "평균 회복량",
+      "maxDmg": "최대",
+      "maxDmgTooltip": "최대 피해",
+      "taken": "받은 피해",
+      "takenTooltip": "받은 총 피해량",
+      "takenPct": "받은 피해%",
+      "takenPctTooltip": "받은 피해 %",
+      "hitsTaken": "피격",
+      "hitsTakenTooltip": "받은 타격 횟수",
+      "mechanic": "패턴",
+      "playersHit": "피격 인원",
+      "playersHitTooltip": "이 패턴에 맞은 플레이어 수"
+    },
+    "skillTips": {
+      "skill": "플레이어가 쓴 각 스킬. 하나를 누르면 그 타격을 볼 수 있습니다.",
+      "healSkill": "플레이어가 쓴 각 회복 스킬.",
+      "takenSkill": "플레이어를 때린 각 몬스터 스킬.",
+      "mechanic": "플레이어들을 때린 각 몬스터 스킬. 하나를 누르면 누구를 때렸는지 볼 수 있습니다.",
+      "hits": "이 스킬이 타격한 횟수.",
+      "dmg": "이 스킬이 준 피해의 합계.",
+      "dmgPct": "플레이어의 피해 중 이 스킬의 비율.",
+      "multiHit": "이 스킬의 타격 중 추가 타격이 들어간 비율.",
+      "multiHitDamage": "이 스킬의 추가 타격이 준 피해.",
+      "crit": "이 스킬의 타격 중 치명타의 비율.",
+      "parry": "무기 막기로 막힌 타격의 비율.",
+      "perfect": "이 스킬의 타격 중 완벽의 비율.",
+      "double": "이 스킬의 타격 중 피해가 2배로 들어간 비율.",
+      "back": "이 스킬의 타격 중 후방에서 들어간 비율.",
+      "frontal": "이 스킬의 타격 중 전방에서 들어간 비율.",
+      "shieldBlock": "방패 막기로 막힌 타격의 비율.",
+      "perfectBlock": "완벽 막기로 막힌 타격의 비율.",
+      "ironWall": "철벽이 발동한 타격의 비율.",
+      "regeneration": "재생으로 생명력이 돌아온 타격의 비율.",
+      "miss": "이 스킬이 빗나간 횟수.",
+      "resist": "대상이 이 스킬에 저항한 횟수.",
+      "regen": "이 스킬의 재생으로 돌아온 생명력.",
+      "minDmg": "이 스킬의 가장 작은 한 방.",
+      "avgDmg": "한 번 타격의 평균 피해.",
+      "maxDmg": "이 스킬의 가장 큰 한 방.",
+      "heal": "이 스킬의 회복량 합계.",
+      "healPct": "플레이어의 회복량 중 이 스킬의 비율.",
+      "ticks": "이 스킬이 회복한 횟수.",
+      "avgHeal": "한 틱의 평균 회복량.",
+      "taken": "이 스킬에게 받은 피해의 합계.",
+      "takenPct": "받은 피해 중 이 스킬의 비율.",
+      "hitsTaken": "이 스킬에게 받은 타격 수."
+    },
+    "stats": {
+      "totalDamage": "총 피해량",
+      "contribution": "피해 비율",
+      "critRate": "치명타 비율",
+      "perfectRate": "완벽률",
+      "doubleRate": "강타율",
+      "backRate": "후방 타격률",
+      "parryRate": "무기막기율",
+      "combatTime": "총 전투 시간",
+      "multiHitDamage": "다단히트 피해",
+      "multiHitHits": "다단히트 횟수",
+      "maxHp": "최대 생명력",
+      "hits": "총 타격 횟수",
+      "regen": "재생",
+      "totalHealing": "총 회복량",
+      "hps": "HPS",
+      "healTicks": "회복 틱",
+      "hotTicks": "HoT 틱",
+      "healSkills": "스킬",
+      "takenTotal": "받은 총 피해량",
+      "dtps": "DTPS",
+      "takenHits": "받은 타격 횟수",
+      "damageReceived": "받은 총 피해량",
+      "hitsReceived": "받은 타격 횟수",
+      "deaths": "사망 횟수"
+    },
+    "fightVs": "전투 상대",
+    "all": "전체",
+    "history": {
+      "allPlayers": "모두"
+    },
+    "dpsChart": "DPS 추이",
+    "historyBtn": "기록",
+    "timeline": "타임라인",
+    "taken": {
+      "monster": "몬스터"
+    },
+    "mode": {
+      "dmg": "피해",
+      "heal": "회복",
+      "taken": "받은 피해"
+    },
+    "title": "상세 정보",
+    "player": "플레이어",
+    "screenshotButton": "스크린샷",
+    "statsTitle": "요약",
+    "summary": {
+      "damage": "피해 {amount} · {rate} DPS",
+      "heal": "회복 {amount} · {rate} HPS",
+      "taken": "받은 피해 {amount} · {rate} DTPS",
+      "fight": "{target} 상대 {time}"
+    },
+    "tips": {
+      "targets": "타격받은 각 대상.",
+      "targetDamage": "이 대상에게 준 피해.",
+      "targetShare": "피해 중 이 대상의 비율.",
+      "healTargets": "회복을 받은 각 플레이어.",
+      "targetHeal": "이 플레이어가 받은 회복량.",
+      "targetHealShare": "회복량 중 이 플레이어의 비율.",
+      "sources": "받은 피해를 준 각 몬스터.",
+      "sourceDamage": "이 몬스터가 준 피해.",
+      "sourceShare": "받은 피해 중 이 몬스터의 비율.",
+      "mechanicPlayer": "이 패턴에 맞은 각 플레이어.",
+      "mechanicHits": "이 패턴이 플레이어를 때린 횟수.",
+      "mechanicDamage": "이 패턴이 플레이어에게 준 피해."
+    },
+    "targets": {
+      "title": "대상",
+      "sources": "공격한 대상"
+    },
+    "hits": {
+      "normal": "일반 타격",
+      "critical": "치명타 타격",
+      "ticks": "틱",
+      "criticalTicks": "치명타 틱",
+      "minAvgMax": "최소 / 평균 / 최대",
+      "types": "타격 유형"
+    },
+    "hitTypes": {
+      "back": "후방피해",
+      "frontal": "전방피해",
+      "perfect": "완벽",
+      "double": "강타",
+      "parry": "무기 막기"
+    },
+    "chart": {
+      "party": "파티",
+      "hps": "HPS 추이",
+      "dtps": "DTPS 추이"
+    },
+    "timelineTracks": {
+      "skills": "스킬",
+      "buffs": "버프",
+      "debuffs": "디버프",
+      "targetDebuffs": "대상 디버프",
+      "stats": "스탯"
+    }
+  },
+  "history": {
+    "title": "기록",
+    "empty": "아직 저장된 보스 전투가 없습니다.",
+    "delete": "삭제",
+    "deleteConfirm": "이 전투를 삭제하시겠습니까?",
+    "showTrainingBattles": "훈련 전투 포함",
+    "trainBadge": "훈련",
+    "liveBadge": "진행 중",
+    "viewList": "목록형 보기",
+    "viewDungeon": "던전별",
+    "viewGrouped": "보스별",
+    "fightCount": "전투 {n}회",
+    "fightCountOne": "전투 1회",
+    "showMore": "더 보기",
+    "previewUpload": "업로드 내용 보기",
+    "previewWorking": "데이터 준비 중…",
+    "previewRequestTip": "'업로드'가 a2tools.app에 보낼 요청을 그대로 읽을 수 있는 파일로 남깁니다. 로그인 정보는 들어 있지 않습니다. 전송하지 않습니다.",
+    "previewRequestDone": "{file}({sent} KB)을 저장했습니다. '업로드'가 보낼 요청 그대로입니다. 아무것도 보내지 않았습니다. 저장 위치: {dir}",
+    "uploadTip": "이 전투를 a2tools.app에 업로드하고 공유 링크 복사",
+    "uploadOpen": "이 전투를 a2tools.app에서 열기",
+    "uploadWorking": "전투 업로드 중…",
+    "uploadDonePublic": "업로드 완료. 링크가 클립보드에 있습니다: {url}",
+    "uploadDonePrivate": "비공개 업로드 완료. 링크가 클립보드에 있습니다: {url}",
+    "openWorld": "필드",
+    "allClasses": "전체 클래스",
+    "players": "{n}명",
+    "solo": "솔로",
+    "partyDps": "파티 DPS",
+    "yourRank": "나 {dps} · {rank}위",
+    "upload": "업로드",
+    "openLog": "기록 열기",
+    "uploadAgain": "다시 업로드",
+    "uploadAgainTip": "이 전투를 a2tools.app에 다시 업로드 (예: a2tools.app에서 기록을 삭제한 뒤)",
+    "allBosses": "전체 보스",
+    "allDays": "전체 날짜"
+  },
+  "gameRecord": {
+    "title": "게임 기록",
+    "switch": "표시할 수치",
+    "meter": "미터",
+    "game": "게임 기록",
+    "both": "둘 다",
+    "filter": "게임 기록이 있는 전투만",
+    "filterTip": "게임 기록은 게임 자체의 전투력 측정기(Ctrl+X)에서 가져옵니다.",
+    "columnTip": "게임 기록: 게임 자체의 전투력 측정기(Ctrl+X)",
+    "matches": "게임과 일치",
+    "differOne": "1개 행이 다릅니다",
+    "differ": "{n}개 행이 다릅니다",
+    "notCompared": "게임 수치만",
+    "damageMeter": "미터 기준 피해",
+    "damageGame": "게임 기준 피해",
+    "takenMeter": "미터 기준 받은 피해",
+    "takenGame": "게임 기준 받은 피해",
+    "allMatch": "스킬 {n}개 모두 일치",
+    "someMatch": "스킬 {n}개 중 {x}개 일치",
+    "noComparison": "이 전투의 패킷이 저장되지 않아 게임 수치만 표시합니다.",
+    "window": "게임 기록: {from}부터 {to}까지.",
+    "covers": "이 전투의 {s}초 포함",
+    "alsoCoversOne": "다른 전투 1개도 포함",
+    "alsoCovers": "다른 전투 {n}개도 포함",
+    "targetOnly": "{target}에 준 피해만 비교합니다.",
+    "onlyDiffer": "다른 행만",
+    "gameTag": "게임 {n}",
+    "note": "차이가 있다면 미터가 전투를 게임과 다르게 읽은 것입니다. 맞는 값은 게임 수치입니다.",
+    "copy": "버그 신고용으로 복사",
+    "copied": "복사됨"
+  },
+  "settings": {
+    "title": "설정",
+    "lockedPort": "찾은 장치와 포트",
+    "resetDetection": "초기화",
+    "characterName": "캐릭터 이름",
+    "characterNamePlaceholder": "캐릭터 이름",
+    "pinMeToTop": "내 줄을 맨 위에 고정",
+    "hideOtherNames": "다른 플레이어 이름 숨기기",
+    "hideOtherNamesHint": "다른 플레이어는 클래스와 번호로 표시되어 스크린샷에 이름이 남지 않습니다. 저장된 전투에는 이름이 그대로 남습니다.",
+    "meterLayout": {
+      "label": "미터 스타일",
+      "normal": "일반",
+      "slim": "슬림"
+    },
+    "detailsMonitor": {
+      "label": "상세 정보를 열 화면",
+      "off": "끄기",
+      "missing": "그 화면은 연결되어 있지 않습니다.",
+      "single": "화면이 하나뿐입니다. 사용하려면 두 번째 화면을 연결하세요.",
+      "badge": "화면",
+      "closeHint": "상세 정보를 닫으면 꺼집니다."
+    },
+    "appearance": "모양",
+    "connection": "캡처",
+    "diagnostics": "문제 해결",
+    "device": {
+      "label": "네트워크 장치",
+      "autoDetect": "자동 감지",
+      "notFound": "{device} (찾을 수 없음)",
+      "following": "{found} 사용 중: 게임 통신이 {device}을(를) 거치지 않습니다."
+    },
+    "advanced": "고급",
+    "saveRawPackets": "패킷 로그 기록",
+    "resetAllSettings": "모두 초기화",
+    "resetAllConfirm": "모든 설정을 초기화하시겠습니까?",
+    "bold": {
+      "label": "굵은 글씨",
+      "names": "이름",
+      "dps": "DPS"
+    },
+    "showPing": "핑 보기",
+    "startInTray": "트레이에서 시작",
+    "startInTrayHint": "미터가 숨겨진 상태로 시작합니다. 트레이 아이콘 메뉴에서 다시 띄울 수 있습니다. 시스템 트레이가 필요하며, 없으면 미터가 그대로 표시됩니다.",
+    "hideFromTaskbar": "작업 표시줄에 표시하지 않음",
+    "hideFromTaskbarHint": "Daevalog의 모든 창(미터, 상세 정보, 기록, 설정)이 작업 표시줄에 나타나지 않습니다. 트레이 아이콘 메뉴로 미터를 표시하거나 숨깁니다.",
+    "showTotalDps": "그룹 합계 표시",
+    "roundDps": "DPS를 정수로 반올림",
+    "autoHideMeter": "미터 자동 숨기기",
+    "showSuspendBtn": "일시정지 버튼 보이기",
+    "showLockBtn": "잠금 버튼 보이기 (클릭이 게임으로 통과)",
+    "waylandLayer": "오버레이: Wayland 레이어",
+    "playerLimit": {
+      "label": "플레이어 행 제한"
+    },
+    "debugLogging": "디버그 로그 기록",
+    "language": {
+      "label": "언어",
+      "system": "시스템 언어"
+    },
+    "timeFormat": {
+      "label": "시간 표시",
+      "hint": "기록, 상세 정보, 게임 기록에서 시각을 표시하는 방식입니다."
+    },
+    "windowOpacity": {
+      "label": "창 불투명도"
+    },
+    "bossNameSize": {
+      "label": "대상 이름 글꼴 크기"
+    },
+    "allTargetsWindow": {
+      "label": "전체 기간",
+      "options": {
+        "off": "끄기 (지역 이동 이후)",
+        "30s": "30초",
+        "1m": "1분",
+        "2m": "2분",
+        "3m": "3분",
+        "5m": "5분"
+      }
+    },
+    "keybinds": "키 설정",
+    "keybind": {
+      "reload": "저장 후 초기화",
+      "toggle": "미터 보이기/숨기기",
+      "pressKeys": "키를 누르세요…",
+      "needModifiers": "보조 키를 두 개 이상 누르세요",
+      "lock": "오버레이 잠금/해제",
+      "portalMissing": "이 데스크톱에는 전역 단축키 서비스(GlobalShortcuts 포털)가 없어 잠금에 키가 없습니다. 트레이나 ⋯ 메뉴에서 미터를 잠그세요.",
+      "portalWaiting": "데스크톱이 키를 승인하기를 기다리는 중입니다.",
+      "portalBound": "데스크톱이 지정한 키: {key}",
+      "portalUnbound": "데스크톱이 키를 지정하지 않았습니다. 키를 다시 녹화해 다시 요청하거나 데스크톱 단축키 설정에서 지정하세요.",
+      "portalRefused": "데스크톱의 확인 창이 닫혀 잠금에 키가 없습니다. 키를 녹화하면 다시 요청합니다.",
+      "portalFailed": "전역 단축키 서비스가 응답하지 않아 잠금에 키가 없습니다.",
+      "windowsBound": "잠금 키: {key}",
+      "windowsTaken": "다른 프로그램이 이 키를 사용하고 있어 잠금에 키가 없습니다. 다른 키를 녹화하세요.",
+      "windowsUnbound": "잠금에 키가 없습니다. 키를 녹화해 지정하세요.",
+      "desktopSettings": "데스크톱 단축키 설정"
+    },
+    "defaultMeterMode": {
+      "label": "시작 시 모드",
+      "hint": "실행 중인 미터도 바로 바뀌며, 행이 처음부터 다시 시작됩니다."
+    },
+    "trainingMode": {
+      "label": "{mode} 행에서 여는 상세 정보",
+      "options": {
+        "all": "모든 허수아비",
+        "highestDamage": "가장 많이 때린 허수아비"
+      },
+      "hint": "{mode}에서 상세 정보와 회복·탱커 탭이 셀 훈련용 허수아비: 전부, 또는 피해를 가장 많이 받은 하나. DPS 행은 그대로입니다."
+    },
+    "account": {
+      "title": "a2tools.app 계정",
+      "signedOut": "로그인하지 않음",
+      "signedIn": "로그인: {name}",
+      "about": "a2tools.app과 계정은 Daevalog가 아니라 A2Tools 개발자가 운영합니다. 전투를 업로드하면 Daevalog는 그 전투 한 번의 게임 통신 데이터를 a2tools.app으로 보냅니다. 데이터 속 캐릭터 이름은 모두 코드로 바뀝니다. 내 캐릭터 이름과, 가운데 글자를 가린 다른 플레이어의 이름도 함께 보냅니다. a2tools.app은 그 데이터로 수치를 직접 계산하고, 내가 지울 때까지 전투를 보관합니다.",
+      "rules": "계정과 업로드에는 a2tools.app의 {privacy}이 적용됩니다. a2tools.app 계정 문의: {help}.",
+      "privacyLink": "개인정보 처리방침",
+      "helpLink": "a2tools.app에 문의하기",
+      "signInHint": "로그인하면 a2tools.app 계정에 전투를 업로드할 수 있습니다. Daevalog는 a2tools.app에 사용자가 누구인지만 묻고, 업로드하는 전투만 보냅니다.",
+      "connect": "로그인",
+      "signOut": "로그아웃",
+      "codePrompt": "브라우저에 이 코드가 표시되는지 확인하세요:",
+      "codeHint": "브라우저 페이지가 열려 있을 것입니다. 코드는 10분 동안 유효합니다.",
+      "working": "승인 대기 중…",
+      "failed": "로그인하지 못했습니다: {error}",
+      "supporter": "후원자",
+      "autoUpload": "보스 전투 자동 업로드",
+      "autoUploadHint": "보스 전투가 끝나면 Daevalog가 a2tools.app에서 정한 공개 범위로 계정에 업로드합니다. 다른 플레이어의 이름은 숨긴 채로 둡니다. 훈련용 허수아비와의 전투는 업로드하지 않습니다.",
+      "autoUploadSignIn": "사용하려면 위에서 로그인하세요.",
+      "autoUploadFailed": "마지막 자동 업로드에 실패했습니다: {error}"
+    },
+    "sendLogs": {
+      "openFolder": "로그 폴더 열기",
+      "openFolderTip": "debug.log, 패킷 로그, 준비한 사본입니다. Daevalog 문제는 '문제 신고'를 이용해 주세요."
+    },
+    "report": {
+      "button": "문제 신고",
+      "title": "문제 신고",
+      "debugLog": "디버그 로그 준비",
+      "intro": "무엇이 잘못됐는지 고르세요. 브라우저에서 GitHub 양식이 열리고, 아래 신고 정보가 채워져 있습니다. 거기서 제출하기 전에는 아무것도 보내지 않습니다.",
+      "kind": {
+        "wrongNumbers": "수치가 틀림",
+        "crash": "충돌 또는 실행 안 됨",
+        "other": "기타",
+        "security": "보안 문제"
+      },
+      "hint": {
+        "wrongNumbers": "그 전투의 준비된 패킷 로그와, 있다면 게임의 전투력 측정기(Ctrl+X) 기록을 첨부해 주세요.",
+        "crashCopy": "'디버그 로그 준비'를 누르세요. 캐릭터 이름, 홈 폴더, 사용자 이름을 지운 report_debug.log를 로그 폴더에 저장합니다. 이슈는 공개되므로 첨부하기 전에 파일을 확인해 주세요. '디버그 로그 활성화'가 꺼져 있으면 켜고 문제를 한 번 더 일으켜 주세요.",
+        "other": "그 밖의 모든 것, 새 기능 아이디어도 여기에.",
+        "security": "공개되면 다른 플레이어나 사용자에게 해가 될 수 있는 모든 것. 이 신고는 개발자만 봅니다."
+      },
+      "prepare": {
+        "title": "패킷 로그 준비",
+        "hint": "패킷 로그에는 만난 모든 플레이어의 이름이 들어 있고, 이슈는 공개됩니다. '로그 준비'는 캐릭터 이름을 모두 바꾼 사본을 로그 폴더에 저장합니다. 사본 이름은 report_로 시작합니다. 그 사본을 첨부해 주세요. 채팅 메시지는 남을 수 있습니다.",
+        "log": "패킷 로그",
+        "button": "로그 준비",
+        "working": "준비 중...",
+        "done": "{name}을(를) 저장했습니다. 로그 폴더가 열려 있습니다.",
+        "failed": "로그를 준비하지 못했습니다: {error}",
+        "none": "아직 패킷 로그가 없습니다. '패킷 로깅 활성화'를 켜고 그 전투를 다시 한 뒤 로그를 준비해 주세요."
+      },
+      "recordFolder": "전투력 측정기 폴더 열기",
+      "recordFolderTip": "게임 자체 기록입니다. 전투력 측정기(Ctrl+X)를 쓸 때마다 record_*.dat 파일이 하나 생깁니다.",
+      "info": "신고 정보",
+      "infoHint": "이 내용이 이슈에 들어갑니다. 사용자 이름, 캐릭터 이름, 폴더 경로는 들어 있지 않습니다.",
+      "copy": "복사",
+      "copied": "복사됨",
+      "open": "양식 열기"
+    },
+    "encounterTimeout": {
+      "label": "전투 종료 시간(초)",
+      "hint": "본인이나 파티가 이 시간 동안 전투하지 않으면 전투가 끝납니다. 공격한 보스가 살아 있는 동안에는 계속됩니다."
+    },
+    "encColumns": {
+      "title": "전투 모드",
+      "hint": "전투가 끝나는 시점과 전투 모드에서 각 줄에 표시할 항목. 미터가 좁으면 뒤쪽 열부터 숨겨집니다.",
+      "encDps": "DPS",
+      "dps": "액티브 DPS",
+      "pct": "피해 %",
+      "total": "총 피해",
+      "crit": "치명타 %",
+      "last10": "최근 10초",
+      "last30": "최근 30초",
+      "last60": "최근 60초",
+      "maxHit": "최대 피해",
+      "hits": "타격"
+    },
+    "sections": {
+      "meter": "미터",
+      "account": "계정"
+    },
+    "colorTheme": {
+      "classic": "클래식",
+      "label": "색상 테마",
+      "system": "시스템",
+      "hint": "지원되는 테마는 Daevalog입니다. 시스템은 데스크톱 색상을 따르며, 잘 보인다는 보장은 없습니다."
+    },
+    "accent": {
+      "label": "강조 색상",
+      "sky": "하늘",
+      "rose": "장미",
+      "lemon": "레몬",
+      "silver": "은색"
+    },
+    "splitView": {
+      "label": "분할 보기",
+      "hint": "DPS 아래 두 번째 표에 힐러 표시: 파티 회복량의 10% 이상을 맡은 치유성과 호법성."
+    },
+    "yourRow": {
+      "label": "내 줄 표시",
+      "name": "내 이름"
+    },
+    "barStrength": {
+      "label": "막대 진하기",
+      "hint": "각 줄을 클래스 색으로 채우는 진하기.",
+      "tableHint": "상세 정보와 기록의 막대는 이름이 잘 보이도록 12%를 넘지 않습니다."
+    },
+    "buttonPlaceHint": "켜면 미터 상단의 버튼, 끄면 ⋯ 메뉴 안에 있습니다.",
+    "layerHint": "켜면 미터가 전체 화면 게임을 포함한 모든 창 위에 표시됩니다. 끄면 일반 창이 되어 전체 화면 게임 아래에 놓입니다. KDE Plasma, Hyprland, Sway에서는 기본으로 켜져 있습니다. GNOME과 X11에서는 동작하지 않습니다. 다음 실행부터 적용됩니다.",
+    "columns": {
+      "title": "열",
+      "hint": "탭마다 열을 몇 개든 고를 수 있습니다. 미터는 들어갈 만큼 넓어집니다.",
+      "dps": "초당 피해 (DPS)",
+      "healed": "회복량",
+      "hps": "초당 회복량 (HPS)",
+      "healPct": "회복 %",
+      "taken": "받은 피해",
+      "dtps": "초당 받은 피해 (DTPS)",
+      "takenPct": "받은 피해 %",
+      "block": "방패 막기",
+      "parry": "무기 막기"
+    },
+    "resetAllHint": "모든 설정을 기본값으로 되돌립니다.",
+    "healthText": {
+      "label": "보스 생명력 표시",
+      "centred": "가운데",
+      "split": "양쪽",
+      "hint": "가운데: 비율과 남은 생명력을 가운데에. 양쪽: 왼쪽 끝에 비율, 가운데에 생명력."
+    },
+    "lowShare": {
+      "label": "낮은 비율 색",
+      "off": "끔",
+      "number": "숫자",
+      "row": "행",
+      "hint": "표시된 피해의 5% 미만인 플레이어는 노란색, 3% 미만은 빨간색이 됩니다. 숫자는 비율을(% 열이 꺼져 있으면 첫 숫자를), 행은 행 전체를 칠합니다."
+    },
+    "groupDamage": {
+      "label": "그룹 피해",
+      "footer": "하단",
+      "line": "별도 줄",
+      "hint": "'총 DPS/DMG 표시'가 켜져 있을 때 그룹 피해를 DPS 옆에 표시할 위치: 하단, 또는 DPS와 함께 행 아래의 별도 줄."
+    },
+    "characterNameHint": "다음 로딩 때 게임의 이름으로 바뀝니다.",
+    "modeOnly": "{mode}에서만 적용됩니다.",
+    "showTotalHint": "푸터의 그룹 합계로, DPS·회복·탱커 모든 탭에 표시됩니다."
+  },
+  "battleTime": {
+    "suspended": "일시정지",
+    "waitingBoss": "아직 보스 없음"
+  },
+  "meter": {
+    "identifyingPlayer": "#{id}",
+    "hiddenPlayer": "{class} {n}",
+    "hiddenPlayerNoClass": "플레이어 {n}",
+    "unattributed": "Unattributed summons and effects",
+    "columns": {
+      "encDps": "DPS",
+      "dps": "액티브",
+      "pct": "%",
+      "share": "비율",
+      "total": "합계",
+      "crit": "CRIT",
+      "last10": "10초",
+      "last30": "30초",
+      "last60": "60초",
+      "maxHit": "최대",
+      "hits": "HIT",
+      "name": "이름",
+      "healed": "회복",
+      "hps": "HPS",
+      "taken": "받은 피해",
+      "dtps": "DTPS",
+      "healer": "힐러"
+    },
+    "columnTips": {
+      "name": "전투에 참여한 각 플레이어와 클래스.",
+      "total": "이 플레이어가 이번 전투에서 준 피해의 합계.",
+      "dps": "이 플레이어의 초당 피해. 상단의 전투 시간으로 계산합니다.",
+      "activeDps": "이 플레이어의 초당 피해. 자신의 첫 타격부터 마지막 타격까지로 계산합니다.",
+      "pct": "표시된 플레이어들의 피해 중 이 플레이어의 비율.",
+      "crit": "이 플레이어의 타격 중 치명타의 비율.",
+      "last": "최근 {n}초 동안 이 플레이어의 초당 피해.",
+      "maxHit": "이번 전투에서 이 플레이어의 가장 큰 한 방.",
+      "hits": "이번 전투에서 이 플레이어가 타격한 횟수.",
+      "healed": "이 플레이어가 이번 전투에서 회복한 양의 합계.",
+      "hps": "이 플레이어의 초당 회복량. 상단의 전투 시간으로 계산합니다.",
+      "healPct": "표시된 플레이어들의 회복량 중 이 플레이어의 비율.",
+      "healTaken": "이 플레이어가 받은 피해. 힐러가 누구에게 회복이 필요한지 보기 위한 것입니다.",
+      "taken": "이 플레이어가 이번 전투에서 받은 피해의 합계.",
+      "dtps": "이 플레이어가 받은 초당 피해. 상단의 전투 시간으로 계산합니다.",
+      "takenPct": "표시된 플레이어들이 받은 피해 중 이 플레이어의 비율.",
+      "block": "이 플레이어가 방패 막기로 막은 타격 수.",
+      "parry": "이 플레이어가 무기 막기로 막은 타격 수.",
+      "healer": "파티 회복량의 10% 이상을 맡은 치유성과 호법성.",
+      "healerPct": "파티 회복량 중 이 힐러의 비율.",
+      "order": "행은 많은 순으로 정렬됩니다. ⋯ > {lowest}로 순서를 뒤집습니다."
+    },
+    "you": "나",
+    "lock": "잠금",
+    "unlock": "잠금 해제",
+    "modes": {
+      "lastHitByMe": "대상",
+      "bossTargets": "보스",
+      "allTargets": "전체",
+      "trainTargets": "훈련",
+      "encounter": "전투"
+    },
+    "tabs": {
+      "dps": "DPS",
+      "heal": "회복",
+      "tank": "탱커"
+    },
+    "suspend": "일시정지",
+    "resume": "재개",
+    "sortLowestFirst": "낮은 순",
+    "fitToRows": "행 수에 맞추기",
+    "more": "추가 옵션",
+    "hideToTray": "트레이로 숨기기. 미터는 계속 작동합니다. 종료는 ⋯ 메뉴에 있습니다.",
+    "lockTip": "클릭이 미터를 통과해 게임으로 가며, 미터를 옮길 수 없습니다.",
+    "suspendTip": "화면의 숫자를 멈춥니다. 집계는 계속되며, 재개하면 모두 표시됩니다.",
+    "noHealer": "아직 힐러가 없습니다",
+    "noHitsTip": "게임이 이 플레이어의 타격은 보내지 않고 지속 피해만 보냈습니다.",
+    "timeToKillTip": "지금 속도로 처치까지 남은 시간. 초록 ✓: 광폭화 전에 처치. 빨강 ✗: 광폭화가 먼저."
+  },
+  "skills": {
+    "fallback": "알 수 없는 스킬 {code}",
+    "dot": "{name} - DOT"
+  },
+  "connection": {
+    "auto": "자동",
+    "detecting": "게임 연결을 찾는 중…",
+    "loopback": "로컬 루프백",
+    "captureUnavailable": "패킷 캡처를 사용할 수 없습니다. 패키지를 다시 설치하거나 github.com/Seralth/Daevalog의 Linux 도움말을 참고하세요.",
+    "npcapMissing": "패킷 캡처에는 Npcap이 필요합니다. 여기를 눌러 npcap.com을 열고 Npcap을 설치한 뒤 미터를 다시 시작하세요.",
+    "dismiss": "닫기"
+  },
+  "target": {
+    "all": "모든 적",
+    "train": "훈련용 허수아비",
+    "encounter": "전투"
+  },
+  "classes": {
+    "GLADIATOR": "검성",
+    "TEMPLAR": "수호성",
+    "RANGER": "궁성",
+    "ASSASSIN": "살성",
+    "SORCERER": "마도성",
+    "CLERIC": "치유성",
+    "ELEMENTALIST": "정령성",
+    "CHANTER": "호법성",
+    "FIGHTER": "권성"
+  },
+  "tray": {
+    "toggle": "미터 표시/숨기기",
+    "settings": "설정",
+    "history": "기록",
+    "quit": "종료"
+  }
+}

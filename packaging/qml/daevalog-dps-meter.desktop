@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Daevalog DPS Meter
+Comment=Real-time DPS overlay for AION 2
+Exec=daevalog-dps-meter
+Icon=daevalog-dps-meter
+Categories=Game;Utility;

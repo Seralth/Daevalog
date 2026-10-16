@@ -1,0 +1,15 @@
+# Packet capture needs CAP_NET_RAW, and nothing else. Only the capture helper
+# gets it; the meter itself runs with none. A new binary (every upgrade)
+# needs it again. setcap sets the whole list, so nothing older stays.
+
+_allow_capture() {
+  local helper=/usr/bin/daevalog-capture
+  local message="==> Daevalog DPS Meter may now capture packets."
+  setcap cap_net_raw=ep "$helper" ||
+    message="==> The capture helper did not get its permission. To grant it:
+    sudo setcap cap_net_raw=ep $helper"
+  echo "$message"
+}
+
+post_install() { _allow_capture; }
+post_upgrade() { _allow_capture; }

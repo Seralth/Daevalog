@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+/target/
+# Written by the build, with this machine's paths.
+/.qmlls.ini

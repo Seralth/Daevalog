@@ -1,0 +1,191 @@
+# Builds and tests Daevalog DPS Meter 2.0 on Windows, and makes the installer.
+#
+# Qt comes from the Qt online archives (install-qt-action). The meter's
+# screenshots run on Qt's offscreen platform. The runner has no Npcap, so the
+# meter shows its "Npcap is missing" notice: live capture is not tested here.
+
+name: Windows
+
+on:
+  push:
+    # A push that changes only documentation does not build.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+
+# A new push to a branch stops that branch's older run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      CARGO_TERM_COLOR: always
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The version shows the commit count, which needs the whole history.
+          fetch-depth: 0
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          # qtdeclarative and qtsvg come with Qt itself.
+          modules: 'qtshadertools'
+          cache: true
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # cl.exe for cxx-qt's C++, and the Visual C++ runtime to ship.
+      - name: Set up the MSVC tools
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          # Kept when a later step fails, so the next run is not cold.
+          cache-on-failure: true
+          workspaces: |
+            src-tauri -> target
+            src-qml -> target
+
+      - name: Show the tools
+        run: |
+          "QMAKE=$env:QT_ROOT_DIR\bin\qmake.exe" >> $env:GITHUB_ENV
+          rustc --version
+          cargo --version
+          & "$env:QT_ROOT_DIR\bin\qmake.exe" -query QT_VERSION
+
+      - name: Build the meter
+        working-directory: src-qml
+        run: cargo build --release --locked
+
+      - name: Test the backend
+        working-directory: src-tauri
+        run: cargo test --locked
+
+      - name: Test the front end
+        working-directory: src-qml
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: cargo test --locked
+
+      - name: Gather the program and the Qt runtime
+        run: |
+          $stage = "$env:RUNNER_TEMP\stage"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item src-qml\target\release\daevalog-qml.exe "$stage\daevalog-dps-meter.exe"
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --release --qmldir src-qml --no-translations --no-compiler-runtime "$stage\daevalog-dps-meter.exe"
+          if ($LASTEXITCODE -ne 0) { throw "windeployqt failed" }
+          # The Visual C++ runtime, beside the program.
+          $crt = Get-ChildItem "$env:VCToolsRedistDir\x64" -Directory -Filter "Microsoft.VC*.CRT" | Select-Object -First 1
+          if (-not $crt) { throw "no Visual C++ runtime under $env:VCToolsRedistDir" }
+          Copy-Item "$($crt.FullName)\*.dll" $stage
+          Copy-Item -Recurse src\data "$stage\data"
+          Copy-Item src-tauri\icons\icon.ico "$stage\daevalog.ico"
+          Copy-Item LICENSE "$stage\LICENSE.txt"
+          Copy-Item public\vendor\fonts\pretendard\LICENSE "$stage\LICENSE-Pretendard.txt"
+          "STAGE=$stage" >> $env:GITHUB_ENV
+
+      # Starts the gathered program, so a missing Qt part shows here too.
+      - name: Take screenshots offscreen
+        run: |
+          $env:QT_QPA_PLATFORM = "offscreen"
+          # Qt writes its warnings to standard error, not the debugger.
+          $env:QT_FORCE_STDERR_LOGGING = "1"
+          # Offscreen Qt looks for fonts under its own lib\fonts; the real
+          # Windows platform reads the system's fonts, so point it there.
+          $env:QT_QPA_FONTDIR = "$env:WINDIR\Fonts"
+          $shots = "$env:RUNNER_TEMP\shots"
+          New-Item -ItemType Directory -Force $shots | Out-Null
+          foreach ($view in @("meter", "meter/notice", "settings/keybinds", "settings/meter", "settings/connection")) {
+            $name = $view -replace '/', '-'
+            $arguments = @("--screenshot", "$shots\$name.png")
+            if ($view -ne "meter") { $arguments += @("--open", $view) }
+            $p = Start-Process -FilePath "$env:STAGE\daevalog-dps-meter.exe" -ArgumentList $arguments -PassThru -NoNewWindow `
+              -RedirectStandardOutput "$shots\$name.out.txt" -RedirectStandardError "$shots\$name.err.txt"
+            $null = $p.Handle
+            if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "$view did not finish in 2 minutes" }
+            $text = "$(Get-Content -Raw "$shots\$name.out.txt")$(Get-Content -Raw "$shots\$name.err.txt")"
+            Write-Output "== $view (exit $($p.ExitCode))" $text
+            if ($p.ExitCode -ne 0) { throw "$view exited with $($p.ExitCode)" }
+            # No Npcap on the runner: its notice is expected. A QML or font
+            # error is not.
+            if ($text -match '\.qml:\d+|QQmlApplicationEngine failed') { throw "$view printed a QML error" }
+            if ($text -match 'Cannot load font|FT_New_Face failed|QFontDatabase:') { throw "$view printed a font error" }
+            if (-not (Test-Path "$shots\$name.png")) { throw "$view saved no screenshot" }
+          }
+
+      - name: Build the installer
+        run: |
+          $find = { Get-ChildItem "${env:ProgramFiles(x86)}\Inno Setup *\ISCC.exe", "$env:ProgramFiles\Inno Setup *\ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 }
+          $iscc = & $find
+          if (-not $iscc) {
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "Inno Setup did not install" }
+            $iscc = & $find
+            if (-not $iscc) { throw "no ISCC.exe after installing Inno Setup" }
+          }
+          $iscc = $iscc.FullName
+          $version = (Select-String -Path src-qml\Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          $rev = git rev-list --count HEAD
+          & $iscc "/DSourceDir=$env:STAGE" "/DAppVersion=$version-r$rev" "/DOutputDir=$env:RUNNER_TEMP\installer" packaging\windows\daevalog-dps-meter.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
+          Get-ChildItem "$env:RUNNER_TEMP\installer"
+
+      # A silent install skips the Npcap question. The installed meter must
+      # start as the gathered one did, and the uninstaller must remove it.
+      - name: Install, start and uninstall
+        run: |
+          $setup = Get-ChildItem "$env:RUNNER_TEMP\installer\*.exe" | Select-Object -First 1
+          if (-not $setup) { throw "no installer" }
+          $dir = "$env:RUNNER_TEMP\installed"
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=$dir") -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "setup exited with $($p.ExitCode)" }
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $env:QT_FORCE_STDERR_LOGGING = "1"
+          $env:QT_QPA_FONTDIR = "$env:WINDIR\Fonts"
+          $p = Start-Process -FilePath "$dir\daevalog-dps-meter.exe" -ArgumentList @("--screenshot", "$env:RUNNER_TEMP\installed.png") -PassThru -NoNewWindow `
+            -RedirectStandardOutput "$env:RUNNER_TEMP\installed.out.txt" -RedirectStandardError "$env:RUNNER_TEMP\installed.err.txt"
+          $null = $p.Handle
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw "the installed meter did not finish in 2 minutes" }
+          $text = "$(Get-Content -Raw "$env:RUNNER_TEMP\installed.out.txt")$(Get-Content -Raw "$env:RUNNER_TEMP\installed.err.txt")"
+          Write-Output "== installed (exit $($p.ExitCode))" $text
+          if ($p.ExitCode -ne 0) { throw "the installed meter exited with $($p.ExitCode)" }
+          if ($text -match '\.qml:\d+|QQmlApplicationEngine failed') { throw "the installed meter printed a QML error" }
+          if ($text -match 'Cannot load font|FT_New_Face failed|QFontDatabase:') { throw "the installed meter printed a font error" }
+          if (-not (Test-Path "$env:RUNNER_TEMP\installed.png")) { throw "the installed meter saved no screenshot" }
+          $p = Start-Process -FilePath "$dir\unins000.exe" -ArgumentList @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART") -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "uninstall exited with $($p.ExitCode)" }
+          # The uninstaller runs a copy of itself, which removes the files
+          # after the first one exits.
+          for ($i = 0; $i -lt 60 -and (Test-Path "$dir\daevalog-dps-meter.exe"); $i++) { Start-Sleep -Seconds 1 }
+          if (Test-Path "$dir\daevalog-dps-meter.exe") { throw "the uninstaller left the meter" }
+
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: daevalog-dps-meter-windows-installer
+          path: ${{ runner.temp }}/installer/*.exe
+          if-no-files-found: error
+
+      - name: Upload the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-screenshots
+          path: ${{ runner.temp }}/shots/
+          if-no-files-found: ignore

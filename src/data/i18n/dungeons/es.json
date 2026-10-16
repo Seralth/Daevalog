@@ -1,0 +1,3207 @@
+{
+  "10": {
+    "name": "Cuna de Esquirlas de Od",
+    "type": "matching"
+  },
+  "100001": {
+    "name": "Poeta",
+    "type": "instancelayer"
+  },
+  "100002": {
+    "name": "Poeta",
+    "type": "instancelayer"
+  },
+  "101041": {
+    "name": "Plantación de Drana",
+    "type": "instancelayer"
+  },
+  "101042": {
+    "name": "Albergue del Peregrino",
+    "type": "instancelayer"
+  },
+  "103": {
+    "name": "Bosque de Munihel",
+    "type": "instancelayer"
+  },
+  "104": {
+    "name": "Acantilado de Anturn",
+    "type": "instancelayer"
+  },
+  "105": {
+    "name": "Almacén de la Brigada Azrakar",
+    "type": "instancelayer"
+  },
+  "106": {
+    "name": "Base Interior del Puesto de Suministros",
+    "type": "instancelayer"
+  },
+  "108": {
+    "name": "Norte del Bosque de Tolbas",
+    "type": "instancelayer"
+  },
+  "109": {
+    "name": "Puesto Temporal de la Legión del Alba",
+    "type": "instancelayer"
+  },
+  "110": {
+    "name": "Sede del Gremio de la Brisa",
+    "type": "instancelayer"
+  },
+  "110001": {
+    "name": "Ishalgen",
+    "type": "instancelayer"
+  },
+  "110005": {
+    "name": "Campo de Detención de la Brigada Azrakar",
+    "type": "instancelayer"
+  },
+  "110006": {
+    "name": "Aldea de Aldelle Nocturna",
+    "type": "instancelayer"
+  },
+  "110007": {
+    "name": "Lago de Tunapre",
+    "type": "instancelayer"
+  },
+  "110008": {
+    "name": "Frente al Campo de Detención de la Brigada Azrakar",
+    "type": "instancelayer"
+  },
+  "111": {
+    "name": "Bosque de los Exiliados",
+    "type": "instancelayer"
+  },
+  "111011": {
+    "name": "Escondite de Reuben",
+    "type": "instancelayer"
+  },
+  "111012": {
+    "name": "Ruinas Abandonadas",
+    "type": "instancelayer"
+  },
+  "111017": {
+    "name": "Patio de los Mercaderes",
+    "type": "instancelayer"
+  },
+  "111025": {
+    "name": "Charco de Drakana",
+    "type": "instancelayer"
+  },
+  "111026": {
+    "name": "Puesto de Destacamento del Cañón",
+    "type": "instancelayer"
+  },
+  "111027": {
+    "name": "Campamento Quai",
+    "type": "instancelayer"
+  },
+  "111028": {
+    "name": "Cementerio Sin Nombre",
+    "type": "instancelayer"
+  },
+  "111029": {
+    "name": "Cueva Oculta",
+    "type": "instancelayer"
+  },
+  "111030": {
+    "name": "Bosque Moslan",
+    "type": "instancelayer"
+  },
+  "111031": {
+    "name": "Altar Norte",
+    "type": "instancelayer"
+  },
+  "111032": {
+    "name": "Altar Este",
+    "type": "instancelayer"
+  },
+  "111033": {
+    "name": "Altar de Tierra",
+    "type": "instancelayer"
+  },
+  "111034": {
+    "name": "Cuartel de la Legión de la Cuchilla",
+    "type": "instancelayer"
+  },
+  "111035": {
+    "name": "Taller Bloqueado",
+    "type": "instancelayer"
+  },
+  "111036": {
+    "name": "Almacén de Suministros de la Legión de la Cuchilla",
+    "type": "instancelayer"
+  },
+  "111037": {
+    "name": "Cueva de los Prisioneros",
+    "type": "instancelayer"
+  },
+  "111038": {
+    "name": "Cuartel de Muqaka",
+    "type": "instancelayer"
+  },
+  "111039": {
+    "name": "Almacén de Fafnite de Lagta",
+    "type": "instancelayer"
+  },
+  "111040": {
+    "name": "Aldea Garra Negra",
+    "type": "instancelayer"
+  },
+  "112": {
+    "name": "Aldea Aullaeu",
+    "type": "instancelayer"
+  },
+  "113": {
+    "name": "Campamento del Cañón",
+    "type": "instancelayer"
+  },
+  "12": {
+    "name": "Campo Nevado de Tormenta Durmiente",
+    "type": "matching"
+  },
+  "14": {
+    "name": "Templo de la Tormenta de Arena",
+    "type": "matching"
+  },
+  "141000": {
+    "name": "Puesto de Reconocimiento del Rastreador Sudka",
+    "type": "instancelayer"
+  },
+  "141001": {
+    "name": "Puesto de Reconocimiento de Zrash Cruel",
+    "type": "instancelayer"
+  },
+  "141002": {
+    "name": "Puesto de Reconocimiento de Rodhar Cruel",
+    "type": "instancelayer"
+  },
+  "141003": {
+    "name": "Puesto de Reconocimiento del Asceta Korag",
+    "type": "instancelayer"
+  },
+  "141004": {
+    "name": "Puesto de Reconocimiento del Asesor Dark",
+    "type": "instancelayer"
+  },
+  "141005": {
+    "name": "Puesto de Reconocimiento del Velador Brons",
+    "type": "instancelayer"
+  },
+  "141006": {
+    "name": "Puesto de Reconocimiento del Aniquilador Cardon",
+    "type": "instancelayer"
+  },
+  "141007": {
+    "name": "Puesto de Reconocimiento de Lucant de Locura",
+    "type": "instancelayer"
+  },
+  "141008": {
+    "name": "Puesto de Reconocimiento de Zrak Depredador",
+    "type": "instancelayer"
+  },
+  "141009": {
+    "name": "Puesto de Reconocimiento del Desintegrador Crovan",
+    "type": "instancelayer"
+  },
+  "141010": {
+    "name": "Puesto de Reconocimiento de Lokand de Estremecimiento",
+    "type": "instancelayer"
+  },
+  "141011": {
+    "name": "Puesto de Reconocimiento de Garmon Inmortal",
+    "type": "instancelayer"
+  },
+  "141012": {
+    "name": "Puesto de Reconocimiento del Destructor Krosh",
+    "type": "instancelayer"
+  },
+  "141013": {
+    "name": "Puesto de Reconocimiento del Torturador Tregon",
+    "type": "instancelayer"
+  },
+  "141014": {
+    "name": "Puesto de Reconocimiento del Carnicero Krums",
+    "type": "instancelayer"
+  },
+  "141015": {
+    "name": "Puesto de Reconocimiento del Captor Kalahanta",
+    "type": "instancelayer"
+  },
+  "141016": {
+    "name": "Puesto de Reconocimiento del Terminator Kalahanta",
+    "type": "instancelayer"
+  },
+  "141017": {
+    "name": "Puesto de Reconocimiento del Triturador Kalahanta",
+    "type": "instancelayer"
+  },
+  "141018": {
+    "name": "Puesto de Reconocimiento de Patalajya el Azotado",
+    "type": "instancelayer"
+  },
+  "141019": {
+    "name": "Puesto de Reconocimiento del Velador de los registros históricos Kalahanta",
+    "type": "instancelayer"
+  },
+  "141020": {
+    "name": "Puesto de Reconocimiento del Árbitro Meganodh",
+    "type": "instancelayer"
+  },
+  "141021": {
+    "name": "Puesto de Reconocimiento del Destructor Ugravahu",
+    "type": "instancelayer"
+  },
+  "142000": {
+    "name": "Guarida de los Saqueadores de Tumbas",
+    "type": "instancelayer"
+  },
+  "142001": {
+    "name": "Guardia de las Afueras del Sagrario",
+    "type": "instancelayer"
+  },
+  "142002": {
+    "name": "Asentamiento de los Bandoleros de Rubek",
+    "type": "instancelayer"
+  },
+  "142003": {
+    "name": "Ruinas del Guardabosques Corrupto",
+    "type": "instancelayer"
+  },
+  "142004": {
+    "name": "Puesto Temporal de la Legión de la Cuchilla",
+    "type": "instancelayer"
+  },
+  "142005": {
+    "name": "Ruinas del Albergue de Leñadores",
+    "type": "instancelayer"
+  },
+  "142006": {
+    "name": "Campamento de Saqueadores del Bosque",
+    "type": "instancelayer"
+  },
+  "142007": {
+    "name": "Almacén de Tesoro del Guardabosques Corrupto",
+    "type": "quest"
+  },
+  "142008": {
+    "name": "Almacén de Tesoro del Puesto de la Legión de la Cuchilla",
+    "type": "quest"
+  },
+  "142009": {
+    "name": "Almacén de Tesoro del Albergue de Leñadores",
+    "type": "quest"
+  },
+  "142010": {
+    "name": "Almacén de Tesoro de la Guarida de Saqueadores de Tumbas",
+    "type": "quest"
+  },
+  "142011": {
+    "name": "Almacén de Tesoro de la Guardia del Sagrario",
+    "type": "quest"
+  },
+  "142012": {
+    "name": "Almacén de Tesoros del Asentamiento de los Bandoleros de Rubek",
+    "type": "quest"
+  },
+  "142013": {
+    "name": "Almacén de Tesoro del Campamento de Saqueadores del Bosque",
+    "type": "quest"
+  },
+  "142014": {
+    "name": "Ruinas de la Base de la Legión",
+    "type": "instancelayer"
+  },
+  "142015": {
+    "name": "Puesto de Guardia de la Legión de Flauke",
+    "type": "instancelayer"
+  },
+  "142016": {
+    "name": "Campamento de los Bandoleros de Detlef",
+    "type": "instancelayer"
+  },
+  "142017": {
+    "name": "Puesto de Vigilancia de Latrima",
+    "type": "instancelayer"
+  },
+  "142018": {
+    "name": "Escondite de Granach",
+    "type": "instancelayer"
+  },
+  "142019": {
+    "name": "Puesto de Guardia del Escuadrón Erradicador de Baratha",
+    "type": "instancelayer"
+  },
+  "142020": {
+    "name": "Base de Vigilancia de Amurata",
+    "type": "instancelayer"
+  },
+  "142021": {
+    "name": "Puesto de Avanzada de Andsha",
+    "type": "instancelayer"
+  },
+  "143000": {
+    "name": "Campamento del Cañón de Hielo",
+    "type": "instancelayer"
+  },
+  "143001": {
+    "name": "Campamento de Cenizas",
+    "type": "instancelayer"
+  },
+  "143004": {
+    "name": "Escondite Maldito del Campo Nevado",
+    "type": "instancelayer"
+  },
+  "143005": {
+    "name": "Ruinas del Templo Caído",
+    "type": "instancelayer"
+  },
+  "143008": {
+    "name": "Base de Vigilancia de Dharvata",
+    "type": "instancelayer"
+  },
+  "143011": {
+    "name": "Puesto de Guardia del Cielo Dinakra",
+    "type": "instancelayer"
+  },
+  "151001": {
+    "name": "Puesto de Reconocimiento del Adorador Dekish",
+    "type": "instancelayer"
+  },
+  "151002": {
+    "name": "Puesto de Reconocimiento del Indagador Sahar",
+    "type": "instancelayer"
+  },
+  "151003": {
+    "name": "Puesto de Reconocimiento del Destructor Tarka",
+    "type": "instancelayer"
+  },
+  "151004": {
+    "name": "Puesto de Reconocimiento del Velador Sandha",
+    "type": "instancelayer"
+  },
+  "151005": {
+    "name": "Puesto de Reconocimiento del Pretoriano Irima",
+    "type": "instancelayer"
+  },
+  "151006": {
+    "name": "Puesto de Reconocimiento del Despiadado Kandak",
+    "type": "instancelayer"
+  },
+  "151007": {
+    "name": "Puesto de Reconocimiento del Cazador Danahan",
+    "type": "instancelayer"
+  },
+  "151008": {
+    "name": "Puesto de Reconocimiento del Implacable Mozant",
+    "type": "instancelayer"
+  },
+  "151009": {
+    "name": "Puesto de Reconocimiento del Iracundo Karsha",
+    "type": "instancelayer"
+  },
+  "151010": {
+    "name": "Puesto de Reconocimiento del Guarda Krache",
+    "type": "instancelayer"
+  },
+  "151011": {
+    "name": "Puesto de Reconocimiento del Verdugo Nemok",
+    "type": "instancelayer"
+  },
+  "151012": {
+    "name": "Puesto de Reconocimiento del Asesor Barha",
+    "type": "instancelayer"
+  },
+  "151013": {
+    "name": "Puesto de Reconocimiento del Astuto Demark",
+    "type": "instancelayer"
+  },
+  "151014": {
+    "name": "Puesto de Reconocimiento del Reconocedor Bagsh",
+    "type": "instancelayer"
+  },
+  "151015": {
+    "name": "Puesto de Reconocimiento del Rastreador Dazran",
+    "type": "instancelayer"
+  },
+  "151016": {
+    "name": "Puesto de Reconocimiento del Fanático Dvahn",
+    "type": "instancelayer"
+  },
+  "151017": {
+    "name": "Puesto de Reconocimiento del Asceta Narat",
+    "type": "instancelayer"
+  },
+  "151018": {
+    "name": "Puesto de Reconocimiento de Taneetch, el Buscador de la Verdad",
+    "type": "instancelayer"
+  },
+  "151019": {
+    "name": "Puesto de Reconocimiento de Varkash, el Verdugo",
+    "type": "instancelayer"
+  },
+  "151020": {
+    "name": "Puesto de Reconocimiento de Moratya el Cruel",
+    "type": "instancelayer"
+  },
+  "151021": {
+    "name": "Puesto de Reconocimiento de Batagon de Indomabilidad",
+    "type": "instancelayer"
+  },
+  "151022": {
+    "name": "Puesto de Reconocimiento de Xanag, el Veloz",
+    "type": "instancelayer"
+  },
+  "152000": {
+    "name": "Campamento de los Desertores",
+    "type": "instancelayer"
+  },
+  "152001": {
+    "name": "Escondite de Romlon",
+    "type": "instancelayer"
+  },
+  "152002": {
+    "name": "Patíbulo de la Sombra del Bosque",
+    "type": "instancelayer"
+  },
+  "152003": {
+    "name": "Escondite del Renegado",
+    "type": "instancelayer"
+  },
+  "152005": {
+    "name": "Base de la Colina de la Meseta",
+    "type": "instancelayer"
+  },
+  "152006": {
+    "name": "Almacén de Tesoro del Campamento de los Desertores",
+    "type": "quest"
+  },
+  "152007": {
+    "name": "Almacén de Tesoros del Escondite de Romlon",
+    "type": "quest"
+  },
+  "152008": {
+    "name": "Almacén de Tesoro del Patíbulo de la Sombra del Bosque",
+    "type": "quest"
+  },
+  "152009": {
+    "name": "Almacén de Tesoro del Escondite del Renegado",
+    "type": "quest"
+  },
+  "152010": {
+    "name": "Almacén de Tesoro de la Base de la Colina de la Meseta",
+    "type": "quest"
+  },
+  "152011": {
+    "name": "Ruinas Sospechosas",
+    "type": "instancelayer"
+  },
+  "153001": {
+    "name": "Campamento de los Bandoleros de Ugaros",
+    "type": "instancelayer"
+  },
+  "153002": {
+    "name": "Puesto de Guardia de Miros",
+    "type": "instancelayer"
+  },
+  "153003": {
+    "name": "Base del Cazador Furtivo",
+    "type": "instancelayer"
+  },
+  "153004": {
+    "name": "Campamento de los Bandoleros de Gargos",
+    "type": "instancelayer"
+  },
+  "153005": {
+    "name": "Guarida de los Ladrones del Cañón",
+    "type": "instancelayer"
+  },
+  "153006": {
+    "name": "Almacén de Tesoro del Campamento de Bandoleros de Ugaros",
+    "type": "quest"
+  },
+  "153007": {
+    "name": "Almacén de Tesoro del Puesto de Guardia de Miros",
+    "type": "quest"
+  },
+  "153008": {
+    "name": "Almacén de Tesoro de la Base del Cazador Furtivo",
+    "type": "quest"
+  },
+  "153009": {
+    "name": "Almacén de Tesoro del Campamento de Bandoleros de Gargos",
+    "type": "quest"
+  },
+  "153010": {
+    "name": "Almacén de Tesoro de la Guarida de Ladrones del Cañón",
+    "type": "quest"
+  },
+  "153011": {
+    "name": "Guarida de los Ladrones de Hernon",
+    "type": "instancelayer"
+  },
+  "153012": {
+    "name": "Ruinas del bastión Rama Dorada",
+    "type": "instancelayer"
+  },
+  "153013": {
+    "name": "Fortaleza del Cielo Rebelde",
+    "type": "instancelayer"
+  },
+  "154001": {
+    "name": "Puesto de Vigilancia de Cohta",
+    "type": "instancelayer"
+  },
+  "154002": {
+    "name": "Base de la Brigada de Patrulla Mantash",
+    "type": "instancelayer"
+  },
+  "154003": {
+    "name": "Puesto de Vigilancia de Sehna",
+    "type": "instancelayer"
+  },
+  "154004": {
+    "name": "Campamento de los Balaur Sabga",
+    "type": "instancelayer"
+  },
+  "154005": {
+    "name": "Puesto de Vigilancia de Maktasha",
+    "type": "instancelayer"
+  },
+  "154006": {
+    "name": "Almacén de Tesoro del Puesto de Vigilancia de Cohta",
+    "type": "quest"
+  },
+  "154007": {
+    "name": "Almacén de Tesoros de la Brigada de Patrulla Mantash",
+    "type": "quest"
+  },
+  "154008": {
+    "name": "Almacén de Tesoro del Puesto de Vigilancia de Sehna",
+    "type": "quest"
+  },
+  "154009": {
+    "name": "Almacén de Tesoros del Campamento de los Balaur Sabga",
+    "type": "quest"
+  },
+  "154010": {
+    "name": "Almacén de Tesoro del Puesto de Vigilancia de Maktasha",
+    "type": "quest"
+  },
+  "154011": {
+    "name": "Puesto de avanzada de Digunaka",
+    "type": "instancelayer"
+  },
+  "154012": {
+    "name": "Puesto de la Veta Oculta",
+    "type": "instancelayer"
+  },
+  "156000": {
+    "name": "Subyugación finalizada"
+  },
+  "156001": {
+    "name": "Subyugación finalizada"
+  },
+  "156002": {
+    "name": "Subyugación finalizada"
+  },
+  "156010": {
+    "name": "Fortaleza de la Brigada de Beritra"
+  },
+  "156011": {
+    "name": "Fortaleza de la Brigada de Beritra"
+  },
+  "156012": {
+    "name": "Fortaleza de la Brigada de Beritra"
+  },
+  "156030": {
+    "name": "Tumba de Orcus"
+  },
+  "156031": {
+    "name": "Tumba de Orcus"
+  },
+  "156032": {
+    "name": "Tumba de Orcus"
+  },
+  "156033": {
+    "name": "Tumba de Orcus"
+  },
+  "156034": {
+    "name": "Tumba de Orcus"
+  },
+  "156035": {
+    "name": "Tumba de Orcus"
+  },
+  "156040": {
+    "name": "Refinería de Fafnite"
+  },
+  "156041": {
+    "name": "Refinería de Fafnite"
+  },
+  "156042": {
+    "name": "Refinería de Fafnite"
+  },
+  "156043": {
+    "name": "Refinería de Fafnite"
+  },
+  "156044": {
+    "name": "Refinería de Fafnite"
+  },
+  "156045": {
+    "name": "Refinería de Fafnite"
+  },
+  "160000": {
+    "name": "Cementerio Silencioso",
+    "type": "growth"
+  },
+  "160001": {
+    "name": "Cuenca de Fafnite",
+    "type": "growth"
+  },
+  "160002": {
+    "name": "Cementerio Silencioso",
+    "type": "growth"
+  },
+  "160003": {
+    "name": "Cementerio Silencioso",
+    "type": "growth"
+  },
+  "160004": {
+    "name": "Cuenca de Fafnite",
+    "type": "growth"
+  },
+  "160005": {
+    "name": "Cuenca de Fafnite",
+    "type": "growth"
+  },
+  "20": {
+    "name": "Reshanta Inferior del Caos"
+  },
+  "200001": {
+    "name": "Encrucijada Onírica",
+    "type": "quest"
+  },
+  "200002": {
+    "name": "Sueño del Dolor",
+    "type": "ascension"
+  },
+  "200003": {
+    "name": "Pesadilla",
+    "type": "bosschallenge"
+  },
+  "200004": {
+    "name": "Sueño de Narun",
+    "type": "ascension"
+  },
+  "200005": {
+    "name": "Subespacio del Ascenso",
+    "type": "ascension"
+  },
+  "200006": {
+    "name": "Sueño del Fragmento Destrozado",
+    "type": "ascension"
+  },
+  "21": {
+    "name": "Reshanta Inferior del Caos",
+    "type": "abyss"
+  },
+  "210001": {
+    "name": "Cueva Costera",
+    "type": "quest"
+  },
+  "210002": {
+    "name": "Grieta de Etheria",
+    "type": "quest"
+  },
+  "210003": {
+    "name": "Remanentes Oníricos",
+    "type": "ascension"
+  },
+  "210004": {
+    "name": "Sagrario de la Ilusión",
+    "type": "quest"
+  },
+  "210006": {
+    "name": "Bodega de la Raíz",
+    "type": "quest"
+  },
+  "210007": {
+    "name": "Altar de Aullaeu",
+    "type": "quest"
+  },
+  "210008": {
+    "name": "Escondite Ilusorio",
+    "type": "quest"
+  },
+  "210009": {
+    "name": "Depósito de Reliquias de Zumion",
+    "type": "quest"
+  },
+  "210010": {
+    "name": "Planta de Desechos de Nahid",
+    "type": "quest"
+  },
+  "210011": {
+    "name": "Templo Divino de Ardus",
+    "type": "quest"
+  },
+  "210012": {
+    "name": "Punto de Intercambio Clandestino",
+    "type": "quest"
+  },
+  "210013": {
+    "name": "Campo de Batalla Olvidado",
+    "type": "ascension"
+  },
+  "210014": {
+    "name": "Barracones Derrumbados de Zikel",
+    "type": "ascension"
+  },
+  "210015": {
+    "name": "Sueño Distorsionado de Zikel",
+    "type": "ascension"
+  },
+  "210016": {
+    "name": "Cueva del Lago Clione",
+    "type": "quest"
+  },
+  "210017": {
+    "name": "Manantial de Vida",
+    "type": "quest"
+  },
+  "210018": {
+    "name": "Zona de Caída de la Luz",
+    "type": "quest"
+  },
+  "210019": {
+    "name": "Centro de Investigación de los Lepharistas",
+    "type": "quest"
+  },
+  "210027": {
+    "name": "Abismo de Chloris",
+    "type": "ascension"
+  },
+  "22": {
+    "name": "Reshanta Intermedia del Caos"
+  },
+  "220001": {
+    "name": "Cripta",
+    "type": "quest"
+  },
+  "220002": {
+    "name": "Sagrario de Zikel",
+    "type": "quest"
+  },
+  "220003": {
+    "name": "Remanentes Oníricos",
+    "type": "ascension"
+  },
+  "220006": {
+    "name": "Oráculo Derrumbado",
+    "type": "quest"
+  },
+  "220007": {
+    "name": "Raíces del Árbol Sagrado",
+    "type": "quest"
+  },
+  "220008": {
+    "name": "Prisión Subterránea de Dranactus",
+    "type": "quest"
+  },
+  "220009": {
+    "name": "Fortaleza Subterránea de Akan de Destrucción",
+    "type": "quest"
+  },
+  "220010": {
+    "name": "Escondite de la Legión de la Cuchilla",
+    "type": "quest"
+  },
+  "220011": {
+    "name": "Impetusium",
+    "type": "quest"
+  },
+  "220012": {
+    "name": "Grieta de Etheria",
+    "type": "quest"
+  },
+  "220013": {
+    "name": "Campo de Batalla Olvidado",
+    "type": "ascension"
+  },
+  "220014": {
+    "name": "Sagrario de Kaisinel Derrumbado",
+    "type": "ascension"
+  },
+  "220015": {
+    "name": "Sueño Distorsionado de Kaisinel",
+    "type": "ascension"
+  },
+  "220016": {
+    "name": "Cueva Sombreada",
+    "type": "quest"
+  },
+  "220017": {
+    "name": "Cueva de Roca Misteriosa",
+    "type": "quest"
+  },
+  "220018": {
+    "name": "Cueva del Lago de Tunapre",
+    "type": "quest"
+  },
+  "220019": {
+    "name": "Almacén Secreto de la Legión de la Cuchilla",
+    "type": "quest"
+  },
+  "220020": {
+    "name": "Torre del Verdugo",
+    "type": "quest"
+  },
+  "220021": {
+    "name": "Templo Flotante de Arkanis",
+    "type": "quest"
+  },
+  "220022": {
+    "name": "Templo de Fuego",
+    "type": "quest"
+  },
+  "220026": {
+    "name": "Cueva del Lago Helado Dormido",
+    "type": "quest"
+  },
+  "220027": {
+    "name": "Abismo de Sigebert",
+    "type": "ascension"
+  },
+  "23": {
+    "name": "Reshanta Intermedia del Caos",
+    "type": "abyss"
+  },
+  "24": {
+    "name": "Reshanta Caótica Superior",
+    "type": "abyss"
+  },
+  "310001": {
+    "name": "Guarida de los Cazadores Furtivos",
+    "type": "seal"
+  },
+  "310002": {
+    "name": "Cueva de la Flor de Espíritu",
+    "type": "seal"
+  },
+  "310003": {
+    "name": "Escondite Maldito",
+    "type": "seal"
+  },
+  "310004": {
+    "name": "Cueva de Hongos Místicos",
+    "type": "seal"
+  },
+  "310005": {
+    "name": "Cueva de los Soldados Rezagados",
+    "type": "seal"
+  },
+  "310006": {
+    "name": "Pozo de Suciedad",
+    "type": "seal"
+  },
+  "310007": {
+    "name": "Ruinas de la Ilusión",
+    "type": "seal"
+  },
+  "310008": {
+    "name": "Escondite de Dehinon",
+    "type": "seal"
+  },
+  "310009": {
+    "name": "Arsenal del Guardián",
+    "type": "seal"
+  },
+  "310010": {
+    "name": "Cueva de los Desesperados",
+    "type": "seal"
+  },
+  "310011": {
+    "name": "Desfiladero Oculto",
+    "type": "seal"
+  },
+  "310012": {
+    "name": "Cueva Distorsionada",
+    "type": "seal"
+  },
+  "310013": {
+    "name": "Residencia del Espiritualista Corrupto",
+    "type": "seal"
+  },
+  "310014": {
+    "name": "Nido de Karat",
+    "type": "seal"
+  },
+  "310015": {
+    "name": "Residencia de Kius",
+    "type": "seal"
+  },
+  "310016": {
+    "name": "Hábitat de Lupyllini",
+    "type": "seal"
+  },
+  "310017": {
+    "name": "Bodega Saqueada",
+    "type": "seal"
+  },
+  "310018": {
+    "name": "Cueva de Odylium Abandonada",
+    "type": "seal"
+  },
+  "310019": {
+    "name": "Tumba de la Roca Solitaria",
+    "type": "seal"
+  },
+  "310020": {
+    "name": "Sala de Secuestro y Confinamiento",
+    "type": "seal"
+  },
+  "310021": {
+    "name": "Archivo de la Ciénaga",
+    "type": "seal"
+  },
+  "310022": {
+    "name": "Barracones de Krall",
+    "type": "seal"
+  },
+  "310023": {
+    "name": "Archivo del Cañón",
+    "type": "seal"
+  },
+  "310024": {
+    "name": "Escondite Fresco",
+    "type": "seal"
+  },
+  "310025": {
+    "name": "Almacén de la Cueva",
+    "type": "seal"
+  },
+  "310026": {
+    "name": "Tumbas de los Muertos Iracundos",
+    "type": "seal"
+  },
+  "310027": {
+    "name": "Guarida de los Bandoleros de Akilo",
+    "type": "seal"
+  },
+  "310028": {
+    "name": "Guarida de Veneno Mortal",
+    "type": "seal"
+  },
+  "310029": {
+    "name": "Cueva de Hierbas",
+    "type": "seal"
+  },
+  "310030": {
+    "name": "Albergue del Peregrino Despojado",
+    "type": "seal"
+  },
+  "310031": {
+    "name": "Cueva de Targos",
+    "type": "seal"
+  },
+  "310032": {
+    "name": "Salón del Conocimiento Destrozado",
+    "type": "seal"
+  },
+  "310033": {
+    "name": "Cueva Subterránea Profunda",
+    "type": "seal"
+  },
+  "310034": {
+    "name": "Prisión de la Fortaleza",
+    "type": "seal"
+  },
+  "310035": {
+    "name": "Sala del Copista",
+    "type": "seal"
+  },
+  "310036": {
+    "name": "Altar del Dragón Rojo",
+    "type": "seal"
+  },
+  "310037": {
+    "name": "Hábitat de Biruta Salvaje",
+    "type": "seal"
+  },
+  "310038": {
+    "name": "Cueva de la Fisura",
+    "type": "seal"
+  },
+  "310039": {
+    "name": "Base de los Renegados",
+    "type": "seal"
+  },
+  "310040": {
+    "name": "Guarida de Klaw",
+    "type": "seal"
+  },
+  "310041": {
+    "name": "Cueva de la Grieta",
+    "type": "seal"
+  },
+  "310042": {
+    "name": "Pozo Profundo y Oscuro",
+    "type": "seal"
+  },
+  "310043": {
+    "name": "Hábitat de Kuru Salvaje",
+    "type": "seal"
+  },
+  "310044": {
+    "name": "Tumba de la Fortaleza",
+    "type": "seal"
+  },
+  "310045": {
+    "name": "Escondite de la Angustia",
+    "type": "seal"
+  },
+  "310046": {
+    "name": "Oratorio Aullaeu",
+    "type": "seal"
+  },
+  "310047": {
+    "name": "Prisión de los Exiliados",
+    "type": "seal"
+  },
+  "310048": {
+    "name": "Altar de Kraka",
+    "type": "seal"
+  },
+  "310049": {
+    "name": "Puesto de Guardia de Dratona",
+    "type": "seal"
+  },
+  "310050": {
+    "name": "Campamento del Escuadrón Explorador Balaur",
+    "type": "seal"
+  },
+  "310051": {
+    "name": "Altar de Esperanza",
+    "type": "seal"
+  },
+  "310052": {
+    "name": "Campo de Detención de Sujetos de Prueba",
+    "type": "seal"
+  },
+  "310053": {
+    "name": "Puesto de Vigilancia de los Balaur",
+    "type": "seal"
+  },
+  "310054": {
+    "name": "Altar de las Ruinas Ocultas",
+    "type": "seal"
+  },
+  "310055": {
+    "name": "Campo de Entrenamiento de Obreros",
+    "type": "seal"
+  },
+  "310056": {
+    "name": "Cueva de Konutin",
+    "type": "seal"
+  },
+  "310057": {
+    "name": "Almacén de la Plantación",
+    "type": "seal"
+  },
+  "310058": {
+    "name": "Tumba del Lector",
+    "type": "seal"
+  },
+  "310059": {
+    "name": "Archivo del Bosque",
+    "type": "seal"
+  },
+  "310060": {
+    "name": "Sótano de la Fortaleza Derrumbada",
+    "type": "seal"
+  },
+  "310061": {
+    "name": "Centro de Investigación Oculto de los Lepharistas",
+    "type": "seal"
+  },
+  "310062": {
+    "name": "Escondite de la Vida Abandonado",
+    "type": "seal"
+  },
+  "310063": {
+    "name": "Zona del Despertar de la Vida",
+    "type": "seal"
+  },
+  "310064": {
+    "name": "Legado Antiguo Sumergido",
+    "type": "seal"
+  },
+  "310065": {
+    "name": "Base Logística de Ishtar",
+    "type": "seal"
+  },
+  "310066": {
+    "name": "Guarida de Drok, el Proscrito",
+    "type": "seal"
+  },
+  "310067": {
+    "name": "Cueva Mugrienta",
+    "type": "seal"
+  },
+  "310068": {
+    "name": "Laboratorio de Creion abandonado",
+    "type": "seal"
+  },
+  "310069": {
+    "name": "Refugio Caído",
+    "type": "seal"
+  },
+  "310070": {
+    "name": "Archivo del Daeva de la Vida",
+    "type": "seal"
+  },
+  "310071": {
+    "name": "Centro de Investigación de Operaciones Especiales Lepharista",
+    "type": "seal"
+  },
+  "310072": {
+    "name": "Base de los Cazarratas",
+    "type": "seal"
+  },
+  "310073": {
+    "name": "Centro de Investigación de Gravarax",
+    "type": "seal"
+  },
+  "310074": {
+    "name": "Hábitat de los Manduri",
+    "type": "seal"
+  },
+  "310075": {
+    "name": "Plantación de Drana mutada",
+    "type": "seal"
+  },
+  "310076": {
+    "name": "Templo Sumergido",
+    "type": "seal"
+  },
+  "310077": {
+    "name": "Bóveda de la Fortaleza de la Torre de la Barrera",
+    "type": "seal"
+  },
+  "310078": {
+    "name": "Manantial Olvidado",
+    "type": "seal"
+  },
+  "310079": {
+    "name": "Escondite de los fugitivos",
+    "type": "seal"
+  },
+  "310080": {
+    "name": "Almacén Secreto de Iagosh",
+    "type": "seal"
+  },
+  "320001": {
+    "name": "Sala de Conmemoración Abandonada",
+    "type": "seal"
+  },
+  "320002": {
+    "name": "Guarida del Estafador",
+    "type": "seal"
+  },
+  "320003": {
+    "name": "Tumba del Abandonado",
+    "type": "seal"
+  },
+  "320004": {
+    "name": "Cueva de Dratona",
+    "type": "seal"
+  },
+  "320005": {
+    "name": "Residencia del Depredador",
+    "type": "seal"
+  },
+  "320006": {
+    "name": "Pozo del Crepúsculo",
+    "type": "seal"
+  },
+  "320007": {
+    "name": "Ruinas Desaparecidas",
+    "type": "seal"
+  },
+  "320008": {
+    "name": "Hábitat de Hierbas Venenosas",
+    "type": "seal"
+  },
+  "320009": {
+    "name": "Nido de Valka",
+    "type": "seal"
+  },
+  "320010": {
+    "name": "Cementerio Antiguo",
+    "type": "seal"
+  },
+  "320011": {
+    "name": "Residencia del Cazador de Tesoros",
+    "type": "seal"
+  },
+  "320012": {
+    "name": "Prisión Abandonada de Akan",
+    "type": "seal"
+  },
+  "320013": {
+    "name": "Cámara de Almacenamiento de Fafnite",
+    "type": "seal"
+  },
+  "320014": {
+    "name": "Túnel de los Insectos",
+    "type": "seal"
+  },
+  "320015": {
+    "name": "Sala de Penitencia Teñida de Sangre",
+    "type": "seal"
+  },
+  "320016": {
+    "name": "Prisión del Olvido",
+    "type": "seal"
+  },
+  "320017": {
+    "name": "Puesto Temporal del Velador",
+    "type": "seal"
+  },
+  "320018": {
+    "name": "Cepo del Dragón Azul",
+    "type": "seal"
+  },
+  "320019": {
+    "name": "Cueva de la Veta Oculta",
+    "type": "seal"
+  },
+  "320020": {
+    "name": "Tumba del Adivino",
+    "type": "seal"
+  },
+  "320021": {
+    "name": "Guarida Aullante",
+    "type": "seal"
+  },
+  "320022": {
+    "name": "Osario del Noble",
+    "type": "seal"
+  },
+  "320023": {
+    "name": "Cueva del Contrabandista",
+    "type": "seal"
+  },
+  "320024": {
+    "name": "Campo de Detención de Homish",
+    "type": "seal"
+  },
+  "320025": {
+    "name": "Cueva de Kumbahum",
+    "type": "seal"
+  },
+  "320026": {
+    "name": "Cueva de las Víctimas",
+    "type": "seal"
+  },
+  "320027": {
+    "name": "Depósito de Drana",
+    "type": "seal"
+  },
+  "320028": {
+    "name": "Ruinas del Sumo Sacerdote",
+    "type": "seal"
+  },
+  "320029": {
+    "name": "Escondite Clausurado",
+    "type": "seal"
+  },
+  "320030": {
+    "name": "Cueva de la Panacea",
+    "type": "seal"
+  },
+  "320031": {
+    "name": "Hábitat de los Fungie",
+    "type": "seal"
+  },
+  "320032": {
+    "name": "Archivo de Sabiduría",
+    "type": "seal"
+  },
+  "320033": {
+    "name": "Sala de Registros Destruida",
+    "type": "seal"
+  },
+  "320034": {
+    "name": "Cueva de Raíces Oscuras",
+    "type": "seal"
+  },
+  "320035": {
+    "name": "Cueva Inestable",
+    "type": "seal"
+  },
+  "320036": {
+    "name": "Base de Lamnah",
+    "type": "seal"
+  },
+  "320037": {
+    "name": "Pozo Retorcido",
+    "type": "seal"
+  },
+  "320038": {
+    "name": "Fisura de la Grieta",
+    "type": "seal"
+  },
+  "320039": {
+    "name": "Altar de las Escamas",
+    "type": "seal"
+  },
+  "320040": {
+    "name": "Archivo de Profecía",
+    "type": "seal"
+  },
+  "320041": {
+    "name": "Guarida de Obreros Skurv",
+    "type": "seal"
+  },
+  "320042": {
+    "name": "Punto de Congregación de Dratona",
+    "type": "seal"
+  },
+  "320043": {
+    "name": "Terreno del Reposo",
+    "type": "seal"
+  },
+  "320044": {
+    "name": "Último Refugio",
+    "type": "seal"
+  },
+  "320045": {
+    "name": "Cueva Subterránea del Adorador",
+    "type": "seal"
+  },
+  "320046": {
+    "name": "Guarida de los Fanáticos",
+    "type": "seal"
+  },
+  "320047": {
+    "name": "Cueva de las Arañas",
+    "type": "seal"
+  },
+  "320048": {
+    "name": "Cueva Vacía",
+    "type": "seal"
+  },
+  "320049": {
+    "name": "Fisura de la Roca Solitaria",
+    "type": "seal"
+  },
+  "320050": {
+    "name": "Cueva de Roca",
+    "type": "seal"
+  },
+  "320051": {
+    "name": "Guarida de los Exiliados",
+    "type": "seal"
+  },
+  "320052": {
+    "name": "Almacén de Tesoros de Piratas",
+    "type": "seal"
+  },
+  "320053": {
+    "name": "Cueva de los Shulak",
+    "type": "seal"
+  },
+  "320054": {
+    "name": "Arsenal de Akan de Destrucción",
+    "type": "seal"
+  },
+  "320055": {
+    "name": "Cueva de los Ascetas",
+    "type": "seal"
+  },
+  "320056": {
+    "name": "Almacén de Fafnite de Lagta",
+    "type": "seal"
+  },
+  "320057": {
+    "name": "Albergue del Guerrero",
+    "type": "seal"
+  },
+  "320058": {
+    "name": "Criadero de Tayga",
+    "type": "seal"
+  },
+  "320059": {
+    "name": "Archivo de Paciencia",
+    "type": "seal"
+  },
+  "320060": {
+    "name": "Guarida de los Hurtadores de Odylium",
+    "type": "seal"
+  },
+  "320061": {
+    "name": "Altar de Fuego Olvidado",
+    "type": "seal"
+  },
+  "320062": {
+    "name": "Base Abandonada de Kromede",
+    "type": "seal"
+  },
+  "320063": {
+    "name": "Oratorio de Verdandi",
+    "type": "seal"
+  },
+  "320064": {
+    "name": "Bodega Secreta de la Legión de la Cuchilla",
+    "type": "seal"
+  },
+  "320065": {
+    "name": "Tierra del Destino Congelada",
+    "type": "seal"
+  },
+  "320066": {
+    "name": "Tierra del Espíritu de Llamas Iracundo",
+    "type": "seal"
+  },
+  "320067": {
+    "name": "Manantial de Pureza",
+    "type": "seal"
+  },
+  "320068": {
+    "name": "Nido del Depredador",
+    "type": "seal"
+  },
+  "320069": {
+    "name": "Cueva de los Varados",
+    "type": "seal"
+  },
+  "320070": {
+    "name": "Cueva de los Exiliados",
+    "type": "seal"
+  },
+  "320071": {
+    "name": "Base de la Legión de la Cuchilla",
+    "type": "seal"
+  },
+  "320072": {
+    "name": "Base de los Saqueadores de Patamor",
+    "type": "seal"
+  },
+  "320073": {
+    "name": "Base de la Unidad de Operaciones Especiales Kurpak",
+    "type": "seal"
+  },
+  "320074": {
+    "name": "Base de Akan del Destino Camuflada",
+    "type": "seal"
+  },
+  "320075": {
+    "name": "Cueva de la Llama",
+    "type": "seal"
+  },
+  "320076": {
+    "name": "Templo Divino del Destino",
+    "type": "seal"
+  },
+  "320077": {
+    "name": "Base Secreta de Indnath",
+    "type": "seal"
+  },
+  "320078": {
+    "name": "Cueva de las Esculturas de Guardianes",
+    "type": "seal"
+  },
+  "320079": {
+    "name": "Cueva Naga de Iralcig",
+    "type": "seal"
+  },
+  "320080": {
+    "name": "Cueva Submarina de Patamor",
+    "type": "seal"
+  },
+  "39": {
+    "name": "Base de la Legión del Alba",
+    "type": "instancelayer"
+  },
+  "400001": {
+    "name": "Ruinas de la Ciudad Ancestral de Roah",
+    "type": "seal"
+  },
+  "400002": {
+    "name": "Ruinas de la Ciudad Ancestral de Roah",
+    "type": "seal"
+  },
+  "46": {
+    "name": "Almacén del Barracón",
+    "type": "instancelayer"
+  },
+  "47": {
+    "name": "Vertedero del Sagrario",
+    "type": "instancelayer"
+  },
+  "48": {
+    "name": "Cuartel de la Torre de Vigilancia",
+    "type": "instancelayer"
+  },
+  "49": {
+    "name": "Sala de Prisioneros",
+    "type": "instancelayer"
+  },
+  "50": {
+    "name": "Panteón",
+    "type": "personalagit"
+  },
+  "500001": {
+    "name": "Asalto Aéreo de Beritra",
+    "type": "fieldevent"
+  },
+  "500002": {
+    "name": "Espada Maldita",
+    "type": "fieldevent"
+  },
+  "500003": {
+    "name": "Recolección de gotas de Od",
+    "type": "fieldevent"
+  },
+  "500004": {
+    "name": "Almacén de Tesoros de Goldrin",
+    "type": "fieldevent"
+  },
+  "500005": {
+    "name": "Asalto de Espíritus",
+    "type": "fieldevent"
+  },
+  "500006": {
+    "name": "Asalto de Espíritus",
+    "type": "fieldevent"
+  },
+  "500007": {
+    "name": "Protegiendo a los comerciantes Shugo",
+    "type": "fieldevent"
+  },
+  "500008": {
+    "name": "Tesoro de Goldrin",
+    "type": "fieldevent"
+  },
+  "500009": {
+    "name": "Recolección de gotas de Od",
+    "type": "fieldevent"
+  },
+  "500010": {
+    "name": "Evasión espectral",
+    "type": "fieldevent"
+  },
+  "500011": {
+    "name": "Salta, salta",
+    "type": "fieldevent"
+  },
+  "500012": {
+    "name": "Lugi oculto",
+    "type": "fieldevent"
+  },
+  "500013": {
+    "name": "Pista misteriosa",
+    "type": "fieldevent"
+  },
+  "500015": {
+    "name": "¿No era esta baldosa?",
+    "type": "fieldevent"
+  },
+  "500016": {
+    "name": "¡Alto, más alto!",
+    "type": "fieldevent"
+  },
+  "500017": {
+    "name": "Asalto Aéreo de Beritra",
+    "type": "fieldevent"
+  },
+  "500018": {
+    "name": "Asalto Aéreo de Beritra",
+    "type": "fieldevent"
+  },
+  "500019": {
+    "name": "Espada Maldita",
+    "type": "fieldevent"
+  },
+  "500020": {
+    "name": "Espada Maldita",
+    "type": "fieldevent"
+  },
+  "500021": {
+    "name": "Asalto de Espíritus",
+    "type": "fieldevent"
+  },
+  "500022": {
+    "name": "Pista misteriosa",
+    "type": "fieldevent"
+  },
+  "500023": {
+    "name": "¡Alto, más alto!",
+    "type": "fieldevent"
+  },
+  "500024": {
+    "name": "Salta, salta",
+    "type": "fieldevent"
+  },
+  "500025": {
+    "name": "Evasión espectral",
+    "type": "fieldevent"
+  },
+  "500026": {
+    "name": "Protegiendo a los comerciantes Shugo",
+    "type": "fieldevent"
+  },
+  "500027": {
+    "name": "Tesoro de Goldrin",
+    "type": "fieldevent"
+  },
+  "500028": {
+    "name": "Lugi oculto",
+    "type": "fieldevent"
+  },
+  "500029": {
+    "name": "¿No era esta baldosa?",
+    "type": "fieldevent"
+  },
+  "500030": {
+    "name": "Disparo Shugo",
+    "type": "fieldevent"
+  },
+  "500031": {
+    "name": "Espada Maldita",
+    "type": "fieldevent"
+  },
+  "500032": {
+    "name": "Asalto Aéreo de Beritra",
+    "type": "fieldevent"
+  },
+  "500033": {
+    "name": "Asalto de Espíritus",
+    "type": "fieldevent"
+  },
+  "500034": {
+    "name": "El dilema del Shugo",
+    "type": "fieldevent"
+  },
+  "500035": {
+    "name": "¡Alto, más alto!",
+    "type": "fieldevent"
+  },
+  "500036": {
+    "name": "¿No era esta baldosa?",
+    "type": "fieldevent"
+  },
+  "500037": {
+    "name": "Salta, salta",
+    "type": "fieldevent"
+  },
+  "500038": {
+    "name": "Lugi oculto",
+    "type": "fieldevent"
+  },
+  "500039": {
+    "name": "Pista misteriosa",
+    "type": "fieldevent"
+  },
+  "500040": {
+    "name": "Evasión espectral",
+    "type": "fieldevent"
+  },
+  "500041": {
+    "name": "Tesoro de Goldrin",
+    "type": "fieldevent"
+  },
+  "500042": {
+    "name": "Recolección de gotas de Od",
+    "type": "fieldevent"
+  },
+  "500043": {
+    "name": "Protegiendo a los comerciantes Shugo",
+    "type": "fieldevent"
+  },
+  "502001": {
+    "name": "Espada Maldita",
+    "type": "fieldevent"
+  },
+  "503001": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "503002": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "503003": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "503004": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "503005": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "503006": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "504001": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "504002": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "504003": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "504004": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "504005": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "504006": {
+    "name": "Corredor del Abismo",
+    "type": "abyssartifact"
+  },
+  "51": {
+    "name": "Puesto de Mando de la Legión del Alba",
+    "type": "instancelayer"
+  },
+  "510001": {
+    "name": "Recolección de gotas de Od",
+    "type": "fieldevent"
+  },
+  "510002": {
+    "name": "Asalto Aéreo de Beritra",
+    "type": "fieldevent"
+  },
+  "510003": {
+    "name": "Salta, salta",
+    "type": "fieldevent"
+  },
+  "510004": {
+    "name": "Lugi oculto",
+    "type": "fieldevent"
+  },
+  "510005": {
+    "name": "Evasión espectral",
+    "type": "fieldevent"
+  },
+  "510006": {
+    "name": "Pista misteriosa",
+    "type": "fieldevent"
+  },
+  "510007": {
+    "name": "Tesoro de Goldrin",
+    "type": "fieldevent"
+  },
+  "510008": {
+    "name": "Asalto Aéreo de Beritra",
+    "type": "fieldevent"
+  },
+  "510009": {
+    "name": "Asalto Aéreo de Beritra",
+    "type": "fieldevent"
+  },
+  "510010": {
+    "name": "¡Alto, más alto!",
+    "type": "fieldevent"
+  },
+  "510011": {
+    "name": "Disparador de pegatinas",
+    "type": "fieldevent"
+  },
+  "510012": {
+    "name": "¿No era esta baldosa?",
+    "type": "fieldevent"
+  },
+  "510013": {
+    "name": "Espada Maldita",
+    "type": "fieldevent"
+  },
+  "510014": {
+    "name": "Espada Maldita",
+    "type": "fieldevent"
+  },
+  "510015": {
+    "name": "Asalto de Espíritus",
+    "type": "fieldevent"
+  },
+  "510016": {
+    "name": "Recolección de gotas de Od",
+    "type": "fieldevent"
+  },
+  "510017": {
+    "name": "Evasión espectral",
+    "type": "fieldevent"
+  },
+  "510018": {
+    "name": "¡Alto, más alto!",
+    "type": "fieldevent"
+  },
+  "510019": {
+    "name": "Pista misteriosa",
+    "type": "fieldevent"
+  },
+  "510020": {
+    "name": "Salta, salta",
+    "type": "fieldevent"
+  },
+  "510021": {
+    "name": "Protegiendo a los comerciantes Shugo",
+    "type": "fieldevent"
+  },
+  "510022": {
+    "name": "Tesoro de Goldrin",
+    "type": "fieldevent"
+  },
+  "510023": {
+    "name": "Lugi oculto",
+    "type": "fieldevent"
+  },
+  "510024": {
+    "name": "¿No era esta baldosa?",
+    "type": "fieldevent"
+  },
+  "510025": {
+    "name": "Disparo Shugo",
+    "type": "fieldevent"
+  },
+  "510026": {
+    "name": "Espada Maldita",
+    "type": "fieldevent"
+  },
+  "510027": {
+    "name": "Asalto Aéreo de Beritra",
+    "type": "fieldevent"
+  },
+  "510028": {
+    "name": "Asalto de Espíritus",
+    "type": "fieldevent"
+  },
+  "510029": {
+    "name": "El dilema del Shugo",
+    "type": "fieldevent"
+  },
+  "510030": {
+    "name": "¡Alto, más alto!",
+    "type": "fieldevent"
+  },
+  "510031": {
+    "name": "¿No era esta baldosa?",
+    "type": "fieldevent"
+  },
+  "510032": {
+    "name": "Salta, salta",
+    "type": "fieldevent"
+  },
+  "510033": {
+    "name": "Lugi oculto",
+    "type": "fieldevent"
+  },
+  "510034": {
+    "name": "Pista misteriosa",
+    "type": "fieldevent"
+  },
+  "510035": {
+    "name": "Evasión espectral",
+    "type": "fieldevent"
+  },
+  "510036": {
+    "name": "Tesoro de Goldrin",
+    "type": "fieldevent"
+  },
+  "510037": {
+    "name": "Recolección de gotas de Od",
+    "type": "fieldevent"
+  },
+  "510038": {
+    "name": "Protegiendo a los comerciantes Shugo",
+    "type": "fieldevent"
+  },
+  "52": {
+    "name": "Oratorio de la Ilusión",
+    "type": "instancelayer"
+  },
+  "600001": {
+    "name": "Cueva de Krao",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 1,
+    "label": "Conquista T1"
+  },
+  "600002": {
+    "name": "Cueva de Krao",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600003": {
+    "name": "Krao Cave"
+  },
+  "600004": {
+    "name": "Cueva de Krao",
+    "type": "party",
+    "tier": 1,
+    "label": "Conquista T1"
+  },
+  "600011": {
+    "name": "Cañón de Urugugu",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600012": {
+    "name": "Cañón de Urugugu",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 2,
+    "label": "Conquista T2"
+  },
+  "600013": {
+    "name": "Cañón de Urugugu",
+    "type": "party",
+    "tier": 2,
+    "label": "Conquista T2"
+  },
+  "600014": {
+    "name": "Urugugu Canyon"
+  },
+  "600021": {
+    "name": "Templo de Fuego",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600022": {
+    "name": "Templo de Fuego",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 3,
+    "label": "Conquista T3"
+  },
+  "600023": {
+    "name": "Templo de Fuego",
+    "type": "party",
+    "tier": 3,
+    "label": "Conquista T3"
+  },
+  "600024": {
+    "name": "Fire Temple"
+  },
+  "600031": {
+    "name": "Draupnir",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600032": {
+    "name": "Draupnir",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 1,
+    "label": "Conquista T1"
+  },
+  "600033": {
+    "name": "Draupnir",
+    "type": "party",
+    "tier": 1,
+    "label": "Conquista T1"
+  },
+  "600034": {
+    "name": "Draupnir"
+  },
+  "600041": {
+    "name": "Nido del Dramata Muerto",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600042": {
+    "name": "Nido del Dramata Muerto",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 4,
+    "label": "Conquista T4"
+  },
+  "600051": {
+    "name": "Base de Investigación Deus",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600052": {
+    "name": "Deus Research Base"
+  },
+  "600053": {
+    "name": "Base de Investigación Deus",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "600054": {
+    "name": "Deus Research Base"
+  },
+  "600055": {
+    "name": "Base de Investigación Deus",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "600056": {
+    "name": "Deus Research Base"
+  },
+  "600057": {
+    "name": "Deus Research Base"
+  },
+  "600058": {
+    "name": "Base de Investigación Deus",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "600059": {
+    "name": "Deus Research Base"
+  },
+  "600061": {
+    "name": "Arkanis Fragmentado",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600062": {
+    "name": "Shattered Arkanis"
+  },
+  "600063": {
+    "name": "Arkanis Fragmentado",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "600064": {
+    "name": "Shattered Arkanis"
+  },
+  "600065": {
+    "name": "Arkanis Fragmentado",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "600066": {
+    "name": "Shattered Arkanis"
+  },
+  "600067": {
+    "name": "Shattered Arkanis"
+  },
+  "600068": {
+    "name": "Arkanis Fragmentado",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "600069": {
+    "name": "Shattered Arkanis"
+  },
+  "600071": {
+    "name": "Isla Aérea de Vakron",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600072": {
+    "name": "Isla Aérea de Vakron",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 2,
+    "label": "Conquista T2"
+  },
+  "600073": {
+    "name": "Isla Aérea de Vakron",
+    "type": "party",
+    "tier": 2,
+    "label": "Conquista T2"
+  },
+  "600074": {
+    "name": "Vakron Sky Island"
+  },
+  "600082": {
+    "name": "Forja Abismal: Ludra",
+    "type": "raid",
+    "difficulty": "normal",
+    "label": "Normal"
+  },
+  "600091": {
+    "name": "Caverna del Cuerno Feroz",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600092": {
+    "name": "Caverna del Cuerno Feroz",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 3,
+    "label": "Conquista T3"
+  },
+  "600093": {
+    "name": "Caverna del Cuerno Feroz",
+    "type": "party",
+    "tier": 3,
+    "label": "Conquista T3"
+  },
+  "600121": {
+    "name": "Cuna de la Nada",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600122": {
+    "name": "Cuna de la Nada",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 4,
+    "label": "Conquista T4"
+  },
+  "600123": {
+    "name": "Cuna de la Nada",
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 4,
+    "label": "Conquista T4 · Difícil"
+  },
+  "600131": {
+    "name": "Corredor de la Ilusión",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600132": {
+    "name": "Corredor de la Ilusión",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 5,
+    "label": "Conquista T5"
+  },
+  "600133": {
+    "name": "Corredor de la Ilusión",
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 5,
+    "label": "Conquista T5 · Difícil"
+  },
+  "600141": {
+    "name": "Isla del Aliento Azul",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600142": {
+    "name": "Isla del Aliento Azul",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 5,
+    "label": "Conquista T5"
+  },
+  "600143": {
+    "name": "Isla del Aliento Azul",
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 5,
+    "label": "Conquista T5 · Difícil"
+  },
+  "600144": {
+    "name": "Ciudadela del Daeva Corrupto"
+  },
+  "600145": {
+    "name": "Ciudadela del Daeva Corrupto"
+  },
+  "600146": {
+    "name": "Ciudadela del Daeva Corrupto"
+  },
+  "600151": {
+    "name": "Ciudadela del Daeva Corrupto",
+    "type": "party",
+    "difficulty": "easy",
+    "label": "Exploración"
+  },
+  "600152": {
+    "name": "Ciudadela del Daeva Corrupto",
+    "type": "party",
+    "difficulty": "normal",
+    "tier": 6,
+    "label": "Conquista T6"
+  },
+  "600153": {
+    "name": "Ciudadela del Daeva Corrupto",
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 6,
+    "label": "Conquista T6 · Difícil"
+  },
+  "600161": {
+    "name": "Consumed Deus Research Base",
+    "difficulty": "exploration"
+  },
+  "600162": {
+    "name": "Consumed Deus Research Base",
+    "difficulty": "normal"
+  },
+  "600163": {
+    "name": "Consumed Deus Research Base",
+    "difficulty": "hard"
+  },
+  "61": {
+    "name": "Arena de Impetusium"
+  },
+  "610010": {
+    "name": "Templo Divino de Vida Hundido",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610011": {
+    "name": "Templo Divino de Vida Hundido",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610012": {
+    "name": "Templo Divino de Vida Hundido",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610013": {
+    "name": "Templo Divino de Vida Hundido",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610020": {
+    "name": "Espejo de Deseo Rojo",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610021": {
+    "name": "Espejo de Deseo Rojo",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610022": {
+    "name": "Espejo de Deseo Rojo",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610023": {
+    "name": "Espejo de Deseo Rojo",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610044": {
+    "name": "Nido del Dramata Muerto",
+    "type": "party",
+    "difficulty": "advanced",
+    "tier": 4,
+    "label": "Conquista T4 · Difícil"
+  },
+  "610052": {
+    "name": "Base de Investigación Deus",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610062": {
+    "name": "Arkanis Fragmentado",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610070": {
+    "name": "Caverna del Cuerno Abismal",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610071": {
+    "name": "Caverna del Cuerno Abismal",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610072": {
+    "name": "Caverna del Cuerno Abismal",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "610073": {
+    "name": "Caverna del Cuerno Abismal",
+    "type": "party",
+    "difficulty": "hard",
+    "label": "Trascendencia"
+  },
+  "62": {
+    "name": "Cuna de Esquirlas de Od"
+  },
+  "620011": {
+    "name": "Purificatorio de Erosión",
+    "type": "raid",
+    "difficulty": "normal",
+    "label": "Normal"
+  },
+  "620021": {
+    "name": "Cáliz de Muspel",
+    "type": "raid",
+    "difficulty": "advanced",
+    "label": "Difícil"
+  },
+  "620022": {
+    "name": "Cáliz de Muspel",
+    "type": "raid",
+    "difficulty": "normal",
+    "label": "Normal"
+  },
+  "64": {
+    "name": "Templo de la Tormenta de Arena"
+  },
+  "690001": {
+    "name": "Subyugación finalizada",
+    "type": "matching",
+    "difficulty": "easy",
+    "label": "Fácil"
+  },
+  "690002": {
+    "name": "Subyugación finalizada",
+    "type": "matching",
+    "difficulty": "normal",
+    "label": "Normal"
+  },
+  "690003": {
+    "name": "Subyugación finalizada",
+    "type": "matching",
+    "difficulty": "hard",
+    "label": "Difícil"
+  },
+  "690011": {
+    "name": "Fortaleza de la Brigada de Beritra",
+    "type": "matching",
+    "difficulty": "easy",
+    "label": "Fácil"
+  },
+  "690012": {
+    "name": "Fortaleza de la Brigada de Beritra",
+    "type": "matching",
+    "difficulty": "normal",
+    "label": "Normal"
+  },
+  "690013": {
+    "name": "Fortaleza de la Brigada de Beritra",
+    "type": "matching",
+    "difficulty": "hard",
+    "label": "Difícil"
+  },
+  "690031": {
+    "name": "Tumba de Orcus",
+    "type": "matching",
+    "difficulty": "easy",
+    "label": "Fácil"
+  },
+  "690032": {
+    "name": "Tumba de Orcus",
+    "type": "matching",
+    "difficulty": "normal",
+    "label": "Normal"
+  },
+  "690033": {
+    "name": "Tumba de Orcus",
+    "type": "matching",
+    "difficulty": "hard",
+    "label": "Difícil"
+  },
+  "690034": {
+    "name": "Tumba de Orcus",
+    "type": "matching",
+    "difficulty": "extreme",
+    "label": "Extremo"
+  },
+  "690035": {
+    "name": "Tumba de Orcus",
+    "type": "matching",
+    "difficulty": "despair",
+    "label": "Desesperación"
+  },
+  "690036": {
+    "name": "Tumba de Orcus",
+    "type": "matching",
+    "difficulty": "hell",
+    "label": "Infierno"
+  },
+  "690041": {
+    "name": "Refinería de Fafnite",
+    "type": "matching",
+    "difficulty": "easy",
+    "label": "Fácil"
+  },
+  "690042": {
+    "name": "Refinería de Fafnite",
+    "type": "matching",
+    "difficulty": "normal",
+    "label": "Normal"
+  },
+  "690043": {
+    "name": "Refinería de Fafnite",
+    "type": "matching",
+    "difficulty": "hard",
+    "label": "Difícil"
+  },
+  "690044": {
+    "name": "Refinería de Fafnite",
+    "type": "matching",
+    "difficulty": "extreme",
+    "label": "Extremo"
+  },
+  "690045": {
+    "name": "Refinería de Fafnite",
+    "type": "matching",
+    "difficulty": "despair",
+    "label": "Desesperación"
+  },
+  "690046": {
+    "name": "Refinería de Fafnite",
+    "type": "matching",
+    "difficulty": "hell",
+    "label": "Infierno"
+  },
+  "7": {
+    "name": "Arena del Templo de Fuego",
+    "type": "matching"
+  },
+  "76": {
+    "name": "Asalto de Espíritus",
+    "type": "fieldevent"
+  },
+  "77": {
+    "name": "Asalto de Espíritus",
+    "type": "fieldevent"
+  },
+  "78": {
+    "name": "Protección del Evento de Campo de Altgard",
+    "type": "fieldevent"
+  },
+  "8": {
+    "name": "Arena de Impetusium",
+    "type": "matching"
+  },
+  "800002": {
+    "name": "Refugio de Fossa",
+    "type": "instancelayer"
+  },
+  "800003": {
+    "name": "Lugar Recomendado para la Recolección de Od",
+    "type": "instancelayer"
+  },
+  "800004": {
+    "name": "Lugar de Experimentos de Creion",
+    "type": "instancelayer"
+  },
+  "800007": {
+    "name": "Avistamiento de Fossa",
+    "type": "instancelayer"
+  },
+  "800008": {
+    "name": "Portal del Abismo Destruido",
+    "type": "instancelayer"
+  },
+  "800009": {
+    "name": "Escondite Secreto de Astin",
+    "type": "instancelayer"
+  },
+  "800010": {
+    "name": "Cueva de las Ilusiones",
+    "type": "instancelayer"
+  },
+  "800011": {
+    "name": "Sur de las Ruinas de la Fortaleza de Verteron",
+    "type": "instancelayer"
+  },
+  "800012": {
+    "name": "Sede Abandonada del Antiguo Gremio",
+    "type": "instancelayer"
+  },
+  "800013": {
+    "name": "Centro de Investigación Drakan",
+    "type": "instancelayer"
+  },
+  "800014": {
+    "name": "Albergue del Sacrificio",
+    "type": "instancelayer"
+  },
+  "800015": {
+    "name": "Isla Funeraria Aullaeu",
+    "type": "instancelayer"
+  },
+  "800016": {
+    "name": "Isla Aérea Bajo la Luna",
+    "type": "instancelayer"
+  },
+  "800017": {
+    "name": "Enfermería de la Legión de Notos",
+    "type": "instancelayer"
+  },
+  "800018": {
+    "name": "Casa Vacía Antigua",
+    "type": "instancelayer"
+  },
+  "800019": {
+    "name": "Casa de Deovar",
+    "type": "instancelayer"
+  },
+  "800020": {
+    "name": "Escondite Abandonado",
+    "type": "instancelayer"
+  },
+  "800021": {
+    "name": "Campo Experimental de Purificación de Slime contaminado",
+    "type": "instancelayer"
+  },
+  "800022": {
+    "name": "Lápida de Cedric",
+    "type": "instancelayer"
+  },
+  "800023": {
+    "name": "Sitio Olvidado",
+    "type": "instancelayer"
+  },
+  "800024": {
+    "name": "Salón de la Compasión",
+    "type": "instancelayer"
+  },
+  "81": {
+    "name": "Sala de Bendición",
+    "type": "instancelayer"
+  },
+  "82": {
+    "name": "Altar de Purificación",
+    "type": "instancelayer"
+  },
+  "820001": {
+    "name": "Campamento Destruido",
+    "type": "instancelayer"
+  },
+  "820002": {
+    "name": "Estación de la banda de saqueadores de Hillsroter",
+    "type": "instancelayer"
+  },
+  "820003": {
+    "name": "Almacén de la banda de saqueadores de Hillsroter",
+    "type": "instancelayer"
+  },
+  "820004": {
+    "name": "Manantial contaminado",
+    "type": "instancelayer"
+  },
+  "820010": {
+    "name": "Cuartel de la Torre de Vigilancia misterioso",
+    "type": "instancelayer"
+  },
+  "820020": {
+    "name": "Escombros de la Zona de Caída",
+    "type": "instancelayer"
+  },
+  "820021": {
+    "name": "Observatorio Abandonado",
+    "type": "instancelayer"
+  },
+  "820022": {
+    "name": "Cueva de Roca Árida",
+    "type": "instancelayer"
+  },
+  "820030": {
+    "name": "Fisura Fétida",
+    "type": "instancelayer"
+  },
+  "820031": {
+    "name": "Escondite de los Lepharistas",
+    "type": "instancelayer"
+  },
+  "820032": {
+    "name": "Taller sin identificar",
+    "type": "instancelayer"
+  },
+  "820040": {
+    "name": "Vivienda de Chloris",
+    "type": "instancelayer"
+  },
+  "820050": {
+    "name": "Base secreta de Chloris",
+    "type": "instancelayer"
+  },
+  "820051": {
+    "name": "Anexo del Centro de Investigación de los Lepharistas",
+    "type": "instancelayer"
+  },
+  "820052": {
+    "name": "Salida de drenaje",
+    "type": "instancelayer"
+  },
+  "83": {
+    "name": "Altar de Nornir",
+    "type": "instancelayer"
+  },
+  "840001": {
+    "name": "Cueva Sospechosa",
+    "type": "quest"
+  },
+  "840002": {
+    "name": "Grieta de Etheria",
+    "type": "quest"
+  },
+  "840003": {
+    "name": "Guarida de los Bandidos",
+    "type": "quest"
+  },
+  "840004": {
+    "name": "Prisión Drakan Abandonada",
+    "type": "quest"
+  },
+  "840005": {
+    "name": "Almacén Temporal de la Compañía Quai",
+    "type": "quest"
+  },
+  "840007": {
+    "name": "Almacén de Objetos Robados de Dodo",
+    "type": "quest"
+  },
+  "840008": {
+    "name": "Guarida de los Muertos",
+    "type": "quest"
+  },
+  "840009": {
+    "name": "Escondite Antiguo",
+    "type": "quest"
+  },
+  "840010": {
+    "name": "Lugar de Experimentación de Scarlotus",
+    "type": "quest"
+  },
+  "840011": {
+    "name": "Primer Escenario",
+    "type": "quest"
+  },
+  "840012": {
+    "name": "Segundo Escenario",
+    "type": "quest"
+  },
+  "840013": {
+    "name": "Depósito de Tarzel",
+    "type": "quest"
+  },
+  "840014": {
+    "name": "Almacén Secreto Oculto",
+    "type": "quest"
+  },
+  "840015": {
+    "name": "Templo de los Espíritus",
+    "type": "quest"
+  },
+  "840016": {
+    "name": "Depósito de Reliquias",
+    "type": "quest"
+  },
+  "840017": {
+    "name": "Ruinas del Pasado",
+    "type": "quest"
+  },
+  "840018": {
+    "name": "Refugio de Sangre",
+    "type": "quest"
+  },
+  "840019": {
+    "name": "Relicario Conquistado",
+    "type": "quest"
+  },
+  "840020": {
+    "name": "Escondite de Daevas Renegados",
+    "type": "quest"
+  },
+  "840021": {
+    "name": "Cárcel Subterránea de Lagta",
+    "type": "quest"
+  },
+  "840022": {
+    "name": "Ruinas Misteriosas",
+    "type": "quest"
+  },
+  "840023": {
+    "name": "Campo de Pruebas de Zumion",
+    "type": "quest"
+  },
+  "840024": {
+    "name": "Archivo de los Akan de Destrucción",
+    "type": "quest"
+  },
+  "840025": {
+    "name": "Altar de Confesión",
+    "type": "quest"
+  },
+  "840026": {
+    "name": "Refinería de Surana",
+    "type": "quest"
+  },
+  "840027": {
+    "name": "Capilla Oculta",
+    "type": "quest"
+  },
+  "840028": {
+    "name": "Cueva del Lago Helado Dormido",
+    "type": "quest"
+  },
+  "840029": {
+    "name": "Biblioteca secreta de los comerciantes Tsenka",
+    "type": "quest"
+  },
+  "840030": {
+    "name": "Cónclave del Destino Falso",
+    "type": "quest"
+  },
+  "840031": {
+    "name": "Depósito de botín de Hillsroter",
+    "type": "quest"
+  },
+  "840032": {
+    "name": "(Sin uso)",
+    "type": "quest"
+  },
+  "840033": {
+    "name": "Escondite de las Dunas de Arena",
+    "type": "quest"
+  },
+  "840034": {
+    "name": "Despacho temporal del traidor",
+    "type": "quest"
+  },
+  "840035": {
+    "name": "Sótano contaminado",
+    "type": "quest"
+  },
+  "840036": {
+    "name": "Almacén de Suministros Superior de los Tsenka",
+    "type": "quest"
+  },
+  "840037": {
+    "name": "Biblioteca del Pulso Desvanecido",
+    "type": "quest"
+  },
+  "840038": {
+    "name": "Ubicación oculta en la Cueva Costera",
+    "type": "quest"
+  },
+  "840039": {
+    "name": "Almacén Abandonado",
+    "type": "quest"
+  },
+  "840040": {
+    "name": "Cueva Oculta del Campo Nevado",
+    "type": "quest"
+  },
+  "840041": {
+    "name": "Cueva Abandonada",
+    "type": "quest"
+  },
+  "840042": {
+    "name": "Zona de Experimentación de los Lepharistas",
+    "type": "quest"
+  },
+  "840043": {
+    "name": "Almacén Secreto",
+    "type": "quest"
+  },
+  "840044": {
+    "name": "Almacén Secreto",
+    "type": "quest"
+  },
+  "840045": {
+    "name": "Laboratorio de los Lepharistas",
+    "type": "quest"
+  },
+  "840046": {
+    "name": "Antigua base de la banda de Chloris",
+    "type": "quest"
+  },
+  "840047": {
+    "name": "Escondite de Milora",
+    "type": "quest"
+  },
+  "840048": {
+    "name": "Lugar misterioso",
+    "type": "quest"
+  },
+  "840049": {
+    "name": "Cueva del Valle de Lava",
+    "type": "quest"
+  },
+  "850000": {
+    "name": "Bastión del Antiguo Grupo Mercenario",
+    "type": "instancelayer"
+  },
+  "850001": {
+    "name": "Pie del Acantilado de la Zona de Caída de Dredgion",
+    "type": "instancelayer"
+  },
+  "850002": {
+    "name": "Condensación de Drakana",
+    "type": "instancelayer"
+  },
+  "850003": {
+    "name": "Almacén de Gelatina de Od",
+    "type": "instancelayer"
+  },
+  "850004": {
+    "name": "Cámara de Piedra Antigua",
+    "type": "quest"
+  },
+  "850005": {
+    "name": "Puesto de Vigilancia del Sagrario",
+    "type": "instancelayer"
+  },
+  "850006": {
+    "name": "Cueva de la Zona de Caída",
+    "type": "instancelayer"
+  },
+  "850007": {
+    "name": "Refugio de Grisilla",
+    "type": "instancelayer"
+  },
+  "850008": {
+    "name": "Cueva del Ermitaño",
+    "type": "instancelayer"
+  },
+  "850009": {
+    "name": "Cueva de las Colinas",
+    "type": "instancelayer"
+  },
+  "850010": {
+    "name": "Almacén Subterráneo de la Garra Negra",
+    "type": "instancelayer"
+  },
+  "850011": {
+    "name": "Casa Antigua",
+    "type": "instancelayer"
+  },
+  "850012": {
+    "name": "Enfermería Temporal",
+    "type": "instancelayer"
+  },
+  "850013": {
+    "name": "Salón de bodas",
+    "type": "instancelayer"
+  },
+  "850014": {
+    "name": "Casa Pequeña",
+    "type": "instancelayer"
+  },
+  "86": {
+    "name": "Antiguo Altar de Purificación",
+    "type": "instancelayer"
+  },
+  "87": {
+    "name": "Despacho de la Legión de Notos",
+    "type": "instancelayer"
+  },
+  "870001": {
+    "name": "Afueras de las Llanuras de Patamor",
+    "type": "instancelayer"
+  },
+  "870002": {
+    "name": "Corazón de las Llanuras de Patamor",
+    "type": "instancelayer"
+  },
+  "870003": {
+    "name": "Escondite del Cazador",
+    "type": "instancelayer"
+  },
+  "870004": {
+    "name": "Isla oculta por la Piedra de barrera",
+    "type": "instancelayer"
+  },
+  "870005": {
+    "name": "Almacén de la Aldea de Patamor",
+    "type": "instancelayer"
+  },
+  "870006": {
+    "name": "Altar de Verdandi",
+    "type": "instancelayer"
+  },
+  "870010": {
+    "name": "Área de Búsqueda de Fragmentos",
+    "type": "instancelayer"
+  },
+  "870011": {
+    "name": "Nido de Kalsek",
+    "type": "instancelayer"
+  },
+  "870012": {
+    "name": "Horca",
+    "type": "instancelayer"
+  },
+  "870013": {
+    "name": "Refugio de la Escarcha Abandonado",
+    "type": "instancelayer"
+  },
+  "870014": {
+    "name": "Escondite de Sombranieve",
+    "type": "instancelayer"
+  },
+  "870020": {
+    "name": "Cueva Costera oculta",
+    "type": "instancelayer"
+  },
+  "870021": {
+    "name": "Aldea Quemada",
+    "type": "instancelayer"
+  },
+  "870030": {
+    "name": "Destruye la segunda cueva de Fafnium",
+    "type": "instancelayer"
+  },
+  "870031": {
+    "name": "Destruye la primera cueva de Fafnium",
+    "type": "instancelayer"
+  },
+  "870032": {
+    "name": "Cueva de Fragmentos del Pasado",
+    "type": "instancelayer"
+  },
+  "870040": {
+    "name": "Isla de Kromede",
+    "type": "instancelayer"
+  },
+  "900001": {
+    "name": "Base de Investigación Biológica Daeva",
+    "type": "daily"
+  },
+  "900002": {
+    "name": "Repositorio de Odylium",
+    "type": "daily"
+  },
+  "900003": {
+    "name": "Depósito secreto de Crobakhi",
+    "type": "daily"
+  },
+  "901": {
+    "name": "Dirigible de la Legión de Altgard",
+    "type": "guild"
+  },
+  "902": {
+    "name": "Dirigible de la Legión de Verteron",
+    "type": "guild"
+  },
+  "904": {
+    "name": "Dirigible de la Legión de Eltnen",
+    "type": "guild"
+  },
+  "905": {
+    "name": "Dirigible de la Legión de Morheim",
+    "type": "guild"
+  },
+  "910011": {
+    "name": "Altar de Pesadilla (fácil)",
+    "type": "awaken",
+    "difficulty": "easy"
+  },
+  "910012": {
+    "name": "Altar de Pesadilla (normal)",
+    "type": "awaken",
+    "difficulty": "normal"
+  },
+  "910013": {
+    "name": "Altar de Pesadilla (difícil)",
+    "type": "awaken",
+    "difficulty": "hard"
+  },
+  "910014": {
+    "name": "Altar de Pesadilla (extremo)",
+    "type": "awaken",
+    "difficulty": "extreme"
+  },
+  "910015": {
+    "name": "Altar de Pesadilla (desesperación)",
+    "type": "awaken"
+  },
+  "910016": {
+    "name": "Altar de Pesadilla (infierno)",
+    "type": "awaken"
+  },
+  "910021": {
+    "name": "Escondite del Tirano (fácil)",
+    "type": "awaken",
+    "difficulty": "easy"
+  },
+  "910022": {
+    "name": "Escondite del Tirano (normal)",
+    "type": "awaken",
+    "difficulty": "normal"
+  },
+  "910023": {
+    "name": "Escondite del Tirano (difícil)",
+    "type": "awaken",
+    "difficulty": "hard"
+  },
+  "910024": {
+    "name": "Escondite del Tirano (extremo)",
+    "type": "awaken",
+    "difficulty": "extreme"
+  },
+  "910025": {
+    "name": "Escondite del Tirano (desesperación)",
+    "type": "awaken"
+  },
+  "910026": {
+    "name": "Escondite del Tirano (infierno)",
+    "type": "awaken"
+  },
+  "910031": {
+    "name": "Sagrario del Odio (fácil)",
+    "type": "awaken",
+    "difficulty": "easy"
+  },
+  "910032": {
+    "name": "Sagrario del Odio (normal)",
+    "type": "awaken",
+    "difficulty": "normal"
+  },
+  "910033": {
+    "name": "Sagrario del Odio (difícil)",
+    "type": "awaken",
+    "difficulty": "hard"
+  },
+  "910034": {
+    "name": "Sagrario del Odio (extremo)",
+    "type": "awaken",
+    "difficulty": "extreme"
+  },
+  "910035": {
+    "name": "Sagrario del Odio (desesperación)",
+    "type": "awaken"
+  },
+  "910036": {
+    "name": "Sagrario del Odio (infierno)",
+    "type": "awaken"
+  },
+  "910041": {
+    "name": "Depósito de Trayectoria (fácil)",
+    "type": "awaken",
+    "difficulty": "easy"
+  },
+  "910042": {
+    "name": "Depósito de Trayectoria (normal)",
+    "type": "awaken",
+    "difficulty": "normal"
+  },
+  "910043": {
+    "name": "Depósito de Trayectoria (difícil)",
+    "type": "awaken",
+    "difficulty": "hard"
+  },
+  "910044": {
+    "name": "Depósito de Trayectoria (extremo)",
+    "type": "awaken",
+    "difficulty": "extreme"
+  },
+  "910045": {
+    "name": "Depósito de Trayectoria (desesperación)",
+    "type": "awaken"
+  },
+  "910046": {
+    "name": "Depósito de Trayectoria (infierno)",
+    "type": "awaken"
+  },
+  "910051": {
+    "name": "Repositorio Olvidado (Fácil)",
+    "type": "awaken",
+    "difficulty": "easy"
+  },
+  "910052": {
+    "name": "Repositorio Olvidado (Normal)",
+    "type": "awaken",
+    "difficulty": "normal"
+  },
+  "910053": {
+    "name": "Repositorio Olvidado (Difícil)",
+    "type": "awaken",
+    "difficulty": "hard"
+  },
+  "910054": {
+    "name": "Repositorio Olvidado (Desafío)",
+    "type": "awaken",
+    "difficulty": "extreme"
+  },
+  "910055": {
+    "name": "Repositorio Olvidado (Locura)",
+    "type": "awaken"
+  },
+  "910056": {
+    "name": "Repositorio Olvidado (Infierno)",
+    "type": "awaken"
+  },
+  "910057": {
+    "name": "Repositorio Olvidado (Perdición)",
+    "type": "awaken"
+  },
+  "910061": {
+    "name": "Alcoba de los Muertos (Fácil)",
+    "type": "awaken",
+    "difficulty": "easy"
+  },
+  "910062": {
+    "name": "Alcoba de los Muertos (Normal)",
+    "type": "awaken",
+    "difficulty": "normal"
+  },
+  "910063": {
+    "name": "Alcoba de los Muertos (Difícil)",
+    "type": "awaken",
+    "difficulty": "hard"
+  },
+  "910064": {
+    "name": "Alcoba de los Muertos (Desafío)",
+    "type": "awaken",
+    "difficulty": "extreme"
+  },
+  "910065": {
+    "name": "Alcoba de los Muertos (Locura)",
+    "type": "awaken"
+  },
+  "910066": {
+    "name": "Alcoba de los Muertos (Infierno)",
+    "type": "awaken"
+  },
+  "910067": {
+    "name": "Alcoba de los Muertos (Perdición)",
+    "type": "awaken"
+  },
+  "94": {
+    "name": "Alrededores del Acantilado Costero",
+    "type": "instancelayer"
+  },
+  "96": {
+    "name": "Bosque Daminu",
+    "type": "instancelayer"
+  },
+  "98": {
+    "name": "Base del Puesto de Suministros",
+    "type": "instancelayer"
+  }
+}

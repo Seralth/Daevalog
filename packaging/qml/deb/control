@@ -1,0 +1,16 @@
+Package: daevalog-dps-meter
+Version: @VERSION@
+Architecture: amd64
+Maintainer: Seralth <packages@seralth.com>
+Installed-Size: @SIZE@
+Depends: @SHLIBS@, libpcap0.8t64 | libpcap0.8, libcap2-bin, qml6-module-qtquick, qml6-module-qtquick-layouts, qml6-module-qtqml-workerscript, qml6-module-qt-labs-platform, qt6-svg-plugins | libqt6svg6 (<< 6.7.2-5~), qt6-wayland
+Recommends: layer-shell-qt, qml6-module-org-kde-layershell
+Suggests: daevalog-dps-meter-legacy
+Conflicts: daevalog-qml, daevalog-qml-dev, a2-tools-dps-meter
+Replaces: daevalog-qml, daevalog-qml-dev, a2-tools-dps-meter
+Section: games
+Priority: optional
+Homepage: https://github.com/Seralth/Daevalog
+Description: Daevalog DPS Meter: AION 2 real-time DPS overlay
+ Real-time DPS overlay for AION 2, running natively on Linux while the game
+ runs under Proton. The 1.x meter is the package daevalog-dps-meter-legacy.

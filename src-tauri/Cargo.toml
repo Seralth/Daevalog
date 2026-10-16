@@ -1,0 +1,86 @@
+[package]
+name = "daevalog-dps-meter"
+version = "1.1.0"
+description = "Daevalog DPS Meter - the parser, combat tally and services behind the meter"
+authors = ["Seralth"]
+edition = "2024"
+license = "AGPL-3.0-only"
+
+# The capture helper (capture-helper/) builds in the same workspace:
+#   cargo build --release -p daevalog-capture
+[workspace]
+members = ["capture-helper"]
+
+[lib]
+name = "a2tools_dps_meter_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[features]
+default = ["backend"]
+# Without `backend` only the parser core builds, and it must stay buildable
+# for wasm32-unknown-unknown (checked by hand: no CI job builds it). So every
+# crate that needs the OS, the network or files is optional and comes in here.
+backend = [
+    "dep:libloading",
+    "dep:daevalog-capture",
+    "dep:tokio",
+    "dep:tracing-subscriber",
+    "dep:reqwest",
+    "dep:futures-util",
+    "dep:urlencoding",
+    "dep:flate2",
+    "dep:dirs",
+    "dep:icu_normalizer",
+    "dep:secret-service",
+    "dep:libc",
+]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+parking_lot = "0.12"
+lz4_flex = "0.11"
+sha2 = "0.11.0"
+daevalog-capture = { path = "capture-helper", optional = true }
+libloading = { version = "0.8", optional = true }
+tokio = { version = "1", features = ["full"], optional = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"], optional = true }
+futures-util = { version = "0.3", optional = true }
+urlencoding = { version = "2", optional = true }
+flate2 = { version = "1.1.10", optional = true }
+dirs = { version = "6", optional = true }
+icu_normalizer = { version = "2.1", default-features = false, features = ["compiled_data"], optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.59", features = [
+    "Win32_Foundation",
+    "Win32_Globalization",
+    "Win32_Security",
+    "Win32_Security_Credentials",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Performance",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# The keyring that holds the account token.
+secret-service = { version = "5.2", features = ["rt-async-io-crypto-rust"], optional = true }
+# Reads the locale's time format (nl_langinfo_l with T_FMT).
+libc = { version = "0.2", optional = true }
+
+[dev-dependencies]
+flate2 = "1"
+
+# The privacy check: anyone can see for themselves what a slice or a packet
+# capture holds. A tool, so it lives in tools/, apart from the meter's code.
+[[bin]]
+name = "a2t-inspect"
+path = "tools/a2t_inspect.rs"
+required-features = ["backend"]
