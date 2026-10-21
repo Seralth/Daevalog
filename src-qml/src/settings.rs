@@ -43,7 +43,9 @@ pub mod qobject {
         #[qproperty(QString, health_text, READ, WRITE = change_health_text, NOTIFY)]
         #[qproperty(QString, low_share, READ, WRITE = change_low_share, NOTIFY)]
         #[qproperty(QString, group_damage, READ, WRITE = change_group_damage, NOTIFY)]
+        #[qproperty(QString, tray_edge, READ, WRITE = change_tray_edge, NOTIFY)]
         #[qproperty(bool, slim_mode, READ, WRITE = change_slim_mode, NOTIFY)]
+        #[qproperty(i32, meter_size, READ, WRITE = change_meter_size, NOTIFY)]
         #[qproperty(bool, split_view, READ, WRITE = change_split_view, NOTIFY)]
         #[qproperty(i32, bar_strength, READ, WRITE = change_bar_strength, NOTIFY)]
         #[qproperty(f64, target_name_size, READ, WRITE = change_target_name_size, NOTIFY)]
@@ -53,6 +55,9 @@ pub mod qobject {
         #[qproperty(bool, start_in_tray, READ, WRITE = change_start_in_tray, NOTIFY)]
         #[qproperty(bool, hide_from_taskbar, READ, WRITE = change_hide_from_taskbar, NOTIFY)]
         #[qproperty(bool, show_ping, READ, WRITE = change_show_ping, NOTIFY)]
+        #[qproperty(bool, spawn_notices, READ, WRITE = change_spawn_notices, NOTIFY)]
+        #[qproperty(bool, shard_warning, READ, WRITE = change_shard_warning, NOTIFY)]
+        #[qproperty(QString, server_time_zone, READ, WRITE = change_server_time_zone, NOTIFY)]
         #[qproperty(bool, show_total, READ, WRITE = change_show_total, NOTIFY)]
         #[qproperty(bool, round_dps, READ, WRITE = change_round_dps, NOTIFY)]
         #[qproperty(bool, show_suspend_button, READ, WRITE = change_show_suspend_button, NOTIFY)]
@@ -91,7 +96,9 @@ pub mod qobject {
         fn change_health_text(self: Pin<&mut Settings>, value: QString);
         fn change_low_share(self: Pin<&mut Settings>, value: QString);
         fn change_group_damage(self: Pin<&mut Settings>, value: QString);
+        fn change_tray_edge(self: Pin<&mut Settings>, value: QString);
         fn change_slim_mode(self: Pin<&mut Settings>, value: bool);
+        fn change_meter_size(self: Pin<&mut Settings>, value: i32);
         fn change_split_view(self: Pin<&mut Settings>, value: bool);
         fn change_bar_strength(self: Pin<&mut Settings>, value: i32);
         fn change_target_name_size(self: Pin<&mut Settings>, value: f64);
@@ -101,6 +108,18 @@ pub mod qobject {
         fn change_start_in_tray(self: Pin<&mut Settings>, value: bool);
         fn change_hide_from_taskbar(self: Pin<&mut Settings>, value: bool);
         fn change_show_ping(self: Pin<&mut Settings>, value: bool);
+        fn change_spawn_notices(self: Pin<&mut Settings>, value: bool);
+        fn change_shard_warning(self: Pin<&mut Settings>, value: bool);
+        fn change_server_time_zone(self: Pin<&mut Settings>, value: QString);
+
+        /// Whether `zone` is a time zone name the clock data knows.
+        #[qinvokable]
+        fn zone_valid(self: &Settings, zone: &QString) -> bool;
+
+        /// The server regions in `language`, as JSON [{"label", "value"}]
+        /// with each region's time zone as its value.
+        #[qinvokable]
+        fn zone_regions(self: &Settings, language: &QString) -> QString;
         fn change_show_total(self: Pin<&mut Settings>, value: bool);
         fn change_round_dps(self: Pin<&mut Settings>, value: bool);
         fn change_show_suspend_button(self: Pin<&mut Settings>, value: bool);
@@ -154,7 +173,10 @@ pub struct SettingsRust {
     health_text: QString,
     low_share: QString,
     group_damage: QString,
+    tray_edge: QString,
     slim_mode: bool,
+    /// The meter window's size in percent: 100, 115, 130 or 150.
+    meter_size: i32,
     split_view: bool,
     /// 10-50, in percent.
     bar_strength: i32,
@@ -166,6 +188,9 @@ pub struct SettingsRust {
     start_in_tray: bool,
     hide_from_taskbar: bool,
     show_ping: bool,
+    spawn_notices: bool,
+    shard_warning: bool,
+    server_time_zone: QString,
     show_total: bool,
     round_dps: bool,
     show_suspend_button: bool,
@@ -219,7 +244,9 @@ impl SettingsRust {
             health_text: QString::from(&v.health_text),
             low_share: QString::from(&v.low_share),
             group_damage: QString::from(&v.group_damage),
+            tray_edge: QString::from(&v.tray_edge),
             slim_mode: v.slim_mode,
+            meter_size: i32::from(v.meter_size),
             split_view: v.split_view,
             bar_strength: i32::from(v.bar_strength),
             target_name_size: v.target_name_size,
@@ -229,6 +256,9 @@ impl SettingsRust {
             start_in_tray: v.start_in_tray,
             hide_from_taskbar: v.hide_from_taskbar,
             show_ping: v.show_ping,
+            spawn_notices: v.spawn_notices,
+            shard_warning: v.shard_warning,
+            server_time_zone: QString::from(&v.server_time_zone),
             show_total: v.show_total,
             round_dps: v.round_dps,
             show_suspend_button: v.show_suspend_button,
@@ -338,6 +368,10 @@ impl qobject::Settings {
         self.change(Key::GroupDamage, value.to_string());
     }
 
+    fn change_tray_edge(self: Pin<&mut Self>, value: QString) {
+        self.change(Key::TrayEdge, value.to_string());
+    }
+
     fn change_screenshot_with_meter(self: Pin<&mut Self>, value: bool) {
         self.change(Key::ScreenshotWithMeter, value.to_string());
     }
@@ -360,6 +394,10 @@ impl qobject::Settings {
 
     fn change_slim_mode(self: Pin<&mut Self>, value: bool) {
         self.change(Key::SlimMode, value.to_string());
+    }
+
+    fn change_meter_size(self: Pin<&mut Self>, value: i32) {
+        self.change(Key::MeterSize, value.to_string());
     }
 
     fn change_split_view(self: Pin<&mut Self>, value: bool) {
@@ -396,6 +434,26 @@ impl qobject::Settings {
 
     fn change_show_ping(self: Pin<&mut Self>, value: bool) {
         self.change(Key::ShowPing, value.to_string());
+    }
+
+    fn change_spawn_notices(self: Pin<&mut Self>, value: bool) {
+        self.change(Key::SpawnNotices, value.to_string());
+    }
+
+    fn change_shard_warning(self: Pin<&mut Self>, value: bool) {
+        self.change(Key::ShardWarning, value.to_string());
+    }
+
+    fn change_server_time_zone(self: Pin<&mut Self>, value: QString) {
+        self.change(Key::ServerTimeZone, value.to_string());
+    }
+
+    fn zone_valid(&self, zone: &QString) -> bool {
+        crate::world_spawns::valid_zone(&zone.to_string())
+    }
+
+    fn zone_regions(&self, language: &QString) -> QString {
+        QString::from(&crate::world_spawns::regions_json(&language.to_string()))
     }
 
     fn change_show_total(self: Pin<&mut Self>, value: bool) {
@@ -502,7 +560,9 @@ impl qobject::Settings {
             Key::HealthText => self.health_text_changed(),
             Key::LowShare => self.low_share_changed(),
             Key::GroupDamage => self.group_damage_changed(),
+            Key::TrayEdge => self.tray_edge_changed(),
             Key::SlimMode => self.slim_mode_changed(),
+            Key::MeterSize => self.meter_size_changed(),
             Key::SplitView => self.split_view_changed(),
             Key::BarStrength => self.bar_strength_changed(),
             Key::TargetNameSize => self.target_name_size_changed(),
@@ -512,6 +572,9 @@ impl qobject::Settings {
             Key::StartInTray => self.start_in_tray_changed(),
             Key::HideFromTaskbar => self.hide_from_taskbar_changed(),
             Key::ShowPing => self.show_ping_changed(),
+            Key::SpawnNotices => self.spawn_notices_changed(),
+            Key::ShardWarning => self.shard_warning_changed(),
+            Key::ServerTimeZone => self.server_time_zone_changed(),
             Key::ShowTotal => self.show_total_changed(),
             Key::RoundDps => self.round_dps_changed(),
             Key::ShowSuspendButton => self.show_suspend_button_changed(),
@@ -555,7 +618,9 @@ impl qobject::Settings {
         show!(self, health_text, health_text_changed, v.health_text);
         show!(self, low_share, low_share_changed, v.low_share);
         show!(self, group_damage, group_damage_changed, v.group_damage);
+        show!(self, tray_edge, tray_edge_changed, v.tray_edge);
         show!(self, slim_mode, slim_mode_changed, v.slim_mode);
+        show!(self, meter_size, meter_size_changed, v.meter_size);
         show!(self, split_view, split_view_changed, v.split_view);
         show!(self, bar_strength, bar_strength_changed, v.bar_strength);
         show!(self, target_name_size, target_name_size_changed, v.target_name_size);
@@ -565,6 +630,9 @@ impl qobject::Settings {
         show!(self, start_in_tray, start_in_tray_changed, v.start_in_tray);
         show!(self, hide_from_taskbar, hide_from_taskbar_changed, v.hide_from_taskbar);
         show!(self, show_ping, show_ping_changed, v.show_ping);
+        show!(self, spawn_notices, spawn_notices_changed, v.spawn_notices);
+        show!(self, shard_warning, shard_warning_changed, v.shard_warning);
+        show!(self, server_time_zone, server_time_zone_changed, v.server_time_zone);
         show!(self, show_total, show_total_changed, v.show_total);
         show!(self, round_dps, round_dps_changed, v.round_dps);
         show!(self, show_suspend_button, show_suspend_button_changed, v.show_suspend_button);

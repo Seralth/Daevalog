@@ -1,0 +1,20 @@
+{
+  "fieldBoss": "Monstro Único de Campo",
+  "maps": {
+    "20": "Piso Inferior de Reshanta do Caos",
+    "22": "Piso Intermediário de Reshanta do Caos",
+    "1010": "Verteron",
+    "1011": "Eltnen",
+    "1110": "Altgard",
+    "1111": "Morheim"
+  },
+  "regions": {
+    "NAW": "América do Norte - Oeste",
+    "NAE": "América do Norte - Leste",
+    "EU": "Europa",
+    "LA": "América do Sul",
+    "AS": "Ásia",
+    "JP": "Japão"
+  },
+  "rift": "Fenda Espaço-Temporal"
+}

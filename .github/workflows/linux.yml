@@ -62,7 +62,7 @@ jobs:
       - name: Install the build tools (Arch)
         if: matrix.system == 'arch'
         # lld: cxx-qt links with it when it finds it; GNU ld fails.
-        run: pacman -Syu --noconfirm --needed git rust lld qt6-base qt6-declarative qt6-svg libpcap libcap hicolor-icon-theme
+        run: pacman -Syu --noconfirm --needed git rust lld qt6-base qt6-declarative qt6-svg layer-shell-qt libpcap libcap hicolor-icon-theme
 
       - name: Install the build tools (Debian, Ubuntu)
         if: matrix.system == 'debian13' || matrix.system == 'ubuntu2404'

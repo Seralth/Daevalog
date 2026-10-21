@@ -310,6 +310,10 @@
       "normal": "Normal",
       "slim": "Schlank"
     },
+    "meterSize": {
+      "label": "Meter-Größe",
+      "hint": "Macht Text und Zeilen des Meters größer. Die anderen Fenster behalten ihre Größe."
+    },
     "detailsMonitor": {
       "label": "Details auf Bildschirm öffnen",
       "off": "Aus",
@@ -549,9 +553,28 @@
       "line": "Eigene Zeile",
       "hint": "Wo der Schaden der Gruppe neben ihren DPS steht, solange „Gesamt-DPS/SCH anzeigen“ an ist: in der Fußzeile oder mit den DPS in einer eigenen Zeile unter den Spielern."
     },
+    "trayEdge": {
+      "label": "Benachrichtigungsleiste",
+      "auto": "Automatisch",
+      "top": "Oben",
+      "bottom": "Unten",
+      "hint": "An welcher Kante des Meters die Benachrichtigungen sitzen. Automatisch: oben, oder unten, wenn über dem Meter kein Platz für die offene Liste ist."
+    },
     "characterNameHint": "Beim nächsten Laden ersetzt der Name aus dem Spiel diesen.",
     "modeOnly": "Nur in {mode}.",
-    "showTotalHint": "Die Gruppensumme in der Fußzeile, auf jedem Tab: DPS, Heilung und Verteidiger."
+    "showTotalHint": "Die Gruppensumme in der Fußzeile, auf jedem Tab: DPS, Heilung und Verteidiger.",
+    "spawnNotices": "Countdown für Berüchtigte Feld-Monster und Raumzeit-Risse",
+    "spawnNoticesHint": "In den Benachrichtigungen: 30, 15 und 5 Minuten vor einem Berüchtigten Feld-Monster, 5 Minuten vor einem Raumzeit-Riss.",
+    "shardWarning": "Siegelstein-Warnung",
+    "shardWarningHint": "Eine Benachrichtigung, wenn deine Treffer keine Siegelsteine mehr nutzen.",
+    "serverTimeZone": "Zeitzone des Servers",
+    "serverTimeZoneHint": "Boss- und Risszeiten folgen der Uhr deines Servers. Wähle deine Region und vergleiche eine Zeit mit der Serverzeit im Spiel.",
+    "zone": {
+      "computer": "Zeitzone dieses Computers",
+      "other": "Andere Zeitzone",
+      "placeholder": "Gebiet/Stadt, z. B. Europe/Berlin",
+      "invalid": "Keine bekannte Zeitzone"
+    }
   },
   "battleTime": {
     "suspended": "Pausiert",
@@ -664,5 +687,37 @@
     "settings": "Einstellungen",
     "history": "Verlauf",
     "quit": "Beenden"
+  },
+  "notices": {
+    "title": "Benachrichtigungen",
+    "clearAll": "Alle löschen",
+    "none": "Keine Benachrichtigungen",
+    "pet": {
+      "soul": "{pet}: Seele",
+      "souls": "{pet}: +{count} Seelen",
+      "registered": "{pet} registriert",
+      "level": "{pet} hat Stufe {level} erreicht",
+      "reached": "Stufe {level} erreicht. {status}",
+      "toRegister": "{souls}/{need} (noch {left} bis zur Registrierung), {toMax} bis zum Maximum",
+      "toLevel": "{souls}/{need} (noch {left} bis Stufe {next}), {toMax} bis zum Maximum",
+      "max": "Stufe {level}, Maximum",
+      "unknown": "Anzahl unbekannt: einmal zur Charakterauswahl und zurück oder einen Gruppendungeon betreten",
+      "behind": "{status} (Pet-Liste von {time}, eventuell veraltet)",
+      "insight": "{genus}-Kenntnis Stufe {level}: {exp}/{need}",
+      "insightGain": "{insight} (+{gain})",
+      "insightMax": "{genus}-Kenntnis Stufe {level} (Maximum)",
+      "insightLevel": "{genus}-Kenntnis Stufe {level}",
+      "unnamed": "Pet {id}"
+    },
+    "spawn": {
+      "at": "{name} um {time}"
+    },
+    "shard": {
+      "off": "Siegelsteine aus",
+      "out": "Siegelsteine aufgebraucht",
+      "toggle": "Die Taste B schaltet sie ein und aus."
+    },
+    "countdown": "in {minutes} Min.",
+    "now": "jetzt"
   }
 }

@@ -122,7 +122,12 @@ std::unique_ptr<QApplication> newApplication(rust::Slice<const rust::String> arg
     // The .desktop file's name (build.rs).
     QApplication::setDesktopFileName(QStringLiteral(DAEVALOG_APP_ID));
     auto app = std::make_unique<QApplication>(argc, argv.data());
+#ifdef DAEVALOG_DEV
+    // Red, so the developer build is not taken for the release one.
+    QApplication::setWindowIcon(QIcon(QStringLiteral(":/daevalog/icons/app-dev.png")));
+#else
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/daevalog/icons/app.png")));
+#endif
     return app;
 }
 
@@ -545,6 +550,17 @@ void setInputArea(QQuickWindow *window, const QRectF &area)
         shape->rectangles(x11, shapeSet, shapeInput, unsorted, id, 0, 0, 1, &rectangle);
     }
     shape->flush(x11);
+}
+
+void setPopupPlace(QQuickWindow *window, const QRectF &anchor, bool below, std::uint32_t adjust)
+{
+    if (!window)
+        return;
+    const Qt::Edges edge = below ? Qt::BottomEdge : Qt::TopEdge;
+    window->setProperty("_q_waylandPopupAnchorRect", anchor.toAlignedRect());
+    window->setProperty("_q_waylandPopupAnchor", QVariant::fromValue(edge | Qt::LeftEdge));
+    window->setProperty("_q_waylandPopupGravity", QVariant::fromValue(edge | Qt::RightEdge));
+    window->setProperty("_q_waylandPopupConstraintAdjustment", QVariant::fromValue(adjust));
 }
 
 QString platformName()

@@ -100,6 +100,10 @@ pub fn start(qt: CxxQtThread<Meter>, language: &'static str) {
             if let Some(changed) = new_language(&mut language, &values) {
                 feed.set_language(changed);
             }
+            let hour24 = values.uses_24h(crate::settings_store::system_clock_24h());
+            crate::pet_souls::tick(&feed.storage, language, hour24);
+            crate::power_shards::tick(&feed.storage, language, values.shard_warning);
+            crate::world_spawns::tick(language, hour24, values.spawn_notices, &values.server_time_zone);
             if follow_default_mode(&mut default_mode, &values, &mut feed.meter.lock()) {
                 request_clear();
             }

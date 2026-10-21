@@ -68,6 +68,13 @@ void setInputArea(QQuickWindow *window, const QRectF &area);
 // Whether setInputArea can leave part of the window taking clicks: on
 // Wayland and X11.
 bool canShapeInput();
+// Where a Wayland popup goes the next time it is shown: on the top edge of
+// `anchor` (its parent's coordinates) growing up, or on its bottom edge
+// growing down, from the anchor's left. `adjust` is what the compositor may
+// do when it does not fit (xdg_positioner constraint_adjustment; 0:
+// nothing). Qt's Wayland plugin reads these window properties when it makes
+// the popup's positioner; elsewhere they do nothing.
+void setPopupPlace(QQuickWindow *window, const QRectF &anchor, bool below, std::uint32_t adjust);
 // Keeps an X11 window out of the taskbar and the window list: each time
 // before it maps, it gets _NET_WM_STATE_SKIP_TASKBAR, which Qt keeps (it
 // adds its own states to those it finds). Install before the first show.

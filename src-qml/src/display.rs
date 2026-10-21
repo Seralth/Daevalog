@@ -128,6 +128,14 @@ pub fn pointer_from_socket() -> bool {
     desktop() == Desktop::Hyprland
 }
 
+/// Whether a popup of the layer-shell meter is left behind when the meter
+/// moves: Hyprland moves a layer surface with its layer animation and its
+/// popups only to where the surface was at their last commit, so a still
+/// popup stops part of the way. Shown again, it goes to its place.
+pub fn layer_popups_lag() -> bool {
+    desktop() == Desktop::Hyprland
+}
+
 /// Whether the layer-shell meter takes the keys while one of its menus is
 /// open. Sway gives a popup's keys only to its parent's surface, and the
 /// meter's layer surface takes none (it must not take them from the game),

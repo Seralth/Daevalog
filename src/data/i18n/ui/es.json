@@ -310,6 +310,10 @@
       "normal": "Normal",
       "slim": "Compacto"
     },
+    "meterSize": {
+      "label": "Tamaño del medidor",
+      "hint": "Agranda el texto y las filas del medidor. Las demás ventanas mantienen su tamaño."
+    },
     "detailsMonitor": {
       "label": "Abrir Detalles en la pantalla",
       "off": "Desactivado",
@@ -549,9 +553,28 @@
       "line": "Línea propia",
       "hint": "Dónde se muestra el daño del grupo junto a su DPS mientras «Mostrar DPS/DÑO total» está activado: en el pie, o con el DPS en una línea propia bajo las filas."
     },
+    "trayEdge": {
+      "label": "Bandeja de notificaciones",
+      "auto": "Automático",
+      "top": "Arriba",
+      "bottom": "Abajo",
+      "hint": "En qué borde del medidor están las notificaciones. Automático: arriba, o abajo si la lista abierta no cabe encima del medidor."
+    },
     "characterNameHint": "El nombre del juego lo reemplaza en la próxima carga.",
     "modeOnly": "Solo en {mode}.",
-    "showTotalHint": "El total del grupo en el pie, en cada pestaña: DPS, Curación y Tanque."
+    "showTotalHint": "El total del grupo en el pie, en cada pestaña: DPS, Curación y Tanque.",
+    "spawnNotices": "Cuenta atrás de monstruos únicos de campo y Grietas Espacio-Tiempo",
+    "spawnNoticesHint": "En las notificaciones: 30, 15 y 5 minutos antes de un monstruo único de campo, 5 minutos antes de una Grieta Espacio-Tiempo.",
+    "shardWarning": "Aviso de Fragmentos de poder",
+    "shardWarningHint": "Un aviso cuando tus golpes dejan de usar Fragmentos de poder.",
+    "serverTimeZone": "Zona horaria del servidor",
+    "serverTimeZoneHint": "Las horas de jefes y grietas siguen el reloj de tu servidor. Elige tu región y compara una hora con la hora del servidor en el juego.",
+    "zone": {
+      "computer": "Zona horaria de este equipo",
+      "other": "Otra zona horaria",
+      "placeholder": "Área/Ciudad, p. ej. Europe/Madrid",
+      "invalid": "Zona horaria desconocida"
+    }
   },
   "battleTime": {
     "suspended": "En pausa",
@@ -664,5 +687,37 @@
     "settings": "Ajustes",
     "history": "Historial",
     "quit": "Salir"
+  },
+  "notices": {
+    "title": "Notificaciones",
+    "clearAll": "Borrar todo",
+    "none": "No hay notificaciones",
+    "pet": {
+      "soul": "Alma de {pet}",
+      "souls": "{pet}: +{count} almas",
+      "registered": "Registrado: {pet}",
+      "level": "{pet} alcanzó el nivel {level}",
+      "reached": "Nivel {level} alcanzado. {status}",
+      "toRegister": "{souls}/{need} (faltan {left} para registrar), {toMax} para el máximo",
+      "toLevel": "{souls}/{need} (faltan {left} para el nivel {next}), {toMax} para el máximo",
+      "max": "Nivel {level}, máximo",
+      "unknown": "Cantidad desconocida: ve a Seleccionar personaje y vuelve, o entra una vez en una mazmorra de grupo",
+      "behind": "{status} (lista de mascotas de las {time}, puede estar desactualizada)",
+      "insight": "Comprensión de raza {genus} nv. {level}: {exp}/{need}",
+      "insightGain": "{insight} (+{gain})",
+      "insightMax": "Comprensión de raza {genus} nv. {level} (máximo)",
+      "insightLevel": "Comprensión de raza {genus} nv. {level}",
+      "unnamed": "Mascota {id}"
+    },
+    "spawn": {
+      "at": "{name} a las {time}"
+    },
+    "shard": {
+      "off": "Fragmentos de poder desactivados",
+      "out": "Fragmentos de poder agotados",
+      "toggle": "La tecla B los activa y desactiva."
+    },
+    "countdown": "en {minutes} min",
+    "now": "ahora"
   }
 }

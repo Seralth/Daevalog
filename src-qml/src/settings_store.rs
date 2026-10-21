@@ -137,6 +137,7 @@ pub enum Key {
     LockHotkey,
     Accent,
     SlimMode,
+    MeterSize,
     SplitView,
     BarStrength,
     TargetNameSize,
@@ -169,10 +170,14 @@ pub enum Key {
     HealthText,
     LowShare,
     GroupDamage,
+    SpawnNotices,
+    ShardWarning,
+    ServerTimeZone,
+    TrayEdge,
 }
 
 impl Key {
-    pub const ALL: [Key; 47] = [
+    pub const ALL: [Key; 52] = [
         Key::Language,
         Key::TimeFormat,
         Key::DefaultMode,
@@ -188,6 +193,7 @@ impl Key {
         Key::LockHotkey,
         Key::Accent,
         Key::SlimMode,
+        Key::MeterSize,
         Key::SplitView,
         Key::BarStrength,
         Key::TargetNameSize,
@@ -220,10 +226,14 @@ impl Key {
         Key::HealthText,
         Key::LowShare,
         Key::GroupDamage,
+        Key::SpawnNotices,
+        Key::ShardWarning,
+        Key::ServerTimeZone,
+        Key::TrayEdge,
     ];
 
     /// The switches: "true" or "false".
-    const SWITCHES: [Key; 21] = [
+    const SWITCHES: [Key; 23] = [
         Key::PinYou,
         Key::ShowYou,
         Key::HideOtherNames,
@@ -245,6 +255,8 @@ impl Key {
         Key::PacketLogging,
         Key::ScreenshotWithMeter,
         Key::ScreenshotToFolder,
+        Key::SpawnNotices,
+        Key::ShardWarning,
     ];
 
     /// The key in settings.json; the 1.x meter's, except those of settings
@@ -267,6 +279,8 @@ impl Key {
             Key::LockHotkey => "dpsMeter.lockHotkey",
             Key::Accent => "dpsMeter.accent",
             Key::SlimMode => "dpsMeter.slimMode",
+            // New in 2.0: 1.x's meter had one size.
+            Key::MeterSize => "dpsMeter.meterSize",
             Key::SplitView => "dpsMeter.splitView",
             Key::BarStrength => "dpsMeter.barStrength",
             Key::TargetNameSize => "dpsMeter.bossNameSize",
@@ -305,6 +319,12 @@ impl Key {
             Key::LowShare => "dpsMeter.lowShare",
             // New in 2.0: 1.x's place for it came with its layouts.
             Key::GroupDamage => "dpsMeter.groupDamage",
+            // New in 2.0: the spawn notices came with the notice tray.
+            Key::SpawnNotices => "dpsMeter.spawnNotices",
+            // New in 2.0, as the spawn notices.
+            Key::ShardWarning => "dpsMeter.shardWarning",
+            Key::ServerTimeZone => "dpsMeter.serverTimeZone",
+            Key::TrayEdge => "dpsMeter.trayEdge",
         }
     }
 }
@@ -323,6 +343,12 @@ pub const LOW_SHARES: [&str; 3] = ["off", "number", "row"];
 /// layout, the default) or on a line of its own under the rows (1.x's
 /// Classic layout).
 pub const GROUP_DAMAGES: [&str; 2] = ["footer", "line"];
+/// Which edge of the meter the notice tray sits on: Auto (the default) puts
+/// it on top, or at the bottom when the open list has no room above.
+pub const TRAY_EDGES: [&str; 3] = ["auto", "top", "bottom"];
+/// The meter window's sizes, in percent (MeterSizes.qml): 100 is the
+/// default, the size the meter was drawn in.
+pub const METER_SIZES: [u8; 4] = [100, 115, 130, 150];
 /// The colour themes (Theme.qml): Daevalog first, the default.
 pub const COLOR_THEMES: [&str; 4] = ["daevalog", "classic", "nord", "system"];
 /// ALL mode's window choices, in ms; 0 is everything since the zone change.
@@ -464,6 +490,8 @@ pub struct Values {
     pub accent: String,
     /// 22 px rows, no column heads, no boss strip.
     pub slim_mode: bool,
+    /// The meter window's text, rows and bands, one of `METER_SIZES`.
+    pub meter_size: u8,
     /// The healers under the DPS tab.
     pub split_view: bool,
     /// The bars' fill, 10-50%.
@@ -480,6 +508,12 @@ pub struct Values {
     /// Keep the app's windows out of the taskbar.
     pub hide_from_taskbar: bool,
     pub show_ping: bool,
+    /// Countdowns in the notice tray before each Field Boss and Spacetime Rift.
+    pub spawn_notices: bool,
+    /// A notice in the tray when your hits stop using Power Shards.
+    pub shard_warning: bool,
+    /// The game server's time zone, an IANA name; empty: this computer's.
+    pub server_time_zone: String,
     /// The group total in the footer.
     pub show_total: bool,
     /// DPS in thousands ("19.5K"); off, the whole number ("19,512").
@@ -526,6 +560,8 @@ pub struct Values {
     pub low_share: String,
     /// One of `GROUP_DAMAGES`.
     pub group_damage: String,
+    /// One of `TRAY_EDGES`.
+    pub tray_edge: String,
 }
 
 impl Default for Values {
@@ -549,6 +585,7 @@ impl Default for Values {
             lock_hotkey: "Ctrl+Alt+L".into(),
             accent: ACCENTS[0].into(),
             slim_mode: false,
+            meter_size: METER_SIZES[0],
             split_view: false,
             bar_strength: 40,
             // The approved meter's (1.x: 15). Each other default is 1.x's
@@ -561,6 +598,9 @@ impl Default for Values {
             start_in_tray: false,
             hide_from_taskbar: false,
             show_ping: true,
+            spawn_notices: true,
+            shard_warning: true,
+            server_time_zone: String::new(),
             show_total: true,
             round_dps: true,
             show_suspend_button: false,
@@ -586,6 +626,7 @@ impl Default for Values {
             health_text: HEALTH_TEXTS[0].into(),
             low_share: "row".into(),
             group_damage: GROUP_DAMAGES[0].into(),
+            tray_edge: TRAY_EDGES[0].into(),
         }
     }
 }
@@ -596,6 +637,12 @@ fn parse_bool(raw: &str) -> Option<bool> {
         "false" => Some(false),
         _ => None,
     }
+}
+
+/// An IANA time zone name as written ("America/Los_Angeles"); whether the
+/// zone exists is Qt's to say (`world_spawns::valid_zone`).
+fn zone_name(raw: &str) -> bool {
+    raw.len() <= 64 && raw.contains('/') && raw.bytes().all(|b| b.is_ascii_alphanumeric() || b"/_+-".contains(&b))
 }
 
 fn number(raw: &str) -> Option<f64> {
@@ -656,6 +703,10 @@ impl Values {
                 *self.hotkey_mut(key) = raw.to_string();
             }
             Key::Accent if ACCENTS.contains(&raw) => self.accent = raw.to_string(),
+            Key::MeterSize => match raw.parse::<u8>() {
+                Ok(size) if METER_SIZES.contains(&size) => self.meter_size = size,
+                _ => return false,
+            },
             // A number out of range goes to the nearest end, as 1.x's
             // controls do; anything else is refused.
             Key::BarStrength => match number(raw) {
@@ -702,10 +753,12 @@ impl Values {
             Key::HealthText if HEALTH_TEXTS.contains(&raw) => self.health_text = raw.to_string(),
             Key::LowShare if LOW_SHARES.contains(&raw) => self.low_share = raw.to_string(),
             Key::GroupDamage if GROUP_DAMAGES.contains(&raw) => self.group_damage = raw.to_string(),
+            Key::TrayEdge if TRAY_EDGES.contains(&raw) => self.tray_edge = raw.to_string(),
             // 1.x saved "off" or a monitor number in Tauri's order, which
             // Qt's screen list need not share: a number is refused (off).
             Key::DetailsMonitor if raw.is_empty() || raw == "off" => self.details_monitor.clear(),
             Key::DetailsMonitor if !raw.bytes().all(|b| b.is_ascii_digit()) => self.details_monitor = raw.to_string(),
+            Key::ServerTimeZone if raw.is_empty() || zone_name(raw) => self.server_time_zone = raw.to_string(),
             Key::LayerPosition if raw.is_empty() => self.layer_position = None,
             Key::LayerPosition => match raw.split_once(',').map(|(x, y)| (x.trim().parse::<i32>(), y.trim().parse::<i32>())) {
                 Some((Ok(x), Ok(y))) if x >= 0 && y >= 0 => self.layer_position = Some((x, y)),
@@ -733,6 +786,7 @@ impl Values {
                 Some(values.hotkey_mut(key).clone())
             }
             Key::Accent => Some(self.accent.clone()),
+            Key::MeterSize => Some(self.meter_size.to_string()),
             Key::BarStrength => Some(self.bar_strength.to_string()),
             Key::TargetNameSize => Some(number_text(self.target_name_size)),
             Key::MeterColumns => Some(self.meter_columns.saved()),
@@ -748,8 +802,10 @@ impl Values {
             Key::HealthText => Some(self.health_text.clone()),
             Key::LowShare => Some(self.low_share.clone()),
             Key::GroupDamage => Some(self.group_damage.clone()),
+            Key::TrayEdge => Some(self.tray_edge.clone()),
             Key::DetailsMonitor => (!self.details_monitor.is_empty()).then(|| self.details_monitor.clone()),
             Key::LayerPosition => self.layer_position.map(|(x, y)| format!("{x},{y}")),
+            Key::ServerTimeZone => (!self.server_time_zone.is_empty()).then(|| self.server_time_zone.clone()),
             _ => unreachable!("{key:?} has a case above"),
         }
     }
@@ -777,6 +833,8 @@ impl Values {
             Key::PacketLogging => &mut self.packet_logging,
             Key::ScreenshotWithMeter => &mut self.screenshot_with_meter,
             Key::ScreenshotToFolder => &mut self.screenshot_to_folder,
+            Key::SpawnNotices => &mut self.spawn_notices,
+            Key::ShardWarning => &mut self.shard_warning,
             _ => unreachable!("{key:?} is not a switch"),
         }
     }
@@ -851,6 +909,8 @@ pub struct Overrides {
     /// --icon-size and --font-size: Details' skill icons and text, in px.
     pub details_icon_size: Option<u8>,
     pub details_font_size: Option<u8>,
+    /// --meter-size: one of `METER_SIZES`.
+    pub meter_size: Option<u8>,
 }
 
 impl Overrides {
@@ -896,6 +956,9 @@ impl Overrides {
         }
         if let Some(px) = self.details_font_size {
             values.details_font_size = px.clamp(11, 20);
+        }
+        if let Some(size) = self.meter_size.filter(|size| METER_SIZES.contains(size)) {
+            values.meter_size = size;
         }
     }
 }
@@ -1320,6 +1383,21 @@ mod tests {
     }
 
     #[test]
+    fn the_server_time_zone_takes_a_zone_name_or_nothing() {
+        let mut v = Values::default();
+        assert_eq!(v.server_time_zone, "", "this computer's zone until the player picks one");
+        assert!(v.take(Key::ServerTimeZone, "America/Los_Angeles"));
+        assert_eq!(v.saved(Key::ServerTimeZone).as_deref(), Some("America/Los_Angeles"));
+        for junk in ["Pacific", "../../etc/passwd", "America/Los Angeles", "Europe/Berlin;rm"] {
+            assert!(!v.take(Key::ServerTimeZone, junk), "{junk}");
+        }
+        assert!(v.take(Key::ServerTimeZone, ""));
+        assert_eq!(v.saved(Key::ServerTimeZone), None);
+        assert!(v.spawn_notices, "on by default");
+        assert!(v.shard_warning, "on by default");
+    }
+
+    #[test]
     fn every_setting_round_trips_through_the_file() {
         let folder = Folder::new();
         let changes = [
@@ -1338,6 +1416,7 @@ mod tests {
             (Key::LockHotkey, "Ctrl+K"),
             (Key::Accent, "lemon"),
             (Key::SlimMode, "true"),
+            (Key::MeterSize, "130"),
             (Key::SplitView, "true"),
             (Key::BarStrength, "25"),
             (Key::TargetNameSize, "15"),
@@ -1370,6 +1449,10 @@ mod tests {
             (Key::HealthText, "split"),
             (Key::LowShare, "number"),
             (Key::GroupDamage, "line"),
+            (Key::SpawnNotices, "false"),
+            (Key::ShardWarning, "false"),
+            (Key::ServerTimeZone, "America/New_York"),
+            (Key::TrayEdge, "bottom"),
         ];
         assert_eq!(changes.len(), Key::ALL.len(), "every setting");
         let set = {
@@ -1396,6 +1479,7 @@ mod tests {
             lock_hotkey: "Ctrl+K".into(),
             accent: "lemon".into(),
             slim_mode: true,
+            meter_size: 130,
             split_view: true,
             bar_strength: 25,
             target_name_size: 15.0,
@@ -1405,6 +1489,9 @@ mod tests {
             start_in_tray: true,
             hide_from_taskbar: true,
             show_ping: false,
+            spawn_notices: false,
+            shard_warning: false,
+            server_time_zone: "America/New_York".into(),
             show_total: false,
             round_dps: false,
             show_suspend_button: true,
@@ -1429,12 +1516,14 @@ mod tests {
             health_text: "split".into(),
             low_share: "number".into(),
             group_damage: "line".into(),
+            tray_edge: "bottom".into(),
         };
         assert_eq!(set, expected);
         let file = folder.read();
         assert_eq!(file.get("dpsMeter.pinMeToTop").map(String::as_str), Some("true"));
         // The 1.x keys and forms.
         assert_eq!(file.get("dpsMeter.bossNameSize").map(String::as_str), Some("15"));
+        assert_eq!(file.get("dpsMeter.meterSize").map(String::as_str), Some("130"));
         assert_eq!(file.get("dpsMeter.encounterTimeoutSec").map(String::as_str), Some("45"));
         assert_eq!(file.get("dpsMeter.showTotalDps").map(String::as_str), Some("false"));
         assert_eq!(file.get("dpsMeter.detailsHiddenColumns").map(String::as_str), Some(r#"["mhit","regen"]"#));
@@ -1500,7 +1589,14 @@ mod tests {
             (Key::HealthText, "middle"),
             (Key::LowShare, "bar"),
             (Key::GroupDamage, "header"),
+            (Key::TrayEdge, "left"),
             (Key::SlimMode, "1"),
+            // Only the four choices: no size between them, none past them.
+            (Key::MeterSize, "120"),
+            (Key::MeterSize, "200"),
+            (Key::MeterSize, "1.5"),
+            (Key::MeterSize, "150%"),
+            (Key::MeterSize, ""),
             (Key::ShowPing, "on"),
             (Key::BarStrength, "strong"),
             (Key::TargetNameSize, "big"),
@@ -1549,7 +1645,12 @@ mod tests {
         assert_eq!(v.low_share, "row");
         // 1.x's Beta layout, its default: the footer.
         assert_eq!(v.group_damage, "footer");
+        // Auto: on top, or at the bottom when the open list has no room above.
+        assert_eq!(v.tray_edge, "auto");
         assert_eq!(v.target_name_size, 13.0);
+        // The meter at the size it was drawn in.
+        assert_eq!(v.meter_size, 100);
+        assert_eq!(v.saved(Key::MeterSize).as_deref(), Some("100"));
         assert_eq!((v.details_font_size, v.details_icon_size), (13, 20));
         assert_eq!(v.skill_columns(), ["hit", "dmg", "dmgpct", "crit", "avgdmg"]);
         assert_eq!(v.meter_columns.dps, ["total", "encDps", "pct"]);
@@ -1997,9 +2098,11 @@ mod tests {
             dps_columns: Some(vec!["hits", "total"]),
             details_icon_size: Some(60),
             details_font_size: Some(5),
+            meter_size: Some(150),
         });
         let values = store.values();
         assert_eq!(values.language.as_deref(), Some("ja"));
+        assert_eq!(values.meter_size, 150);
         // Sizes past the sliders' ends stop at them.
         assert_eq!((values.details_icon_size, values.details_font_size), (56, 11));
         assert_eq!(values.color_theme, "nord");

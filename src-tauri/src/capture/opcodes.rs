@@ -20,6 +20,16 @@ pub const COMBAT_STATE: [u8; 2] = [0x21, 0x8D];
 /// The self record: the character you are playing. Your server and class
 /// follow the name.
 pub const SELF_IDENTITY: [u8; 2] = [0x33, 0x36];
+/// The pet collection: every registered pet's level and souls.
+pub const PET_COLLECTION: [u8; 2] = [0x00, 0x90];
+/// Souls added to pets.
+pub const PET_SOULS: [u8; 2] = [0x0D, 0x90];
+/// A pet registered.
+pub const PET_REGISTERED: [u8; 2] = [0x09, 0x90];
+/// A pet reached a new level.
+pub const PET_LEVEL: [u8; 2] = [0x14, 0x90];
+/// An item in your bag changed: its id and the count now.
+pub const BAG_ITEM: [u8; 2] = [0x1B, 0x56];
 /// Party roster.
 pub const PARTY_ROSTER: [u8; 2] = [0x02, 0x97];
 /// Out of a party: the key of the party you were in.

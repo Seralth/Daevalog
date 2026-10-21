@@ -49,11 +49,11 @@ Item {
 
     readonly property color classColor: Theme.classColor(job)
 
-    height: Theme.rowHeight
+    height: Theme.meter.rowHeight
 
     Rectangle {
         anchors.fill: parent
-        radius: 3
+        radius: Theme.meter.part(3)
         color: row.lowLook === "row" ? Theme.barFill(row.lowColor, Theme.lowShareTint) : Theme.rowEmpty
     }
 
@@ -66,12 +66,12 @@ Item {
         Rectangle {
             width: row.width
             height: parent.height
-            radius: 3
+            radius: Theme.meter.part(3)
             color: Theme.barFill(row.barColor)
         }
         Rectangle {
             anchors.right: parent.right
-            width: 2
+            width: Theme.meter.px(2)
             height: parent.height
             color: Theme.barEdge(row.barColor)
         }
@@ -80,16 +80,16 @@ Item {
     // Your own row: a rail in the accent colour.
     Rectangle {
         visible: row.you
-        width: 2
+        width: Theme.meter.px(2)
         height: parent.height
         color: Theme.accent
     }
 
     Image {
-        x: Theme.padLeft
+        x: Theme.meter.padLeft
         anchors.verticalCenter: parent.verticalCenter
-        width: Theme.iconSize
-        height: Theme.iconSize
+        width: Theme.meter.iconSize
+        height: Theme.meter.iconSize
         source: Theme.classIcon(row.job)
         fillMode: Image.PreserveAspectFit
         smooth: true
@@ -100,14 +100,15 @@ Item {
     // name gives way first, so the power stays whole.
     Row {
         id: who
-        x: Theme.padLeft + Theme.colIcon + Theme.colGap
+        x: Theme.meter.padLeft + Theme.meter.colIcon + Theme.meter.colGap
         height: parent.height
-        spacing: 4
-        readonly property real room: numbers.x - Theme.colGap - x
+        spacing: Theme.meter.px(4)
+        readonly property real room: numbers.x - Theme.meter.colGap - x
         HudText {
             width: Math.max(0, Math.min(implicitWidth, who.room - (power.visible ? power.implicitWidth + who.spacing : 0)))
             height: parent.height
             text: I18n.playerName(row)
+            font.pixelSize: Theme.meter.sizeRow
             // The Bold settings: names DemiBold, numbers Medium, as approved;
             // normal weight when off.
             font.weight: Settings.boldNames ? Font.DemiBold : Font.Normal
@@ -118,7 +119,7 @@ Item {
             height: parent.height
             numeric: true
             text: row.combatPower
-            font.pixelSize: Theme.sizeSmall
+            font.pixelSize: Theme.meter.sizeSmall
             // Apart from the name, in the theme's accent.
             color: Theme.accent
         }
@@ -127,19 +128,20 @@ Item {
     Row {
         id: numbers
         anchors.right: parent.right
-        anchors.rightMargin: Theme.padRight
+        anchors.rightMargin: Theme.meter.padRight
         height: parent.height
-        spacing: Theme.colGap
+        spacing: Theme.meter.colGap
 
         Repeater {
             model: row.cells.length
             HudText {
                 id: number
                 required property int index
-                width: row.widths[index] || 40
+                width: row.widths[index] || Theme.meter.px(40)
                 height: row.height
                 horizontalAlignment: Text.AlignRight
                 numeric: true
+                font.pixelSize: Theme.meter.sizeRow
                 // While a tab's texts change, a cell past the new list's end
                 // still reads once before it goes.
                 text: row.cells[index] !== undefined ? row.cells[index] : ""

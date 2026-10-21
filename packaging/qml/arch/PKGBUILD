@@ -8,6 +8,13 @@ pkgname=daevalog-dps-meter
 epoch=1
 pkgver=0
 pkgrel=1
+# DAEVALOG_REBUILD=<n> in the environment (optional): rebuild <n> of the same
+# commit, for example after a Qt update; pkgrel is then n+1. It is set apart
+# from the line above because makepkg writes that line back to pkgrel=1 when
+# pkgver() changes pkgver.
+if [[ ${DAEVALOG_REBUILD:-0} != 0 ]]; then
+  pkgrel=$((10#$DAEVALOG_REBUILD + 1))
+fi
 pkgdesc="Daevalog DPS Meter: real-time DPS overlay for AION 2 (Linux/Proton)"
 arch=(x86_64)
 url="https://github.com/Seralth/Daevalog"
@@ -16,12 +23,15 @@ license=('AGPL-3.0-only' 'OFL-1.1')
 # qt6-base has Widgets (the tray) and, from Qt 6.10, the Wayland client.
 # qt6-declarative has every QML module the meter imports: QtQuick,
 # QtQuick.Layouts, Qt.labs.platform. The QML compiled in by qmlcachegen uses
-# Qt's private API, so rebuild after a Qt minor update.
-# qt6-svg draws the skill icons. libpcap is loaded by the capture helper at
-# run time; setcap (libcap) grants it the capture permission on install.
-depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'gcc-libs' 'glibc' 'libpcap' 'libcap' 'hicolor-icon-theme')
-optdepends=('layer-shell-qt: --layer-shell, the overlay above fullscreen games on KDE Plasma, Hyprland and Sway'
-            'daevalog-dps-meter-legacy: the 1.x meter, beside this one')
+# its private API, so package() asks for at least the Qt minor version the
+# meter was built with, and a Qt minor update needs a rebuild.
+# qt6-svg draws the skill icons. layer-shell-qt puts the overlay above
+# fullscreen games on KDE Plasma, Hyprland and Sway; without it the meter is
+# a normal window, which Hyprland and Sway tile. libpcap is loaded by the
+# capture helper at run time; setcap (libcap) grants it the capture
+# permission on install.
+depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'layer-shell-qt' 'gcc-libs' 'glibc' 'libpcap' 'libcap' 'hicolor-icon-theme')
+optdepends=('daevalog-dps-meter-legacy: the 1.x meter, beside this one')
 makedepends=('rust' 'git')
 # The 2.0 test packages were daevalog-qml and daevalog-qml-dev; the package
 # was a2tools-dps-meter before the fork was renamed.
@@ -35,12 +45,14 @@ _root() {
   cd "$startdir/../../.." && pwd
 }
 
-# <crate version>.r<commits>.g<hash>, e.g. 2.0.0.r800.g0123abc.
+# <crate version>.r<commits>.g<hash>, e.g. 2.0.0.r800.g0123abc. The hash is
+# asked for with 7 digits, so a clone with more objects than CI's gives the
+# same version.
 pkgver() {
   cd "$(_root)"
   local release count hash
   release=$(grep -m1 '^version' src-qml/Cargo.toml | cut -d'"' -f2) || return 1
-  count=$(git rev-list --count HEAD) && hash=$(git rev-parse --short HEAD) || return 1
+  count=$(git rev-list --count HEAD) && hash=$(git rev-parse --short=7 HEAD) || return 1
   printf '%s.r%s.g%s' "$release" "$count" "$hash"
 }
 
@@ -55,6 +67,12 @@ build() {
 package() {
   local root
   root="$(_root)"
+  # At least the Qt minor version it was built with (see depends).
+  local qt i
+  qt=$(pacman -Q qt6-declarative | cut -d' ' -f2 | cut -d. -f1,2)
+  for i in "${!depends[@]}"; do
+    [[ ${depends[i]} == qt6-declarative ]] && depends[i]="qt6-declarative>=$qt"
+  done
   install -Dm755 "$root/src-qml/target/release/daevalog-qml" "$pkgdir/usr/bin/daevalog-dps-meter"
   # The meter starts it by this name from its own folder.
   install -Dm755 "$root/src-qml/target/release/daevalog-capture" "$pkgdir/usr/bin/daevalog-capture"

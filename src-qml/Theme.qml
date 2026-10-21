@@ -43,6 +43,9 @@ QtObject {
             "warning": "#F2C66D",
             "error": "#F07C7C",
             "negative": "#FF3B3B",
+            // The Spacetime Rift (red in game): 5.8:1 on the window, 3.3:1 on
+            // the panel over a mid grey scene.
+            "rift": "#FF5C5C",
             "ping": ["#7BD88F", "#F2C66D", "#F07C7C"],
             "accents": { "sky": "#5fcaff", "rose": "#ff6fae", "lemon": "#eef26b", "silver": "#c8d0dc" }
         },
@@ -68,6 +71,8 @@ QtObject {
             "warning": "#f2b94f",
             "error": "#e06b6b",
             "negative": "#FF3B3B",
+            // 6.4:1 on the window, 3.7:1 on the panel over a mid grey scene.
+            "rift": "#FF5C5C",
             "ping": ["#7BD88F", "#F2C66D", "#F07C7C"],
             "accents": { "sky": "#5fcaff", "rose": "#ff6fae", "lemon": "#eef26b", "silver": "#c8d0dc" }
         },
@@ -90,6 +95,9 @@ QtObject {
             "error": "#D08A91",
             // nord11, Nord's own red; the hatch carries the meaning.
             "negative": "#BF616A",
+            // nord11 is too dark for a mark on the panel: a lighter red, 4.9:1
+            // on the window, 3.1:1 on the panel over a mid grey scene.
+            "rift": "#FF7A7A",
             "ping": ["#A3BE8C", "#EBCB8B", "#D08A91"],
             // Each preset as its Nord colour: frost, purple, yellow, snow.
             "accents": { "sky": "#88C0D0", "rose": "#B48EAD", "lemon": "#EBCB8B", "silver": "#D8DEE9" }
@@ -109,6 +117,7 @@ QtObject {
         "warning": themes.daevalog.warning,
         "error": themes.daevalog.error,
         "negative": themes.daevalog.negative,
+        "rift": themes.daevalog.rift,
         "ping": themes.daevalog.ping,
         "accents": {}
     }) : (themes[theme] || themes.daevalog)
@@ -187,6 +196,8 @@ QtObject {
     readonly property color error: base.error
     // Debuffs on the player: saturated red, drawn hatched (Timeline.qml).
     readonly property color negative: base.negative
+    // The Spacetime Rift notice's mark (NoticeIcon.qml), red as in game.
+    readonly property color rift: base.rift
 
     // Bars: flat class colour, a thin solid edge at their end. The strength
     // is the "Bar strength" setting, 10-50%.
@@ -251,21 +262,14 @@ QtObject {
     readonly property int sizeRow: 13
     readonly property int sizeTitle: 15
 
-    // Slim mode: 22 px rows, no column heads, no boss strip.
+    // Slim mode: 22 px rows, no column heads, the boss strip 3 px without text.
     readonly property bool slim: Settings.slimMode
-    readonly property int rowHeight: slim ? 22 : 30
-    readonly property int rowGap: slim ? 2 : 3
-    readonly property int headerHeight: 30
-    readonly property int headsHeight: 20
-    readonly property int bossHeight: 6
-    readonly property int footerHeight: 28
-
-    // Row columns: icon | name | numbers. Number columns are set per tab.
-    readonly property int iconSize: slim ? 15 : 18
-    readonly property int colIcon: 22
-    readonly property int colGap: 6
-    readonly property int padLeft: 8
-    readonly property int padRight: 10
+    // The meter window's type, rows, columns and bands, at the Meter size
+    // setting (MeterSizes.qml).
+    readonly property MeterSizes meter: MeterSizes {
+        scale: Settings.meterSize / 100
+        slim: Settings.slimMode
+    }
 
     // The other windows: table rows, setting rows, the side column.
     readonly property int tableRow: 26

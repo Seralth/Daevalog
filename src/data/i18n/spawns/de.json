@@ -1,0 +1,20 @@
+{
+  "fieldBoss": "Berüchtigtes Feld-Monster",
+  "maps": {
+    "20": "Chaotische Untere Ebene von Reshanta",
+    "22": "Chaotische Mittlere Ebene von Reshanta",
+    "1010": "Verteron",
+    "1011": "Eltnen",
+    "1110": "Altgard",
+    "1111": "Morheim"
+  },
+  "regions": {
+    "NAW": "Nordamerika - West",
+    "NAE": "Nordamerika – Ost",
+    "EU": "Europa",
+    "LA": "Südamerika",
+    "AS": "Asien",
+    "JP": "Japan"
+  },
+  "rift": "Raumzeit-Riss"
+}

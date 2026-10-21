@@ -3,7 +3,7 @@ Version: @VERSION@
 Architecture: amd64
 Maintainer: Seralth <packages@seralth.com>
 Installed-Size: @SIZE@
-Depends: @SHLIBS@, libpcap0.8t64 | libpcap0.8, libcap2-bin, qml6-module-qtquick, qml6-module-qtquick-layouts, qml6-module-qtqml-workerscript, qml6-module-qt-labs-platform, qt6-svg-plugins | libqt6svg6 (<< 6.7.2-5~), qt6-wayland
+Depends: @SHLIBS@, libqt6qml6 (>= @QT@), libpcap0.8t64 | libpcap0.8, libcap2-bin, qml6-module-qtquick, qml6-module-qtquick-layouts, qml6-module-qtqml-workerscript, qml6-module-qt-labs-platform, qt6-svg-plugins | libqt6svg6 (<< 6.7.2-5~), qt6-wayland
 Recommends: layer-shell-qt, qml6-module-org-kde-layershell
 Suggests: daevalog-dps-meter-legacy
 Conflicts: daevalog-qml, daevalog-qml-dev, a2-tools-dps-meter

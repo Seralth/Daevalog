@@ -1,0 +1,20 @@
+{
+  "fieldBoss": "Monstres uniques de terrain",
+  "maps": {
+    "20": "Reshanta Inférieur du Chaos",
+    "22": "Reshanta Intermédiaire du Chaos",
+    "1010": "Verteron",
+    "1011": "Eltnen",
+    "1110": "Altgard",
+    "1111": "Morheim"
+  },
+  "regions": {
+    "NAW": "Amérique du Nord - Ouest",
+    "NAE": "Amérique du Nord - Est",
+    "EU": "Europe",
+    "LA": "Amérique du Sud",
+    "AS": "Asie",
+    "JP": "Japon"
+  },
+  "rift": "Failles spatio-temporelles"
+}

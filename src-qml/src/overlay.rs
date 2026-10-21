@@ -77,6 +77,9 @@ pub mod qobject {
         #[cxx_name = "canShapeInput"]
         fn can_shape_input() -> bool;
 
+        #[cxx_name = "setPopupPlace"]
+        unsafe fn set_popup_place(window: *mut QQuickWindow, anchor: &QRectF, below: bool, adjust: u32);
+
         #[cxx_name = "keepOffTaskbar"]
         unsafe fn keep_off_taskbar(window: *mut QQuickWindow);
 
@@ -98,6 +101,7 @@ pub mod qobject {
         #[qproperty(bool, layer_setting, READ, CONSTANT)]
         #[qproperty(bool, auto_hide_setting, READ, CONSTANT)]
         #[qproperty(bool, layer_menu_keys, READ, CONSTANT)]
+        #[qproperty(bool, layer_popups_lag, READ, CONSTANT)]
         #[qproperty(QMargins, layer_margins)]
         #[qproperty(QString, screenshot_path, READ, CONSTANT)]
         #[qproperty(QString, start_view, READ, CONSTANT)]
@@ -128,6 +132,14 @@ pub mod qobject {
         /// of it back.
         #[qinvokable]
         unsafe fn shape_input(self: &Overlay, window: *mut QQuickWindow, area: QRectF);
+
+        /// Where a Wayland popup goes when it is next shown: on the top or
+        /// (`below`) the bottom edge of `anchor`, its parent's coordinates.
+        /// Where it does not fit, the compositor may `slide` it onto the
+        /// screen, or `flip` it to the other edge first; with neither it
+        /// goes exactly where asked.
+        #[qinvokable]
+        unsafe fn place_popup(self: &Overlay, window: *mut QQuickWindow, anchor: QRectF, below: bool, slide: bool, flip: bool);
 
         /// A layer-shell drag starts: the pointer took hold of the `size`
         /// window at `grab`, in a `screen`-sized area (the screen less the
@@ -204,6 +216,9 @@ pub struct OverlayRust {
     /// Whether a layer meter takes the keys while a menu of it is open
     /// (`display::layer_menu_takes_keys`).
     layer_menu_keys: bool,
+    /// Whether a layer meter's popups stay behind when it moves
+    /// (`display::layer_popups_lag`).
+    layer_popups_lag: bool,
     layer_margins: QMargins,
     screenshot_path: QString,
     /// --open: the window and page to open at the start ("history/record").
@@ -241,6 +256,7 @@ impl Default for OverlayRust {
             layer_setting: crate::display::layer_setting(&platform),
             auto_hide_setting: daevalog::platform::window_detector::SEES_FOREGROUND,
             layer_menu_keys: crate::display::layer_menu_takes_keys(),
+            layer_popups_lag: crate::display::layer_popups_lag(),
             // Where it was last dropped, else the starting place; kept on
             // screen once the window knows its size (`keep_layer_on_screen`).
             layer_margins: {
@@ -283,6 +299,13 @@ impl qobject::Overlay {
     unsafe fn shape_input(&self, window: *mut qobject::QQuickWindow, area: QRectF) {
         // As in `watch_window`.
         unsafe { qobject::set_input_area(window, &area) }
+    }
+
+    unsafe fn place_popup(&self, window: *mut qobject::QQuickWindow, anchor: QRectF, below: bool, slide: bool, flip: bool) {
+        // xdg_positioner's constraint_adjustment: slide_x 1, slide_y 2, flip_y 8.
+        let adjust = if slide { 1 | 2 } else { 0 } | if flip { 8 } else { 0 };
+        // As in `watch_window`.
+        unsafe { qobject::set_popup_place(window, &anchor, below, adjust) }
     }
 
     fn begin_layer_drag(mut self: Pin<&mut Self>, grab: QPointF, size: QSizeF, screen: QSizeF) {

@@ -4,6 +4,8 @@
   <qresource prefix="/daevalog">
     <file alias="fonts/PretendardVariable.ttf">../public/vendor/fonts/pretendard/files/PretendardVariable.ttf</file>
     <file alias="icons/app.png">../src-tauri/icons/64x64.png</file>
+    <file alias="icons/pet-soul.svg">icons/pet-soul.svg</file>
+    <file alias="icons/app-dev.png">icons/app-dev-64.png</file>
     <file alias="classes/gladiator.png">../public/src/assets/검성.png</file>
     <file alias="classes/templar.png">../public/src/assets/수호성.png</file>
     <file alias="classes/ranger.png">../public/src/assets/궁성.png</file>

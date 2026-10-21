@@ -6,11 +6,15 @@ pub use super::varint::{
 mod damage;
 mod fields;
 mod identity;
+mod pet_collection;
+mod power_shards;
 mod roster;
 mod spawn;
 mod ticks;
 mod world;
 
+pub use pet_collection::{PetCollectionEvent, PetCount};
+pub use power_shards::ShardEvent;
 pub(crate) use spawn::embedded_spawns;
 pub(crate) use ticks::compact_record_in;
 
@@ -187,6 +191,8 @@ impl PacketDecoder {
         self.read_combat_state(frame);
         self.read_zone_change(frame);
         self.read_map_load(frame);
+        self.read_pet_collection(frame);
+        self.read_shard_count(frame);
         if !taken {
             self.read_tick_record(frame);
         }

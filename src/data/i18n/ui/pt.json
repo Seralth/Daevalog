@@ -310,6 +310,10 @@
       "normal": "Normal",
       "slim": "Compacto"
     },
+    "meterSize": {
+      "label": "Tamanho do medidor",
+      "hint": "Aumenta o texto e as linhas do medidor. As outras janelas mantêm o tamanho."
+    },
     "detailsMonitor": {
       "label": "Abrir Detalhes na tela",
       "off": "Desativado",
@@ -549,9 +553,28 @@
       "line": "Linha própria",
       "hint": "Onde o dano do grupo aparece ao lado do DPS enquanto “Mostrar DPS/DAN total” está ligado: no rodapé, ou com o DPS numa linha própria abaixo das linhas."
     },
+    "trayEdge": {
+      "label": "Bandeja de notificações",
+      "auto": "Automático",
+      "top": "Em cima",
+      "bottom": "Embaixo",
+      "hint": "Em qual borda do medidor ficam as notificações. Automático: em cima, ou embaixo quando não há espaço acima do medidor para a lista aberta."
+    },
     "characterNameHint": "O nome do jogo substitui este no próximo carregamento.",
     "modeOnly": "Só em {mode}.",
-    "showTotalHint": "O total do grupo no rodapé, em todas as abas: DPS, Cura e Tanque."
+    "showTotalHint": "O total do grupo no rodapé, em todas as abas: DPS, Cura e Tanque.",
+    "spawnNotices": "Contagem regressiva de Monstros Únicos de Campo e Fendas Espaço-Temporais",
+    "spawnNoticesHint": "Nas notificações: 30, 15 e 5 minutos antes de um Monstro Único de Campo, 5 minutos antes de uma Fenda Espaço-Temporal.",
+    "shardWarning": "Aviso de Fragmentos de Poder",
+    "shardWarningHint": "Uma notificação quando seus golpes deixam de usar Fragmentos de Poder.",
+    "serverTimeZone": "Fuso horário do servidor",
+    "serverTimeZoneHint": "Os horários de chefes e fendas seguem o relógio do seu servidor. Escolha sua região e compare um horário com o horário do servidor no jogo.",
+    "zone": {
+      "computer": "Fuso horário deste computador",
+      "other": "Outro fuso horário",
+      "placeholder": "Área/Cidade, ex.: America/Sao_Paulo",
+      "invalid": "Fuso horário desconhecido"
+    }
   },
   "battleTime": {
     "suspended": "Pausado",
@@ -664,5 +687,37 @@
     "settings": "Configurações",
     "history": "Histórico",
     "quit": "Sair"
+  },
+  "notices": {
+    "title": "Notificações",
+    "clearAll": "Limpar tudo",
+    "none": "Nenhuma notificação",
+    "pet": {
+      "soul": "Alma de {pet}",
+      "souls": "{pet}: +{count} almas",
+      "registered": "{pet} registrado",
+      "level": "{pet} alcançou o nível {level}",
+      "reached": "Nível {level} alcançado. {status}",
+      "toRegister": "{souls}/{need} (faltam {left} para registrar), {toMax} até o máximo",
+      "toLevel": "{souls}/{need} (faltam {left} para o nível {next}), {toMax} até o máximo",
+      "max": "Nível {level}, máximo",
+      "unknown": "Quantidade desconhecida: vá a Selecionar Personagem e volte, ou entre uma vez em uma masmorra de grupo",
+      "behind": "{status} (lista de mascotes das {time}, pode estar desatualizada)",
+      "insight": "Compreensão do Tipo {genus} Nv. {level}: {exp}/{need}",
+      "insightGain": "{insight} (+{gain})",
+      "insightMax": "Compreensão do Tipo {genus} Nv. {level} (máximo)",
+      "insightLevel": "Compreensão do Tipo {genus} Nv. {level}",
+      "unnamed": "Mascote {id}"
+    },
+    "spawn": {
+      "at": "{name} às {time}"
+    },
+    "shard": {
+      "off": "Fragmentos de Poder desligados",
+      "out": "Fragmentos de Poder esgotados",
+      "toggle": "A tecla B os liga e desliga."
+    },
+    "countdown": "em {minutes} min",
+    "now": "agora"
   }
 }

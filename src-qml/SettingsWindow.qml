@@ -22,8 +22,10 @@ AppWindow {
 
     // The report form is a page of Diagnostics. "-full" (--open only) grows
     // the window to the whole page, for a screenshot of a long section;
-    // "meter-heal" (--open only) shows the column picker's Heal tab.
-    readonly property string shownPage: page.replace("-full", "").replace("meter-heal", "meter")
+    // "meter-heal" (--open only) shows the column picker's Heal tab;
+    // "notices-zone" (--open only) shows a typed server time zone.
+    readonly property string shownPage: page.replace("-full", "").replace("meter-heal", "meter").replace("notices-zone", "notices")
+    onPageChanged: if (page === "notices-zone") Settings.serverTimeZone = "Europe/London"
     readonly property string section: shownPage === "report" ? "diagnostics" : shownPage
     readonly property bool fullPage: page.endsWith("-full")
     // "Show Details on monitor" works on X11 only: Wayland lets no window
@@ -107,6 +109,7 @@ AppWindow {
         { "id": "connection", "label": I18n.tr("settings.connection") },
         { "id": "appearance", "label": I18n.tr("settings.appearance") },
         { "id": "meter", "label": I18n.tr("settings.sections.meter") },
+        { "id": "notices", "label": I18n.tr("notices.title") },
         { "id": "account", "label": I18n.tr("settings.sections.account") },
         { "id": "keybinds", "label": I18n.tr("settings.keybinds") },
         { "id": "diagnostics", "label": I18n.tr("settings.diagnostics") },
@@ -618,6 +621,17 @@ AppWindow {
                             onPicked: value => Settings.slimMode = value
                         }
                     }
+                    // The meter window only (Theme.meter): the windows read
+                    // off the game keep their size.
+                    SettingRow {
+                        label: I18n.tr("settings.meterSize.label")
+                        hint: I18n.tr("settings.meterSize.hint")
+                        UiSegmented {
+                            options: [100, 115, 130, 150].map(n => ({ "label": n + "%", "value": n }))
+                            current: Settings.meterSize
+                            onPicked: value => Settings.meterSize = value
+                        }
+                    }
                     SwitchRow {
                         label: I18n.tr("settings.splitView.label")
                         hint: I18n.tr("settings.splitView.hint")
@@ -809,7 +823,7 @@ AppWindow {
                     }
                     // Where the health bar's text sits: 1.x's Beta and
                     // Classic layouts each had one.
-                    // Slim has no health bar: greyed there.
+                    // Slim's health bar has no text: greyed there.
                     SettingRow {
                         enabled: !Settings.slimMode
                         label: I18n.tr("settings.healthText.label")
@@ -975,6 +989,93 @@ AppWindow {
                                     Settings.encounterTimeout = n
                                 // Shows the kept value, also after a refused one.
                                 timeoutField.text = Qt.binding(() => String(Settings.encounterTimeout))
+                            }
+                        }
+                    }
+                }
+
+                // ---- Notifications
+                Column {
+                    width: parent.width
+                    visible: settings.shownPage === "notices"
+                    readonly property real labelWidth: settings.labelColumn(this)
+                    // Which edge of the meter the notice tray sits on.
+                    SettingRow {
+                        label: I18n.tr("settings.trayEdge.label")
+                        hint: I18n.tr("settings.trayEdge.hint")
+                        UiSegmented {
+                            options: [
+                                { "label": I18n.tr("settings.trayEdge.auto"), "value": "auto" },
+                                { "label": I18n.tr("settings.trayEdge.top"), "value": "top" },
+                                { "label": I18n.tr("settings.trayEdge.bottom"), "value": "bottom" }
+                            ]
+                            current: Settings.trayEdge
+                            onPicked: value => Settings.trayEdge = value
+                        }
+                    }
+                    // Countdowns in the notice tray. The schedule runs on the
+                    // server's clock: the zone is the region's, picked here,
+                    // or any zone typed in; empty is this computer's.
+                    SwitchRow {
+                        label: I18n.tr("settings.spawnNotices")
+                        hint: I18n.tr("settings.spawnNoticesHint")
+                        checked: Settings.spawnNotices
+                        onToggled: on => Settings.spawnNotices = on
+                    }
+                    SwitchRow {
+                        label: I18n.tr("settings.shardWarning")
+                        hint: I18n.tr("settings.shardWarningHint")
+                        checked: Settings.shardWarning
+                        onToggled: on => Settings.shardWarning = on
+                    }
+                    SettingRow {
+                        id: zoneRow
+                        label: I18n.tr("settings.serverTimeZone")
+                        hint: I18n.tr("settings.serverTimeZoneHint")
+                        last: true
+                        labelOn: zoneList.height
+                        readonly property var regions: JSON.parse(Settings.zoneRegions(I18n.language))
+                        readonly property bool isRegion: regions.some(r => r.value === Settings.serverTimeZone)
+                        property bool otherPicked: false
+                        property bool refused: false
+                        readonly property string shown: otherPicked || (Settings.serverTimeZone !== "" && !isRegion)
+                            ? "other" : Settings.serverTimeZone
+                        Column {
+                            width: Math.min(260, parent.width)
+                            spacing: 6
+                            UiDropdown {
+                                id: zoneList
+                                width: parent.width
+                                options: [{ "label": I18n.tr("settings.zone.computer"), "value": "" }].concat(
+                                    zoneRow.regions,
+                                    [{ "label": I18n.tr("settings.zone.other"), "value": "other" }])
+                                current: zoneRow.shown
+                                onPicked: value => {
+                                    zoneRow.refused = false
+                                    zoneRow.otherPicked = value === "other"
+                                    if (value !== "other")
+                                        Settings.serverTimeZone = value
+                                }
+                            }
+                            UiField {
+                                id: zoneField
+                                visible: zoneRow.shown === "other"
+                                width: parent.width
+                                placeholder: I18n.tr("settings.zone.placeholder")
+                                text: zoneRow.isRegion ? "" : Settings.serverTimeZone
+                                onEdited: text => {
+                                    const zone = text.trim()
+                                    zoneRow.refused = zone !== "" && !Settings.zoneValid(zone)
+                                    if (zone !== "" && !zoneRow.refused)
+                                        Settings.serverTimeZone = zone
+                                }
+                            }
+                            UiText {
+                                visible: zoneField.visible && zoneRow.refused
+                                width: parent.width
+                                text: I18n.tr("settings.zone.invalid")
+                                color: Theme.warning
+                                font.pixelSize: Theme.sizeSmall
                             }
                         }
                     }

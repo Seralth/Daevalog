@@ -310,6 +310,10 @@
       "normal": "일반",
       "slim": "슬림"
     },
+    "meterSize": {
+      "label": "미터 크기",
+      "hint": "미터의 글자와 행을 크게 합니다. 다른 창의 크기는 그대로입니다."
+    },
     "detailsMonitor": {
       "label": "상세 정보를 열 화면",
       "off": "끄기",
@@ -549,9 +553,28 @@
       "line": "별도 줄",
       "hint": "'총 DPS/DMG 표시'가 켜져 있을 때 그룹 피해를 DPS 옆에 표시할 위치: 하단, 또는 DPS와 함께 행 아래의 별도 줄."
     },
+    "trayEdge": {
+      "label": "알림 트레이",
+      "auto": "자동",
+      "top": "위",
+      "bottom": "아래",
+      "hint": "알림을 미터의 어느 가장자리에 표시할지 정합니다. 자동: 위, 미터 위에 펼친 목록을 놓을 공간이 없으면 아래."
+    },
     "characterNameHint": "다음 로딩 때 게임의 이름으로 바뀝니다.",
     "modeOnly": "{mode}에서만 적용됩니다.",
-    "showTotalHint": "푸터의 그룹 합계로, DPS·회복·탱커 모든 탭에 표시됩니다."
+    "showTotalHint": "푸터의 그룹 합계로, DPS·회복·탱커 모든 탭에 표시됩니다.",
+    "spawnNotices": "필드 네임드 및 시공의 균열 카운트다운",
+    "spawnNoticesHint": "알림에 표시: 필드 네임드 30분, 15분, 5분 전, 시공의 균열 5분 전.",
+    "shardWarning": "봉혼석 경고",
+    "shardWarningHint": "공격에 봉혼석이 더 이상 사용되지 않으면 알림을 표시합니다.",
+    "serverTimeZone": "서버 시간대",
+    "serverTimeZoneHint": "보스와 균열 시간은 서버 시계를 따릅니다. 지역을 고른 뒤 게임 안의 서버 시간과 비교하세요.",
+    "zone": {
+      "computer": "이 컴퓨터의 시간대",
+      "other": "다른 시간대",
+      "placeholder": "지역/도시 (예: Asia/Seoul)",
+      "invalid": "알 수 없는 시간대"
+    }
   },
   "battleTime": {
     "suspended": "일시정지",
@@ -664,5 +687,37 @@
     "settings": "설정",
     "history": "기록",
     "quit": "종료"
+  },
+  "notices": {
+    "title": "알림",
+    "clearAll": "모두 지우기",
+    "none": "알림 없음",
+    "pet": {
+      "soul": "{pet} 영혼",
+      "souls": "{pet} 영혼 +{count}",
+      "registered": "{pet} 등록",
+      "level": "{pet} {level}레벨 달성",
+      "reached": "{level}레벨 달성. {status}",
+      "toRegister": "{souls}/{need} (등록까지 {left}), 최대까지 {toMax}",
+      "toLevel": "{souls}/{need} ({next}레벨까지 {left}), 최대까지 {toMax}",
+      "max": "{level}레벨, 최대",
+      "unknown": "개수를 알 수 없음: 캐릭터 선택에 갔다 오거나 파티 던전에 한 번 입장하세요",
+      "behind": "{status} ({time} 기준 펫 목록, 실제보다 적을 수 있음)",
+      "insight": "{genus} 종족 이해도 {level}레벨: {exp}/{need}",
+      "insightGain": "{insight} (+{gain})",
+      "insightMax": "{genus} 종족 이해도 {level}레벨 (최대)",
+      "insightLevel": "{genus} 종족 이해도 {level}레벨",
+      "unnamed": "펫 {id}"
+    },
+    "spawn": {
+      "at": "{time} {name}"
+    },
+    "shard": {
+      "off": "봉혼석 꺼짐",
+      "out": "봉혼석 소진",
+      "toggle": "B 키로 켜고 끌 수 있습니다."
+    },
+    "countdown": "{minutes}분 후",
+    "now": "지금"
   }
 }

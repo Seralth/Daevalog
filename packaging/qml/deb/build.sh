@@ -9,13 +9,25 @@
 #
 # dpkg-shlibdeps writes the library half of Depends, with Debian's own
 # versions. The QML modules and Qt's Wayland plugin are loaded at run time,
-# so control lists them by hand.
+# so control lists them by hand. The QML compiled in by qmlcachegen uses
+# QtQml's private API, so Depends asks for at least the Qt minor version the
+# meter was built with.
+#
+# DAEVALOG_REBUILD=<n> in the environment (optional): rebuild <n> of the same
+# commit, for example after a Qt update. The version is then
+# <version>+r<commits>+b<n>; none or 0 gives <version>+r<commits>.
 set -eu
 
 root=$(cd "$(dirname "$0")/../../.." && pwd)
 out=$(cd "${1:-.}" && pwd)
 version=$(grep -m1 '^version' "$root/src-qml/Cargo.toml" | cut -d'"' -f2)
 rev=$(git -C "$root" rev-list --count HEAD)
+debversion=${version}+r${rev}
+case ${DAEVALOG_REBUILD:-0} in
+  *[!0-9]*) echo "build.sh: DAEVALOG_REBUILD is not a number: $DAEVALOG_REBUILD" >&2; exit 2 ;;
+  0) ;;
+  *) debversion=${debversion}+b${DAEVALOG_REBUILD} ;;
+esac
 
 cargo build --release --locked --manifest-path "$root/src-qml/Cargo.toml"
 # The capture helper, which holds the capture permission so the meter holds
@@ -46,6 +58,7 @@ mkdir -p "$work/debian"
 printf 'Source: daevalog-dps-meter\n\nPackage: daevalog-dps-meter\nArchitecture: any\n' > "$work/debian/control"
 shlibs=$(cd "$work" && dpkg-shlibdeps -O "$pkg/usr/bin/daevalog-dps-meter" "$pkg/usr/bin/daevalog-capture" | sed -n 's/^shlibs:Depends=//p')
 size=$(du -sk "$pkg/usr" | cut -f1)
+qt=$(dpkg-query -W -f='${Version}' qt6-declarative-dev | sed -E 's/^[0-9]+://; s/^([0-9]+\.[0-9]+).*/\1/')
 
 install -d "$pkg/DEBIAN"
 # Ubuntu 24.04 has no Qt 6 layer shell (its layer-shell-qt is the Qt 5 one),
@@ -55,7 +68,7 @@ drop=""
 if ! apt-cache show qml6-module-org-kde-layershell > /dev/null 2>&1; then
   drop='/^Recommends:/d'
 fi
-sed -e "s#@VERSION@#${version}+r${rev}#" -e "s#@SHLIBS@#${shlibs}#" -e "s#@SIZE@#${size}#" -e "$drop" \
+sed -e "s#@VERSION@#${debversion}#" -e "s#@SHLIBS@#${shlibs}#" -e "s#@SIZE@#${size}#" -e "s#@QT@#${qt}#" -e "$drop" \
   "$root/packaging/qml/deb/control" > "$pkg/DEBIAN/control"
 install -m755 "$root/packaging/qml/deb/postinst" "$pkg/DEBIAN/postinst"
-dpkg-deb --root-owner-group -b "$pkg" "$out/daevalog-dps-meter_${version}+r${rev}_amd64.deb"
+dpkg-deb --root-owner-group -b "$pkg" "$out/daevalog-dps-meter_${debversion}_amd64.deb"

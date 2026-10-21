@@ -44,6 +44,8 @@ struct HitHead {
     actor: i32,
     /// The skill, a Theostone's item id already turned into its effect id.
     code: i32,
+    /// The same for every hit of one cast.
+    uid: u8,
     hit_type: i32,
 }
 
@@ -188,9 +190,10 @@ impl PacketDecoder {
             code = code * 10 + 1;
         }
         let code = i32::try_from(code).ok().filter(|&c| skill_code_in_range(c))?;
-        *at += 1; // the uid
+        let uid = *packet.get(*at)?;
+        *at += 1;
         let hit_type = next_varint(packet, at)?;
-        Some(HitHead { target, switch, actor, code, hit_type })
+        Some(HitHead { target, switch, actor, code, uid, hit_type })
     }
 
     /// A record without a value counts only as a Miss or a Resist: damage
@@ -340,6 +343,9 @@ impl PacketDecoder {
                 self.data_storage.add_heal_event(head.actor, head.actor, skill, body.damage, false, self.record_time());
             }
             return;
+        }
+        if let Some(p) = plotter {
+            self.note_shard_hit(head.actor, head.code, head.uid, p.flags);
         }
         let row = self.damage_row(head, body);
         let (mods, dir) = (plotter.map(|p| Byte(p.flags)), plotter.and_then(|p| p.angle).map(Byte));

@@ -5,6 +5,7 @@ use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering::Relaxed};
 
+use crate::capture::decoder::{PetCollectionEvent, ShardEvent};
 use crate::entity::job_class::JobClass;
 
 /// A fight segment nobody has hit for longer than this is over.
@@ -27,6 +28,8 @@ mod heal;
 mod identity;
 mod names;
 mod numbers;
+mod pet_collection;
+mod power_shards;
 mod roster;
 mod taken;
 pub use aggregates::{
@@ -89,6 +92,10 @@ pub struct DataStorage {
     /// you or your party pulled, for boss mode to keep on screen (a revive
     /// after a wipe); taken once by the meter.
     before_zone_change: Mutex<Option<Arc<DataStorage>>>,
+    /// Pet collection records for the pet soul notices; no fight clears them.
+    pet_collection: Mutex<VecDeque<PetCollectionEvent>>,
+    /// Your shard hits and counts for the shard notice; no fight clears them.
+    shards: Mutex<VecDeque<ShardEvent>>,
 }
 
 type Ids = HashSet<i32>;
@@ -258,6 +265,8 @@ impl DataStorage {
             player_numbers: Mutex::default(),
             buffs: Mutex::default(),
             before_zone_change: Mutex::default(),
+            pet_collection: Mutex::default(),
+            shards: Mutex::default(),
         }
     }
 
@@ -275,6 +284,8 @@ impl DataStorage {
             player_numbers: Mutex::new(self.player_numbers.lock().clone()),
             buffs: Mutex::new(self.buffs.lock().clone()),
             before_zone_change: Mutex::default(),
+            pet_collection: Mutex::default(),
+            shards: Mutex::default(),
         }
     }
 

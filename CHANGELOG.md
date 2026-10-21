@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.0 r2 (2026-10-21)
+
+### Meter
+
+- A notice tray on the meter's edge. A thin bar shows an icon for each kind of notice waiting. The chevron pulls the card out: the notices, newest first, each with its own ✕, and Clear all. A new notice only adds its icon, so nothing opens over the game. Settings > Notifications > Notification tray puts it on the top or the bottom edge. Auto, the default, takes the top, or the bottom when the meter is too near the top of the screen for the open card.
+- Pet soul notices in the tray. Each soul a pet takes shows how many souls it now holds toward its next level, and how many it needs to the top. Each pet has one line, updated with every soul, so farming does not flood the tray. Registering a pet or reaching a new level also shows the genus Insight it gave. The counts start from the pet list the game sends when you log in or come back from Select Character, and when you enter or leave a party dungeon or the Abyss. Before that, a pet's count shows as unknown.
+- Field Boss and Spacetime Rift countdowns in the tray. A Field Boss shows 30, 15 and 5 minutes before it appears, with every boss of that time and its map. A Spacetime Rift shows 5 minutes before it opens. Each counts down to its time and leaves the tray 10 minutes after it. The times come from the game's own schedule, so a patch that moves them moves the countdowns too.
+- A Notifications page in Settings: turn the countdowns off, and set your server's time zone. Pick your server region (in the game's own names), or type any time zone. Until you pick one, the meter uses your computer's time zone. Check one countdown against the server time shown in game.
+- A Power Shard warning in the tray. When your hits used Power Shards and three casts in a row land without them, one notice says Power Shards are off, or that they ran out when your bag has none left. It goes away when your hits use shards again. If you never use shards, it never shows. Turn it off in Settings > Notifications.
+- Meter size in Settings > Appearance: 100%, 115%, 130% or 150%. The meter's text, rows, header and footer grow together, so the meter keeps its shape and its text stays sharp. The other windows keep their size.
+- In Slim, the boss health shows as a thin line without text. 2.0.0 showed no health bar in Slim.
+
+### Linux desktop
+
+- The Arch package installs layer-shell-qt, so on KDE Plasma, Hyprland and Sway the meter is the overlay above a fullscreen game without a second install. Without it, Hyprland and Sway tiled the meter across the screen.
+- Each package needs at least the Qt version it was built with. A meter installed on an older Qt stopped at start.
+
 ## 2.0.0 (2026-10-16)
 
 Daevalog 2.0 is a new meter. Its windows are drawn with Qt 6 instead of a web page, and the code behind them is new. On its first start, 2.0 copies your 1.x saved fights and the settings that still exist. Your a2tools.app sign-in does not come over, so sign in again.

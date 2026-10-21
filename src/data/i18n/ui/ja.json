@@ -310,6 +310,10 @@
       "normal": "通常",
       "slim": "スリム"
     },
+    "meterSize": {
+      "label": "メーターのサイズ",
+      "hint": "メーターの文字と行を大きくします。ほかのウィンドウの大きさは変わりません。"
+    },
     "detailsMonitor": {
       "label": "詳細を開く画面",
       "off": "オフ",
@@ -549,9 +553,28 @@
       "line": "専用の行",
       "hint": "「合計DPS/ダメージを表示」がオンのとき、グループのダメージをDPSの横に表示する場所：フッター、またはDPSと一緒に行の下の専用の行。"
     },
+    "trayEdge": {
+      "label": "通知トレイ",
+      "auto": "自動",
+      "top": "上",
+      "bottom": "下",
+      "hint": "通知をメーターのどの辺に表示するか。自動：上。メーターの上に開いた一覧を置く余裕がないときは下。"
+    },
     "characterNameHint": "次のロード時にゲームの名前に置き換わります。",
     "modeOnly": "{mode}でのみ有効。",
-    "showTotalHint": "フッターのグループ合計です。DPS・回復・タンカーのすべてのタブに表示されます。"
+    "showTotalHint": "フッターのグループ合計です。DPS・回復・タンカーのすべてのタブに表示されます。",
+    "spawnNotices": "フィールド ネームドと時空の亀裂のカウントダウン",
+    "spawnNoticesHint": "通知に表示：フィールド ネームドの30分・15分・5分前、時空の亀裂の5分前。",
+    "shardWarning": "封魂石の警告",
+    "shardWarningHint": "攻撃が封魂石を使わなくなったときに通知します。",
+    "serverTimeZone": "サーバーのタイムゾーン",
+    "serverTimeZoneHint": "ボスと亀裂の時刻はサーバーの時計に従います。地域を選び、ゲーム内のサーバー時間と比べてください。",
+    "zone": {
+      "computer": "このコンピューターのタイムゾーン",
+      "other": "その他のタイムゾーン",
+      "placeholder": "地域/都市（例：Asia/Tokyo）",
+      "invalid": "不明なタイムゾーン"
+    }
   },
   "battleTime": {
     "suspended": "一時停止中",
@@ -664,5 +687,37 @@
     "settings": "設定",
     "history": "履歴",
     "quit": "終了"
+  },
+  "notices": {
+    "title": "通知",
+    "clearAll": "すべて消去",
+    "none": "通知はありません",
+    "pet": {
+      "soul": "{pet}の魂",
+      "souls": "{pet}の魂 +{count}",
+      "registered": "{pet}を登録",
+      "level": "{pet}がレベル{level}に到達",
+      "reached": "レベル{level}到達。{status}",
+      "toRegister": "{souls}/{need}（登録まであと{left}）、最大まであと{toMax}",
+      "toLevel": "{souls}/{need}（レベル{next}まであと{left}）、最大まであと{toMax}",
+      "max": "レベル{level}、最大",
+      "unknown": "数が不明です：キャラクター選択から戻るか、パーティーダンジョンに一度入ってください",
+      "behind": "{status}（{time}時点のペット一覧、古い可能性があります）",
+      "insight": "{genus}種族理解度 Lv.{level}：{exp}/{need}",
+      "insightGain": "{insight}（+{gain}）",
+      "insightMax": "{genus}種族理解度 Lv.{level}（最大）",
+      "insightLevel": "{genus}種族理解度 Lv.{level}",
+      "unnamed": "ペット {id}"
+    },
+    "spawn": {
+      "at": "{time} {name}"
+    },
+    "shard": {
+      "off": "封魂石オフ",
+      "out": "封魂石切れ",
+      "toggle": "Bキーでオン・オフを切り替えます。"
+    },
+    "countdown": "あと{minutes}分",
+    "now": "今"
   }
 }

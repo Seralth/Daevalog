@@ -310,6 +310,10 @@
       "normal": "Normal",
       "slim": "Compact"
     },
+    "meterSize": {
+      "label": "Taille du compteur",
+      "hint": "Agrandit le texte et les lignes du compteur. Les autres fenêtres gardent leur taille."
+    },
     "detailsMonitor": {
       "label": "Ouvrir Détails sur l'écran",
       "off": "Désactivé",
@@ -549,9 +553,28 @@
       "line": "Ligne à part",
       "hint": "Où les dégâts du groupe s'affichent à côté de son DPS tant que « Afficher DPS/DGT total » est activé : dans le pied, ou avec le DPS sur une ligne à part sous les lignes."
     },
+    "trayEdge": {
+      "label": "Bandeau des notifications",
+      "auto": "Auto",
+      "top": "En haut",
+      "bottom": "En bas",
+      "hint": "Sur quel bord du compteur se trouvent les notifications. Auto : en haut, ou en bas s'il n'y a pas la place pour la liste ouverte au-dessus du compteur."
+    },
     "characterNameHint": "Le nom donné par le jeu le remplace au prochain chargement.",
     "modeOnly": "Uniquement en {mode}.",
-    "showTotalHint": "Le total du groupe en bas, sur chaque onglet : DPS, Soins et Défenseur."
+    "showTotalHint": "Le total du groupe en bas, sur chaque onglet : DPS, Soins et Défenseur.",
+    "spawnNotices": "Compte à rebours des monstres uniques de terrain et des failles spatio-temporelles",
+    "spawnNoticesHint": "Dans les notifications : 30, 15 et 5 minutes avant un monstre unique de terrain, 5 minutes avant une faille spatio-temporelle.",
+    "shardWarning": "Alerte Éclats de pouvoir",
+    "shardWarningHint": "Une notification quand vos coups n'utilisent plus d'Éclats de pouvoir.",
+    "serverTimeZone": "Fuseau horaire du serveur",
+    "serverTimeZoneHint": "Les heures des boss et des failles suivent l'horloge de votre serveur. Choisissez votre région, puis comparez une heure avec l'heure du serveur en jeu.",
+    "zone": {
+      "computer": "Fuseau horaire de cet ordinateur",
+      "other": "Autre fuseau horaire",
+      "placeholder": "Zone/Ville, p. ex. Europe/Paris",
+      "invalid": "Fuseau horaire inconnu"
+    }
   },
   "battleTime": {
     "suspended": "En pause",
@@ -664,5 +687,37 @@
     "settings": "Paramètres",
     "history": "Historique",
     "quit": "Quitter"
+  },
+  "notices": {
+    "title": "Notifications",
+    "clearAll": "Tout effacer",
+    "none": "Aucune notification",
+    "pet": {
+      "soul": "Âme de {pet}",
+      "souls": "{pet} : +{count} âmes",
+      "registered": "{pet} enregistré",
+      "level": "{pet} a atteint le niveau {level}",
+      "reached": "Niveau {level} atteint. {status}",
+      "toRegister": "{souls}/{need} (encore {left} pour l'enregistrer), {toMax} jusqu'au max",
+      "toLevel": "{souls}/{need} (encore {left} pour le niveau {next}), {toMax} jusqu'au max",
+      "max": "Niveau {level}, max",
+      "unknown": "Nombre inconnu : passez par Sélection du personnage et revenez, ou entrez une fois dans un donjon de groupe",
+      "behind": "{status} (liste des familiers de {time}, peut-être en retard)",
+      "insight": "Perception d'espèce {genus} niv. {level} : {exp}/{need}",
+      "insightGain": "{insight} (+{gain})",
+      "insightMax": "Perception d'espèce {genus} niv. {level} (max)",
+      "insightLevel": "Perception d'espèce {genus} niv. {level}",
+      "unnamed": "Familier {id}"
+    },
+    "spawn": {
+      "at": "{name} à {time}"
+    },
+    "shard": {
+      "off": "Éclats de pouvoir désactivés",
+      "out": "Plus d'Éclats de pouvoir",
+      "toggle": "La touche B les active et les désactive."
+    },
+    "countdown": "dans {minutes} min",
+    "now": "maintenant"
   }
 }

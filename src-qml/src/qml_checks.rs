@@ -719,6 +719,33 @@ mod tests {
     }
 
     #[test]
+    fn slim_shows_a_thin_health_bar_without_text() {
+        // Slim had no health bar at all.
+        let text = std::fs::read_to_string(root().join("MeterWindow.qml")).unwrap();
+        assert!(text.contains("readonly property bool hasBoss: Meter.bossHealth >= 0\n"));
+        let sizes = std::fs::read_to_string(root().join("MeterSizes.qml")).unwrap();
+        assert!(sizes.contains("readonly property int bossBand: px(slim ? 3 : 16)\n"));
+        assert!(text.contains("+ (hasBoss ? Theme.meter.bossBand : 0) +"), "the meter's height");
+        let chars = code_only(&text);
+        let bars: Vec<Block> = blocks_of(&chars, "Rectangle").into_iter().filter(|b| value_of(&b.own, "id").as_deref() == Some("healthBar")).collect();
+        assert_eq!(bars.len(), 1);
+        let bar = &bars[0];
+        assert_eq!(value_of(&bar.own, "visible").as_deref(), Some("meter.hasBoss"));
+        assert_eq!(value_of(&bar.own, "Layout.preferredHeight").as_deref(), Some("Theme.meter.bossBand"));
+        assert_eq!(value_of(&bar.own, "color").as_deref(), Some("Theme.bossTrack"));
+        // Every text on the bar sits in the one part slim hides.
+        let inside = |b: &Block, outer: &Block| b.open > outer.open && b.close < outer.close;
+        let hidden: Vec<Block> = blocks_of(&chars, "Item")
+            .into_iter()
+            .filter(|b| inside(b, bar) && value_of(&b.own, "visible").as_deref() == Some("!Theme.slim"))
+            .collect();
+        assert_eq!(hidden.len(), 1);
+        let texts: Vec<Block> = blocks_of(&chars, "HudText").into_iter().filter(|b| inside(b, bar)).collect();
+        assert_eq!(texts.len(), 3);
+        assert!(texts.iter().all(|t| inside(t, &hidden[0])));
+    }
+
+    #[test]
     fn the_time_to_kill_sits_after_the_enrage_countdown_with_its_mark() {
         // In the header, as it was too small on the health bar; a tick or a
         // cross, not a second number, after the enrage countdown, not beside
@@ -737,6 +764,35 @@ mod tests {
         // The time to kill is no longer on the health bar.
         assert!(text.contains("Layout.maximumWidth: Math.ceil(implicitWidth)"), "the name whole where it fits");
         assert_eq!(text.matches("Meter.bossEta").count(), 2, "the item and its visibility");
+    }
+
+    #[test]
+    fn the_open_notice_list_reads_at_row_size() {
+        // At 11 px the list was too small to read on a dense screen; the
+        // bar's text and the empty line are the row size too.
+        let text = std::fs::read_to_string(root().join("NoticeTray.qml")).unwrap();
+        let chars = code_only(&text);
+        let list = blocks_of(&chars, "ListView").into_iter().next().expect("the list");
+        let inside = |b: &Block| b.at > list.open && b.at < list.close;
+        let texts = blocks_of(&chars, "HudText");
+        let (rows, others): (Vec<&Block>, Vec<&Block>) = texts.iter().partition(|b| inside(b));
+        assert_eq!(rows.len(), 3, "title, text and time");
+        for b in rows {
+            assert_eq!(value_of(&b.own, "font.pixelSize").as_deref(), Some("Theme.sizeRow"), "line {}", line_of(&chars, b.open));
+        }
+        for b in others {
+            assert_eq!(value_of(&b.own, "font.pixelSize").as_deref(), Some("Theme.sizeRow"), "line {}", line_of(&chars, b.open));
+        }
+        let icons: Vec<Block> = blocks_of(&chars, "NoticeIcon").into_iter().filter(inside).collect();
+        assert_eq!(icons.len(), 1);
+        assert_eq!(value_of(&icons[0].own, "width").as_deref(), Some("28"));
+        assert_eq!(value_of(&icons[0].own, "height").as_deref(), Some("28"));
+        assert!(icons[0].own.contains("anchors.verticalCenter: parent.verticalCenter"), "centred on the notice");
+        assert!(text.contains("height: Math.max(38, words.implicitHeight + 10)"));
+        assert!(text.contains("readonly property int listMax: 260"));
+        // The bar's icons keep their own size.
+        let icon = std::fs::read_to_string(root().join("NoticeIcon.qml")).unwrap();
+        assert!(icon.contains("implicitWidth: 14\n") && icon.contains("implicitHeight: 14\n"));
     }
 
     #[test]
@@ -777,6 +833,58 @@ mod tests {
         assert_eq!(shown.iter().filter(|v| *v == "meter.showsDamage && !meter.damageLine").count(), 2);
         assert_eq!(shown.iter().filter(|v| *v == "Settings.showTotal && !meter.damageLine").count(), 1);
         assert!(text.contains("visible: meter.damageLine"), "the own line");
+    }
+
+    #[test]
+    fn the_tray_edge_follows_its_setting() {
+        // Auto is the default: on top, or at the bottom when the open list
+        // has no room above.
+        assert_eq!(crate::settings_store::Values::default().tray_edge, "auto");
+        let settings = std::fs::read_to_string(root().join("SettingsWindow.qml")).unwrap();
+        let auto = settings.find("\"settings.trayEdge.auto\"").expect("Auto");
+        let top = settings.find("\"settings.trayEdge.top\"").expect("Top");
+        let bottom = settings.find("\"settings.trayEdge.bottom\"").expect("Bottom");
+        assert!(auto < top && top < bottom, "Auto, Top, Bottom");
+        assert!(settings.contains("onPicked: value => Settings.trayEdge = value"));
+    }
+
+    #[test]
+    fn the_meters_text_and_rows_follow_the_meter_size() {
+        // The meter's text in the windows' type (Theme.sizeRow, HudText's
+        // own default) would stay small at 150%.
+        for file in ["MeterWindow.qml", "MeterRow.qml"] {
+            let chars = code_only(&std::fs::read_to_string(root().join(file)).unwrap());
+            let code: String = chars.iter().collect();
+            assert!(!code.contains("Theme.size"), "{file}: the windows' type scale");
+            for block in blocks_of(&chars, "HudText") {
+                let size = value_of(&block.own, "font.pixelSize").unwrap_or_default();
+                assert!(size.starts_with("Theme.meter."), "{file}:{} HudText font.pixelSize {size:?}", line_of(&chars, block.at));
+            }
+        }
+        // The rows, bands and columns live in Theme.meter only.
+        let theme = std::fs::read_to_string(root().join("Theme.qml")).unwrap();
+        assert!(theme.contains("scale: Settings.meterSize / 100"));
+        for size in ["rowHeight", "rowGap", "headerHeight", "headsHeight", "footerHeight", "iconSize", "colIcon", "colGap", "padLeft", "padRight"] {
+            assert!(!theme.contains(&format!("property int {size}:")), "Theme.{size}");
+            for path in files(&root(), "qml") {
+                let text = std::fs::read_to_string(&path).unwrap();
+                assert!(!text.contains(&format!("Theme.{size}")), "{} Theme.{size}", path.display());
+            }
+        }
+        // The setting, by the slim mode; only the meter has it.
+        let settings = std::fs::read_to_string(root().join("SettingsWindow.qml")).unwrap();
+        let layout = settings.find("\"settings.meterLayout.label\"").expect("Meter layout");
+        let size = settings.find("\"settings.meterSize.label\"").expect("Meter size");
+        assert!(layout < size && !settings[layout..size].contains("SwitchRow"), "right after Meter layout");
+        assert!(settings.contains("options: [100, 115, 130, 150].map(n => ({ \"label\": n + \"%\", \"value\": n }))"));
+        assert!(settings.contains("onPicked: value => Settings.meterSize = value"));
+        for path in files(&root(), "qml") {
+            let name = path.file_name().unwrap().to_string_lossy().to_string();
+            let text = std::fs::read_to_string(&path).unwrap();
+            if !["MeterWindow.qml", "MeterRow.qml", "Theme.qml", "SettingsWindow.qml"].contains(&name.as_str()) {
+                assert!(!text.contains("Theme.meter.") && !text.contains("Settings.meterSize"), "{name}");
+            }
+        }
     }
 
     #[test]
@@ -960,6 +1068,76 @@ mod tests {
             assert!(text.contains(&format!("function on{filter}Changed() {{\n            pages.reset()")), "{filter}");
         }
         assert!(text.contains("History.onlyRecords = false\n        pages.reset()"));
+    }
+
+    #[test]
+    fn the_tray_takes_the_edge_with_room() {
+        // With the meter near the top of the screen, the open card went off
+        // the screen (X11) or over the meter (Wayland). Auto picks the
+        // bottom edge where the largest card has no room above.
+        let text = std::fs::read_to_string(root().join("NoticeTray.qml")).unwrap();
+        assert!(text.contains("readonly property string edge: Settings.trayEdge"));
+        assert!(text.contains("readonly property int fullHeight: barHeight + listMax + 4"));
+        assert!(text.contains("const wantsBelow = edge === \"bottom\"\n            || (edge === \"auto\" && (room ? room.above < fullHeight && room.below > room.above : !open && below))"));
+        // The list is no taller than the room on its side.
+        assert!(text.contains("Math.min(list.contentHeight, listRoom)"));
+        assert!(text.contains("listRoom = room ? Math.max(38, Math.min(listMax, (below ? room.below : room.above) - barHeight - 4)) : listMax"));
+        assert!(text.contains("y = wantsBelow ? at.y : at.y - h"));
+        // The bar on the card's far edge, the chevron away from the meter
+        // to open.
+        assert!(text.contains("y: tray.below ? tray.height - height : 0"));
+        assert!(text.contains("onYChanged: tray.shapeInput()"), "locked, the chevron takes clicks where it is");
+        assert!(text.contains("turn: tray.open !== tray.below ? 0 : 180"));
+        // Wayland: exactly where asked when the room is known (Hyprland slid
+        // it over the header); the compositor flips it when not.
+        assert!(text.contains("Overlay.placePopup(tray, Qt.rect(inset, 0, w, meter.height), wantsBelow, !room, flip)"));
+        assert!(text.contains("const flip = !room && edge === \"auto\""));
+        // It follows the bottom edge and a layer surface's margins.
+        assert!(text.contains("function onHeightChanged() { tray.placeSoon() }"));
+        assert!(text.contains("function onLayerMarginsChanged() {\n            tray.placeSoon()"));
+        assert!(text.contains("onEdgeChanged: placeSoon()"));
+        // Hyprland leaves a still popup part of the way when the meter
+        // moves: shown again once the move has settled.
+        assert!(text.contains("if (tray.meter && tray.meter.layerSurface && Overlay.layerPopupsLag && tray.visible)\n                moveSettled.restart()"));
+        assert!(text.contains("            tray.visible = false\n            tray.place()"));
+    }
+
+    #[test]
+    fn the_notice_bar_reads_at_row_size() {
+        // Its 14 px icons and 11 px text were too small to read.
+        let text = std::fs::read_to_string(root().join("NoticeTray.qml")).unwrap();
+        let chars = code_only(&text);
+        let code: String = chars.iter().collect();
+        assert!(code.contains("readonly property int barHeight: 24"));
+        let bar = blocks_of(&chars, "Item").into_iter().find(|b| b.own.contains("id: bar")).expect("the bar");
+        assert_eq!(value_of(&bar.own, "height").as_deref(), Some("tray.barHeight"));
+        let inside = |b: &Block| b.open > bar.open && b.close < bar.close;
+        let icons: Vec<Block> = blocks_of(&chars, "NoticeIcon").into_iter().filter(inside).collect();
+        assert_eq!(icons.len(), 1, "one icon per kind");
+        assert_eq!(value_of(&icons[0].own, "width").as_deref(), Some("18"));
+        assert_eq!(value_of(&icons[0].own, "height").as_deref(), Some("18"));
+        let texts: Vec<Block> = blocks_of(&chars, "HudText").into_iter().filter(inside).collect();
+        assert_eq!(texts.len(), 3, "the count, the title and Clear all");
+        for t in &texts {
+            assert_eq!(value_of(&t.own, "font.pixelSize").as_deref(), Some("Theme.sizeRow"), "line {}", line_of(&chars, t.at));
+        }
+        // The card, the line under the bar and the list start from the bar's height.
+        assert!(code.contains("readonly property int wantedHeight: barHeight + (open ? listHeight + 4 : 0)"));
+        assert!(code.contains("    height: barHeight\n"));
+        let starts: Vec<String> = ["Rectangle", "HudText", "ListView"]
+            .iter()
+            .flat_map(|c| blocks_of(&chars, c))
+            .filter(|b| !inside(b) && b.open > bar.close)
+            .filter_map(|b| value_of(&b.own, "y"))
+            .filter(|y| y.contains("barHeight"))
+            .collect();
+        assert_eq!(
+            starts,
+            vec!["tray.below ? bar.y - 1 : tray.barHeight", "tray.below ? 8 : tray.barHeight + 8", "tray.below ? 2 : tray.barHeight + 2"]
+        );
+        // Other places size the icon themselves.
+        let icon = std::fs::read_to_string(root().join("NoticeIcon.qml")).unwrap();
+        assert!(icon.contains("implicitWidth: 14\n    implicitHeight: 14"));
     }
 
     #[test]

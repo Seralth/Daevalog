@@ -1,0 +1,20 @@
+{
+  "fieldBoss": "Field Boss",
+  "maps": {
+    "20": "Chaotic Lower Reshanta",
+    "22": "Chaotic Middle Reshanta",
+    "1010": "Verteron",
+    "1011": "Eltnen",
+    "1110": "Altgard",
+    "1111": "Morheim"
+  },
+  "regions": {
+    "NAW": "North America - West",
+    "NAE": "North America - East",
+    "EU": "Europe",
+    "LA": "South America",
+    "AS": "Asia",
+    "JP": "Japan"
+  },
+  "rift": "Spacetime Rift"
+}

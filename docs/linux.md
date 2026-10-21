@@ -50,7 +50,7 @@ Most systems install Daevalog from [packages.seralth.com](https://packages.seral
 | Bazzite and other image-based Fedoras | [packages.seralth.com/#bazzite](https://packages.seralth.com/#bazzite) |
 | openSUSE Tumbleweed | [packages.seralth.com/#opensuse](https://packages.seralth.com/#opensuse) |
 
-The overlay above a fullscreen game on KDE Plasma, Hyprland and Sway also needs layer-shell-qt. apt and dnf install it with the meter where the system has it; on Arch, install it with `sudo pacman -S --needed layer-shell-qt`.
+The overlay above a fullscreen game on KDE Plasma, Hyprland and Sway also needs layer-shell-qt. pacman, apt and dnf install it with the meter where the system has it.
 
 ### Steam Deck (SteamOS)
 
@@ -74,7 +74,7 @@ Use **Desktop Mode** for the meter: Game Mode keeps every other program off the 
     sudo pacman-key --add daevalog.asc
     sudo pacman-key --lsign-key 33F1E9F759E2887D26372C35502429F6C085461C
     printf '\n[daevalog]\nServer = https://packages.seralth.com/arch/$arch\n' | sudo tee -a /etc/pacman.conf
-    sudo pacman -Syu daevalog-dps-meter layer-shell-qt
+    sudo pacman -Syu daevalog-dps-meter
     exit
     ```
 
@@ -144,6 +144,10 @@ rpmbuild -bb packaging/qml/rpm/daevalog-dps-meter.spec --define "_topdir $PWD/rp
   --define "pkgrelease $(git rev-list --count HEAD)"
 sudo zypper install --allow-unsigned-rpm ./rpmbuild/RPMS/x86_64/daevalog-dps-meter-*.rpm
 ```
+
+#### Rebuilding the same commit
+
+To build a commit again, for example after a Qt minor update, set `DAEVALOG_REBUILD` to the rebuild number (1, 2, ...) for `makepkg`, `build.sh` or `rpmbuild`, for example `DAEVALOG_REBUILD=1 makepkg -si`. The package then sorts above the earlier build of that commit: Arch `1:2.0.0.r1.g0123abc-2`, Debian `2.0.0+r1+b1`, Fedora and openSUSE `2.0.0-1.1`. Without it, or with 0, the version is as shown in [Which version you have](#which-version-you-have).
 
 ### Other distributions
 

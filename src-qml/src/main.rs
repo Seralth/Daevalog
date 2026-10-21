@@ -21,8 +21,12 @@ mod layer_drag;
 mod live;
 mod menus;
 mod meter;
+mod notices;
 mod overlay;
 mod party;
+mod pet_souls;
+mod power_shards;
+mod world_spawns;
 #[cfg(test)]
 mod qml_checks;
 #[cfg(test)]
@@ -58,6 +62,7 @@ pub const CAPTURE_HELPER: &str = "daevalog-capture-dev";
 const USAGE_TOP: &str = "\
 Usage: daevalog-dps-meter [--layer-shell] [--locked] [--screenshot FILE.png]
                           [--open VIEW] [--width N] [--icon-size N] [--font-size N]
+                          [--meter-size N]
                           [--mode MODE] [--you] [--players N] [--pin-you]
                           [--hide-names] [--language LANG] [--theme THEME] [--columns LIST]
                           [--capture-helper FILE]
@@ -80,6 +85,7 @@ for this run only.
 const USAGE_TOP: &str = "\
 Usage: daevalog-dps-meter [--locked] [--screenshot FILE.png]
                           [--open VIEW] [--width N] [--icon-size N] [--font-size N]
+                          [--meter-size N]
                           [--mode MODE] [--you] [--players N] [--pin-you]
                           [--hide-names] [--language LANG] [--theme THEME] [--columns LIST]
                           [--replay FILE [--fast] [--until TIME] [--print-fights]
@@ -98,10 +104,13 @@ const USAGE_OPTIONS: &str = "  --locked            start locked: clicks go throu
                       smallest width), for a screenshot of a narrow one
   --icon-size N       Details' skill icons N px (20 to 56)
   --font-size N       Details' text N px (11 to 20)
+  --meter-size N      the meter's text and rows at N% (100, 115, 130 or 150)
   --open VIEW         open a window at the start: meter/heal, meter/tank,
                       meter/split, meter/slim, meter/health-split,
                       meter/low-share-number, meter/damage-line,
-                      meter/notice, meter/card,
+                      meter/notice, meter/card, meter/tray and
+                      meter/tray-closed (the notice tray, with sample
+                      notices),
                       meter/paused (suspended), details, details/dmg,
                       details/heal, details/taken,
                       details/mechanics, details/timeline, details/options,
@@ -205,6 +214,12 @@ pub fn data_dir() -> Option<PathBuf> {
         .find(|dir| dir.join("i18n/skills").is_dir())
 }
 
+/// A JSON file of the game data or the data folder; `None` when it is
+/// missing or not JSON.
+pub fn read_json(path: &Path) -> Option<serde_json::Value> {
+    serde_json::from_str(&std::fs::read_to_string(path).ok()?).ok()
+}
+
 /// The capture helper to start: --capture-helper, else the one in this
 /// program's folder, never one from PATH.
 #[cfg(not(windows))]
@@ -269,6 +284,11 @@ fn parse_args(args: &[String]) -> Result<Command, String> {
                 } else {
                     overrides.details_font_size = px;
                 }
+            }
+            "--meter-size" => {
+                let size = args.next().ok_or("--meter-size needs a number")?;
+                let size = size.parse().ok().filter(|n| settings_store::METER_SIZES.contains(n));
+                overrides.meter_size = Some(size.ok_or("--meter-size is 100, 115, 130 or 150")?);
             }
             "--mode" => {
                 let name = args.next().ok_or("--mode needs a mode")?;
@@ -534,6 +554,11 @@ mod tests {
         let Ok(Command::Run(sized)) = parse_args(&args(&["--icon-size", "56", "--font-size", "20"])) else { panic!() };
         assert_eq!((sized.overrides.details_icon_size, sized.overrides.details_font_size), (Some(56), Some(20)));
         assert!(parse_args(&args(&["--icon-size", "big"])).is_err());
+        let Ok(Command::Run(big)) = parse_args(&args(&["--open", "meter/slim", "--meter-size", "150"])) else { panic!() };
+        assert_eq!((big.overrides.meter_size, big.overrides.slim_mode), (Some(150), true));
+        for refused in ["120", "200", "big"] {
+            assert!(parse_args(&args(&["--meter-size", refused])).is_err(), "{refused}");
+        }
         assert!(parse_args(&args(&["--open", "tray"])).is_err());
         assert!(parse_args(&args(&["--open"])).is_err());
     }
@@ -555,7 +580,7 @@ mod tests {
     fn the_help_names_what_the_options_take() {
         let help = usage();
         let top = help.split("\n\n").next().unwrap_or_default();
-        for option in ["--width N", "--icon-size N", "--font-size N"] {
+        for option in ["--width N", "--icon-size N", "--font-size N", "--meter-size N"] {
             assert!(top.contains(option), "{option} in the usage line");
         }
         for said in [

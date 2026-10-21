@@ -71,12 +71,12 @@ Window {
     // is set back, then it is off (see onHeightChanged).
     property bool restoreHeight: false
 
-    readonly property bool hasBoss: Meter.bossHealth >= 0 && !Theme.slim
-    // The health bar is tall enough for its text (Theme.sizeSmall).
-    readonly property int bossBand: 16
-    readonly property int naturalHeight: 2 + Theme.headerHeight + (Capture.notice ? notice.height : 0)
-        + (hasBoss ? bossBand : 0) + (Theme.slim ? 0 : Theme.headsHeight)
-        + rowList.implicitHeight + 10 + Theme.footerHeight
+    readonly property bool hasBoss: Meter.bossHealth >= 0
+    // Every size below is Theme.meter's, at the Meter size setting; the
+    // 1 px lines and the border stay 1 px.
+    readonly property int naturalHeight: 2 + Theme.meter.headerHeight + (Capture.notice ? notice.height : 0)
+        + (hasBoss ? Theme.meter.bossBand : 0) + (Theme.slim ? 0 : Theme.meter.headsHeight)
+        + rowList.implicitHeight + Theme.meter.px(10) + Theme.meter.footerHeight
 
     // Each tab's number columns, as Settings > Meter > Columns chose them
     // (any number of them), in the list's order: head, tooltip (the full
@@ -115,15 +115,15 @@ Window {
     readonly property var tabKeys: (JSON.parse(Settings.meterColumns) || {})[["dps", "heal", "tank"][tab]] || []
     readonly property var columns: tabKeys.map(key => {
         const info = columnInfo[["dps", "heal", "tank"][tab]][key]
-        const width = info.widths[tabKeys.length > 3 ? 1 : 0] + (info.rate && !Settings.roundDps ? 12 : 0)
+        const width = Theme.meter.px(info.widths[tabKeys.length > 3 ? 1 : 0] + (info.rate && !Settings.roundDps ? 12 : 0))
         return { "head": info.head, "tip": info.tip, "width": width, "kind": info.kind }
     })
     readonly property var columnWidths: columns.map(c => c.width)
     readonly property var columnKinds: columns.map(c => c.kind)
     readonly property var healerColumns: [
-        { "head": I18n.tr("meter.columns.healed"), "tip": I18n.tr("settings.columns.healed") + "\n" + I18n.tr("meter.columnTips.healed"), "width": 64, "kind": "main" },
-        { "head": I18n.tr("meter.columns.hps"), "tip": I18n.tr("settings.columns.hps") + "\n" + I18n.tr("meter.columnTips.hps"), "width": 56, "kind": "main" },
-        { "head": I18n.tr("meter.columns.share"), "tip": I18n.tr("settings.columns.healPct") + "\n" + I18n.tr("meter.columnTips.healerPct"), "width": 40, "kind": "share" }
+        { "head": I18n.tr("meter.columns.healed"), "tip": I18n.tr("settings.columns.healed") + "\n" + I18n.tr("meter.columnTips.healed"), "width": Theme.meter.px(64), "kind": "main" },
+        { "head": I18n.tr("meter.columns.hps"), "tip": I18n.tr("settings.columns.hps") + "\n" + I18n.tr("meter.columnTips.hps"), "width": Theme.meter.px(56), "kind": "main" },
+        { "head": I18n.tr("meter.columns.share"), "tip": I18n.tr("settings.columns.healPct") + "\n" + I18n.tr("meter.columnTips.healerPct"), "width": Theme.meter.px(40), "kind": "share" }
     ]
     readonly property string groupTotal: [Meter.groupTotal, party ? party.healTotal : "", party ? party.tankTotal : ""][tab]
     // The group's damage beside its DPS, as 1.x, DPS tab only, as Settings >
@@ -221,18 +221,31 @@ Window {
     // show (the split view's healers too), as MeterRow lays them out; the
     // 1 px border on each side; never below 260.
     readonly property int rowsMinimum: {
-        const need = widths => widths.reduce((sum, w) => sum + w, 0) + widths.length * Theme.colGap
+        const need = widths => widths.reduce((sum, w) => sum + w, 0) + widths.length * Theme.meter.colGap
         const healers = Settings.splitView && tab === 0 ? need(healerColumns.map(c => c.width)) : 0
-        return 2 + Theme.padLeft + Theme.colIcon + Theme.colGap + 60 + Theme.padRight
+        return 2 + Theme.meter.padLeft + Theme.meter.colIcon + Theme.meter.colGap + Theme.meter.px(60) + Theme.meter.padRight
             + Math.max(need(columnWidths), healers)
     }
-    minimumWidth: Math.max(260, rowsMinimum)
+    minimumWidth: Math.max(Theme.meter.px(260), rowsMinimum)
     // The width that gives names about the room three columns leave at
     // 360 px: the start, and a change of columns, grow to it.
-    readonly property int roomyWidth: Math.max(360, rowsMinimum + 70)
+    readonly property int roomyWidth: Math.max(Theme.meter.px(360), rowsMinimum + Theme.meter.px(70))
     onRowsMinimumChanged: {
         if (width < rowsMinimum)
             width = rowsMinimum
+    }
+    // A new meter size keeps the window's proportions: its width, and a
+    // height the user set, grow or shrink with everything in it.
+    property real sizedAt: 1
+    Connections {
+        target: Theme.meter
+        function onScaleChanged() {
+            const k = Theme.meter.scale / meter.sizedAt
+            meter.sizedAt = Theme.meter.scale
+            meter.width = Math.max(meter.minimumWidth, Math.round(meter.width * k))
+            if (meter.userSized)
+                meter.height = Math.max(meter.minimumHeight, Math.round(meter.height * k))
+        }
     }
     Connections {
         target: Settings
@@ -241,10 +254,10 @@ Window {
                 meter.width = meter.roomyWidth
         }
     }
-    minimumHeight: 2 + Theme.headerHeight + Theme.footerHeight
+    minimumHeight: 2 + Theme.meter.headerHeight + Theme.meter.footerHeight
     visible: shown || hidesInPlace
     color: "transparent"
-    title: I18n.tr("header.title")
+    title: I18n.tr("header.title") + (System.devBuild ? " (dev)" : "")
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
            | ((Settings.locked && !hasInputRegion) || hiddenInPlace ? Qt.WindowTransparentForInput : 0)
            | (unmanaged ? Qt.BypassWindowManagerHint : 0)
@@ -253,6 +266,7 @@ Window {
         // Not bindings: a resize by the user must stick.
         width = roomyWidth
         height = naturalHeight
+        sizedAt = Theme.meter.scale
         restoreHeight = true
         Overlay.watchWindow(meter)
         shapeInput()
@@ -316,14 +330,14 @@ Window {
         // Off: a mark that only shows a state.
         property bool clickable: true
         signal clicked()
-        implicitWidth: 16
-        implicitHeight: 16
+        implicitWidth: Theme.meter.px(16)
+        implicitHeight: Theme.meter.px(16)
         HoverHandler { id: hover; enabled: button.clickable }
         TapHandler { enabled: button.clickable; onTapped: button.clicked() }
     }
 
     component SmallText: HudText {
-        font.pixelSize: Theme.sizeSmall
+        font.pixelSize: Theme.meter.sizeSmall
         color: Theme.hudSub
     }
 
@@ -344,18 +358,18 @@ Window {
 
         Rectangle {
             visible: heads.rule
-            y: 2
+            y: Theme.meter.px(2)
             width: parent.width
             height: 1
             color: Theme.hairline
         }
         Item {
             anchors.fill: parent
-            anchors.leftMargin: 6
-            anchors.rightMargin: 6
-            anchors.topMargin: heads.rule ? 4 : 0
+            anchors.leftMargin: Theme.meter.px(6)
+            anchors.rightMargin: Theme.meter.px(6)
+            anchors.topMargin: heads.rule ? Theme.meter.px(4) : 0
             SmallText {
-                x: Theme.padLeft + Theme.colIcon + Theme.colGap
+                x: Theme.meter.padLeft + Theme.meter.colIcon + Theme.meter.colGap
                 height: parent.height
                 text: heads.first
                 UiTip {
@@ -365,9 +379,9 @@ Window {
             }
             Row {
                 anchors.right: parent.right
-                anchors.rightMargin: Theme.padRight
+                anchors.rightMargin: Theme.meter.padRight
                 height: parent.height
-                spacing: Theme.colGap
+                spacing: Theme.meter.colGap
                 Repeater {
                     model: heads.columns
                     SmallText {
@@ -515,7 +529,7 @@ Window {
         id: panel
         anchors.fill: parent
         visible: meter.shown
-        radius: 6
+        radius: Theme.meter.part(6)
         color: Theme.panel
         border.color: Theme.panelEdge
         border.width: 1
@@ -529,7 +543,7 @@ Window {
             // to kill.
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Theme.headerHeight
+                Layout.preferredHeight: Theme.meter.headerHeight
 
                 DragHandler {
                     id: headerDrag
@@ -568,22 +582,22 @@ Window {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 10
-                    spacing: 8
+                    anchors.leftMargin: Theme.meter.px(10)
+                    anchors.rightMargin: Theme.meter.px(10)
+                    spacing: Theme.meter.px(8)
 
                     // The state dot, on a dark ring like the text's outline.
                     Rectangle {
-                        implicitWidth: 7
-                        implicitHeight: 7
-                        radius: 3.5
+                        implicitWidth: Theme.meter.part(7)
+                        implicitHeight: Theme.meter.part(7)
+                        radius: Theme.meter.part(3.5)
                         color: Capture.suspended ? Theme.meterNote : Theme.accent
                         Rectangle {
                             z: -1
                             anchors.centerIn: parent
-                            width: 9
-                            height: 9
-                            radius: 4.5
+                            width: Theme.meter.part(9)
+                            height: Theme.meter.part(9)
+                            radius: Theme.meter.part(4.5)
                             color: Theme.outline
                         }
                     }
@@ -591,6 +605,7 @@ Window {
                         numeric: true
                         text: Meter.fightTime
                         color: Theme.number
+                        font.pixelSize: Theme.meter.sizeRow
                         font.weight: Font.DemiBold
                     }
                     // As wide as the name, the countdown and the time to kill
@@ -602,7 +617,7 @@ Window {
                         text: meter.shotNote !== "" ? meter.shotNote
                             : Capture.suspended ? I18n.tr("battleTime.suspended") : I18n.targetName(Meter.mode, Meter.target)
                         color: meter.shotNote !== "" || Capture.suspended ? Theme.meterNote : Theme.hudName
-                        font.pixelSize: Math.round(Settings.targetNameSize)
+                        font.pixelSize: Theme.meter.px(Settings.targetNameSize)
                         font.weight: Font.DemiBold
                     }
                     // The time left until the boss's timed enrage, in the
@@ -612,6 +627,7 @@ Window {
                         numeric: true
                         text: Meter.enrage
                         color: Theme.pingColors[Meter.enrageLevel]
+                        font.pixelSize: Theme.meter.sizeRow
                         font.weight: Font.DemiBold
                     }
                     // The time to kill, then a tick while it comes before the
@@ -622,6 +638,7 @@ Window {
                         numeric: true
                         text: Meter.bossEta + (Meter.killMark !== "" ? " " + Meter.killMark : "")
                         color: Meter.killMark !== "" ? Theme.pingColors[Meter.killMarkLevel] : Theme.number
+                        font.pixelSize: Theme.meter.sizeRow
                         font.weight: Font.DemiBold
                         UiTip {
                             delay: Theme.meterTipRest
@@ -652,10 +669,10 @@ Window {
                             Rectangle {
                                 required property int modelData
                                 anchors.centerIn: parent
-                                anchors.horizontalCenterOffset: modelData
-                                width: 4
-                                height: 12
-                                radius: 1
+                                anchors.horizontalCenterOffset: Theme.meter.part(modelData)
+                                width: Theme.meter.part(4)
+                                height: Theme.meter.part(12)
+                                radius: Theme.meter.part(1)
                                 color: Theme.outline
                             }
                         }
@@ -664,9 +681,9 @@ Window {
                             Rectangle {
                                 required property int modelData
                                 anchors.centerIn: parent
-                                anchors.horizontalCenterOffset: modelData
-                                width: 2
-                                height: 10
+                                anchors.horizontalCenterOffset: Theme.meter.part(modelData)
+                                width: Theme.meter.part(2)
+                                height: Theme.meter.part(10)
                                 color: suspendButton.ink
                             }
                         }
@@ -675,11 +692,15 @@ Window {
                             visible: Capture.suspended
                             anchors.fill: parent
                             readonly property color ink: suspendButton.ink
+                            // Drawn again at the new size, never stretched.
+                            readonly property real size: Theme.meter.scale
                             onInkChanged: requestPaint()
                             onVisibleChanged: requestPaint()
+                            onSizeChanged: requestPaint()
                             onPaint: {
                                 const g = getContext("2d")
                                 g.reset()
+                                g.scale(size, size)
                                 g.beginPath()
                                 g.moveTo(4.5, 3)
                                 g.lineTo(13, 8)
@@ -711,21 +732,21 @@ Window {
                         // rises 2 px and its right leg leaves the body.
                         readonly property color ink: hovered || Settings.locked ? Theme.hudName : Theme.hudSub
                         // The middle of the shackle's arc, where its legs start.
-                        readonly property real arcMiddle: Settings.locked ? 5 : 3
+                        readonly property real arcMiddle: Theme.meter.part(Settings.locked ? 5 : 3)
                         // The arc is the top half of a ring; the dark copy's
                         // half reaches a pixel lower, so an open end has one too.
                         Item {
-                            x: 3
-                            y: lockButton.arcMiddle - 5
-                            width: 10
-                            height: 6
+                            x: Theme.meter.part(3)
+                            y: lockButton.arcMiddle - Theme.meter.part(5)
+                            width: Theme.meter.part(10)
+                            height: Theme.meter.part(6)
                             clip: true
                             Rectangle {
-                                width: 10
-                                height: 10
-                                radius: 5
+                                width: Theme.meter.part(10)
+                                height: Theme.meter.part(10)
+                                radius: Theme.meter.part(5)
                                 color: "transparent"
-                                border.width: 3.5
+                                border.width: Theme.meter.part(3.5)
                                 border.color: Theme.outline
                             }
                         }
@@ -733,25 +754,25 @@ Window {
                             model: Settings.locked ? [3, 9.5] : [3]
                             Rectangle {
                                 required property real modelData
-                                x: modelData
+                                x: Theme.meter.part(modelData)
                                 y: lockButton.arcMiddle
-                                width: 3.5
-                                height: 7 - y
+                                width: Theme.meter.part(3.5)
+                                height: Theme.meter.part(7) - y
                                 color: Theme.outline
                             }
                         }
                         Item {
-                            x: 4
-                            y: lockButton.arcMiddle - 4
-                            width: 8
-                            height: 4
+                            x: Theme.meter.part(4)
+                            y: lockButton.arcMiddle - Theme.meter.part(4)
+                            width: Theme.meter.part(8)
+                            height: Theme.meter.part(4)
                             clip: true
                             Rectangle {
-                                width: 8
-                                height: 8
-                                radius: 4
+                                width: Theme.meter.part(8)
+                                height: Theme.meter.part(8)
+                                radius: Theme.meter.part(4)
                                 color: "transparent"
-                                border.width: 1.5
+                                border.width: Theme.meter.part(1.5)
                                 border.color: lockButton.ink
                             }
                         }
@@ -759,19 +780,19 @@ Window {
                             model: Settings.locked ? [4, 10.5] : [4]
                             Rectangle {
                                 required property real modelData
-                                x: modelData
+                                x: Theme.meter.part(modelData)
                                 y: lockButton.arcMiddle
-                                width: 1.5
-                                height: 7 - y
+                                width: Theme.meter.part(1.5)
+                                height: Theme.meter.part(7) - y
                                 color: lockButton.ink
                             }
                         }
                         Rectangle {
-                            x: 2.5
-                            y: 6
-                            width: 11
-                            height: 8
-                            radius: 1.5
+                            x: Theme.meter.part(2.5)
+                            y: Theme.meter.part(6)
+                            width: Theme.meter.part(11)
+                            height: Theme.meter.part(8)
+                            radius: Theme.meter.part(1.5)
                             color: lockButton.ink
                             border.width: 1
                             border.color: Theme.outline
@@ -786,20 +807,20 @@ Window {
                         }
                         Rectangle {
                             anchors.centerIn: parent
-                            width: 12
-                            height: 4
-                            radius: 2
+                            width: Theme.meter.part(12)
+                            height: Theme.meter.part(4)
+                            radius: Theme.meter.part(2)
                             color: Theme.outline
                         }
                         Row {
                             anchors.centerIn: parent
-                            spacing: 2
+                            spacing: Theme.meter.part(2)
                             Repeater {
                                 model: 3
                                 Rectangle {
-                                    width: 2
-                                    height: 2
-                                    radius: 1
+                                    width: Theme.meter.part(2)
+                                    height: Theme.meter.part(2)
+                                    radius: Theme.meter.part(1)
                                     color: menuButton.hovered ? Theme.hudName : Theme.hudSub
                                 }
                             }
@@ -817,9 +838,9 @@ Window {
                             Rectangle {
                                 required property int modelData
                                 anchors.centerIn: parent
-                                width: 13
-                                height: 3.5
-                                radius: 1.75
+                                width: Theme.meter.part(13)
+                                height: Theme.meter.part(3.5)
+                                radius: Theme.meter.part(1.75)
                                 rotation: modelData
                                 antialiasing: true
                                 color: Theme.outline
@@ -830,8 +851,8 @@ Window {
                             Rectangle {
                                 required property int modelData
                                 anchors.centerIn: parent
-                                width: 11
-                                height: 1.5
+                                width: Theme.meter.part(11)
+                                height: Theme.meter.part(1.5)
                                 rotation: modelData
                                 antialiasing: true
                                 color: closeButton.hovered ? Theme.hudName : Theme.hudSub
@@ -852,20 +873,20 @@ Window {
             Rectangle {
                 id: notice
                 Layout.fillWidth: true
-                Layout.preferredHeight: noticeText.implicitHeight + 12
+                Layout.preferredHeight: noticeText.implicitHeight + Theme.meter.px(12)
                 visible: Capture.notice
                 color: "transparent"
                 HudText {
                     id: noticeText
-                    x: 10
+                    x: Theme.meter.px(10)
                     anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width - dismiss.width - 26
+                    width: parent.width - dismiss.width - Theme.meter.px(26)
                     // On Windows capture needs Npcap, which the installer
                     // cannot bring: a click opens its site.
                     readonly property bool npcap: Qt.platform.os === "windows"
                     text: npcap ? I18n.tr("connection.npcapMissing") : I18n.tr("connection.captureUnavailable")
                     color: Theme.warning
-                    font.pixelSize: Theme.sizeSmall
+                    font.pixelSize: Theme.meter.sizeSmall
                     wrapMode: Text.WordWrap
                     // The help's address whole, also at 260 px in German.
                     maximumLineCount: 4
@@ -881,10 +902,10 @@ Window {
                 HudText {
                     id: dismiss
                     anchors.right: parent.right
-                    anchors.rightMargin: 10
+                    anchors.rightMargin: Theme.meter.px(10)
                     anchors.verticalCenter: parent.verticalCenter
                     text: I18n.tr("connection.dismiss")
-                    font.pixelSize: Theme.sizeSmall
+                    font.pixelSize: Theme.meter.sizeSmall
                     color: dismissHover.hovered ? Theme.hudName : Theme.hudSub
                     HoverHandler { id: dismissHover }
                     TapHandler { onTapped: Capture.notice = false }
@@ -904,7 +925,7 @@ Window {
                 id: healthBar
                 readonly property real share: Math.max(0, Meter.bossHealth)
                 Layout.fillWidth: true
-                Layout.preferredHeight: meter.bossBand
+                Layout.preferredHeight: Theme.meter.bossBand
                 visible: meter.hasBoss
                 color: Theme.bossTrack
                 Rectangle {
@@ -919,42 +940,47 @@ Window {
                 // the health at the right (1.x's Beta layout).
                 readonly property string percent: Math.round(healthBar.share * 100) + "%"
                 readonly property bool centred: Settings.healthText === "centred"
-                HudText {
-                    visible: !healthBar.centred
-                    x: 8
-                    height: parent.height
-                    numeric: true
-                    text: healthBar.percent
-                    font.pixelSize: Theme.sizeSmall
-                    font.weight: Font.DemiBold
-                    color: Theme.hudSub
-                }
-                HudText {
-                    visible: !healthBar.centred
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    height: parent.height
-                    numeric: true
-                    text: Meter.bossHpText
-                    font.pixelSize: Theme.sizeSmall
-                    // Small text on the meter stays full white (Visual rules).
-                    color: Theme.hudSub
-                }
-                HudText {
-                    visible: healthBar.centred
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    height: parent.height
-                    numeric: true
-                    text: healthBar.percent + "  " + Meter.bossHpText
-                    font.pixelSize: Theme.sizeSmall
-                    font.weight: Font.DemiBold
-                    color: Theme.hudSub
+                // Slim's line is too thin for text.
+                Item {
+                    anchors.fill: parent
+                    visible: !Theme.slim
+                    HudText {
+                        visible: !healthBar.centred
+                        x: Theme.meter.px(8)
+                        height: parent.height
+                        numeric: true
+                        text: healthBar.percent
+                        font.pixelSize: Theme.meter.sizeSmall
+                        font.weight: Font.DemiBold
+                        color: Theme.hudSub
+                    }
+                    HudText {
+                        visible: !healthBar.centred
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        height: parent.height
+                        numeric: true
+                        text: Meter.bossHpText
+                        font.pixelSize: Theme.meter.sizeSmall
+                        // Small text on the meter stays full white (Visual rules).
+                        color: Theme.hudSub
+                    }
+                    HudText {
+                        visible: healthBar.centred
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        height: parent.height
+                        numeric: true
+                        text: healthBar.percent + "  " + Meter.bossHpText
+                        font.pixelSize: Theme.meter.sizeSmall
+                        font.weight: Font.DemiBold
+                        color: Theme.hudSub
+                    }
                 }
             }
 
             // Column heads, on the rows' columns. Slim mode has none.
             ColumnHeads {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Theme.headsHeight
+                Layout.preferredHeight: Theme.meter.headsHeight
                 visible: !Theme.slim
                 first: I18n.tr("meter.columns.name")
                 firstTip: I18n.tr("meter.columns.name") + "\n" + I18n.tr("meter.columnTips.name")
@@ -968,10 +994,10 @@ Window {
                 clip: true
                 Column {
                     id: rowList
-                    x: 6
-                    y: 4
-                    width: parent.width - 12
-                    spacing: Theme.rowGap
+                    x: Theme.meter.px(6)
+                    y: Theme.meter.px(4)
+                    width: parent.width - 2 * x
+                    spacing: Theme.meter.rowGap
                     // DPS: the backend's rows.
                     Repeater {
                         id: dpsRows
@@ -1016,12 +1042,12 @@ Window {
                     Item {
                         visible: meter.damageLine
                         width: rowList.width
-                        height: 14
+                        height: Theme.meter.px(14)
                         Row {
                             anchors.right: parent.right
-                            anchors.rightMargin: Theme.padRight
+                            anchors.rightMargin: Theme.meter.padRight
                             height: parent.height
-                            spacing: 5
+                            spacing: Theme.meter.px(5)
                             SmallText {
                                 height: parent.height
                                 numeric: true
@@ -1041,9 +1067,9 @@ Window {
                         }
                     }
                     ColumnHeads {
-                        width: rowList.width + 12
-                        x: -6
-                        height: Theme.headsHeight + 4
+                        width: rowList.width + 2 * rowList.x
+                        x: -rowList.x
+                        height: Theme.meter.headsHeight + Theme.meter.px(4)
                         visible: meter.splitShown
                         rule: true
                         first: I18n.tr("meter.columns.healer")
@@ -1052,8 +1078,8 @@ Window {
                     }
                     SmallText {
                         visible: meter.splitShown && !meter.split
-                        x: Theme.padLeft + Theme.colIcon + Theme.colGap
-                        height: Theme.rowHeight
+                        x: Theme.meter.padLeft + Theme.meter.colIcon + Theme.meter.colGap
+                        height: Theme.meter.rowHeight
                         text: I18n.tr("meter.noHealer")
                         color: Theme.meterNote
                     }
@@ -1077,7 +1103,7 @@ Window {
             // Footer: tabs and mode on the left, group total and ping right.
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Theme.footerHeight
+                Layout.preferredHeight: Theme.meter.footerHeight
 
                 Rectangle {
                     width: parent.width
@@ -1087,9 +1113,9 @@ Window {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
-                    spacing: 2
+                    anchors.leftMargin: Theme.meter.px(8)
+                    anchors.rightMargin: Theme.meter.px(8)
+                    spacing: Theme.meter.px(2)
 
                     Repeater {
                         model: [I18n.tr("meter.tabs.dps"), I18n.tr("meter.tabs.heal"), I18n.tr("meter.tabs.tank")]
@@ -1098,9 +1124,9 @@ Window {
                             required property string modelData
                             required property int index
                             readonly property bool active: meter.tab === index
-                            implicitWidth: tabLabel.implicitWidth + 14
-                            implicitHeight: tabLabel.implicitHeight + 6
-                            radius: 3
+                            implicitWidth: tabLabel.implicitWidth + Theme.meter.px(14)
+                            implicitHeight: tabLabel.implicitHeight + Theme.meter.px(6)
+                            radius: Theme.meter.part(3)
                             color: active ? Theme.accentTint : "transparent"
                             SmallText {
                                 id: tabLabel
@@ -1119,22 +1145,22 @@ Window {
                     // fight too. It opens the list of the five modes.
                     Rectangle {
                         id: modeButton
-                        Layout.leftMargin: 8
+                        Layout.leftMargin: Theme.meter.px(8)
                         Layout.fillWidth: true
                         // Whole pixels: the layout rounds a filling item down,
                         // which would cut the name short.
-                        Layout.preferredWidth: Math.ceil(modeLabel.implicitWidth) + 12
+                        Layout.preferredWidth: Math.ceil(modeLabel.implicitWidth) + 2 * modeLabel.anchors.leftMargin
                         Layout.maximumWidth: Layout.preferredWidth
-                        implicitHeight: modeLabel.implicitHeight + 6
-                        radius: 3
+                        implicitHeight: modeLabel.implicitHeight + Theme.meter.px(6)
+                        radius: Theme.meter.part(3)
                         color: modeHover.hovered ? Theme.rowEmpty : "transparent"
                         border.color: Theme.hairline
                         border.width: 1
                         SmallText {
                             id: modeLabel
                             anchors.fill: parent
-                            anchors.leftMargin: 6
-                            anchors.rightMargin: 6
+                            anchors.leftMargin: Theme.meter.px(6)
+                            anchors.rightMargin: Theme.meter.px(6)
                             horizontalAlignment: Text.AlignHCenter
                             text: I18n.modeName(Meter.mode)
                         }
@@ -1158,19 +1184,19 @@ Window {
                     // Footer: the damage after the rate.
                     SmallText {
                         visible: meter.showsDamage && !meter.damageLine
-                        Layout.leftMargin: 3
+                        Layout.leftMargin: Theme.meter.px(3)
                         text: "·"
                     }
                     SmallText {
                         visible: meter.showsDamage && !meter.damageLine
-                        Layout.leftMargin: 3
+                        Layout.leftMargin: Theme.meter.px(3)
                         numeric: true
                         text: Meter.groupDamage
                     }
                     // The number itself is coloured by its band; "--ms" in
                     // the note colour until the first ping comes.
                     SmallText {
-                        Layout.leftMargin: 8
+                        Layout.leftMargin: Theme.meter.px(8)
                         numeric: true
                         visible: Settings.showPing
                         text: Meter.ping !== "" ? Meter.ping : "--ms"

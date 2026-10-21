@@ -136,6 +136,9 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - When packet capture cannot start on Linux, the meter says so in its own window, instead of the Windows prompt to download Npcap.
 - **Report a problem** in Settings opens the right issue form with your version and system filled in (you see exactly what before it opens), and can prepare a packet log with every character name replaced, to attach without exposing other players.
 - **Open log folder** in Settings opens the folder with `debug.log` and the packet logs, to attach to an issue here.
+- **Notice tray** on the meter's top edge: an icon per kind of notice waiting, and a card that pulls up with the notices. Nothing opens over the game by itself.
+- **Pet soul notices:** each soul a pet takes says how many souls it holds toward its next level and how many it needs to the top, one line per pet.
+- **Power Shard warning:** a notice when your hits stop using Power Shards after using them, or when you ran out.
 
 ### Linux desktop
 - **Qt Quick windows.** Daevalog 2.0 draws its windows with Qt 6 instead of WebKitGTK.
@@ -216,6 +219,10 @@ Daevalog started as a fork of a fork:
 AION 2 is a trademark of NCSOFT. Daevalog DPS Meter is not affiliated with or endorsed by NCSOFT or A2Tools (see [Use at your own risk](#use-at-your-own-risk)).
 
 The community links of the A2Tools project are in the [A2Tools DPS Meter repository](https://github.com/taengu/A2Tools-DPS-Meter).
+
+### Icons
+
+The Field Boss and Spacetime Rift notices use two [Lucide](https://lucide.dev) icons, "swords" and "orbit", under the ISC License (notice in [LICENSE](LICENSE)).
 
 ### Fonts
 

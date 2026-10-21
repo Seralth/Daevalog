@@ -12,6 +12,7 @@ fn main() {
         QmlFile::from("LayerArea.qml"),
         QmlFile::from("MeterRow.qml"),
         QmlFile::from("HudText.qml"),
+        QmlFile::from("MeterSizes.qml"),
         QmlFile::from("Theme.qml").singleton(true),
         QmlFile::from("I18n.qml").singleton(true),
         QmlFile::from("Format.qml").singleton(true),
@@ -48,10 +49,12 @@ fn main() {
         QmlFile::from("NoData.qml"),
         QmlFile::from("HotkeyText.qml"),
         QmlFile::from("SkillIcon.qml"),
+        QmlFile::from("NoticeTray.qml"),
+        QmlFile::from("NoticeIcon.qml"),
     ]);
 
     let builder = CxxQtBuilder::new_qml_module(module)
-        .files(["src/meter.rs", "src/details.rs", "src/history.rs", "src/overlay.rs", "src/settings.rs", "src/i18n.rs", "src/shell.rs", "src/menus.rs", "src/system.rs", "src/capture.rs", "src/account.rs", "src/instance.rs", "src/windows.rs", "src/hotkey.rs", "src/skill_icons.rs"])
+        .files(["src/meter.rs", "src/details.rs", "src/history.rs", "src/overlay.rs", "src/settings.rs", "src/i18n.rs", "src/shell.rs", "src/menus.rs", "src/system.rs", "src/capture.rs", "src/account.rs", "src/instance.rs", "src/windows.rs", "src/hotkey.rs", "src/skill_icons.rs", "src/notices.rs"])
         .cpp_file("cpp/shell.cpp")
         .cpp_file("cpp/menus.cpp")
         .cpp_file("cpp/instance.cpp")
@@ -77,12 +80,16 @@ fn main() {
     // port is open to anything on the machine.
     println!("cargo:rerun-if-env-changed=DAEVALOG_QML_DEBUG");
     let qml_debug = std::env::var_os("DAEVALOG_QML_DEBUG").is_some();
+    let dev = std::env::var_os("CARGO_FEATURE_DEV").is_some();
     // SAFETY: plain defines; cxx-qt's own settings stay as they are.
     let builder = unsafe {
         builder.cc_builder(move |cc| {
             cc.define("DAEVALOG_APP_ID", format!("\"{app_id}\"").as_str());
             if qml_debug {
                 cc.define("QT_QML_DEBUG", None);
+            }
+            if dev {
+                cc.define("DAEVALOG_DEV", None);
             }
         })
     };

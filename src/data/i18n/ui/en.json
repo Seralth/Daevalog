@@ -310,6 +310,10 @@
       "normal": "Normal",
       "slim": "Slim"
     },
+    "meterSize": {
+      "label": "Meter size",
+      "hint": "Makes the meter's text and rows bigger. The other windows keep their size."
+    },
     "detailsMonitor": {
       "label": "Show Details on monitor",
       "off": "Off",
@@ -549,9 +553,28 @@
       "line": "Own line",
       "hint": "Where the group's damage shows beside its DPS while Show total DPS/DMG is on: in the footer, or with the DPS on a line of its own under the rows."
     },
+    "trayEdge": {
+      "label": "Notification tray",
+      "auto": "Auto",
+      "top": "Top",
+      "bottom": "Bottom",
+      "hint": "Which edge of the meter the notifications sit on. Auto: the top, or the bottom when there is no room above the meter for the open list."
+    },
     "characterNameHint": "The game's name replaces this when you next load in.",
     "modeOnly": "Only in {mode}.",
-    "showTotalHint": "The group's total in the footer, on every tab: DPS, Heal and Tank."
+    "showTotalHint": "The group's total in the footer, on every tab: DPS, Heal and Tank.",
+    "spawnNotices": "Field Boss and Spacetime Rift countdowns",
+    "spawnNoticesHint": "In the notifications: 30, 15 and 5 minutes before a Field Boss, 5 minutes before a Spacetime Rift.",
+    "shardWarning": "Power Shard warning",
+    "shardWarningHint": "A notice when your hits stop using Power Shards.",
+    "serverTimeZone": "Server time zone",
+    "serverTimeZoneHint": "Boss and rift times run on your server's clock. Pick your region, then check a time against the server time in game.",
+    "zone": {
+      "computer": "This computer's time zone",
+      "other": "Other time zone",
+      "placeholder": "Area/City, e.g. Europe/London",
+      "invalid": "Not a known time zone"
+    }
   },
   "battleTime": {
     "suspended": "Paused",
@@ -664,5 +687,37 @@
     "settings": "Settings",
     "history": "History",
     "quit": "Quit"
+  },
+  "notices": {
+    "title": "Notifications",
+    "clearAll": "Clear all",
+    "none": "No notifications",
+    "pet": {
+      "soul": "{pet} soul",
+      "souls": "{pet} +{count} souls",
+      "registered": "{pet} registered",
+      "level": "{pet} reached level {level}",
+      "reached": "Level {level} reached. {status}",
+      "toRegister": "{souls}/{need} ({left} to register), {toMax} to max",
+      "toLevel": "{souls}/{need} ({left} to level {next}), {toMax} to max",
+      "max": "Level {level}, max",
+      "unknown": "Count unknown: go to Select Character and back, or enter a party dungeon once",
+      "behind": "{status} (pet list from {time}, may be behind)",
+      "insight": "{genus} Insight {level}: {exp}/{need}",
+      "insightGain": "{insight} (+{gain})",
+      "insightMax": "{genus} Insight {level} (max)",
+      "insightLevel": "{genus} Insight {level}",
+      "unnamed": "Pet {id}"
+    },
+    "spawn": {
+      "at": "{name} at {time}"
+    },
+    "shard": {
+      "off": "Power Shards off",
+      "out": "Power Shards ran out",
+      "toggle": "The B key turns them on and off."
+    },
+    "countdown": "in {minutes} min",
+    "now": "now"
   }
 }

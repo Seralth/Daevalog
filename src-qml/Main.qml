@@ -73,8 +73,20 @@ QtObject {
         meter.closeHides = Qt.binding(() => tray.available && tray.visible)
         keepUnlockable()
         // A screenshot asks the desktop nothing.
-        if (!screenshotMode)
+        if (!screenshotMode) {
             Hotkey.start(Settings.lockHotkey)
+            makeNoticeTray()
+        }
+    }
+
+    // The notice tray on the meter's top edge (NoticeTray.qml).
+    property var noticeTray: null
+    function makeNoticeTray() {
+        if (noticeTray)
+            return
+        noticeTray = make("NoticeTray.qml")
+        if (noticeTray)
+            noticeTray.meter = meter
     }
 
     // A saved lock, or one set from Settings, only where it can be undone.
@@ -338,6 +350,20 @@ QtObject {
             Capture.notice = true
         else if (page === "paused")
             Capture.suspended = true
+        else if (page === "tray" || page === "tray-closed") {
+            Notices.add("", "warning", "Sample warning", "A longer line of text under the title, which wraps onto a second line in a narrow tray.")
+            Notices.add("", "info", "Sample notice", "One line of text")
+            Notices.add("", "info", "Sample notice with no text", "")
+            Notices.add("pet:1003", "pet", "Forest Specter soul", "22/25 (3 to level 2), 78 to max")
+            const now = Math.floor(Date.now() / 1000)
+            Notices.addUntil("spawn:rift:1", "rift", "Spacetime Rift at 05:00", "", now + 4 * 60)
+            Notices.addUntil("spawn:boss:1", "boss", "Field Boss at 21:30",
+                             "Executor Tamasa, Executor Argo, Executor Kaira (Chaotic Lower Reshanta)\nExecutioner Dramos, Turncoat Ducal, Ravager Marakha (Chaotic Middle Reshanta)",
+                             now + 12 * 60)
+            makeNoticeTray()
+            noticeTray.open = page === "tray"
+            return noticeTray
+        }
         else if (page === "card") {
             // The meter's first row, once a replay has ended.
             card = make("SkillCard.qml")
@@ -447,8 +473,8 @@ QtObject {
     // History. The system tray draws this menu, so it is the desktop's own.
     readonly property Platform.SystemTrayIcon tray: Platform.SystemTrayIcon {
         visible: !app.screenshotMode
-        icon.source: "qrc:/daevalog/icons/app.png"
-        tooltip: I18n.tr("header.title")
+        icon.source: System.devBuild ? "qrc:/daevalog/icons/app-dev.png" : "qrc:/daevalog/icons/app.png"
+        tooltip: I18n.tr("header.title") + (System.devBuild ? " (dev)" : "")
         // Not shown until the tray opens it: KDE's tray shows a menu that
         // is visible, at the screen's corner, as soon as the meter starts.
         menu: Platform.Menu {

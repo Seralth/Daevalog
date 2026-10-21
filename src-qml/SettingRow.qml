@@ -13,6 +13,9 @@ Item {
     property string hint
     property string tip
     property bool last: false
+    // A control of stacked lines (a list, then a field under it): the name
+    // centres on its first this many px; 0: on the whole control.
+    property real labelOn: 0
     default property alias control: slot.data
 
     // The page's label column (SettingsWindow `labelColumn`): as wide as the
@@ -27,7 +30,7 @@ Item {
     UiText {
         id: name
         width: row.labelWidth
-        y: controls.y + Math.max(0, (slot.height - height) / 2)
+        y: controls.y + Math.max(0, ((row.labelOn > 0 ? row.labelOn : slot.height) - height) / 2)
         text: row.label
         wrapMode: Text.WordWrap
         maximumLineCount: 2

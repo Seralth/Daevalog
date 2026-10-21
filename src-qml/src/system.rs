@@ -33,6 +33,7 @@ pub mod qobject {
         #[qml_element]
         #[qml_singleton]
         #[qproperty(QString, version, READ, CONSTANT)]
+        #[qproperty(bool, dev_build, READ, CONSTANT)]
         #[qproperty(QString, data_folder, READ, CONSTANT)]
         #[qproperty(QString, record_folder, READ, NOTIFY)]
         #[qproperty(QString, report_info, READ, NOTIFY)]
@@ -79,6 +80,8 @@ pub fn version() -> String {
 
 pub struct SystemRust {
     version: QString,
+    /// The developer build (the `dev` feature): its own name and a red icon.
+    dev_build: bool,
     /// The data folder, where the logs are; empty when there is none.
     data_folder: QString,
     /// The game's Combat Analysis folder; empty when it was not found.
@@ -95,6 +98,7 @@ impl Default for SystemRust {
         let folder = crate::settings_store::folder().map(|p| p.display().to_string()).unwrap_or_default();
         Self {
             version: QString::from(&version()),
+            dev_build: cfg!(feature = "dev"),
             data_folder: QString::from(&folder),
             record_folder: QString::default(),
             report_info: QString::default(),

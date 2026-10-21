@@ -239,6 +239,9 @@ fn rust_keys() -> Vec<&'static str> {
     let mut keys = vec![UNATTRIBUTED, YOU, IDENTIFYING, HIDDEN, HIDDEN_NO_CLASS];
     keys.extend([ALL_TARGETS, TRAINING, ENCOUNTER, WAITING_BOSS]);
     keys.extend(CLASS_KEYS.iter().map(|(_, key)| *key));
+    keys.extend(crate::pet_souls::KEYS);
+    keys.extend(crate::power_shards::KEYS);
+    keys.extend(crate::world_spawns::KEYS);
     keys
 }
 

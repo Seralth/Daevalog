@@ -12,8 +12,7 @@ pkgdesc="Daevalog DPS Meter, developer build"
 arch=(x86_64)
 url="https://github.com/Seralth/Daevalog"
 license=('AGPL-3.0-only' 'OFL-1.1')
-depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'gcc-libs' 'glibc' 'libpcap' 'libcap' 'hicolor-icon-theme')
-optdepends=('layer-shell-qt: --layer-shell, the overlay above fullscreen games on KDE Plasma, Hyprland and Sway')
+depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'layer-shell-qt' 'gcc-libs' 'glibc' 'libpcap' 'libcap' 'hicolor-icon-theme')
 makedepends=('rust' 'git')
 install=daevalog-dps-meter-dev.install
 options=('!lto' '!debug')
@@ -39,12 +38,18 @@ build() {
 package() {
   local root
   root="$(_root)"
+  # At least the Qt minor version it was built with (see depends).
+  local qt i
+  qt=$(pacman -Q qt6-declarative | cut -d' ' -f2 | cut -d. -f1,2)
+  for i in "${!depends[@]}"; do
+    [[ ${depends[i]} == qt6-declarative ]] && depends[i]="qt6-declarative>=$qt"
+  done
   install -Dm755 "$root/src-qml/target/release/daevalog-qml" "$pkgdir/usr/bin/daevalog-dps-meter-dev"
   # The developer build starts the helper by this name from its own folder.
   install -Dm755 "$root/src-qml/target/release/daevalog-capture" "$pkgdir/usr/bin/daevalog-capture-dev"
   install -d "$pkgdir/usr/share/daevalog-dps-meter-dev"
   cp -r "$root/src/data" "$pkgdir/usr/share/daevalog-dps-meter-dev/data"
-  install -Dm644 "$root/src-tauri/icons/128x128.png" \
+  install -Dm644 "$root/src-qml/icons/app-dev-128.png" \
     "$pkgdir/usr/share/icons/hicolor/128x128/apps/daevalog-dps-meter-dev.png"
   install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/daevalog-dps-meter-dev.desktop" <<DESKTOP
 [Desktop Entry]

@@ -5,10 +5,15 @@
 #   rpmbuild -bb packaging/qml/rpm/daevalog-dps-meter.spec --define "checkout $PWD" \
 #     --define "pkgversion <src-qml version>" --define "pkgrelease <commits>"
 #
+# DAEVALOG_REBUILD=<n> in the environment (optional): rebuild <n> of the same
+# commit, for example after a Qt update. The release is then <commits>.<n>;
+# none or 0 leaves it as it is.
+#
 # rpmbuild finds the Qt libraries the binary links against by itself. The
 # QML modules are loaded at run time, so they are required here. The QML
-# compiled in by qmlcachegen uses Qt's private API, which rpmbuild also
-# finds (libQt6Qml.so.6(Qt_6.11_PRIVATE_API)): rebuild for each Qt minor
+# compiled in by qmlcachegen uses QtQml's private API, so the package asks
+# for at least the Qt minor version it was built with (Fedora's rpmbuild also
+# finds libQt6Qml.so.6(Qt_6.11_PRIVATE_API)): rebuild for each Qt minor
 # version.
 
 %global debug_package %{nil}
@@ -16,7 +21,14 @@
 Name:           daevalog-dps-meter
 # Set with --define (see above); the release is 1 when none is given.
 Version:        %{?pkgversion}
-Release:        %{?pkgrelease}%{!?pkgrelease:1}
+%global rebuild %(echo "${DAEVALOG_REBUILD:-0}")
+%if "%{rebuild}" != "0"
+%if "%(echo '%{rebuild}' | tr -d 0-9)" != ""
+%{error:DAEVALOG_REBUILD is not a number: %{rebuild}}
+%endif
+%global rebuildpart .%{rebuild}
+%endif
+Release:        %{?pkgrelease}%{!?pkgrelease:1}%{?rebuildpart}
 Summary:        Daevalog DPS Meter - AION 2 real-time DPS overlay
 # The program is AGPL-3.0-only. The bundled Pretendard font is OFL.
 License:        AGPL-3.0-only AND OFL-1.1
@@ -47,9 +59,19 @@ BuildRequires:  qt6-qtdeclarative-devel
 
 # The capture helper loads libpcap at run time, so rpmbuild cannot find it.
 Requires:       libpcap.so.1()(64bit)
+# The Qt minor version built with, from the QtQml development package.
+%if 0%{?suse_version}
+%global qt %(rpm -q --qf '%%{VERSION}' qt6-declarative-devel | cut -d. -f1,2)
+%else
+%global qt %(rpm -q --qf '%%{VERSION}' qt6-qtdeclarative-devel | cut -d. -f1,2)
+%endif
+%if "%(echo '%{qt}' | tr -d 0-9.)" != "" || "%{qt}" == ""
+%{error:no Qt version from the QtQml development package: %{qt}}
+%endif
 %if 0%{?suse_version}
 # openSUSE names: the QML modules the meter imports, the SVG image plugin
 # (skill icons), and the Wayland client, which openSUSE packs on its own.
+Requires:       libQt6Qml6 >= %{qt}
 Requires:       qt6qmlimport(QtQuick)
 Requires:       qt6qmlimport(QtQuick.Layouts)
 Requires:       qt6qmlimport(Qt.labs.platform)
@@ -60,6 +82,7 @@ Recommends:     qt6qmlimport(org.kde.layershell)
 %else
 # The QML modules the meter imports. qt6-qtbase-gui, which rpmbuild adds,
 # has Widgets (the tray) and the Wayland client.
+Requires:       qt6-qtdeclarative%{?_isa} >= %{qt}
 Requires:       qt6qml(QtQuick)
 Requires:       qt6qml(QtQuick.Layouts)
 Requires:       qt6qml(Qt.labs.platform)

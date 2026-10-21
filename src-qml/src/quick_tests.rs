@@ -67,6 +67,11 @@ fn history_shows_thirty_fights_at_a_time_and_folds_its_groups() {
 }
 
 #[test]
+fn the_meter_size_keeps_100_percent_as_it_was_and_grows_every_size() {
+    run("tst_meter_sizes.qml");
+}
+
+#[test]
 fn a_number_with_nothing_behind_it_shows_a_dash() {
     run("tst_no_data.qml");
 }
