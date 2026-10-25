@@ -184,7 +184,7 @@
     "type": "instancelayer"
   },
   "141005": {
-    "name": "Puesto de Reconocimiento del Velador Brons",
+    "name": "Puesto de Reconocimiento del Vigilante Brons",
     "type": "instancelayer"
   },
   "141006": {
@@ -376,7 +376,7 @@
     "type": "instancelayer"
   },
   "151004": {
-    "name": "Puesto de Reconocimiento del Velador Sandha",
+    "name": "Puesto de Reconocimiento del Vigilante Sandha",
     "type": "instancelayer"
   },
   "151005": {
@@ -436,7 +436,7 @@
     "type": "instancelayer"
   },
   "151019": {
-    "name": "Puesto de Reconocimiento de Varkash, el Verdugo",
+    "name": "Puesto de Reconocimiento de Varkash, el Ejecutor",
     "type": "instancelayer"
   },
   "151020": {
@@ -876,7 +876,7 @@
     "type": "abyss"
   },
   "24": {
-    "name": "Reshanta Caótica Superior",
+    "name": "Reshanta Superior del Caos",
     "type": "abyss"
   },
   "310001": {
@@ -1264,7 +1264,7 @@
     "type": "seal"
   },
   "320017": {
-    "name": "Puesto Temporal del Velador",
+    "name": "Puesto Temporal del Vigilante",
     "type": "seal"
   },
   "320018": {
@@ -1950,8 +1950,9 @@
   "600004": {
     "name": "Cueva de Krao",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Conquista T1"
+    "label": "Conquista T1 · Difícil"
   },
   "600011": {
     "name": "Cañón de Urugugu",
@@ -2013,8 +2014,9 @@
   "600033": {
     "name": "Draupnir",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Conquista T1"
+    "label": "Conquista T1 · Difícil"
   },
   "600034": {
     "name": "Draupnir"
@@ -2601,11 +2603,11 @@
     "type": "instancelayer"
   },
   "820002": {
-    "name": "Estación de la banda de saqueadores de Hillsroter",
+    "name": "Estación de la Banda de saqueadores de Hillsroter",
     "type": "instancelayer"
   },
   "820003": {
-    "name": "Almacén de la banda de saqueadores de Hillsroter",
+    "name": "Almacén de la Banda de saqueadores de Hillsroter",
     "type": "instancelayer"
   },
   "820004": {
@@ -2785,7 +2787,7 @@
     "type": "quest"
   },
   "840033": {
-    "name": "Escondite de las Dunas de Arena",
+    "name": "Escondite de las dunas de arena",
     "type": "quest"
   },
   "840034": {
@@ -2797,7 +2799,7 @@
     "type": "quest"
   },
   "840036": {
-    "name": "Almacén de Suministros Superior de los Tsenka",
+    "name": "Almacén de suministros superior de Tsenka",
     "type": "quest"
   },
   "840037": {
@@ -2809,31 +2811,31 @@
     "type": "quest"
   },
   "840039": {
-    "name": "Almacén Abandonado",
+    "name": "Almacén abandonado",
     "type": "quest"
   },
   "840040": {
-    "name": "Cueva Oculta del Campo Nevado",
+    "name": "Cueva oculta del campo nevado",
     "type": "quest"
   },
   "840041": {
-    "name": "Cueva Abandonada",
+    "name": "Cueva abandonada",
     "type": "quest"
   },
   "840042": {
-    "name": "Zona de Experimentación de los Lepharistas",
+    "name": "Zona de experimentos Lepharista",
     "type": "quest"
   },
   "840043": {
-    "name": "Almacén Secreto",
+    "name": "Almacén aislado",
     "type": "quest"
   },
   "840044": {
-    "name": "Almacén Secreto",
+    "name": "Almacén aislado",
     "type": "quest"
   },
   "840045": {
-    "name": "Laboratorio de los Lepharistas",
+    "name": "Laboratorio Lepharista",
     "type": "quest"
   },
   "840046": {
@@ -2849,7 +2851,7 @@
     "type": "quest"
   },
   "840049": {
-    "name": "Cueva del Valle de Lava",
+    "name": "Cueva del Cañón de Lava",
     "type": "quest"
   },
   "850000": {
@@ -2953,7 +2955,7 @@
     "type": "instancelayer"
   },
   "870012": {
-    "name": "Horca",
+    "name": "Patíbulo",
     "type": "instancelayer"
   },
   "870013": {
@@ -3022,12 +3024,12 @@
     "difficulty": "easy"
   },
   "910012": {
-    "name": "Altar de Pesadilla (normal)",
+    "name": "Altar de Pesadilla (Normal)",
     "type": "awaken",
     "difficulty": "normal"
   },
   "910013": {
-    "name": "Altar de Pesadilla (difícil)",
+    "name": "Altar de Pesadilla (Difícil)",
     "type": "awaken",
     "difficulty": "hard"
   },
@@ -3060,7 +3062,7 @@
     "difficulty": "hard"
   },
   "910024": {
-    "name": "Escondite del Tirano (extremo)",
+    "name": "Escondite del Tirano (Extremo)",
     "type": "awaken",
     "difficulty": "extreme"
   },
@@ -3073,7 +3075,7 @@
     "type": "awaken"
   },
   "910031": {
-    "name": "Sagrario del Odio (fácil)",
+    "name": "Sagrario del Odio (Fácil)",
     "type": "awaken",
     "difficulty": "easy"
   },
@@ -3083,7 +3085,7 @@
     "difficulty": "normal"
   },
   "910033": {
-    "name": "Sagrario del Odio (difícil)",
+    "name": "Sagrario del Odio (Difícil)",
     "type": "awaken",
     "difficulty": "hard"
   },
@@ -3093,7 +3095,7 @@
     "difficulty": "extreme"
   },
   "910035": {
-    "name": "Sagrario del Odio (desesperación)",
+    "name": "Sagrario del Odio (Desesperación)",
     "type": "awaken"
   },
   "910036": {
@@ -3111,7 +3113,7 @@
     "difficulty": "normal"
   },
   "910043": {
-    "name": "Depósito de Trayectoria (difícil)",
+    "name": "Depósito de Trayectoria (Difícil)",
     "type": "awaken",
     "difficulty": "hard"
   },
@@ -3121,7 +3123,7 @@
     "difficulty": "extreme"
   },
   "910045": {
-    "name": "Depósito de Trayectoria (desesperación)",
+    "name": "Depósito de Trayectoria (Desesperación)",
     "type": "awaken"
   },
   "910046": {
@@ -3129,7 +3131,7 @@
     "type": "awaken"
   },
   "910051": {
-    "name": "Repositorio Olvidado (Fácil)",
+    "name": "Repositorio Olvidado (fácil)",
     "type": "awaken",
     "difficulty": "easy"
   },
@@ -3139,7 +3141,7 @@
     "difficulty": "normal"
   },
   "910053": {
-    "name": "Repositorio Olvidado (Difícil)",
+    "name": "Repositorio Olvidado (difícil)",
     "type": "awaken",
     "difficulty": "hard"
   },
@@ -3161,7 +3163,7 @@
     "type": "awaken"
   },
   "910061": {
-    "name": "Alcoba de los Muertos (Fácil)",
+    "name": "Alcoba de los Muertos (fácil)",
     "type": "awaken",
     "difficulty": "easy"
   },

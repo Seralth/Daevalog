@@ -1,3 +1,4 @@
+use super::byte_queue::ByteQueue;
 use super::varint::varint_at;
 /// The stretches of `buffer[..end]` a record can sit in: each packet, and each
 /// run of bytes between frames (padding, a walk resynchronising, the end of a
@@ -222,6 +223,36 @@ pub fn embedded_bundles(packet: &[u8]) -> Vec<EmbeddedBundle> {
         }
     }
     found
+}
+
+/// Each packet frame in `buf`, bundles opened as a replay opens them.
+/// `depth` is that of the bundle `buf` came out of, 0 for none: depth 0 is
+/// walked as the stream is (`walk`), a bundle's contents strictly
+/// (`split_frames`); bundles past `NEST_LIMIT` stay shut.
+pub fn visit_packets(buf: &[u8], depth: usize, visit: &mut dyn FnMut(&[u8])) {
+    let walked = if depth == 0 { walk(buf) } else { split_frames(buf) };
+    for frame in walked.frames {
+        match frame.kind {
+            ChunkForm::Packet => visit(frame.bytes(buf)),
+            ChunkForm::Bundle if depth < NEST_LIMIT => {
+                if let Some(content) = inflate_block(frame.payload(buf)) {
+                    visit_packets(&content, depth + 1, visit);
+                }
+            }
+            ChunkForm::Bundle => {}
+        }
+    }
+}
+
+/// Adds `bytes` to a stream's held bytes and takes out the whole packets they
+/// now hold, bundles opened; a frame still arriving stays held.
+pub fn take_packets(held: &mut ByteQueue, bytes: &[u8]) -> Vec<Vec<u8>> {
+    held.append(bytes);
+    let whole = walk(held.snapshot()).consumed;
+    let mut packets = Vec::new();
+    visit_packets(&held.snapshot()[..whole], 0, &mut |p| packets.push(p.to_vec()));
+    held.drop_front(whole);
+    packets
 }
 
 /// The bundle whose payload starts at `packet[ff]`, if a length varint right

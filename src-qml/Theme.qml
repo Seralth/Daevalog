@@ -38,14 +38,23 @@ QtObject {
             "meterNote": "#8A95A8",
             // A line that carries values: white 38%, 3.5:1 on both.
             "valueLine": 0.38,
+            // A scroll bar's thumb: white 42%, 4.3:1 on the window and
+            // 3.8:1 on its track over the surface.
+            "scrollThumb": 0.42,
             // The scheme has no red or green meaning (its Negative and
             // Positive are blue): status colours are the app's.
             "warning": "#F2C66D",
             "error": "#F07C7C",
             "negative": "#FF3B3B",
-            // The Spacetime Rift (red in game): 5.8:1 on the window, 3.3:1 on
-            // the panel over a mid grey scene.
-            "rift": "#FF5C5C",
+            // The notices' marks, on the window and on the panel over a mid
+            // grey scene: an Abyss Boss red, 5.8:1 and 3.3:1; the Spacetime
+            // Rift purple as its map icon, 6.8:1 and 3.9:1; the field boss
+            // tiers: Gartua emerald, 9.1:1 and 5.2:1; the commanders yellow,
+            // as Unique gear, 12.1:1 and 6.9:1.
+            "abyssBoss": "#FF5C5C",
+            "rift": "#B48CFF",
+            "gartua": "#34D399",
+            "commander": "#FFD23F",
             "ping": ["#7BD88F", "#F2C66D", "#F07C7C"],
             "accents": { "sky": "#5fcaff", "rose": "#ff6fae", "lemon": "#eef26b", "silver": "#c8d0dc" }
         },
@@ -68,11 +77,19 @@ QtObject {
             "meterNote": "#8A95A8",
             // 3.2:1 on the window colour.
             "valueLine": 0.35,
+            // A scroll bar's thumb: 4.4:1 on the window, 4.0:1 on its track
+            // over the surface.
+            "scrollThumb": 0.42,
             "warning": "#f2b94f",
             "error": "#e06b6b",
             "negative": "#FF3B3B",
-            // 6.4:1 on the window, 3.7:1 on the panel over a mid grey scene.
-            "rift": "#FF5C5C",
+            // The notices' marks as the default theme's; on the window and
+            // on the panel over a mid grey scene: 6.4:1 and 3.7:1, 7.5:1 and
+            // 4.3:1, 10.1:1 and 5.8:1, 13.4:1 and 7.7:1.
+            "abyssBoss": "#FF5C5C",
+            "rift": "#B48CFF",
+            "gartua": "#34D399",
+            "commander": "#FFD23F",
             "ping": ["#7BD88F", "#F2C66D", "#F07C7C"],
             "accents": { "sky": "#5fcaff", "rose": "#ff6fae", "lemon": "#eef26b", "silver": "#c8d0dc" }
         },
@@ -90,14 +107,23 @@ QtObject {
             "meterNote": "#D8DEE9",
             // nord4 at 50%: 3.4:1 and 3.0:1.
             "valueLine": 0.5,
+            // A scroll bar's thumb: nord6 at 55%, 4.6:1 on the window and
+            // 3.7:1 on its track over nord1.
+            "scrollThumb": 0.55,
             // nord13; nord11 red is 3.1:1 as text, so the softer #D08A91.
             "warning": "#EBCB8B",
             "error": "#D08A91",
             // nord11, Nord's own red; the hatch carries the meaning.
             "negative": "#BF616A",
-            // nord11 is too dark for a mark on the panel: a lighter red, 4.9:1
-            // on the window, 3.1:1 on the panel over a mid grey scene.
-            "rift": "#FF7A7A",
+            // The notices' marks, on the window and on the panel over a mid
+            // grey scene. nord11 and nord15 are too dark for a mark on the
+            // panel: a lighter red for an Abyss Boss, 4.9:1 and 3.1:1, and a
+            // lighter purple for the rift, 5.8:1 and 3.6:1. The field boss
+            // tiers in Nord's lighter tones: 7.0:1 and 4.4:1, 8.4:1 and 5.3:1.
+            "abyssBoss": "#FF7A7A",
+            "rift": "#C9A6C3",
+            "gartua": "#8FD0A8",
+            "commander": "#F0D264",
             "ping": ["#A3BE8C", "#EBCB8B", "#D08A91"],
             // Each preset as its Nord colour: frost, purple, yellow, snow.
             "accents": { "sky": "#88C0D0", "rose": "#B48EAD", "lemon": "#EBCB8B", "silver": "#D8DEE9" }
@@ -114,10 +140,19 @@ QtObject {
         "note": Qt.rgba(system.windowText.r, system.windowText.g, system.windowText.b, 0.6),
         "meterNote": system.windowText,
         "valueLine": 0.4,
+        // A scroll bar's thumb: 3.6:1 or more on its track in Breeze and
+        // Adwaita, light and dark.
+        "scrollThumb": 0.6,
         "warning": themes.daevalog.warning,
         "error": themes.daevalog.error,
         "negative": themes.daevalog.negative,
+        // The notices' marks as the default theme's; on Breeze Dark's
+        // window (#202326) and on the panel over a mid grey scene: 5.2:1 and
+        // 3.0:1, 6.1:1 and 3.6:1, 8.2:1 and 4.8:1, 10.9:1 and 6.4:1.
+        "abyssBoss": themes.daevalog.abyssBoss,
         "rift": themes.daevalog.rift,
+        "gartua": themes.daevalog.gartua,
+        "commander": themes.daevalog.commander,
         "ping": themes.daevalog.ping,
         "accents": {}
     }) : (themes[theme] || themes.daevalog)
@@ -128,7 +163,7 @@ QtObject {
     }
 
     // Panel: the window colour at the window opacity setting (2.0 default
-    // 60%), so the game shows through the meter.
+    // 72%), so the game shows through the meter.
     readonly property real panelOpacity: Settings.windowOpacity / 100
     readonly property color panel: tint(base.window, panelOpacity)
     readonly property color panelEdge: tint(base.ink, 0.08)
@@ -161,6 +196,10 @@ QtObject {
     readonly property color valueLine: tint(base.ink, base.valueLine)
     // Lines and marks that carry no values, never text.
     readonly property color faint: tint(base.ink, 0.3)
+    // A scroll bar's thumb (UiScrollBar.qml): at least 3:1 on the window,
+    // the surface and the bar's own track in every theme, so a page that
+    // scrolls says so.
+    readonly property color scrollThumb: tint(base.ink, base.scrollThumb)
     // A control that cannot act now (signed out, busy) is drawn this strong.
     readonly property real disabledOpacity: 0.4
 
@@ -196,8 +235,13 @@ QtObject {
     readonly property color error: base.error
     // Debuffs on the player: saturated red, drawn hatched (Timeline.qml).
     readonly property color negative: base.negative
-    // The Spacetime Rift notice's mark (NoticeIcon.qml), red as in game.
+    // The notices' marks (NoticeIcon.qml): an Abyss Boss in red; a
+    // Spacetime Rift in purple, as its map icon; a field boss in its tier's
+    // colour: Gartua and the commanders (the rest keep the meter's ink).
+    readonly property color abyssBoss: base.abyssBoss
     readonly property color rift: base.rift
+    readonly property color gartua: base.gartua
+    readonly property color commander: base.commander
 
     // Bars: flat class colour, a thin solid edge at their end. The strength
     // is the "Bar strength" setting, 10-50%.
@@ -215,6 +259,41 @@ QtObject {
         // Muted so saturated red stays for negatives.
         "fighter": "#C47A7A"
     })
+
+    // Item grades (the game's grade keys; Legend reads "Epic" in game and
+    // Epic "Heroic"), on a worn item's name, glyph and edge in the Character
+    // window: the hues of the game's own grade text styles (grey, green,
+    // blue, gold, orange, red, cyan), lightened to read on the cards below:
+    // 6.4:1 or more on Daevalog, 7.3:1 on Classic, 4.5:1 on Nord (Mythic;
+    // on Nord's surface Legend is only 4.1:1, so the cards are a faint lift
+    // off the window, not the surface). A light System palette takes the
+    // same hues darker: 5.0:1 or more on its cards.
+    readonly property var gradeColors: ({
+        "Common": "#c8ccd4",
+        "Rare": "#6fd08c",
+        "Legend": "#6aa8ff",
+        "Unique": "#f2c15a",
+        "Epic": "#ff9a3d",
+        "Mythic": "#ff7a85",
+        "Special": "#3fe8d0"
+    })
+    readonly property var gradeColorsOnLight: ({
+        "Common": "#4b5260",
+        "Rare": "#216435",
+        "Legend": "#003f96",
+        "Unique": "#805a0a",
+        "Epic": "#8a4300",
+        "Mythic": "#a8001c",
+        "Special": "#006b5e"
+    })
+    readonly property bool lightWindow: Qt.lighter(base.window, 1.0).hslLightness > 0.5
+    function gradeColor(grade) {
+        return (lightWindow ? gradeColorsOnLight : gradeColors)[grade] || note
+    }
+    // A card in the windows (the Character window's gear and boards): a
+    // faint lift off the window, which keeps coloured text at the window's
+    // contrast.
+    readonly property color card: tint(base.ink, 0.035)
 
     // The windows' table bars (Details, History): the blue names sit on
     // them, so at most 12%, where the names keep 4.5:1 on every class colour

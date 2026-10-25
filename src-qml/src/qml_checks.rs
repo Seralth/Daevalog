@@ -12,6 +12,12 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
+/// A `#rrggbb` colour (quoted or not) as red, green and blue from 0 to 1.
+fn rgb(hex: &str) -> [f64; 3] {
+    let n = u32::from_str_radix(hex.trim().trim_matches('"').trim_start_matches('#'), 16).unwrap();
+    [n >> 16, n >> 8 & 0xff, n & 0xff].map(|c| f64::from(c) / 255.0)
+}
+
 fn files(dir: &Path, ext: &str) -> Vec<PathBuf> {
     let mut out: Vec<PathBuf> = std::fs::read_dir(dir)
         .expect("source folder")
@@ -389,7 +395,7 @@ mod tests {
         assert_eq!(value_of(&rows[0].own, "visible").as_deref(), Some("Overlay.taskbarSetting"));
         // It takes every window off the taskbar, and says so.
         let main = std::fs::read_to_string(root().join("Main.qml")).unwrap();
-        assert!(main.contains("for (const window of [app.meter, app.details, app.history, app.settings])"));
+        assert!(main.contains("for (const window of [app.meter, app.details, app.history, app.settings, app.character])"));
         assert!(crate::i18n::text("en", "settings.hideFromTaskbarHint").starts_with("Every Daevalog window"));
     }
 
@@ -769,30 +775,56 @@ mod tests {
     #[test]
     fn the_open_notice_list_reads_at_row_size() {
         // At 11 px the list was too small to read on a dense screen; the
-        // bar's text and the empty line are the row size too.
+        // bar's text and the empty line are the row size too, the meter's,
+        // so they grow with the Meter size setting.
         let text = std::fs::read_to_string(root().join("NoticeTray.qml")).unwrap();
         let chars = code_only(&text);
-        let list = blocks_of(&chars, "ListView").into_iter().next().expect("the list");
+        let list = blocks_of(&chars, "Repeater").into_iter().find(|b| b.own.contains("id: rows")).expect("the list");
         let inside = |b: &Block| b.at > list.open && b.at < list.close;
         let texts = blocks_of(&chars, "HudText");
         let (rows, others): (Vec<&Block>, Vec<&Block>) = texts.iter().partition(|b| inside(b));
         assert_eq!(rows.len(), 3, "title, text and time");
         for b in rows {
-            assert_eq!(value_of(&b.own, "font.pixelSize").as_deref(), Some("Theme.sizeRow"), "line {}", line_of(&chars, b.open));
+            assert_eq!(value_of(&b.own, "font.pixelSize").as_deref(), Some("Theme.meter.sizeRow"), "line {}", line_of(&chars, b.open));
         }
         for b in others {
-            assert_eq!(value_of(&b.own, "font.pixelSize").as_deref(), Some("Theme.sizeRow"), "line {}", line_of(&chars, b.open));
+            assert_eq!(value_of(&b.own, "font.pixelSize").as_deref(), Some("Theme.meter.sizeRow"), "line {}", line_of(&chars, b.open));
         }
         let icons: Vec<Block> = blocks_of(&chars, "NoticeIcon").into_iter().filter(inside).collect();
         assert_eq!(icons.len(), 1);
-        assert_eq!(value_of(&icons[0].own, "width").as_deref(), Some("28"));
-        assert_eq!(value_of(&icons[0].own, "height").as_deref(), Some("28"));
+        let mark: String = chars[icons[0].open..icons[0].close].iter().collect();
+        assert!(mark.contains("width: Theme.meter.px(28)\n") && mark.contains("height: Theme.meter.px(28)\n"), "{mark}");
         assert!(icons[0].own.contains("anchors.verticalCenter: parent.verticalCenter"), "centred on the notice");
-        assert!(text.contains("height: Math.max(38, words.implicitHeight + 10)"));
-        assert!(text.contains("readonly property int listMax: 260"));
+        assert!(text.contains("height: Math.max(tray.rowMin, words.implicitHeight + Theme.meter.px(10))"));
+        assert!(text.contains("readonly property int rowMin: Theme.meter.px(38)\n"));
+        assert!(text.contains(
+            "readonly property int listMax: (1 + countdownLines + (maxRows - 1) * (1 + textLines)) * Math.ceil(rowFont.height)\n        + maxRows * Theme.meter.px(10) + moreHeight"
+        ));
+        // The same line counts cut the rows' text.
+        assert!(text.contains("maximumLineCount: line.modelData.until > 0 ? tray.countdownLines : tray.textLines"));
+        assert!(text.contains("readonly property int countdownLines: 6\n    readonly property int textLines: 3\n"));
+        assert!(text.contains("font.pixelSize: Theme.meter.sizeRow"), "the row font, at the meter's size");
         // The bar's icons keep their own size.
         let icon = std::fs::read_to_string(root().join("NoticeIcon.qml")).unwrap();
         assert!(icon.contains("implicitWidth: 14\n") && icon.contains("implicitHeight: 14\n"));
+    }
+
+    #[test]
+    fn the_open_notice_list_shows_whole_notices() {
+        // At a 260 px cap the fourth pet notice was cut in half at the
+        // meter's edge, and locked it could not be scrolled to. The card
+        // shows at most three whole notices; a line pages on.
+        let text = std::fs::read_to_string(root().join("NoticeTray.qml")).unwrap();
+        assert!(text.contains("readonly property int maxRows: 3"));
+        assert!(text.contains("readonly property var page: items.slice(first, first + maxRows)"));
+        assert!(text.contains("visible: index < tray.shown"));
+        assert!(text.contains("if (first > 0 || first + n < items.length)\n            n = fitting(listRoom - moreHeight)"));
+        assert!(text.contains("onTapped: tray.showFrom(tray.later > 0 ? tray.first + tray.shown : 0)"));
+        // The first page stays on the newest, also on a locked meter; a later
+        // page keeps its top notice.
+        assert!(text.contains("const at = first > 0 ? items.findIndex(n => n.id === firstId) : 0"));
+        assert!(text.contains("onOpenChanged: showFrom(0)"));
+        assert!(text.contains("onLockedChanged: {\n        shapeInput()\n        showFrom(0)\n    }"));
     }
 
     #[test]
@@ -851,8 +883,9 @@ mod tests {
     #[test]
     fn the_meters_text_and_rows_follow_the_meter_size() {
         // The meter's text in the windows' type (Theme.sizeRow, HudText's
-        // own default) would stay small at 150%.
-        for file in ["MeterWindow.qml", "MeterRow.qml"] {
+        // own default) would stay small at 150%. The notice tray grows with
+        // the meter it sits on.
+        for file in ["MeterWindow.qml", "MeterRow.qml", "NoticeTray.qml"] {
             let chars = code_only(&std::fs::read_to_string(root().join(file)).unwrap());
             let code: String = chars.iter().collect();
             assert!(!code.contains("Theme.size"), "{file}: the windows' type scale");
@@ -871,7 +904,7 @@ mod tests {
                 assert!(!text.contains(&format!("Theme.{size}")), "{} Theme.{size}", path.display());
             }
         }
-        // The setting, by the slim mode; only the meter has it.
+        // The setting, by the slim mode; only the meter and its tray have it.
         let settings = std::fs::read_to_string(root().join("SettingsWindow.qml")).unwrap();
         let layout = settings.find("\"settings.meterLayout.label\"").expect("Meter layout");
         let size = settings.find("\"settings.meterSize.label\"").expect("Meter size");
@@ -881,7 +914,7 @@ mod tests {
         for path in files(&root(), "qml") {
             let name = path.file_name().unwrap().to_string_lossy().to_string();
             let text = std::fs::read_to_string(&path).unwrap();
-            if !["MeterWindow.qml", "MeterRow.qml", "Theme.qml", "SettingsWindow.qml"].contains(&name.as_str()) {
+            if !["MeterWindow.qml", "MeterRow.qml", "NoticeTray.qml", "Theme.qml", "SettingsWindow.qml"].contains(&name.as_str()) {
                 assert!(!text.contains("Theme.meter.") && !text.contains("Settings.meterSize"), "{name}");
             }
         }
@@ -953,8 +986,8 @@ mod tests {
     }
 
     #[test]
-    fn details_history_and_settings_keep_their_place() {
-        for (file, name) in [("DetailsWindow.qml", "details"), ("HistoryWindow.qml", "history"), ("SettingsWindow.qml", "settings")] {
+    fn details_history_settings_and_character_keep_their_place() {
+        for (file, name) in [("DetailsWindow.qml", "details"), ("HistoryWindow.qml", "history"), ("SettingsWindow.qml", "settings"), ("CharacterWindow.qml", "character")] {
             let text = std::fs::read_to_string(root().join(file)).unwrap();
             assert!(text.contains(&format!("placeName: \"{name}\"")), "{file}");
         }
@@ -1077,11 +1110,11 @@ mod tests {
         // bottom edge where the largest card has no room above.
         let text = std::fs::read_to_string(root().join("NoticeTray.qml")).unwrap();
         assert!(text.contains("readonly property string edge: Settings.trayEdge"));
-        assert!(text.contains("readonly property int fullHeight: barHeight + listMax + 4"));
+        assert!(text.contains("readonly property int fullHeight: barHeight + listMax + Theme.meter.px(4)"));
         assert!(text.contains("const wantsBelow = edge === \"bottom\"\n            || (edge === \"auto\" && (room ? room.above < fullHeight && room.below > room.above : !open && below))"));
         // The list is no taller than the room on its side.
-        assert!(text.contains("Math.min(list.contentHeight, listRoom)"));
-        assert!(text.contains("listRoom = room ? Math.max(38, Math.min(listMax, (below ? room.below : room.above) - barHeight - 4)) : listMax"));
+        assert!(text.contains("height: Math.min(column.implicitHeight, tray.listRoom)"));
+        assert!(text.contains("listRoom = room ? Math.max(rowMin, (below ? room.below : room.above) - barHeight - Theme.meter.px(4)) : noLimit"));
         assert!(text.contains("y = wantsBelow ? at.y : at.y - h"));
         // The bar on the card's far edge, the chevron away from the meter
         // to open.
@@ -1108,23 +1141,23 @@ mod tests {
         let text = std::fs::read_to_string(root().join("NoticeTray.qml")).unwrap();
         let chars = code_only(&text);
         let code: String = chars.iter().collect();
-        assert!(code.contains("readonly property int barHeight: 24"));
+        assert!(code.contains("readonly property int barHeight: Theme.meter.px(24)"));
         let bar = blocks_of(&chars, "Item").into_iter().find(|b| b.own.contains("id: bar")).expect("the bar");
         assert_eq!(value_of(&bar.own, "height").as_deref(), Some("tray.barHeight"));
         let inside = |b: &Block| b.open > bar.open && b.close < bar.close;
         let icons: Vec<Block> = blocks_of(&chars, "NoticeIcon").into_iter().filter(inside).collect();
         assert_eq!(icons.len(), 1, "one icon per kind");
-        assert_eq!(value_of(&icons[0].own, "width").as_deref(), Some("18"));
-        assert_eq!(value_of(&icons[0].own, "height").as_deref(), Some("18"));
+        let mark: String = chars[icons[0].open..icons[0].close].iter().collect();
+        assert!(mark.contains("width: Theme.meter.px(18)\n") && mark.contains("height: Theme.meter.px(18)\n"), "{mark}");
         let texts: Vec<Block> = blocks_of(&chars, "HudText").into_iter().filter(inside).collect();
         assert_eq!(texts.len(), 3, "the count, the title and Clear all");
         for t in &texts {
-            assert_eq!(value_of(&t.own, "font.pixelSize").as_deref(), Some("Theme.sizeRow"), "line {}", line_of(&chars, t.at));
+            assert_eq!(value_of(&t.own, "font.pixelSize").as_deref(), Some("Theme.meter.sizeRow"), "line {}", line_of(&chars, t.at));
         }
         // The card, the line under the bar and the list start from the bar's height.
-        assert!(code.contains("readonly property int wantedHeight: barHeight + (open ? listHeight + 4 : 0)"));
+        assert!(code.contains("readonly property int wantedHeight: barHeight + (open ? listHeight + Theme.meter.px(4) : 0)"));
         assert!(code.contains("    height: barHeight\n"));
-        let starts: Vec<String> = ["Rectangle", "HudText", "ListView"]
+        let starts: Vec<String> = ["Rectangle", "HudText", "Item"]
             .iter()
             .flat_map(|c| blocks_of(&chars, c))
             .filter(|b| !inside(b) && b.open > bar.close)
@@ -1133,11 +1166,115 @@ mod tests {
             .collect();
         assert_eq!(
             starts,
-            vec!["tray.below ? bar.y - 1 : tray.barHeight", "tray.below ? 8 : tray.barHeight + 8", "tray.below ? 2 : tray.barHeight + 2"]
+            vec![
+                "tray.below ? bar.y - 1 : tray.barHeight",
+                "tray.below ? Theme.meter.px : tray.barHeight + Theme.meter.px",
+                "tray.below ? Theme.meter.px : tray.barHeight + Theme.meter.px"
+            ]
         );
+        assert!(code.contains("y: tray.below ? Theme.meter.px(8) : tray.barHeight + Theme.meter.px(8)\n"));
+        assert!(code.contains("y: tray.below ? Theme.meter.px(2) : tray.barHeight + Theme.meter.px(2)\n"));
         // Other places size the icon themselves.
         let icon = std::fs::read_to_string(root().join("NoticeIcon.qml")).unwrap();
         assert!(icon.contains("implicitWidth: 14\n    implicitHeight: 14"));
+    }
+
+    /// The notice marks' colours by theme, from Theme.qml: (theme, window,
+    /// [(colour name, value)]). System is checked on Breeze Dark, Plasma's
+    /// own dark scheme (its Window BackgroundNormal, 32,35,38), with the
+    /// default theme's marks it takes.
+    fn mark_colours() -> Vec<(&'static str, String, Vec<(&'static str, String)>)> {
+        let text = std::fs::read_to_string(root().join("Theme.qml")).unwrap();
+        let block = |start: &str, end: &str| -> String {
+            let from = text.find(start).unwrap_or_else(|| panic!("{start}"));
+            let to = from + text[from..].find(end).unwrap_or_else(|| panic!("{end}"));
+            text[from..to].to_string()
+        };
+        let hex = |block: &str, name: &str| -> String {
+            let key = format!("\"{name}\": \"#");
+            let at = block.find(&key).unwrap_or_else(|| panic!("{name}")) + key.len();
+            block[at..at + 6].to_string()
+        };
+        let themes = [
+            ("daevalog", block("\"daevalog\": {", "\"classic\": {")),
+            ("classic", block("\"classic\": {", "\"nord\": {")),
+            ("nord", block("\"nord\": {", "readonly property var base")),
+        ];
+        let mut marks: Vec<_> = themes
+            .into_iter()
+            .map(|(theme, b)| (theme, hex(&b, "window"), MARK_COLOURS.iter().map(|&name| (name, hex(&b, name))).collect::<Vec<_>>()))
+            .collect();
+        let default = marks[0].2.clone();
+        marks.push(("system on Breeze Dark", "202326".to_string(), default));
+        marks
+    }
+
+    const MARK_COLOURS: [&str; 4] = ["abyssBoss", "rift", "gartua", "commander"];
+
+    /// WCAG contrast of two "rrggbb" colours.
+    fn contrast(a: &str, b: &str) -> f64 {
+        let luminance = |hex: &str| {
+            let channel = |at: usize| {
+                let c = u8::from_str_radix(&hex[at..at + 2], 16).unwrap() as f64 / 255.0;
+                if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+            };
+            0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4)
+        };
+        let (x, y) = (luminance(a), luminance(b));
+        (x.max(y) + 0.05) / (x.min(y) + 0.05)
+    }
+
+    #[test]
+    fn each_boss_tier_and_the_rift_has_its_own_mark_colour() {
+        // Abyss Bosses red; the rift purple, as its map icon; field bosses
+        // by tier: Gartua emerald, the commanders yellow; the rest keep the
+        // ink. Only Gartua and the commanders get a countdown, so no other
+        // tier has a colour.
+        let icon = std::fs::read_to_string(root().join("NoticeIcon.qml")).unwrap();
+        for (kind, colour) in [
+            ("abyss", "Theme.abyssBoss"),
+            ("gartua", "Theme.gartua"),
+            ("commander", "Theme.commander"),
+            ("rift", "Theme.rift"),
+            ("warning", "Theme.warning"),
+        ] {
+            assert!(icon.contains(&format!("\"{kind}\": {colour}")), "{kind}");
+        }
+        assert!(icon.contains("readonly property color ink: inks[kind] || Theme.hudSub"));
+        assert!(icon.contains(r#"readonly property string shape: ["abyss", "gartua", "commander"].includes(kind) ? "boss" : kind"#));
+        let theme = std::fs::read_to_string(root().join("Theme.qml")).unwrap();
+        for name in MARK_COLOURS {
+            assert!(theme.contains(&format!("readonly property color {name}: base.{name}\n")), "{name}");
+            assert!(theme.contains(&format!("\"{name}\": themes.daevalog.{name},")), "System takes the default's {name}");
+        }
+        for (theme, _, colours) in mark_colours() {
+            let values: std::collections::BTreeSet<&String> = colours.iter().map(|(_, v)| v).collect();
+            assert_eq!(values.len(), MARK_COLOURS.len(), "{theme}: each mark its own colour");
+        }
+    }
+
+    #[test]
+    fn the_notice_marks_read_on_the_panel_over_a_mid_grey_scene() {
+        // A mark needs 3:1 (WCAG's figure for icons) on the panel: the
+        // window colour at the default opacity over a mid grey game scene.
+        let opacity = crate::settings_store::Values::default().window_opacity as f64 / 100.0;
+        let mut weak = Vec::new();
+        for (theme, window, colours) in mark_colours() {
+            let panel: String = (0..3)
+                .map(|i| {
+                    let w = u8::from_str_radix(&window[2 * i..2 * i + 2], 16).unwrap() as f64;
+                    format!("{:02x}", (w * opacity + 128.0 * (1.0 - opacity)).round() as u8)
+                })
+                .collect();
+            for (name, value) in colours {
+                let ratio = contrast(&value, &panel);
+                if ratio < 3.0 {
+                    weak.push(format!("{theme} {name} #{value}: {ratio:.2}:1"));
+                }
+            }
+        }
+        assert!(weak.is_empty(), "{}", weak.join("\n"));
+        assert!((contrast("FF5C5C", "161925") - 5.78).abs() < 0.01, "the ratio as Theme.qml's notes give it");
     }
 
     #[test]
@@ -1150,6 +1287,171 @@ mod tests {
         let menu = std::fs::read_to_string(root().join("UiMenu.qml")).unwrap();
         assert!(menu.contains("readonly property int iconGutter: hasIcons ? 22 : 0"));
         assert!(menu.contains("x: 10 + menu.gutter + menu.iconGutter"));
+    }
+
+    #[test]
+    fn the_character_window_only_shows_and_opens_beside_history() {
+        // Read only: the tabs and the character list are its only controls.
+        for path in files(&root(), "qml").into_iter().filter(|p| p.file_name().unwrap().to_string_lossy().starts_with("Character")) {
+            let chars = code_only(&std::fs::read_to_string(&path).unwrap());
+            for control in ["UiButton", "UiSwitch", "UiSlider", "UiField", "UiMenuItem"] {
+                assert!(blocks_of(&chars, control).is_empty(), "{} has a {control}", path.display());
+            }
+        }
+        let main = std::fs::read_to_string(root().join("Main.qml")).unwrap();
+        let history = main.find("text: I18n.tr(\"tray.history\")").expect("History in the meter's menu");
+        let character = main.find("text: I18n.tr(\"character.title\")").expect("Character in the meter's menu");
+        let settings = main.find("text: I18n.tr(\"tray.settings\")").unwrap();
+        assert!(history < character && character < settings, "right after History");
+        assert!(main.contains("onTriggered: app.openCharacter()"));
+    }
+
+    #[test]
+    fn every_character_page_says_when_the_game_has_not_sent_it() {
+        for page in ["CharacterGear.qml", "CharacterStats.qml", "CharacterSkills.qml", "CharacterBoards.qml"] {
+            let text = std::fs::read_to_string(root().join(page)).unwrap();
+            assert!(text.contains("I18n.tr(\"character.notRead\")"), "{page}");
+        }
+    }
+
+    #[test]
+    fn the_character_window_follows_new_reads_and_the_language() {
+        let text = std::fs::read_to_string(root().join("CharacterWindow.qml")).unwrap();
+        assert!(text.contains("running: window.visible\n        onTriggered: Character.refresh()"), "looks again while open");
+        assert!(text.contains("function onLanguageChanged() {\n            Character.redraw()"));
+        assert!(text.contains("function onHour24Changed() {\n            Character.redraw()"));
+        // Several characters: a list to pick from; one: no list.
+        assert!(text.contains("visible: window.files.length > 1"));
+    }
+
+    /// A page taller than the window shows that it scrolls: every page is
+    /// a Flickable the window loads, and the window's upright scroll bar
+    /// follows whichever page is open.
+    #[test]
+    fn every_character_page_shows_that_it_scrolls() {
+        for page in ["CharacterGear.qml", "CharacterStats.qml", "CharacterSkills.qml", "CharacterBoards.qml"] {
+            let chars = code_only(&std::fs::read_to_string(root().join(page)).unwrap());
+            let text: String = chars.iter().collect();
+            assert!(text.trim_start().starts_with("pragma") && text.contains("\nFlickable {"), "{page} is a Flickable");
+            let name = page.trim_end_matches(".qml");
+            let window = std::fs::read_to_string(root().join("CharacterWindow.qml")).unwrap();
+            assert!(window.contains(&format!("        {name} {{\n            view: window.view")), "{page} is one of the window's pages");
+        }
+        let chars = code_only(&std::fs::read_to_string(root().join("CharacterWindow.qml")).unwrap());
+        let loader = blocks_of(&chars, "Loader");
+        assert!(loader.len() == 1 && loader[0].own.contains("id: pages"), "the pages' loader");
+        let bars = blocks_of(&chars, "UiScrollBar");
+        assert_eq!(bars.len(), 1, "one scroll bar for the pages");
+        let bar: String = chars[bars[0].open..bars[0].close].iter().collect();
+        for line in [
+            "page: pages.item as Flickable",
+            "vertical: true",
+            "anchors.top: pages.top",
+            "anchors.bottom: pages.bottom",
+            "anchors.right: parent.right",
+            "position: page ? page.contentY : 0",
+            "range: page ? Math.max(0, page.contentHeight - page.height) : 0",
+            "view: page ? page.height : 1",
+            "onMoved: p => page.contentY = p",
+        ] {
+            assert!(bar.contains(line), "the scroll bar: {line}");
+        }
+        let scroll_bar = std::fs::read_to_string(root().join("UiScrollBar.qml")).unwrap();
+        assert!(scroll_bar.contains("property bool vertical: false") && scroll_bar.contains("visible: range > 0"), "upright, only when there is something to scroll");
+    }
+
+    /// Every scroll bar's thumb (the Character pages, the skill tables, the
+    /// timeline) is at least 3:1 on the window, the surface and its own
+    /// track, in every theme; under System, on Breeze and Adwaita, light
+    /// and dark, and on Qt's own palette.
+    #[test]
+    fn every_scroll_thumb_reads_at_3_to_1() {
+        let theme = std::fs::read_to_string(root().join("Theme.qml")).unwrap();
+        let over = |fg: [f64; 3], alpha: f64, bg: [f64; 3]| -> [f64; 3] { [0, 1, 2].map(|i| fg[i] * alpha + bg[i] * (1.0 - alpha)) };
+        let lum = |c: [f64; 3]| -> f64 {
+            let [r, g, b] = c.map(|v| if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) });
+            0.2126 * r + 0.7152 * g + 0.0722 * b
+        };
+        let ratio = |a: [f64; 3], b: [f64; 3]| -> f64 {
+            let (x, y) = (lum(a), lum(b));
+            (x.max(y) + 0.05) / (x.min(y) + 0.05)
+        };
+        let alpha_of = |line: &str| -> f64 {
+            let start = theme.find(line).unwrap_or_else(|| panic!("Theme.qml: {line}")) + line.len();
+            theme[start..].split(')').next().unwrap().trim().parse().unwrap()
+        };
+        let track = alpha_of("readonly property color rowEmpty: tint(base.ink,");
+        assert!(theme.contains("readonly property color scrollThumb: tint(base.ink, base.scrollThumb)"));
+        // A theme's value: `"key": ...,` inside its block.
+        let value = |block: &str, key: &str| -> String {
+            let at = block.find(&format!("\"{key}\": ")).unwrap_or_else(|| panic!("{key}")) + key.len() + 4;
+            block[at..].split([',', '\n']).next().unwrap().trim().to_string()
+        };
+        let check = |name: &str, window: [f64; 3], surface: [f64; 3], ink: [f64; 3], thumb: f64| {
+            for (place, bg) in [("window", window), ("surface", surface)] {
+                let under = over(ink, track, bg);
+                let drawn = over(ink, thumb, under);
+                for (against, colour) in [(place.to_string(), bg), (format!("track on the {place}"), under)] {
+                    let r = ratio(drawn, colour);
+                    assert!(r >= 3.0, "{name}: the scroll thumb is {r:.2}:1 on the {against}");
+                }
+            }
+        };
+        for name in ["daevalog", "classic", "nord"] {
+            let start = theme.find(&format!("\"{name}\": {{")).unwrap_or_else(|| panic!("{name}"));
+            let block = &theme[start..start + theme[start..].find("\n        }").unwrap()];
+            let thumb: f64 = value(block, "scrollThumb").parse().unwrap();
+            check(name, rgb(&value(block, "window")), rgb(&value(block, "surface")), rgb(&value(block, "ink")), thumb);
+        }
+        let system = &theme[theme.find("theme === \"system\" ? ({").unwrap()..];
+        let thumb: f64 = value(&system[..system.find("})").unwrap()], "scrollThumb").parse().unwrap();
+        for (name, window, view, text) in [
+            ("System, Qt's palette", "#efefef", "#ffffff", "#000000"),
+            ("System, Breeze", "#eff0f1", "#ffffff", "#232629"),
+            ("System, Breeze Dark", "#202326", "#141618", "#fcfcfc"),
+            ("System, Adwaita", "#fafafa", "#ffffff", "#2e3436"),
+            ("System, Adwaita dark", "#242424", "#1e1e1e", "#ffffff"),
+        ] {
+            check(name, rgb(window), rgb(view), rgb(text), thumb);
+        }
+        // Every scroll bar draws its thumb in that colour.
+        let bar = std::fs::read_to_string(root().join("UiScrollBar.qml")).unwrap();
+        assert!(bar.contains("? Theme.sub : Theme.scrollThumb"), "the thumb at rest is Theme.scrollThumb");
+        for file in ["CharacterWindow.qml", "UiTable.qml", "Timeline.qml"] {
+            assert!(std::fs::read_to_string(root().join(file)).unwrap().contains("UiScrollBar {"), "{file}");
+        }
+    }
+
+    /// Each of the game's item grades has a colour in both grade maps, in
+    /// the hue the game gives that grade's text: Common grey, Rare green,
+    /// Legend blue, Unique gold, Epic orange, Mythic red, Special cyan.
+    #[test]
+    fn item_grades_take_the_games_hues() {
+        let theme = std::fs::read_to_string(root().join("Theme.qml")).unwrap();
+        let map = |name: &str| -> HashMap<String, (f64, f64)> {
+            let start = theme.find(&format!("property var {name}: ({{")).unwrap_or_else(|| panic!("{name}"));
+            let block = &theme[start..start + theme[start..].find("})").unwrap()];
+            block.lines().filter_map(|line| {
+                let (key, value) = line.trim().trim_end_matches(',').split_once(": ")?;
+                let [r, g, b] = value.trim_matches('"').starts_with('#').then(|| rgb(value))?;
+                let (max, min) = (r.max(g).max(b), r.min(g).min(b));
+                let d = max - min;
+                let hue = if d == 0.0 { 0.0 } else if max == r { 60.0 * ((g - b) / d).rem_euclid(6.0) }
+                    else if max == g { 60.0 * ((b - r) / d + 2.0) } else { 60.0 * ((r - g) / d + 4.0) };
+                Some((key.trim_matches('"').to_string(), (hue, d / max)))
+            }).collect()
+        };
+        let games = [("Rare", 137.0), ("Legend", 211.0), ("Unique", 47.0), ("Epic", 25.0), ("Mythic", 355.0), ("Special", 171.0)];
+        for name in ["gradeColors", "gradeColorsOnLight"] {
+            let colours = map(name);
+            assert_eq!(colours.len(), 7, "{name}: {colours:?}");
+            assert!(colours["Common"].1 < 0.25, "{name}: Common is grey");
+            for (grade, hue) in games {
+                let (h, saturation) = colours[grade];
+                let off = (h - hue).abs().min(360.0 - (h - hue).abs());
+                assert!(off <= 20.0 && saturation > 0.4, "{name}: {grade} at hue {h:.0}, the game's {hue}");
+            }
+        }
     }
 
     #[test]

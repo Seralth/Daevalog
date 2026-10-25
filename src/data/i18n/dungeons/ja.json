@@ -1950,8 +1950,9 @@
   "600004": {
     "name": "クラオ洞窟",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "征服1ティア"
+    "label": "征服1ティア · 難しい"
   },
   "600011": {
     "name": "ウルググ峡谷",
@@ -2013,8 +2014,9 @@
   "600033": {
     "name": "ドラウプニル",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "征服1ティア"
+    "label": "征服1ティア · 難しい"
   },
   "600034": {
     "name": "Draupnir"

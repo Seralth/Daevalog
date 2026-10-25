@@ -1950,8 +1950,9 @@
   "600004": {
     "name": "Krao Cave",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Conquest Tier 1"
+    "label": "Conquest Tier 1 · Hard"
   },
   "600011": {
     "name": "Urugugu Canyon",
@@ -2013,8 +2014,9 @@
   "600033": {
     "name": "Draupnir",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Conquest Tier 1"
+    "label": "Conquest Tier 1 · Hard"
   },
   "600034": {
     "name": "Draupnir"

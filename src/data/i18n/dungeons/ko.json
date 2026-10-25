@@ -1950,8 +1950,9 @@
   "600004": {
     "name": "크라오 동굴",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "정복 1티어"
+    "label": "정복 1티어 · 어려움"
   },
   "600011": {
     "name": "우루구구 협곡",
@@ -2013,8 +2014,9 @@
   "600033": {
     "name": "드라웁니르",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "정복 1티어"
+    "label": "정복 1티어 · 어려움"
   },
   "600034": {
     "name": "드라웁니르"

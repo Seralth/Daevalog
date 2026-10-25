@@ -1,0 +1,98 @@
+{
+  "source": "Made-up sample for the contract tests",
+  "version": 1,
+  "classes": {
+    "Elementalist": [
+      {
+        "skill": 16010000,
+        "acquire": "Mastery",
+        "kind": "Active"
+      },
+      {
+        "skill": 16020000,
+        "acquire": "Mastery",
+        "kind": "Active"
+      },
+      {
+        "skill": 16040000,
+        "acquire": "Mastery",
+        "kind": "Active"
+      },
+      {
+        "skill": 16300000,
+        "acquire": "Mastery",
+        "kind": "Passive"
+      },
+      {
+        "skill": 16370000,
+        "acquire": "Stigma",
+        "kind": "Active"
+      }
+    ]
+  },
+  "specialties": {
+    "16010000": [
+      {
+        "part": 16010010,
+        "option": 1,
+        "unlock": 8,
+        "slot": 0
+      },
+      {
+        "part": 16010020,
+        "option": 2,
+        "unlock": 8,
+        "slot": 0
+      },
+      {
+        "part": 16010030,
+        "option": 3,
+        "unlock": 12,
+        "slot": 0
+      },
+      {
+        "part": 16010040,
+        "option": 4,
+        "unlock": 16,
+        "slot": 0
+      },
+      {
+        "part": 16010050,
+        "option": 5,
+        "unlock": 20,
+        "slot": 0
+      }
+    ],
+    "16370000": [
+      {
+        "part": 16370010,
+        "option": 1,
+        "unlock": 1,
+        "slot": 1
+      },
+      {
+        "part": 16370020,
+        "option": 2,
+        "unlock": 3,
+        "slot": 2
+      },
+      {
+        "part": 16370030,
+        "option": 3,
+        "unlock": 5,
+        "slot": 3
+      },
+      {
+        "part": 16370040,
+        "option": 4,
+        "unlock": 7,
+        "slot": 4
+      }
+    ]
+  },
+  "mastery_slots": [
+    8,
+    12,
+    16
+  ]
+}

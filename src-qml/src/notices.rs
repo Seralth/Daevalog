@@ -3,9 +3,11 @@
 //! `Notices`, the QML singleton behind the notice tray above the meter
 //! (NoticeTray.qml): a list of short notices, newest first, each of a kind
 //! that picks its icon. Any part of the meter posts one with `post` (or
-//! `post_until`, for one the tray counts down to) and takes one off with
-//! `remove`, from any thread; the player dismisses them one by one or all at
-//! once. The list lives as long as the meter runs.
+//! `post_until`, for one the tray counts down to), changes one's text where
+//! it is with `update` (or a countdown's title and time with `retime`), and
+//! takes one off with `remove`, from any thread;
+//! the player dismisses them one by one or all at once. The list lives as
+//! long as the meter runs.
 
 use core::pin::Pin;
 use std::sync::{Mutex, OnceLock};
@@ -98,6 +100,31 @@ impl NoticeList {
         id
     }
 
+    /// A new text for the notice with `key`, if one is on the list: it keeps
+    /// its place and its time.
+    pub fn update(&mut self, key: &str, text: &str) -> bool {
+        match self.notices.iter_mut().find(|n| !key.is_empty() && n.key == key) {
+            Some(notice) if notice.text != text => {
+                notice.text = text.to_string();
+                true
+            }
+            _ => false,
+        }
+    }
+
+    /// A new title and time to count down to for the notice with `key`, if
+    /// one is on the list: it keeps its place, its text and the time it came.
+    pub fn retime(&mut self, key: &str, title: &str, until: i64) -> bool {
+        match self.notices.iter_mut().find(|n| !key.is_empty() && n.key == key) {
+            Some(notice) if notice.title != title || notice.until != until => {
+                notice.title = title.to_string();
+                notice.until = until;
+                true
+            }
+            _ => false,
+        }
+    }
+
     /// Takes off the notice with `key`, if one is on the list.
     pub fn remove_key(&mut self, key: &str) -> bool {
         let before = self.notices.len();
@@ -147,9 +174,12 @@ impl Default for NoticesRust {
 /// The object, for posts from other threads.
 static QT: OnceLock<CxxQtThread<qobject::Notices>> = OnceLock::new();
 
-/// A post or a removal from another thread.
+/// A post or a removal from another thread. A post holds the local time it
+/// was made, so one that waits for the object keeps that time.
 enum Change {
-    Post { key: String, kind: String, title: String, text: String, until: i64 },
+    Post { key: String, kind: String, title: String, text: String, at: (u32, u32), until: i64 },
+    Update { key: String, text: String },
+    Retime { key: String, title: String, until: i64 },
     Remove(String),
 }
 
@@ -158,8 +188,13 @@ static WAITING: Mutex<Vec<Change>> = Mutex::new(Vec::new());
 
 impl cxx_qt::Initialize for qobject::Notices {
     fn initialize(mut self: Pin<&mut Self>) {
-        let _ = QT.set(self.qt_thread());
-        let waiting = std::mem::take(&mut *WAITING.lock().unwrap_or_else(|e| e.into_inner()));
+        // Under the lock send() checks QT in, so no change lands in
+        // WAITING after it is emptied.
+        let waiting = {
+            let mut waiting = WAITING.lock().unwrap_or_else(|e| e.into_inner());
+            let _ = QT.set(self.qt_thread());
+            std::mem::take(&mut *waiting)
+        };
         for change in waiting {
             self.as_mut().apply(change);
         }
@@ -176,7 +211,19 @@ pub fn post(key: &str, kind: &str, title: &str, text: &str) {
 
 /// As `post`, for a notice the tray counts down to the unix second `until`.
 pub fn post_until(key: &str, kind: &str, title: &str, text: &str, until: i64) {
-    send(Change::Post { key: key.to_string(), kind: kind.to_string(), title: title.to_string(), text: text.to_string(), until });
+    send(Change::Post { key: key.to_string(), kind: kind.to_string(), title: title.to_string(), text: text.to_string(), at: now(), until });
+}
+
+/// A new text for the notice with `key`, where it is, from anywhere in the
+/// meter; nothing when it is not on the list (dismissed, say).
+pub fn update(key: &str, text: &str) {
+    send(Change::Update { key: key.to_string(), text: text.to_string() });
+}
+
+/// A new title and time for the notice with `key`, where it is, from
+/// anywhere in the meter; nothing when it is not on the list.
+pub fn retime(key: &str, title: &str, until: i64) {
+    send(Change::Retime { key: key.to_string(), title: title.to_string(), until });
 }
 
 /// Takes the notice with `key` off the list, from anywhere in the meter.
@@ -185,11 +232,13 @@ pub fn remove(key: &str) {
 }
 
 fn send(change: Change) {
+    let mut waiting = WAITING.lock().unwrap_or_else(|e| e.into_inner());
     match QT.get() {
         Some(qt) => {
+            drop(waiting);
             let _ = qt.queue(move |notices| notices.apply(change));
         }
-        None => WAITING.lock().unwrap_or_else(|e| e.into_inner()).push(change),
+        None => waiting.push(change),
     }
 }
 
@@ -198,16 +247,24 @@ fn now() -> (u32, u32) {
     (now.hour(), now.minute())
 }
 
-impl qobject::Notices {
-    fn apply(mut self: Pin<&mut Self>, change: Change) {
-        let changed = match change {
-            Change::Post { key, kind, title, text, until } => {
-                self.as_mut().rust_mut().list.add(&key, &kind, &title, &text, now(), until);
+impl NoticeList {
+    /// Makes one change; whether the list changed.
+    fn apply(&mut self, change: Change) -> bool {
+        match change {
+            Change::Post { key, kind, title, text, at, until } => {
+                self.add(&key, &kind, &title, &text, at, until);
                 true
             }
-            Change::Remove(key) => self.as_mut().rust_mut().list.remove_key(&key),
-        };
-        if changed {
+            Change::Update { key, text } => self.update(&key, &text),
+            Change::Retime { key, title, until } => self.retime(&key, &title, until),
+            Change::Remove(key) => self.remove_key(&key),
+        }
+    }
+}
+
+impl qobject::Notices {
+    fn apply(mut self: Pin<&mut Self>, change: Change) {
+        if self.as_mut().rust_mut().list.apply(change) {
             self.publish();
         }
     }
@@ -227,7 +284,7 @@ impl qobject::Notices {
     }
 
     fn add_until(self: Pin<&mut Self>, key: QString, kind: QString, title: QString, text: QString, until: i64) {
-        self.apply(Change::Post { key: key.to_string(), kind: kind.to_string(), title: title.to_string(), text: text.to_string(), until });
+        self.apply(Change::Post { key: key.to_string(), kind: kind.to_string(), title: title.to_string(), text: text.to_string(), at: now(), until });
     }
 
     fn dismiss(mut self: Pin<&mut Self>, id: i32) {
@@ -292,6 +349,38 @@ mod tests {
     }
 
     #[test]
+    fn an_update_keeps_the_notice_where_it_is() {
+        let mut list = NoticeList::default();
+        let pet = list.add("pet:1003", "pet", "Soul", "1/25 (behind)", (9, 0), 0);
+        list.add("", "info", "Other", "", (9, 1), 0);
+        assert!(list.update("pet:1003", "1/25"));
+        assert!(!list.update("pet:1003", "1/25"), "the same text changes nothing");
+        assert_eq!(list.notices()[1].id, pet);
+        assert_eq!(list.notices()[1].text, "1/25");
+        assert_eq!((list.notices()[1].hour, list.notices()[1].minute), (9, 0));
+        assert!(list.dismiss(pet));
+        assert!(!list.update("pet:1003", "2/25"), "a dismissed notice stays gone");
+        assert!(!list.update("", "x"), "an empty key updates nothing");
+        assert_eq!(list.notices().len(), 1);
+    }
+
+    #[test]
+    fn a_retime_keeps_the_notice_where_it_is_and_a_dismissed_one_gone() {
+        let mut list = NoticeList::default();
+        let boss = list.add("fieldboss:101021", "gartua", "Field Boss at 05:00", "Eternal Gartua (Verteron)", (4, 30), 100);
+        list.add("", "info", "Other", "", (4, 31), 0);
+        assert!(list.retime("fieldboss:101021", "Field Boss at 04:58", 88));
+        assert!(!list.retime("fieldboss:101021", "Field Boss at 04:58", 88), "the same title and time change nothing");
+        let n = &list.notices()[1];
+        assert_eq!((n.id, n.title.as_str(), n.until, n.text.as_str()), (boss, "Field Boss at 04:58", 88, "Eternal Gartua (Verteron)"));
+        assert_eq!((n.hour, n.minute), (4, 30));
+        assert!(list.dismiss(boss));
+        assert!(!list.retime("fieldboss:101021", "Field Boss at 05:10", 700), "a dismissed notice stays gone");
+        assert!(!list.retime("", "x", 1), "an empty key retimes nothing");
+        assert_eq!(list.notices().len(), 1);
+    }
+
+    #[test]
     fn the_list_keeps_only_the_newest() {
         let mut list = NoticeList::default();
         for i in 0..KEEP + 5 {
@@ -311,6 +400,22 @@ mod tests {
         assert!(!list.remove_key("spawn:boss:1"));
         assert!(!list.remove_key(""), "an empty key takes nothing off");
         assert_eq!(list.notices().len(), 1);
+    }
+
+    #[test]
+    fn a_post_made_before_the_object_keeps_the_time_it_was_made() {
+        let before = now();
+        post("test:waits", "info", "Early", "");
+        let after = now();
+        let mut waiting = WAITING.lock().unwrap_or_else(|e| e.into_inner());
+        let found = waiting.iter().position(|c| matches!(c, Change::Post { key, .. } if key == "test:waits")).expect("waiting");
+        let Change::Post { at, .. } = waiting.remove(found) else { unreachable!() };
+        drop(waiting);
+        assert!(at == before || at == after, "{at:?}");
+        // Taken in later: the notice shows the time in the post, not the time it is taken in.
+        let mut list = NoticeList::default();
+        assert!(list.apply(Change::Post { key: String::new(), kind: "info".into(), title: "Early".into(), text: String::new(), at: (3, 4), until: 0 }));
+        assert_eq!((list.notices()[0].hour, list.notices()[0].minute), (3, 4));
     }
 
     #[test]

@@ -74,7 +74,7 @@ const NEXT_WINDOW: usize = 32;
 const WORLD_WINDOW: usize = 10;
 const LEVEL_TOP: i32 = 200;
 const ITEM_LEVEL_TOP: i32 = 1_000_000;
-const COMBAT_POWER_TOP: u64 = 100_000_000;
+pub(crate) const COMBAT_POWER_TOP: u64 = 100_000_000;
 
 /// Every roster in `data`, in byte order. Any `02 97` may open one, frame
 /// boundaries or not, including one inside a roster already read.
@@ -187,6 +187,19 @@ fn member_record(data: &[u8], at: usize, slot: u8) -> MemberRead {
     MemberRead::Read { name: name.to_string(), member, field, end: power_at + 8 }
 }
 
+/// A member record of the roster's layout at `at`, as the roster reads it,
+/// with where it ends; `None` when it does not read. The other party lists
+/// share the layout (`capture::player_facts`).
+pub(crate) fn member_at(data: &[u8], at: usize) -> Option<(String, RosterEntry, usize)> {
+    if data.len().saturating_sub(at) < RECORD_MIN {
+        return None;
+    }
+    match member_record(data, at, data[at + 1]) {
+        MemberRead::Read { name, member, end, .. } => Some((name, member, end)),
+        MemberRead::Broken | MemberRead::CutShort => None,
+    }
+}
+
 /// Where a member's world sits, from `past_stats` (the byte after the item
 /// level) on, and the world. Mostly the account id's world; when the account
 /// id names another (account 2201, record and the game's server tag
@@ -226,7 +239,9 @@ fn member_start(data: &[u8], at: usize) -> bool {
         && short_text(data, at + 10).is_some()
 }
 
-fn home_world(dbid: u64) -> u16 {
+/// The world an account id names: a character number, two zero bytes, then
+/// the world the character was made on.
+pub(crate) fn home_world(dbid: u64) -> u16 {
     (dbid >> 48) as u16
 }
 

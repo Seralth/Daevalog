@@ -285,27 +285,10 @@ impl Slicer {
     }
 }
 
-/// Each packet frame in `buf`, bundles opened as a replay opens them.
-/// `depth` is that of the bundle `buf` came out of, 0 for none.
-fn visit_packets(buf: &[u8], depth: usize, visit: &mut dyn FnMut(&[u8])) {
-    let walked = if depth == 0 { framing::walk(buf) } else { framing::split_frames(buf) };
-    for frame in walked.frames {
-        match frame.kind {
-            ChunkForm::Packet => visit(frame.bytes(buf)),
-            ChunkForm::Bundle if depth < NEST_LIMIT => {
-                if let Some(content) = framing::inflate_block(frame.payload(buf)) {
-                    visit_packets(&content, depth + 1, visit);
-                }
-            }
-            ChunkForm::Bundle => {}
-        }
-    }
-}
-
 /// A record's packets back to back, bundles opened: what a replay reads.
 pub fn expand(record: &[u8]) -> Vec<u8> {
     let mut out = Vec::with_capacity(record.len());
-    visit_packets(record, 0, &mut |packet| out.extend_from_slice(packet));
+    framing::visit_packets(record, 0, &mut |packet| out.extend_from_slice(packet));
     out
 }
 
@@ -324,7 +307,7 @@ fn find_leak(records: &[(i32, Vec<u8>)], ordered: &[(&String, &u64)]) -> Result<
     let is_known = |text: &[u8]| ordered.iter().any(|(name, _)| name.as_bytes() == text);
     let mut field_len = None;
     for (_, record) in records {
-        visit_packets(record, 0, &mut |packet| {
+        framing::visit_packets(record, 0, &mut |packet| {
             if field_len.is_none() && !carries_event(packet) {
                 let fields = name_fields(packet);
                 field_len = fields.iter().filter_map(|f| packet.get(f.range.clone())).find(|t| is_known(t)).map(<[u8]>::len);

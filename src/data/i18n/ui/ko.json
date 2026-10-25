@@ -563,8 +563,8 @@
     "characterNameHint": "다음 로딩 때 게임의 이름으로 바뀝니다.",
     "modeOnly": "{mode}에서만 적용됩니다.",
     "showTotalHint": "푸터의 그룹 합계로, DPS·회복·탱커 모든 탭에 표시됩니다.",
-    "spawnNotices": "필드 네임드 및 시공의 균열 카운트다운",
-    "spawnNoticesHint": "알림에 표시: 필드 네임드 30분, 15분, 5분 전, 시공의 균열 5분 전.",
+    "spawnNotices": "보스 및 시공의 균열 카운트다운",
+    "spawnNoticesHint": "알림에 표시: 어비스 보스와 필드 보스(가르투아, 타르탄, 카샤파, 라그타) 30분, 15분, 5분 전, 시공의 균열 5분 전. 필드 보스 시간은 지도를 열면 받아옵니다.",
     "shardWarning": "봉혼석 경고",
     "shardWarningHint": "공격에 봉혼석이 더 이상 사용되지 않으면 알림을 표시합니다.",
     "serverTimeZone": "서버 시간대",
@@ -692,6 +692,8 @@
     "title": "알림",
     "clearAll": "모두 지우기",
     "none": "알림 없음",
+    "more": "{count}개 더",
+    "top": "맨 위로",
     "pet": {
       "soul": "{pet} 영혼",
       "souls": "{pet} 영혼 +{count}",
@@ -710,7 +712,9 @@
       "unnamed": "펫 {id}"
     },
     "spawn": {
-      "at": "{time} {name}"
+      "at": "{time} {name}",
+      "abyssBoss": "어비스 보스",
+      "fieldBoss": "필드 보스"
     },
     "shard": {
       "off": "봉혼석 꺼짐",
@@ -719,5 +723,46 @@
     },
     "countdown": "{minutes}분 후",
     "now": "지금"
+  },
+  "character": {
+    "title": "캐릭터",
+    "tabs": {
+      "gear": "장비",
+      "sheet": "캐릭터 시트",
+      "skills": "스킬",
+      "boards": "데바니온"
+    },
+    "level": "LV{n}",
+    "itemLevel": "아이템 레벨",
+    "combatPower": "전투력",
+    "highest": "최고 {n}",
+    "seen": "{date} 기준",
+    "empty": "아직 캐릭터가 없습니다",
+    "emptyHint": "미터를 켠 채로 캐릭터로 접속하거나, 캐릭터 선택으로 갔다가 돌아오세요.",
+    "unread": "읽지 못한 캐릭터 파일: {n}",
+    "packFailed": "이 창의 게임 데이터를 불러오지 못했습니다.",
+    "notRead": "아직 읽지 않았습니다. 접속할 때 게임이 보냅니다.",
+    "gear": {
+      "empty": "비어 있음",
+      "notRead": "장비 세부 정보를 읽지 않음",
+      "sockets": "마석 슬롯: {n}",
+      "skillLevel": "LV+{n}",
+      "baseAt": "+{n} 기본 스탯",
+      "base": "기본 스탯"
+    },
+    "titles": "타이틀",
+    "titlesOwned": "보유 {n}",
+    "none": "없음",
+    "skills": {
+      "active": "액티브",
+      "passive": "패시브",
+      "stigma": "스티그마",
+      "specialty": "특화",
+      "daevanion": "데바니온 : LV+{n}",
+      "gear": "장비 장착 : LV+{n}"
+    },
+    "boards": {
+      "nodes": "노드 {taken}/{total}"
+    }
   }
 }

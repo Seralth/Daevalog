@@ -1950,8 +1950,9 @@
   "600004": {
     "name": "Caverna de Krao",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Conquista T1"
+    "label": "Conquista T1 · Difícil"
   },
   "600011": {
     "name": "Desfiladeiro de Urugugu",
@@ -2013,8 +2014,9 @@
   "600033": {
     "name": "Draupnir",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Conquista T1"
+    "label": "Conquista T1 · Difícil"
   },
   "600034": {
     "name": "Draupnir"

@@ -22,6 +22,13 @@ const ANCHOR_IDS: RangeInclusive<i32> = 100..=i32::MAX;
 /// Home servers a self record may name; the game's table runs from 1001 to
 /// 2560.
 const HOME_SERVERS: RangeInclusive<u16> = 1000..=2999;
+/// Whether `id` is in the game's ServerName table: 1001-1060, 1101-1160 and
+/// so on to 2501-2560. Stricter than `HOME_SERVERS`: the census searches list
+/// and player records at every byte, where a loose range lets noise through.
+pub(crate) fn listed_server(id: u16) -> bool {
+    matches!(id / 100, 10..=15 | 20..=25) && (1..=60).contains(&(id % 100))
+}
+
 /// Field lengths the loose readers take.
 const LOOSE_FIELD: RangeInclusive<usize> = 1..=36;
 /// Name lengths the nickname patterns take.
@@ -266,7 +273,7 @@ pub(super) struct MaskedRecord {
 }
 /// A player spawn's (`44 36`, `45 36`) id and name, as
 /// `PacketDecoder::read_spawn_name` reads them.
-pub(super) enum PlayerSpawn {
+pub(crate) enum PlayerSpawn {
     /// The name bit is clear: a player all the same.
     Unnamed(i32),
     Named(i32, String, Range<usize>),
@@ -274,7 +281,7 @@ pub(super) enum PlayerSpawn {
 
 /// A player's record or spawn from just past its opcode. A set name bit
 /// promises a name: a field that is none gives `None`.
-pub(super) fn player_spawn_at(data: &[u8], offset_after_opcode: usize) -> Option<PlayerSpawn> {
+pub(crate) fn player_spawn_at(data: &[u8], offset_after_opcode: usize) -> Option<PlayerSpawn> {
     let (id, len_at) = masked_head(data, offset_after_opcode)?;
     let Some(len_at) = len_at else { return Some(PlayerSpawn::Unnamed(id)) };
     let field = name_field(data, len_at)?;

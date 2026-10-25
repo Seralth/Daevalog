@@ -1,0 +1,66 @@
+{
+  "source": "Made-up sample for the contract tests",
+  "version": 1,
+  "titles": {
+    "11020001": {
+      "category": "Attack",
+      "owned": [
+        [
+          220,
+          100
+        ]
+      ],
+      "equipped": [
+        [
+          128,
+          15
+        ]
+      ]
+    },
+    "11020002": {
+      "category": "Attack",
+      "owned": [],
+      "equipped": [
+        [
+          31,
+          20
+        ]
+      ]
+    },
+    "12030001": {
+      "category": "Defense",
+      "owned": [],
+      "equipped": [
+        [
+          52,
+          30
+        ]
+      ]
+    },
+    "13010001": {
+      "category": "Etc",
+      "owned": [
+        [
+          193,
+          50
+        ]
+      ],
+      "equipped": [
+        [
+          282,
+          120
+        ]
+      ]
+    },
+    "14000001": {
+      "category": "None",
+      "owned": [
+        [
+          193,
+          20
+        ]
+      ],
+      "equipped": []
+    }
+  }
+}

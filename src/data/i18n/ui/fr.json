@@ -563,8 +563,8 @@
     "characterNameHint": "Le nom donné par le jeu le remplace au prochain chargement.",
     "modeOnly": "Uniquement en {mode}.",
     "showTotalHint": "Le total du groupe en bas, sur chaque onglet : DPS, Soins et Défenseur.",
-    "spawnNotices": "Compte à rebours des monstres uniques de terrain et des failles spatio-temporelles",
-    "spawnNoticesHint": "Dans les notifications : 30, 15 et 5 minutes avant un monstre unique de terrain, 5 minutes avant une faille spatio-temporelle.",
+    "spawnNotices": "Compte à rebours des boss et des failles spatio-temporelles",
+    "spawnNoticesHint": "Dans les notifications : 30, 15 et 5 minutes avant un boss de l'Abysse et avant les boss de terrain Gartua, Dartan, Kashapa et Lagta, 5 minutes avant une faille spatio-temporelle. Les heures des boss de terrain arrivent quand vous ouvrez la Carte.",
     "shardWarning": "Alerte Éclats de pouvoir",
     "shardWarningHint": "Une notification quand vos coups n'utilisent plus d'Éclats de pouvoir.",
     "serverTimeZone": "Fuseau horaire du serveur",
@@ -692,6 +692,8 @@
     "title": "Notifications",
     "clearAll": "Tout effacer",
     "none": "Aucune notification",
+    "more": "{count} de plus",
+    "top": "Retour en haut",
     "pet": {
       "soul": "Âme de {pet}",
       "souls": "{pet} : +{count} âmes",
@@ -710,7 +712,9 @@
       "unnamed": "Familier {id}"
     },
     "spawn": {
-      "at": "{name} à {time}"
+      "at": "{name} à {time}",
+      "abyssBoss": "Boss de l'Abysse",
+      "fieldBoss": "Boss de terrain"
     },
     "shard": {
       "off": "Éclats de pouvoir désactivés",
@@ -719,5 +723,46 @@
     },
     "countdown": "dans {minutes} min",
     "now": "maintenant"
+  },
+  "character": {
+    "title": "Personnage",
+    "tabs": {
+      "gear": "Équipement",
+      "sheet": "Fiche de personnage",
+      "skills": "Compétences",
+      "boards": "Daevanion"
+    },
+    "level": "Niv. {n}",
+    "itemLevel": "Niv. d'objet",
+    "combatPower": "Puissance de combat",
+    "highest": "maximum {n}",
+    "seen": "Données du {date}",
+    "empty": "Aucun personnage pour l'instant",
+    "emptyHint": "Connectez-vous à un personnage avec le meter ouvert, ou passez par Sélection du personnage et revenez.",
+    "unread": "Fichiers de personnage non lus : {n}",
+    "packFailed": "Les données du jeu de cette fenêtre n'ont pas pu être chargées.",
+    "notRead": "Pas encore lu : le jeu l'envoie à la connexion.",
+    "gear": {
+      "empty": "Vide",
+      "notRead": "Détails de l'équipement non lus",
+      "sockets": "Emplacements de pierres de mana : {n}",
+      "skillLevel": "Niv. +{n}",
+      "baseAt": "Stats de base à +{n}",
+      "base": "Stats de base"
+    },
+    "titles": "Titres",
+    "titlesOwned": "{n} en possession",
+    "none": "Aucun",
+    "skills": {
+      "active": "Active",
+      "passive": "Passif",
+      "stigma": "Stigma",
+      "specialty": "Spécialisation",
+      "daevanion": "Daevanion : Niv. +{n}",
+      "gear": "Équipement porté : Niv. +{n}"
+    },
+    "boards": {
+      "nodes": "{taken} cases sur {total}"
+    }
   }
 }

@@ -1,0 +1,4063 @@
+{
+  "version": 1,
+  "server": 2560,
+  "class": "Fighter",
+  "level": 55,
+  "item_level": {
+    "as_of_ms": 1766966400000,
+    "current": 99999,
+    "highest": 99999
+  },
+  "combat_power": {
+    "as_of_ms": 1766966400000,
+    "current": 9999999,
+    "highest": 9999999
+  },
+  "gear": {
+    "as_of_ms": 1766966400000,
+    "items": [
+      {
+        "slot": 1,
+        "item": 110130100,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 2,
+        "item": 115030098,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 3,
+        "item": 210330113,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 4,
+        "item": 210430113,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 5,
+        "item": 210130114,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 6,
+        "item": 210230113,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 7,
+        "item": 210530113,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 8,
+        "item": 210630113,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 19,
+        "item": 210730113,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 17,
+        "item": 215250001,
+        "detail": {
+          "enhance": 10,
+          "item_level": 23,
+          "sockets": 0,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 10,
+        "item": 310130115,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 11,
+        "item": 310230117,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 12,
+        "item": 310230021,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 13,
+        "item": 310330117,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 14,
+        "item": 310330021,
+        "detail": {
+          "enhance": 16,
+          "item_level": 86,
+          "sockets": 4,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 15,
+        "item": 310460006,
+        "detail": {
+          "enhance": 5,
+          "item_level": 19,
+          "sockets": 1,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 16,
+        "item": 310450018,
+        "detail": {
+          "enhance": 5,
+          "item_level": 30,
+          "sockets": 2,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 22,
+        "item": 311050002,
+        "detail": {
+          "enhance": 10,
+          "item_level": 23,
+          "sockets": 0,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 23,
+        "item": 310900001,
+        "detail": {
+          "enhance": 10,
+          "item_level": 50,
+          "sockets": 0,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      },
+      {
+        "slot": 24,
+        "item": 310900001,
+        "detail": {
+          "enhance": 10,
+          "item_level": 50,
+          "sockets": 0,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 579,
+              "value": 99999
+            },
+            {
+              "stat": 578,
+              "value": 99999
+            },
+            {
+              "stat": 414,
+              "value": 99999
+            },
+            {
+              "stat": 210,
+              "value": 9999
+            },
+            {
+              "stat": 488,
+              "value": 9999
+            },
+            {
+              "stat": 487,
+              "value": 9999
+            }
+          ],
+          "skill_lines": [
+            19000100,
+            19010000
+          ]
+        }
+      }
+    ]
+  },
+  "stats": {
+    "as_of_ms": 1766966400000,
+    "values": [
+      {
+        "stat": 317,
+        "value": 9999999
+      },
+      {
+        "stat": 307,
+        "value": 9999999
+      },
+      {
+        "stat": 318,
+        "value": 9999999
+      },
+      {
+        "stat": 312,
+        "value": 9999999
+      },
+      {
+        "stat": 128,
+        "value": 9999999
+      },
+      {
+        "stat": 133,
+        "value": 9999999
+      },
+      {
+        "stat": 193,
+        "value": 9999999
+      },
+      {
+        "stat": 199,
+        "value": 9999999
+      },
+      {
+        "stat": 575,
+        "value": 9999999
+      },
+      {
+        "stat": 282,
+        "value": 99999
+      },
+      {
+        "stat": 205,
+        "value": 99999
+      },
+      {
+        "stat": 1,
+        "value": 9999999
+      },
+      {
+        "stat": 2,
+        "value": 9999999
+      },
+      {
+        "stat": 3,
+        "value": 9999999
+      },
+      {
+        "stat": 4,
+        "value": 9999999
+      },
+      {
+        "stat": 5,
+        "value": 9999999
+      },
+      {
+        "stat": 6,
+        "value": 9999999
+      },
+      {
+        "stat": 7,
+        "value": 9999999
+      },
+      {
+        "stat": 12,
+        "value": 9999999
+      },
+      {
+        "stat": 18,
+        "value": 9999999
+      },
+      {
+        "stat": 8,
+        "value": 9999999
+      },
+      {
+        "stat": 9,
+        "value": 9999999
+      },
+      {
+        "stat": 10,
+        "value": 9999999
+      },
+      {
+        "stat": 11,
+        "value": 9999999
+      },
+      {
+        "stat": 13,
+        "value": 9999999
+      },
+      {
+        "stat": 14,
+        "value": 9999999
+      },
+      {
+        "stat": 15,
+        "value": 9999999
+      },
+      {
+        "stat": 16,
+        "value": 9999999
+      },
+      {
+        "stat": 17,
+        "value": 9999999
+      },
+      {
+        "stat": 284,
+        "value": 9999999
+      },
+      {
+        "stat": 69,
+        "value": 9999999
+      },
+      {
+        "stat": 38,
+        "value": 9999999
+      },
+      {
+        "stat": 41,
+        "value": 9999999
+      },
+      {
+        "stat": 98,
+        "value": 9999999
+      },
+      {
+        "stat": 99,
+        "value": 9999999
+      },
+      {
+        "stat": 587,
+        "value": 9999999
+      },
+      {
+        "stat": 588,
+        "value": 9999999
+      },
+      {
+        "stat": 28,
+        "value": 99999
+      },
+      {
+        "stat": 70,
+        "value": 99999
+      },
+      {
+        "stat": 32,
+        "value": 99999
+      },
+      {
+        "stat": 74,
+        "value": 99999
+      },
+      {
+        "stat": 44,
+        "value": 99999
+      },
+      {
+        "stat": 47,
+        "value": 99999
+      },
+      {
+        "stat": 102,
+        "value": 99999
+      },
+      {
+        "stat": 103,
+        "value": 99999
+      },
+      {
+        "stat": 589,
+        "value": 99999
+      },
+      {
+        "stat": 590,
+        "value": 99999
+      },
+      {
+        "stat": 146,
+        "value": 99999
+      },
+      {
+        "stat": 147,
+        "value": 99999
+      },
+      {
+        "stat": 100,
+        "value": 9999999
+      },
+      {
+        "stat": 101,
+        "value": 9999999
+      },
+      {
+        "stat": 591,
+        "value": 9999999
+      },
+      {
+        "stat": 592,
+        "value": 9999999
+      },
+      {
+        "stat": 256,
+        "value": 9999999
+      },
+      {
+        "stat": 255,
+        "value": 9999999
+      },
+      {
+        "stat": 449,
+        "value": 99999
+      },
+      {
+        "stat": 445,
+        "value": 99999
+      },
+      {
+        "stat": 448,
+        "value": 99999
+      },
+      {
+        "stat": 444,
+        "value": 99999
+      },
+      {
+        "stat": 442,
+        "value": 99999
+      },
+      {
+        "stat": 446,
+        "value": 99999
+      },
+      {
+        "stat": 443,
+        "value": 99999
+      },
+      {
+        "stat": 447,
+        "value": 99999
+      },
+      {
+        "stat": 148,
+        "value": 99999
+      },
+      {
+        "stat": 153,
+        "value": 99999
+      },
+      {
+        "stat": 381,
+        "value": 99999
+      },
+      {
+        "stat": 382,
+        "value": 99999
+      },
+      {
+        "stat": 150,
+        "value": 99999
+      },
+      {
+        "stat": 155,
+        "value": 99999
+      },
+      {
+        "stat": 560,
+        "value": 99999
+      },
+      {
+        "stat": 561,
+        "value": 99999
+      },
+      {
+        "stat": 535,
+        "value": 99999
+      },
+      {
+        "stat": 536,
+        "value": 99999
+      },
+      {
+        "stat": 451,
+        "value": 99999
+      },
+      {
+        "stat": 459,
+        "value": 99999
+      },
+      {
+        "stat": 539,
+        "value": 99999
+      },
+      {
+        "stat": 540,
+        "value": 99999
+      },
+      {
+        "stat": 151,
+        "value": 99999
+      },
+      {
+        "stat": 156,
+        "value": 99999
+      },
+      {
+        "stat": 543,
+        "value": 99999
+      },
+      {
+        "stat": 544,
+        "value": 99999
+      },
+      {
+        "stat": 250,
+        "value": 99999
+      },
+      {
+        "stat": 251,
+        "value": 99999
+      },
+      {
+        "stat": 453,
+        "value": 99999
+      },
+      {
+        "stat": 461,
+        "value": 99999
+      },
+      {
+        "stat": 149,
+        "value": 99999
+      },
+      {
+        "stat": 154,
+        "value": 99999
+      },
+      {
+        "stat": 458,
+        "value": 99999
+      },
+      {
+        "stat": 466,
+        "value": 99999
+      },
+      {
+        "stat": 457,
+        "value": 99999
+      },
+      {
+        "stat": 465,
+        "value": 99999
+      },
+      {
+        "stat": 456,
+        "value": 99999
+      },
+      {
+        "stat": 464,
+        "value": 99999
+      },
+      {
+        "stat": 454,
+        "value": 99999
+      },
+      {
+        "stat": 462,
+        "value": 99999
+      },
+      {
+        "stat": 455,
+        "value": 99999
+      },
+      {
+        "stat": 463,
+        "value": 99999
+      },
+      {
+        "stat": 58,
+        "value": 9999999
+      },
+      {
+        "stat": 61,
+        "value": 9999999
+      },
+      {
+        "stat": 65,
+        "value": 99999
+      },
+      {
+        "stat": 76,
+        "value": 99999
+      },
+      {
+        "stat": 113,
+        "value": 9999999
+      },
+      {
+        "stat": 125,
+        "value": 9999999
+      },
+      {
+        "stat": 132,
+        "value": 9999999
+      },
+      {
+        "stat": 136,
+        "value": 9999999
+      },
+      {
+        "stat": 570,
+        "value": 9999999
+      },
+      {
+        "stat": 569,
+        "value": 9999999
+      },
+      {
+        "stat": 56,
+        "value": 9999999
+      },
+      {
+        "stat": 57,
+        "value": 9999999
+      },
+      {
+        "stat": 110,
+        "value": 9999999
+      },
+      {
+        "stat": 122,
+        "value": 9999999
+      },
+      {
+        "stat": 379,
+        "value": 99999
+      },
+      {
+        "stat": 380,
+        "value": 99999
+      },
+      {
+        "stat": 50,
+        "value": 9999999
+      },
+      {
+        "stat": 51,
+        "value": 9999999
+      },
+      {
+        "stat": 520,
+        "value": 99999
+      },
+      {
+        "stat": 521,
+        "value": 99999
+      },
+      {
+        "stat": 393,
+        "value": 9999999
+      },
+      {
+        "stat": 394,
+        "value": 9999999
+      },
+      {
+        "stat": 395,
+        "value": 9999999
+      },
+      {
+        "stat": 396,
+        "value": 9999999
+      },
+      {
+        "stat": 397,
+        "value": 9999999
+      },
+      {
+        "stat": 398,
+        "value": 9999999
+      },
+      {
+        "stat": 399,
+        "value": 9999999
+      },
+      {
+        "stat": 400,
+        "value": 9999999
+      },
+      {
+        "stat": 483,
+        "value": 99999
+      },
+      {
+        "stat": 484,
+        "value": 99999
+      },
+      {
+        "stat": 401,
+        "value": 9999999
+      },
+      {
+        "stat": 402,
+        "value": 9999999
+      },
+      {
+        "stat": 403,
+        "value": 9999999
+      },
+      {
+        "stat": 404,
+        "value": 9999999
+      },
+      {
+        "stat": 405,
+        "value": 9999999
+      },
+      {
+        "stat": 406,
+        "value": 9999999
+      },
+      {
+        "stat": 407,
+        "value": 9999999
+      },
+      {
+        "stat": 408,
+        "value": 9999999
+      },
+      {
+        "stat": 485,
+        "value": 99999
+      },
+      {
+        "stat": 486,
+        "value": 99999
+      },
+      {
+        "stat": 409,
+        "value": 9999999
+      },
+      {
+        "stat": 410,
+        "value": 9999999
+      },
+      {
+        "stat": 411,
+        "value": 9999999
+      },
+      {
+        "stat": 412,
+        "value": 9999999
+      },
+      {
+        "stat": 413,
+        "value": 9999999
+      },
+      {
+        "stat": 414,
+        "value": 9999999
+      },
+      {
+        "stat": 415,
+        "value": 9999999
+      },
+      {
+        "stat": 416,
+        "value": 9999999
+      },
+      {
+        "stat": 487,
+        "value": 99999
+      },
+      {
+        "stat": 488,
+        "value": 99999
+      },
+      {
+        "stat": 417,
+        "value": 9999999
+      },
+      {
+        "stat": 418,
+        "value": 9999999
+      },
+      {
+        "stat": 419,
+        "value": 9999999
+      },
+      {
+        "stat": 420,
+        "value": 9999999
+      },
+      {
+        "stat": 421,
+        "value": 9999999
+      },
+      {
+        "stat": 422,
+        "value": 9999999
+      },
+      {
+        "stat": 423,
+        "value": 9999999
+      },
+      {
+        "stat": 424,
+        "value": 9999999
+      },
+      {
+        "stat": 489,
+        "value": 99999
+      },
+      {
+        "stat": 490,
+        "value": 99999
+      },
+      {
+        "stat": 164,
+        "value": 9999999
+      },
+      {
+        "stat": 170,
+        "value": 9999999
+      },
+      {
+        "stat": 165,
+        "value": 9999999
+      },
+      {
+        "stat": 171,
+        "value": 9999999
+      },
+      {
+        "stat": 166,
+        "value": 9999999
+      },
+      {
+        "stat": 172,
+        "value": 9999999
+      },
+      {
+        "stat": 167,
+        "value": 9999999
+      },
+      {
+        "stat": 173,
+        "value": 9999999
+      },
+      {
+        "stat": 176,
+        "value": 99999
+      },
+      {
+        "stat": 182,
+        "value": 99999
+      },
+      {
+        "stat": 177,
+        "value": 99999
+      },
+      {
+        "stat": 183,
+        "value": 99999
+      },
+      {
+        "stat": 178,
+        "value": 99999
+      },
+      {
+        "stat": 184,
+        "value": 99999
+      },
+      {
+        "stat": 179,
+        "value": 99999
+      },
+      {
+        "stat": 185,
+        "value": 99999
+      },
+      {
+        "stat": 241,
+        "value": 99999
+      },
+      {
+        "stat": 214,
+        "value": 99999
+      },
+      {
+        "stat": 208,
+        "value": 9999999
+      },
+      {
+        "stat": 210,
+        "value": 99999
+      },
+      {
+        "stat": 218,
+        "value": 99999
+      },
+      {
+        "stat": 235,
+        "value": 99999
+      },
+      {
+        "stat": 385,
+        "value": 99999
+      },
+      {
+        "stat": 236,
+        "value": 99999
+      },
+      {
+        "stat": 242,
+        "value": 9999999
+      },
+      {
+        "stat": 298,
+        "value": 9999999
+      },
+      {
+        "stat": 275,
+        "value": 9999999
+      },
+      {
+        "stat": 195,
+        "value": 9999999
+      },
+      {
+        "stat": 221,
+        "value": 9999999
+      },
+      {
+        "stat": 220,
+        "value": 99999
+      },
+      {
+        "stat": 276,
+        "value": 9999999
+      },
+      {
+        "stat": 201,
+        "value": 9999999
+      },
+      {
+        "stat": 578,
+        "value": 9999999
+      },
+      {
+        "stat": 579,
+        "value": 9999999
+      },
+      {
+        "stat": 386,
+        "value": 99999
+      },
+      {
+        "stat": 516,
+        "value": 99999
+      },
+      {
+        "stat": 585,
+        "value": 99999
+      },
+      {
+        "stat": 277,
+        "value": 9999999
+      },
+      {
+        "stat": 244,
+        "value": 9999999
+      },
+      {
+        "stat": 300,
+        "value": 9999999
+      },
+      {
+        "stat": 301,
+        "value": 9999999
+      }
+    ]
+  },
+  "skills": {
+    "as_of_ms": 1766966400000,
+    "list": [
+      {
+        "skill": 19000100,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19010000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19040000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19130000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19070000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19420000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19250000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19170000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19090000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19230000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19200000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19160000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19450000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19730000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19710000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19720000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19740000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19750000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19760000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19780000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19770000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19790000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19800000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19290000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19350000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19460000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19300000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19310000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19280000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19330000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19370000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19320000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19360000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19390000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19380000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      },
+      {
+        "skill": 19400000,
+        "level": 20,
+        "base": 10,
+        "board": 7,
+        "gear": 3
+      }
+    ]
+  },
+  "specialties": {
+    "as_of_ms": 1766966400000,
+    "list": [
+      {
+        "skill": 19000100,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19000150
+          },
+          {
+            "slot": 2,
+            "part": 19000140
+          },
+          {
+            "slot": 3,
+            "part": 19000130
+          }
+        ]
+      },
+      {
+        "skill": 19010000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19010050
+          },
+          {
+            "slot": 2,
+            "part": 19010040
+          },
+          {
+            "slot": 3,
+            "part": 19010030
+          }
+        ]
+      },
+      {
+        "skill": 19040000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19040050
+          },
+          {
+            "slot": 2,
+            "part": 19040040
+          },
+          {
+            "slot": 3,
+            "part": 19040030
+          }
+        ]
+      },
+      {
+        "skill": 19130000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19130050
+          },
+          {
+            "slot": 2,
+            "part": 19130040
+          },
+          {
+            "slot": 3,
+            "part": 19130030
+          }
+        ]
+      },
+      {
+        "skill": 19070000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19070050
+          },
+          {
+            "slot": 2,
+            "part": 19070040
+          },
+          {
+            "slot": 3,
+            "part": 19070030
+          }
+        ]
+      },
+      {
+        "skill": 19420000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19420050
+          },
+          {
+            "slot": 2,
+            "part": 19420040
+          },
+          {
+            "slot": 3,
+            "part": 19420030
+          }
+        ]
+      },
+      {
+        "skill": 19250000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19250050
+          },
+          {
+            "slot": 2,
+            "part": 19250040
+          },
+          {
+            "slot": 3,
+            "part": 19250030
+          }
+        ]
+      },
+      {
+        "skill": 19170000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19170050
+          },
+          {
+            "slot": 2,
+            "part": 19170040
+          },
+          {
+            "slot": 3,
+            "part": 19170030
+          }
+        ]
+      },
+      {
+        "skill": 19090000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19090050
+          },
+          {
+            "slot": 2,
+            "part": 19090040
+          },
+          {
+            "slot": 3,
+            "part": 19090030
+          }
+        ]
+      },
+      {
+        "skill": 19230000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19230050
+          },
+          {
+            "slot": 2,
+            "part": 19230040
+          },
+          {
+            "slot": 3,
+            "part": 19230030
+          }
+        ]
+      },
+      {
+        "skill": 19200000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19200050
+          },
+          {
+            "slot": 2,
+            "part": 19200040
+          },
+          {
+            "slot": 3,
+            "part": 19200030
+          }
+        ]
+      },
+      {
+        "skill": 19160000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19160050
+          },
+          {
+            "slot": 2,
+            "part": 19160040
+          },
+          {
+            "slot": 3,
+            "part": 19160030
+          }
+        ]
+      },
+      {
+        "skill": 19450000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 19450050
+          },
+          {
+            "slot": 2,
+            "part": 19450040
+          },
+          {
+            "slot": 3,
+            "part": 19450030
+          }
+        ]
+      }
+    ]
+  },
+  "boards": {
+    "as_of_ms": 1766966400000,
+    "list": [
+      {
+        "board": 91,
+        "nodes": [
+          910001,
+          910002,
+          910003,
+          910006,
+          910007,
+          910008,
+          910009,
+          910010,
+          910011,
+          910013,
+          910014,
+          910015,
+          910016,
+          910018,
+          910019,
+          910020,
+          910021,
+          910024,
+          910026,
+          910027,
+          910028,
+          910030,
+          910031,
+          910032,
+          910033,
+          910036,
+          910037,
+          910038,
+          910039,
+          910040,
+          910043,
+          910044,
+          910045,
+          910048,
+          910051,
+          910053,
+          910055,
+          910056,
+          910057,
+          910058,
+          910061,
+          910062,
+          910063,
+          910065,
+          910066,
+          910067,
+          910068,
+          910069,
+          910070,
+          910073,
+          910074,
+          910076,
+          910078,
+          910079,
+          910080,
+          910082,
+          910085,
+          910086,
+          910087,
+          910089,
+          910091,
+          910092,
+          910093,
+          910095,
+          910097,
+          910098,
+          910099,
+          910100,
+          910102,
+          910103,
+          910104,
+          910105,
+          910106,
+          910108,
+          910110,
+          910111,
+          910115,
+          910116,
+          910118,
+          910120,
+          910121,
+          910122,
+          910123,
+          910124,
+          910126,
+          910127,
+          910128,
+          910129,
+          910131,
+          910133,
+          910134,
+          910135,
+          910137,
+          910139,
+          910140,
+          910141,
+          910144,
+          910146,
+          910147,
+          910148,
+          910150,
+          910152,
+          910153,
+          910156,
+          910157,
+          910158,
+          910159,
+          910160,
+          910161,
+          910163,
+          910164,
+          910165,
+          910168,
+          910169,
+          910170,
+          910171,
+          910173,
+          910175,
+          910178,
+          910181,
+          910182,
+          910183,
+          910186,
+          910187,
+          910188,
+          910189,
+          910190,
+          910193,
+          910194,
+          910195,
+          910196,
+          910198,
+          910199,
+          910200,
+          910202,
+          910205,
+          910206,
+          910207,
+          910208,
+          910210,
+          910211,
+          910212,
+          910213,
+          910215,
+          910216,
+          910217,
+          910218,
+          910219,
+          910220,
+          910223,
+          910224,
+          910225
+        ]
+      },
+      {
+        "board": 92,
+        "nodes": [
+          920001,
+          920002,
+          920003,
+          920007,
+          920008,
+          920009,
+          920010,
+          920013,
+          920014,
+          920015,
+          920016,
+          920018,
+          920019,
+          920020,
+          920021,
+          920022,
+          920025,
+          920026,
+          920028,
+          920030,
+          920031,
+          920032,
+          920033,
+          920035,
+          920037,
+          920041,
+          920042,
+          920043,
+          920044,
+          920045,
+          920047,
+          920050,
+          920051,
+          920052,
+          920053,
+          920054,
+          920056,
+          920059,
+          920061,
+          920062,
+          920063,
+          920064,
+          920065,
+          920067,
+          920069,
+          920070,
+          920071,
+          920073,
+          920074,
+          920075,
+          920076,
+          920078,
+          920080,
+          920081,
+          920082,
+          920083,
+          920084,
+          920086,
+          920087,
+          920088,
+          920090,
+          920091,
+          920092,
+          920093,
+          920095,
+          920097,
+          920099,
+          920100,
+          920101,
+          920103,
+          920104,
+          920105,
+          920106,
+          920108,
+          920110,
+          920112,
+          920114,
+          920116,
+          920118,
+          920120,
+          920121,
+          920122,
+          920123,
+          920125,
+          920126,
+          920127,
+          920129,
+          920131,
+          920133,
+          920134,
+          920135,
+          920136,
+          920138,
+          920139,
+          920140,
+          920142,
+          920143,
+          920144,
+          920145,
+          920146,
+          920148,
+          920150,
+          920151,
+          920152,
+          920153,
+          920155,
+          920156,
+          920157,
+          920159,
+          920161,
+          920162,
+          920163,
+          920164,
+          920165,
+          920167,
+          920170,
+          920172,
+          920173,
+          920174,
+          920175,
+          920176,
+          920179,
+          920181,
+          920182,
+          920183,
+          920184,
+          920185,
+          920189,
+          920191,
+          920193,
+          920194,
+          920195,
+          920196,
+          920198,
+          920200,
+          920201,
+          920204,
+          920205,
+          920206,
+          920207,
+          920208,
+          920210,
+          920211,
+          920212,
+          920213,
+          920216,
+          920217,
+          920218,
+          920219,
+          920223,
+          920224,
+          920225
+        ]
+      },
+      {
+        "board": 93,
+        "nodes": [
+          930001,
+          930002,
+          930003,
+          930004,
+          930005,
+          930007,
+          930008,
+          930009,
+          930010,
+          930011,
+          930013,
+          930014,
+          930015,
+          930016,
+          930018,
+          930020,
+          930021,
+          930022,
+          930026,
+          930027,
+          930028,
+          930030,
+          930031,
+          930032,
+          930033,
+          930034,
+          930037,
+          930038,
+          930039,
+          930040,
+          930041,
+          930043,
+          930044,
+          930045,
+          930047,
+          930049,
+          930051,
+          930052,
+          930054,
+          930056,
+          930057,
+          930059,
+          930062,
+          930063,
+          930064,
+          930065,
+          930066,
+          930069,
+          930072,
+          930073,
+          930074,
+          930076,
+          930077,
+          930079,
+          930081,
+          930083,
+          930084,
+          930085,
+          930086,
+          930087,
+          930089,
+          930090,
+          930091,
+          930094,
+          930095,
+          930096,
+          930097,
+          930098,
+          930100,
+          930102,
+          930105,
+          930106,
+          930107,
+          930108,
+          930109,
+          930111,
+          930115,
+          930117,
+          930118,
+          930119,
+          930120,
+          930121,
+          930124,
+          930126,
+          930128,
+          930129,
+          930130,
+          930131,
+          930132,
+          930135,
+          930136,
+          930137,
+          930139,
+          930140,
+          930141,
+          930142,
+          930143,
+          930145,
+          930147,
+          930149,
+          930150,
+          930152,
+          930153,
+          930154,
+          930157,
+          930160,
+          930161,
+          930162,
+          930163,
+          930164,
+          930167,
+          930169,
+          930170,
+          930172,
+          930174,
+          930175,
+          930177,
+          930179,
+          930181,
+          930182,
+          930183,
+          930185,
+          930186,
+          930187,
+          930188,
+          930189,
+          930192,
+          930193,
+          930194,
+          930195,
+          930196,
+          930198,
+          930199,
+          930200,
+          930204,
+          930205,
+          930206,
+          930208,
+          930210,
+          930211,
+          930212,
+          930213,
+          930215,
+          930216,
+          930217,
+          930218,
+          930219,
+          930221,
+          930222,
+          930223,
+          930224,
+          930225
+        ]
+      },
+      {
+        "board": 94,
+        "nodes": [
+          940001,
+          940002,
+          940003,
+          940004,
+          940006,
+          940007,
+          940008,
+          940009,
+          940010,
+          940013,
+          940014,
+          940015,
+          940016,
+          940019,
+          940020,
+          940021,
+          940023,
+          940025,
+          940026,
+          940027,
+          940028,
+          940030,
+          940031,
+          940032,
+          940033,
+          940034,
+          940036,
+          940037,
+          940038,
+          940039,
+          940040,
+          940043,
+          940044,
+          940045,
+          940046,
+          940049,
+          940052,
+          940055,
+          940059,
+          940061,
+          940062,
+          940063,
+          940064,
+          940065,
+          940066,
+          940067,
+          940069,
+          940070,
+          940071,
+          940073,
+          940074,
+          940075,
+          940078,
+          940081,
+          940084,
+          940086,
+          940087,
+          940088,
+          940090,
+          940091,
+          940092,
+          940093,
+          940095,
+          940096,
+          940097,
+          940098,
+          940099,
+          940100,
+          940101,
+          940103,
+          940104,
+          940105,
+          940106,
+          940108,
+          940109,
+          940110,
+          940116,
+          940117,
+          940118,
+          940120,
+          940121,
+          940122,
+          940123,
+          940125,
+          940126,
+          940127,
+          940128,
+          940129,
+          940130,
+          940131,
+          940133,
+          940134,
+          940135,
+          940136,
+          940138,
+          940139,
+          940140,
+          940142,
+          940145,
+          940148,
+          940151,
+          940152,
+          940153,
+          940155,
+          940156,
+          940157,
+          940159,
+          940160,
+          940161,
+          940162,
+          940163,
+          940164,
+          940165,
+          940167,
+          940171,
+          940174,
+          940177,
+          940180,
+          940181,
+          940182,
+          940183,
+          940186,
+          940187,
+          940188,
+          940189,
+          940190,
+          940192,
+          940193,
+          940194,
+          940195,
+          940196,
+          940198,
+          940199,
+          940200,
+          940201,
+          940203,
+          940205,
+          940206,
+          940207,
+          940210,
+          940211,
+          940212,
+          940213,
+          940216,
+          940217,
+          940218,
+          940219,
+          940220,
+          940222,
+          940223,
+          940224,
+          940225
+        ]
+      },
+      {
+        "board": 95,
+        "nodes": [
+          950001,
+          950002,
+          950003,
+          950007,
+          950008,
+          950009,
+          950011,
+          950012,
+          950013,
+          950014,
+          950015,
+          950016,
+          950018,
+          950019,
+          950020,
+          950021,
+          950022,
+          950024,
+          950026,
+          950028,
+          950030,
+          950031,
+          950032,
+          950034,
+          950037,
+          950038,
+          950039,
+          950040,
+          950041,
+          950042,
+          950043,
+          950044,
+          950045,
+          950047,
+          950049,
+          950050,
+          950051,
+          950052,
+          950055,
+          950057,
+          950059,
+          950061,
+          950062,
+          950063,
+          950064,
+          950067,
+          950070,
+          950072,
+          950073,
+          950074,
+          950076,
+          950079,
+          950081,
+          950082,
+          950083,
+          950084,
+          950085,
+          950087,
+          950089,
+          950091,
+          950092,
+          950093,
+          950094,
+          950095,
+          950096,
+          950098,
+          950100,
+          950101,
+          950102,
+          950103,
+          950104,
+          950105,
+          950106,
+          950108,
+          950111,
+          950112,
+          950114,
+          950115,
+          950118,
+          950120,
+          950121,
+          950122,
+          950123,
+          950124,
+          950125,
+          950126,
+          950128,
+          950130,
+          950131,
+          950132,
+          950133,
+          950134,
+          950135,
+          950137,
+          950139,
+          950141,
+          950142,
+          950143,
+          950144,
+          950145,
+          950147,
+          950150,
+          950152,
+          950153,
+          950154,
+          950156,
+          950159,
+          950162,
+          950163,
+          950164,
+          950165,
+          950167,
+          950169,
+          950171,
+          950174,
+          950175,
+          950176,
+          950177,
+          950179,
+          950181,
+          950182,
+          950183,
+          950184,
+          950185,
+          950186,
+          950187,
+          950188,
+          950189,
+          950192,
+          950194,
+          950195,
+          950196,
+          950198,
+          950200,
+          950202,
+          950204,
+          950205,
+          950206,
+          950207,
+          950208,
+          950210,
+          950211,
+          950212,
+          950213,
+          950214,
+          950215,
+          950217,
+          950218,
+          950219,
+          950223,
+          950224,
+          950225
+        ]
+      },
+      {
+        "board": 96,
+        "nodes": [
+          960001,
+          960002,
+          960003,
+          960004,
+          960006,
+          960007,
+          960008,
+          960010,
+          960011,
+          960012,
+          960013,
+          960014,
+          960015,
+          960016,
+          960019,
+          960020,
+          960021,
+          960023,
+          960025,
+          960028,
+          960030,
+          960031,
+          960032,
+          960033,
+          960034,
+          960036,
+          960037,
+          960038,
+          960039,
+          960040,
+          960041,
+          960042,
+          960043,
+          960044,
+          960045,
+          960048,
+          960052,
+          960054,
+          960056,
+          960058,
+          960061,
+          960062,
+          960063,
+          960065,
+          960066,
+          960067,
+          960068,
+          960069,
+          960070,
+          960071,
+          960072,
+          960073,
+          960076,
+          960078,
+          960079,
+          960080,
+          960082,
+          960085,
+          960088,
+          960089,
+          960090,
+          960091,
+          960095,
+          960096,
+          960097,
+          960098,
+          960099,
+          960100,
+          960101,
+          960102,
+          960103,
+          960105,
+          960106,
+          960107,
+          960108,
+          960111,
+          960115,
+          960118,
+          960119,
+          960120,
+          960121,
+          960123,
+          960124,
+          960125,
+          960126,
+          960127,
+          960128,
+          960129,
+          960130,
+          960131,
+          960135,
+          960136,
+          960137,
+          960138,
+          960141,
+          960144,
+          960146,
+          960147,
+          960148,
+          960150,
+          960153,
+          960154,
+          960155,
+          960156,
+          960157,
+          960158,
+          960159,
+          960160,
+          960161,
+          960163,
+          960164,
+          960165,
+          960168,
+          960170,
+          960172,
+          960174,
+          960178,
+          960181,
+          960182,
+          960183,
+          960184,
+          960185,
+          960186,
+          960187,
+          960188,
+          960189,
+          960190,
+          960192,
+          960193,
+          960194,
+          960195,
+          960196,
+          960198,
+          960201,
+          960203,
+          960205,
+          960206,
+          960207,
+          960210,
+          960211,
+          960212,
+          960213,
+          960214,
+          960215,
+          960216,
+          960218,
+          960219,
+          960220,
+          960222,
+          960223,
+          960224,
+          960225
+        ]
+      }
+    ]
+  },
+  "titles": {
+    "as_of_ms": 1766966400000,
+    "owned": [
+      11010001,
+      11010002,
+      11010003,
+      11010004,
+      11010005,
+      11020001,
+      11020002,
+      11020003,
+      11020004,
+      11020005,
+      11020006,
+      11020007,
+      11020008,
+      11020009,
+      11020010,
+      11020011,
+      11020012,
+      11020013,
+      11020014,
+      11020015,
+      11020016,
+      11020017,
+      11020018,
+      11020019,
+      11020020,
+      11020021,
+      11020022,
+      11020023,
+      11020024,
+      11020025,
+      11020026,
+      11020027,
+      11020028,
+      11020029,
+      11020030,
+      11020031,
+      11020032,
+      11020033,
+      11020034,
+      11020035,
+      11020036,
+      11020037,
+      11020038,
+      11020039,
+      11020040,
+      11020041,
+      11020042,
+      11020043,
+      11020044,
+      11020045,
+      11020046,
+      11020047,
+      11020048,
+      11020049,
+      11020050,
+      11020051,
+      11020052,
+      11020053,
+      11020054,
+      11020055,
+      11020056,
+      11020057,
+      11020058,
+      11020059,
+      11020060,
+      11020061,
+      11020062,
+      11020063,
+      11020064,
+      11020065,
+      11020066,
+      11020067,
+      11020068,
+      11020069,
+      11020070,
+      11020071,
+      11020072,
+      11020073,
+      11020074,
+      11020075,
+      11020076,
+      11020077,
+      11020078,
+      11020079,
+      11020080,
+      11020081,
+      11020082,
+      11020083,
+      11020084,
+      11020085,
+      11020086,
+      12010001,
+      12010002,
+      12010003,
+      12010004,
+      12010005,
+      12010006,
+      12010007,
+      12010008,
+      12010009,
+      12010010,
+      12010011,
+      12010012,
+      12010013,
+      12010014,
+      12010015,
+      12010016,
+      12010017,
+      12010018,
+      12010019,
+      12010020,
+      12010021,
+      12010022,
+      12010023,
+      12010024,
+      12010025,
+      12010026,
+      12010027,
+      12010028,
+      12010029,
+      12010030,
+      12010031,
+      12010032,
+      12010033,
+      12010034,
+      12010035,
+      12010036,
+      12010037,
+      12010038,
+      12010039,
+      12010040,
+      12010041,
+      12010042,
+      12010043,
+      12010044,
+      12010045,
+      12010046,
+      12010047,
+      12010048,
+      12010049,
+      12010050,
+      12010051,
+      12010052,
+      12010053,
+      12010054,
+      12010055,
+      12010056,
+      12010057,
+      12010058,
+      12010059,
+      12010060,
+      12010061,
+      12010062,
+      12010063,
+      12010064,
+      12010065,
+      12010066,
+      12010067,
+      12010068,
+      12010069,
+      12010070,
+      12010071,
+      12010072,
+      12010073,
+      12010074,
+      12010075,
+      12010076,
+      12010077,
+      12010078,
+      12010079,
+      12010080,
+      12010081,
+      12020001,
+      12020002,
+      12020003,
+      12020004,
+      12020005,
+      12020006,
+      12020007,
+      12020008,
+      12020009,
+      12020010,
+      12020011,
+      12020012,
+      12020013,
+      12020014,
+      12020015,
+      12020016,
+      12020017,
+      12020018,
+      12020019,
+      12020020,
+      12020021,
+      12030001,
+      12030002,
+      12030003,
+      12030004,
+      12030005,
+      12030006,
+      12030007,
+      13010001,
+      13010002,
+      13010003,
+      13010004,
+      13010005,
+      13010006,
+      13010007,
+      13010008,
+      13010009,
+      13010010,
+      13010012,
+      13010013,
+      13010014,
+      13010015,
+      13010016,
+      13010017,
+      13010018,
+      13010019,
+      13010020,
+      13010021,
+      13010022,
+      13010023,
+      13010024,
+      13010025,
+      13010026,
+      13010027,
+      13010028,
+      13010029,
+      13010030,
+      13010031,
+      13010032,
+      13010033,
+      13020001,
+      13020002,
+      13020003,
+      13020004,
+      13020005,
+      13020006,
+      13020007,
+      13020008,
+      13020009,
+      13020010,
+      13020011,
+      13020012,
+      13020013,
+      13020014,
+      13020015,
+      13020016,
+      13020017,
+      13020018,
+      13020019,
+      13020020,
+      13020021,
+      13020022,
+      13020023,
+      13020024,
+      13020025,
+      13020026,
+      13020027,
+      13020028,
+      13020029,
+      13020030,
+      13020034,
+      13020036,
+      13020037,
+      13020038,
+      13020039,
+      13020040,
+      13020041,
+      13020042,
+      13020043,
+      13020044,
+      13020045,
+      13020046,
+      13020047,
+      13020048,
+      13020049,
+      13020050,
+      13020051,
+      13020052,
+      13020053,
+      13020054,
+      13020055,
+      13020056,
+      13020057,
+      13030001,
+      13030002,
+      13030003,
+      13030004,
+      13030005,
+      13030006,
+      13030007,
+      13030008,
+      13030009,
+      13030010,
+      13030011,
+      13030012,
+      13030013,
+      13030014,
+      13030015,
+      13030016,
+      13030017,
+      13030018,
+      13030019,
+      13030020,
+      13030021,
+      13030022,
+      13030023,
+      13030024,
+      13030025,
+      13030028,
+      13030029,
+      13030030,
+      13030031,
+      13030032,
+      13030033,
+      13030034,
+      13030035,
+      13030036,
+      13040001,
+      13040002,
+      13040003,
+      13040006,
+      13040007,
+      13040008,
+      13040011,
+      13040012,
+      13040013,
+      13040016,
+      13040017,
+      13040018,
+      13040021,
+      13040022,
+      13040023,
+      13040026,
+      13040027,
+      13040028,
+      13040031,
+      13040032,
+      13040033,
+      13040034,
+      13040035,
+      13040036,
+      13040037,
+      13040038,
+      13040039,
+      13040040,
+      13040041,
+      13040042,
+      13040043,
+      13040044,
+      13040045,
+      13040046,
+      13040047,
+      13040048,
+      13040049,
+      13040050,
+      13040051,
+      13040052,
+      13040053,
+      13040054,
+      13040055,
+      13040056,
+      13040057,
+      13040058,
+      13040059,
+      13040060,
+      13040061,
+      13040062,
+      13040063,
+      13040064,
+      13040065,
+      13040066,
+      13050007,
+      13050008,
+      13050009,
+      13050010,
+      13050011,
+      13050012,
+      13050013,
+      13050014,
+      13050015,
+      13050016,
+      13050017,
+      13050018,
+      13050019,
+      13050020,
+      13050023,
+      13050024,
+      13050027,
+      13050028,
+      13050029,
+      13050030,
+      13050031,
+      13050032,
+      13050033,
+      13050034,
+      13050035,
+      13050036,
+      13050037,
+      13050038,
+      13050039,
+      13050040,
+      13050041,
+      13050042,
+      13050043,
+      13050044,
+      13050045,
+      13050046,
+      13050047,
+      13050051,
+      13051001,
+      13051002,
+      13051003,
+      13051004,
+      13051005,
+      13051006,
+      13051007,
+      13051008,
+      13051009,
+      14030001,
+      14030002,
+      14030003,
+      14030004,
+      14030005,
+      14030006,
+      14030007,
+      14030008,
+      14030009,
+      14030010,
+      14030011,
+      14030012,
+      14030013,
+      14030014,
+      14030015,
+      14030016,
+      14030017,
+      14030018,
+      14030019,
+      14030020,
+      14030021,
+      14030022,
+      14030023,
+      14030024,
+      14030025,
+      14030026,
+      14030027,
+      14030028,
+      14030029,
+      14030030,
+      14030031,
+      14030032,
+      14030033,
+      14030034,
+      14030035,
+      14030036,
+      14030037,
+      14030038,
+      14030039,
+      14030040,
+      14030041,
+      14030042,
+      14030043,
+      14030044,
+      14030045,
+      14030046,
+      14030047,
+      14030048,
+      14030049,
+      14030050,
+      14030051,
+      14030052,
+      14030053,
+      14030054,
+      14030055,
+      14030056,
+      14030057,
+      14030058,
+      14030059,
+      14030060,
+      14030061,
+      14030062,
+      14030063,
+      14030064,
+      14030065,
+      14030066,
+      14030067,
+      14030068,
+      14030069,
+      14030070,
+      14030071,
+      14030072,
+      14030073,
+      14030074,
+      14030075,
+      14030076,
+      14030077,
+      14030078,
+      21010001,
+      21010002,
+      21010003,
+      21010004,
+      21010005,
+      21020001,
+      21020002,
+      21020003,
+      21020004,
+      21020005,
+      21020006,
+      21020007,
+      21020008,
+      21020009,
+      21020010,
+      21020011,
+      21020012,
+      21020013,
+      21020014,
+      21020015,
+      21020016,
+      21020017,
+      21020018,
+      21020019,
+      21020020,
+      21020021,
+      21020022,
+      21020023,
+      21020024,
+      21020025,
+      21020026,
+      21020027,
+      21020028,
+      21020029,
+      21020030,
+      21020031,
+      21020032,
+      21020033,
+      21020034,
+      21020035,
+      21020036,
+      21020037,
+      21020038,
+      21020039,
+      21020040,
+      21020041,
+      21020042,
+      21020043,
+      21020044,
+      21020045,
+      21020046,
+      21020047,
+      21020048,
+      21020049,
+      21020050,
+      21020051,
+      21020052,
+      21020053,
+      21020054,
+      21020055,
+      21020056,
+      21020057,
+      21020058,
+      21020059,
+      21020060,
+      21020061,
+      21020062,
+      21020063,
+      21020064,
+      21020065,
+      21020066,
+      21020067,
+      21020068,
+      21020069,
+      21020070,
+      21020071,
+      21020072,
+      21020073,
+      21020074,
+      21020075,
+      21020076,
+      21020077,
+      21020078,
+      21020079,
+      21020080,
+      21020081,
+      21020082,
+      21020083,
+      21020084,
+      21020085,
+      21020086,
+      22010001,
+      22010002,
+      22010003,
+      22010004,
+      22010005,
+      22010006,
+      22010007,
+      22010008,
+      22010009,
+      22010010,
+      22010011,
+      22010012,
+      22010013,
+      22010014,
+      22010015,
+      22010016,
+      22010017,
+      22010018,
+      22010019,
+      22010020,
+      22010021,
+      22010022,
+      22010023,
+      22010024,
+      22010025,
+      22010026,
+      22010027,
+      22010028,
+      22010029,
+      22010030,
+      22010031,
+      22010032,
+      22010033,
+      22010034,
+      22010035,
+      22010036,
+      22010037,
+      22010038,
+      22010039,
+      22010040,
+      22010041,
+      22010042,
+      22010043,
+      22010044,
+      22010045,
+      22010046,
+      22010047,
+      22010048,
+      22010049,
+      22010050,
+      22010051,
+      22010052,
+      22010053,
+      22010054,
+      22010055,
+      22010056,
+      22010057,
+      22010058,
+      22010059,
+      22010060,
+      22010061,
+      22010062,
+      22010063,
+      22010064,
+      22010065,
+      22010066,
+      22010067,
+      22010068,
+      22010069,
+      22010070,
+      22010071,
+      22010072,
+      22010073,
+      22010074,
+      22010075,
+      22010076,
+      22010077,
+      22010078,
+      22010079,
+      22010080,
+      22010081,
+      22020001,
+      22020002,
+      22020003,
+      22020004,
+      22020005,
+      22020006,
+      22020007,
+      22020008,
+      22020009,
+      22020010,
+      22020011,
+      22020012,
+      22020013,
+      22020014,
+      22020015,
+      22020016,
+      22020017,
+      22020018,
+      22020019,
+      22020020,
+      22020021,
+      22030001,
+      22030002,
+      22030003,
+      22030004,
+      22030005,
+      22030006,
+      22030007,
+      23010001,
+      23010002,
+      23010003,
+      23010004,
+      23010005,
+      23010006,
+      23010007,
+      23010008,
+      23010009,
+      23010010,
+      23010012,
+      23010013,
+      23010014,
+      23010015,
+      23010016,
+      23010017,
+      23010018,
+      23010019,
+      23010020,
+      23010021,
+      23010022,
+      23010023,
+      23010024,
+      23010025,
+      23010026,
+      23010027,
+      23010028,
+      23010029,
+      23010030,
+      23010031,
+      23010032,
+      23010033,
+      23020001,
+      23020002,
+      23020003,
+      23020004,
+      23020005,
+      23020006,
+      23020007,
+      23020008,
+      23020009,
+      23020010,
+      23020011,
+      23020012,
+      23020013,
+      23020014,
+      23020015,
+      23020016,
+      23020017,
+      23020018,
+      23020019,
+      23020020,
+      23020021,
+      23020022,
+      23020023,
+      23020024,
+      23020025,
+      23020026,
+      23020027,
+      23020028,
+      23020029,
+      23020030,
+      23020034,
+      23020036,
+      23020037,
+      23020038,
+      23020039,
+      23020040,
+      23020041,
+      23020042,
+      23020043,
+      23020044,
+      23020045,
+      23020046,
+      23020047,
+      23020048,
+      23020049,
+      23020050,
+      23020051,
+      23020052,
+      23020053,
+      23020054,
+      23020055,
+      23020056,
+      23020057,
+      23030001,
+      23030002,
+      23030003,
+      23030004,
+      23030005,
+      23030006,
+      23030007,
+      23030008,
+      23030009,
+      23030010,
+      23030011,
+      23030012,
+      23030013,
+      23030014,
+      23030015,
+      23030016,
+      23030017,
+      23030018,
+      23030019,
+      23030020,
+      23030021,
+      23030022,
+      23030023,
+      23030024,
+      23030025,
+      23030028,
+      23030029,
+      23030030,
+      23030031,
+      23030032,
+      23030033,
+      23030034,
+      23030035,
+      23030036,
+      23040001,
+      23040002,
+      23040003,
+      23040006,
+      23040007,
+      23040008,
+      23040011,
+      23040012,
+      23040013,
+      23040016,
+      23040017,
+      23040018,
+      23040021,
+      23040022,
+      23040023,
+      23040026,
+      23040027,
+      23040028,
+      23040031,
+      23040032,
+      23040033,
+      23040034,
+      23040035,
+      23040036,
+      23040037,
+      23040038,
+      23040039,
+      23040040,
+      23040041,
+      23040042,
+      23040043,
+      23040044,
+      23040045,
+      23040046,
+      23040047,
+      23040048,
+      23040049,
+      23040050,
+      23040051,
+      23040052,
+      23040053,
+      23040054,
+      23040055,
+      23040056,
+      23040057,
+      23040058,
+      23040059,
+      23040060,
+      23040061,
+      23040062,
+      23040063,
+      23040064,
+      23040065,
+      23040066,
+      23050007,
+      23050008,
+      23050009,
+      23050010,
+      23050011,
+      23050012,
+      23050013,
+      23050014,
+      23050015,
+      23050016,
+      23050017,
+      23050018,
+      23050019,
+      23050020,
+      23050023,
+      23050024,
+      23050027,
+      23050028,
+      23050029,
+      23050030,
+      23050031,
+      23050032,
+      23050033,
+      23050034,
+      23050035,
+      23050036,
+      23050037,
+      23050038,
+      23050039,
+      23050040,
+      23050041,
+      23050042,
+      23050043,
+      23050044,
+      23050045,
+      23050046,
+      23050047,
+      23050051,
+      23051001,
+      23051002,
+      23051003,
+      23051004,
+      23051005,
+      23051006,
+      23051007,
+      23051008,
+      23051009,
+      24030001,
+      24030002,
+      24030003,
+      24030004,
+      24030005,
+      24030006,
+      24030007,
+      24030008,
+      24030009,
+      24030010,
+      24030011,
+      24030012,
+      24030013,
+      24030014,
+      24030015,
+      24030016,
+      24030017,
+      24030018,
+      24030019,
+      24030020,
+      24030021,
+      24030022,
+      24030023,
+      24030024,
+      24030025,
+      24030026,
+      24030027,
+      24030028,
+      24030029,
+      24030030,
+      24030031,
+      24030032,
+      24030033,
+      24030034,
+      24030035,
+      24030036,
+      24030037,
+      24030038,
+      24030039,
+      24030040,
+      24030041,
+      24030042,
+      24030043,
+      24030044,
+      24030045,
+      24030046,
+      24030047,
+      24030048,
+      24030049,
+      24030050,
+      24030051,
+      24030052,
+      24030053,
+      24030054,
+      24030055,
+      24030056,
+      24030057,
+      24030058,
+      24030059,
+      24030060,
+      24030061,
+      24030062,
+      24030063,
+      24030064,
+      24030065,
+      24030066,
+      24030067,
+      24030068,
+      24030069,
+      24030070,
+      24030071,
+      24030072,
+      24030073,
+      24030074,
+      24030075,
+      24030076,
+      24030077,
+      24030078
+    ],
+    "equipped": [
+      {
+        "slot": 1,
+        "title": 24030040
+      },
+      {
+        "slot": 2,
+        "title": 24030068
+      },
+      {
+        "slot": 3,
+        "title": 23020051
+      }
+    ]
+  }
+}

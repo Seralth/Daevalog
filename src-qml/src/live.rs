@@ -3,15 +3,19 @@
 //! Live capture: the backend's live feed (capture helper, dispatcher, game
 //! port detection, meter) read every 100 ms through its meter view, as the
 //! 1.x page polled it. Its boss fights are saved to the data folder as 1.x
-//! saves them: every 30 s, and once more when the program quits. The name
-//! setting goes to the backend at the start and takes over the name the game
-//! gives, as 1.x's meter does.
+//! saves them: every 30 s, and once more when the program quits. Your
+//! character's file is saved there too, when the game told the meter
+//! something new about it, at most every 10 s, and once more at quit. The
+//! name setting goes to the backend at the start and takes over the name
+//! the game gives, as 1.x's meter does.
 
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{mpsc, Arc, OnceLock};
 use std::time::{Duration, Instant};
 
 use cxx_qt::CxxQtThread;
+use daevalog::capture::character_live;
 use daevalog::clock;
 use daevalog::combat::dps_calculator::DpsCalculator;
 use daevalog::combat::meter_view::MeterView;
@@ -83,6 +87,7 @@ pub fn start(qt: CxxQtThread<Meter>, language: &'static str) {
         apply_character_name(&feed.storage, &crate::capture::saved_name(), false);
         let _ = FEED.set(feed.clone());
         start_auto_save(feed.clone());
+        start_character_save(feed.clone());
         let settings = crate::settings_store::store();
         let mut default_mode = settings.values().default_mode;
         feed.meter.lock().set_target_selection_mode(&default_mode);
@@ -90,7 +95,7 @@ pub fn start(qt: CxxQtThread<Meter>, language: &'static str) {
 
         let mut view = MeterView::new();
         let mut party = PartyFeed::live(feed.meter.lock().details_source());
-        let mut trail = crate::snapshot::HpTrail::default();
+        let mut trail = crate::kill_time::HpTrail::default();
         let mut applied = MeterApplied::default();
         let mut next = Instant::now();
         loop {
@@ -103,7 +108,7 @@ pub fn start(qt: CxxQtThread<Meter>, language: &'static str) {
             let hour24 = values.uses_24h(crate::settings_store::system_clock_24h());
             crate::pet_souls::tick(&feed.storage, language, hour24);
             crate::power_shards::tick(&feed.storage, language, values.shard_warning);
-            crate::world_spawns::tick(language, hour24, values.spawn_notices, &values.server_time_zone);
+            crate::countdowns::tick(&feed.storage, language, hour24, values.spawn_notices, &values.server_time_zone);
             if follow_default_mode(&mut default_mode, &values, &mut feed.meter.lock()) {
                 request_clear();
             }
@@ -127,7 +132,7 @@ pub fn start(qt: CxxQtThread<Meter>, language: &'static str) {
             let mut snapshot = Snapshot::new(&reading, shown, now);
             let wanted = crate::meter::party_shown();
             snapshot.party = party.update(&reading, shown, now, false, values.training_mode == "all", &options, wanted);
-            snapshot.boss_eta = trail.update(now, snapshot.target_id, snapshot.boss_live_hp);
+            snapshot.boss_eta = trail.update(now, snapshot.target_id, snapshot.battle_ms, snapshot.boss_live_hp, crate::kill_time::crowd_map(reading.dungeon_id));
             let ping = feed.ping.current_ping_ms();
             // Paused, the screen holds while the meter counts on underneath,
             // as a paused stream; a clear or a mode the player picks still
@@ -164,6 +169,22 @@ fn start_auto_save(feed: Arc<LiveFeed>) {
         let saved = live_save::auto_save(dir, history, &feed.storage, &feed.meter);
         crate::account::auto_upload(dir, history, saved.as_ref());
     });
+}
+
+/// Saves your character's file every `character_live::EVERY`, when the game
+/// told the meter something new about it.
+fn start_character_save(feed: Arc<LiveFeed>) {
+    let Some(dir) = crate::settings_store::folder() else { return };
+    std::thread::spawn(move || loop {
+        std::thread::sleep(character_live::EVERY);
+        save_character(&feed, &dir);
+    });
+}
+
+fn save_character(feed: &LiveFeed, dir: &Path) {
+    if let Err(error) = feed.character.save(dir) {
+        eprintln!("daevalog-dps-meter: the character file was not saved: {error}");
+    }
 }
 
 /// The mode menu's pick, for the backend at once; the next reading shows it.
@@ -230,13 +251,20 @@ pub fn save_and_clear() {
     });
 }
 
-/// Saves every fight as it stands before the program quits. Waits at most
-/// `QUIT_SAVE_WAIT`: a stuck disk cannot keep the program open.
+/// Saves every fight as it stands, and your character's file, before the
+/// program quits. Waits at most `QUIT_SAVE_WAIT`: a stuck disk cannot keep
+/// the program open.
 pub fn save_before_quit() {
-    let (Some(feed), Some((_, history))) = (FEED.get().cloned(), crate::history::store()) else { return };
+    let Some(feed) = FEED.get().cloned() else { return };
+    let (dir, history) = (crate::settings_store::folder(), crate::history::store());
     let (saved, wait) = mpsc::channel();
     std::thread::spawn(move || {
-        live_save::save_before_quit(history, &feed.meter);
+        if let Some(dir) = &dir {
+            save_character(&feed, dir);
+        }
+        if let Some((_, history)) = history {
+            live_save::save_before_quit(history, &feed.meter);
+        }
         let _ = saved.send(());
     });
     if wait.recv_timeout(QUIT_SAVE_WAIT).is_err() {

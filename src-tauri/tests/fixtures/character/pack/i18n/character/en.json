@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "items": {
+    "110600101": "Sample Orb",
+    "110900101": "Sample Guard",
+    "111100101": "Sample Hood",
+    "111100102": "Sample Robe",
+    "112200101": "Sample Ring",
+    "113000101": "Sample Rune",
+    "112100101": "Sample Chain"
+  },
+  "boards": {
+    "51": "Sample Board One",
+    "56": "Sample Board Six"
+  },
+  "node_titles": {
+    "SAMPLE_NODE_START_51": "Board One - Start",
+    "SAMPLE_NODE_START_56": "Board Six - Start",
+    "SAMPLE_NODE_COMBAT_SPEED": "Combat Speed",
+    "SAMPLE_NODE_MAX_ATTACK": "Max Attack",
+    "SAMPLE_NODE_SKILL_UP": "Skill Level Up - Sample Bolt",
+    "SAMPLE_NODE_CRITICAL": "Critical Hit",
+    "SAMPLE_NODE_ACCURACY_DEFENSE": "Accuracy Bonus, Defense Bonus"
+  },
+  "titles": {
+    "11020001": "Sample Hunter",
+    "11020002": "Sample Duelist",
+    "12030001": "Sample Guardian",
+    "13010001": "Sample Wanderer",
+    "14000001": "Sample Collector"
+  },
+  "title_categories": {
+    "Attack": "Attack",
+    "Defense": "Defense",
+    "Etc": "Etc"
+  },
+  "specialties": {
+    "16010010": "+10% Sample Bolt damage",
+    "16010020": "Sample Bolt cooldown -1 s",
+    "16010030": "+5% Critical Hit for Sample Bolt",
+    "16010040": "Sample Bolt hits one more target",
+    "16010050": "Sample Bolt stuns for 1 s",
+    "16370010": "Tier one: +5% Combat Speed",
+    "16370020": "Tier two: +5% Attack",
+    "16370030": "Tier three: +10% HP",
+    "16370040": "Tier four: one more charge"
+  },
+  "servers": {
+    "1001": "Sample Server"
+  },
+  "slots": {
+    "MainHand": "Main Hand",
+    "SubHand": "Off Hand",
+    "Helmet": "Helmet",
+    "Shoulder": "Shoulders",
+    "Torso": "Chest",
+    "Pants": "Pants",
+    "Gloves": "Gloves",
+    "Boots": "Boots",
+    "Cape": "Cape",
+    "Belt": "Belt",
+    "Necklace": "Necklace",
+    "Earring1": "Earring",
+    "Earring2": "Earring",
+    "Ring1": "Ring",
+    "Ring2": "Ring",
+    "Bracelet1": "Bracelet",
+    "Bracelet2": "Bracelet",
+    "Amulet": "Amulet",
+    "Rune1": "Rune",
+    "Rune2": "Rune"
+  },
+  "grades": {
+    "Common": "Common",
+    "Rare": "Rare",
+    "Legend": "Legendary",
+    "Unique": "Unique",
+    "Special": "Special"
+  },
+  "stat_groups": {
+    "MainStat": "Main Stats",
+    "Attack": "Attack",
+    "BookMark": "Basic",
+    "Recovery": "Recovery"
+  }
+}

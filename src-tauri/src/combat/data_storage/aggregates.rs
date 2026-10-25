@@ -344,6 +344,31 @@ pub struct TargetTotals {
 }
 
 impl TargetTotals {
+    /// Each row's (hits, damage) change from `before`, the same target read
+    /// earlier, by (actor as sent, skill, is a tick), in that order. A row
+    /// gone counts as dropped to zero (one actor's rows merged into
+    /// another's). A new first-damage time is a new segment: every row
+    /// counts from nothing.
+    pub fn row_changes(&self, before: Option<&TargetTotals>) -> std::collections::BTreeMap<(i32, i32, bool), (i64, i64)> {
+        let rows = |t: &TargetTotals| -> HashMap<(i32, i32, bool), (i64, i64)> {
+            let skills = t.actors.iter().flat_map(|(&actor, a)| a.skills.iter().map(move |(&(skill, dot), s)| ((actor, skill, dot), s)));
+            skills.map(|(key, s)| (key, (i64::from(s.hit_count), s.total_damage))).collect()
+        };
+        let base = match before {
+            Some(b) if b.first_damage_time == self.first_damage_time => rows(b),
+            _ => HashMap::new(),
+        };
+        let now = rows(self);
+        now.keys()
+            .chain(base.keys())
+            .filter_map(|k| {
+                let (h, d) = now.get(k).copied().unwrap_or((0, 0));
+                let (bh, bd) = base.get(k).copied().unwrap_or((0, 0));
+                (h != bh || d != bd).then_some((*k, (h - bh, d - bd)))
+            })
+            .collect()
+    }
+
     pub(super) fn new(target_id: i32, timestamp: i64) -> Self {
         TargetTotals {
             target_id,

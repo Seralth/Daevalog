@@ -1,0 +1,311 @@
+{
+  "version": 1,
+  "server": 1001,
+  "name": "Samplechar",
+  "class": "Elementalist",
+  "level": 45,
+  "item_level": {
+    "as_of_ms": 1767225602000,
+    "current": 512,
+    "highest": 515
+  },
+  "combat_power": {
+    "as_of_ms": 1767225602000,
+    "current": 25000,
+    "highest": 25210
+  },
+  "gear": {
+    "as_of_ms": 1767225600000,
+    "items": [
+      {
+        "slot": 1,
+        "item": 110600101,
+        "detail": {
+          "enhance": 5,
+          "item_level": 45,
+          "sockets": 3,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 282,
+              "value": 1050
+            },
+            {
+              "stat": 128,
+              "value": 60
+            }
+          ],
+          "skill_lines": [
+            16010000
+          ]
+        }
+      },
+      {
+        "slot": 2,
+        "item": 110900101,
+        "detail": {
+          "enhance": 0,
+          "item_level": 42,
+          "sockets": 2,
+          "soul_bound": false,
+          "lines": [],
+          "skill_lines": []
+        }
+      },
+      {
+        "slot": 3,
+        "item": 111100101,
+        "detail": {
+          "enhance": 3,
+          "item_level": 39,
+          "sockets": 3,
+          "soul_bound": true,
+          "lines": [
+            {
+              "stat": 193,
+              "value": 820
+            }
+          ],
+          "skill_lines": []
+        }
+      },
+      {
+        "slot": 5,
+        "item": 111100102,
+        "detail": null
+      },
+      {
+        "slot": 13,
+        "item": 112200101,
+        "detail": {
+          "enhance": 5,
+          "item_level": 43,
+          "sockets": 0,
+          "soul_bound": false,
+          "lines": [],
+          "skill_lines": []
+        }
+      },
+      {
+        "slot": 23,
+        "item": 113000101,
+        "detail": {
+          "enhance": 1,
+          "item_level": 41,
+          "sockets": 0,
+          "soul_bound": false,
+          "lines": [
+            {
+              "stat": 7,
+              "value": 12
+            }
+          ],
+          "skill_lines": []
+        }
+      }
+    ]
+  },
+  "stats": {
+    "as_of_ms": 1767225602000,
+    "values": [
+      {
+        "stat": 1,
+        "value": 120
+      },
+      {
+        "stat": 2,
+        "value": 95
+      },
+      {
+        "stat": 3,
+        "value": 160
+      },
+      {
+        "stat": 4,
+        "value": 110
+      },
+      {
+        "stat": 5,
+        "value": 90
+      },
+      {
+        "stat": 6,
+        "value": 140
+      },
+      {
+        "stat": 7,
+        "value": 15
+      },
+      {
+        "stat": 19,
+        "value": 410
+      },
+      {
+        "stat": 31,
+        "value": 1890
+      },
+      {
+        "stat": 33,
+        "value": 1210
+      },
+      {
+        "stat": 52,
+        "value": 1530
+      },
+      {
+        "stat": 104,
+        "value": 980
+      },
+      {
+        "stat": 128,
+        "value": 870
+      },
+      {
+        "stat": 193,
+        "value": 31240
+      },
+      {
+        "stat": 220,
+        "value": 3000
+      },
+      {
+        "stat": 242,
+        "value": 115400
+      },
+      {
+        "stat": 282,
+        "value": 2150
+      },
+      {
+        "stat": 425,
+        "value": 1225
+      }
+    ]
+  },
+  "skills": {
+    "as_of_ms": 1767225601000,
+    "list": [
+      {
+        "skill": 16010000,
+        "level": 14,
+        "base": 11,
+        "board": 2,
+        "gear": 1
+      },
+      {
+        "skill": 16020000,
+        "level": 10,
+        "base": 9,
+        "board": 1,
+        "gear": 0
+      },
+      {
+        "skill": 16300000,
+        "level": 5,
+        "base": 5,
+        "board": 0,
+        "gear": 0
+      },
+      {
+        "skill": 16370000,
+        "level": 5,
+        "base": 5,
+        "board": 0,
+        "gear": 0
+      },
+      {
+        "skill": 1001,
+        "level": 1,
+        "base": 1,
+        "board": 0,
+        "gear": 0
+      }
+    ]
+  },
+  "specialties": {
+    "as_of_ms": 1767225601000,
+    "list": [
+      {
+        "skill": 16010000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 16010010
+          },
+          {
+            "slot": 2,
+            "part": 16010030
+          },
+          {
+            "slot": 3,
+            "part": 0
+          }
+        ]
+      },
+      {
+        "skill": 16370000,
+        "picks": [
+          {
+            "slot": 1,
+            "part": 16370010
+          },
+          {
+            "slot": 2,
+            "part": 16370020
+          },
+          {
+            "slot": 3,
+            "part": 16370030
+          },
+          {
+            "slot": 4,
+            "part": 16370040
+          }
+        ]
+      }
+    ]
+  },
+  "boards": {
+    "as_of_ms": 1767225601000,
+    "list": [
+      {
+        "board": 51,
+        "nodes": [
+          510113,
+          510033,
+          510052,
+          510037
+        ]
+      },
+      {
+        "board": 56,
+        "nodes": [
+          560113
+        ]
+      }
+    ]
+  },
+  "titles": {
+    "as_of_ms": 1767225601000,
+    "owned": [
+      11020001,
+      12030001,
+      13010001,
+      14000001
+    ],
+    "equipped": [
+      {
+        "slot": 1,
+        "title": 11020001
+      },
+      {
+        "slot": 2,
+        "title": 12030001
+      },
+      {
+        "slot": 3,
+        "title": 13010001
+      }
+    ]
+  }
+}

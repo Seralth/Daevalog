@@ -259,9 +259,9 @@ pub fn removed(entity: u32, list: &[(u8, u32, u8, Option<(u32, u32, u32)>)]) -> 
     packet([0x2C, 0x38], &f)
 }
 
-/// `4a 36 <entity> <n> (<stat u16> <value i32>)* <8 bytes>`: your own stats.
+/// `4a 36 <entity> <n varint> (<stat u16> <value i32>)* <8 bytes>`: your own stats.
 pub fn stats(entity: u32, values: &[(u16, i32)]) -> Vec<u8> {
-    let mut f = vec![F::V(entity), F::U8(values.len() as u8)];
+    let mut f = vec![F::V(entity), F::V(values.len() as u32)];
     for &(stat, value) in values {
         f.extend([F::U16(stat), F::U32(value as u32)]);
     }
@@ -322,7 +322,7 @@ pub fn hp_record(id: u32, small: Option<&[(u8, u32)]>, large: Option<&[(u8, u64)
 
 /// A `41 36` spawn, in the order the spawn readers find its fields:
 /// `<id> <kind> 00 <gate> [<len> <name>] <code u24> 00 40 02 <x y z f32>
-/// 01 <hp> <max hp> <filler> 06 <n> <abnormals> <end>`.
+/// <heading f32> <2 bytes> 01 <hp> <max hp> <filler> 06 <n> <abnormals> <end>`.
 #[derive(Debug, Clone, Default)]
 pub struct Spawn<'a> {
     pub id: u32,
@@ -349,7 +349,7 @@ impl Spawn<'_> {
         }
         let code = self.code.to_le_bytes();
         f.extend([F::Raw(&code[..3]), F::Raw(&[0x00, 0x40, 0x02])]);
-        f.extend([F::F32(1500.0), F::F32(-2500.0), F::F32(120.0)]);
+        f.extend([F::F32(1500.0), F::F32(-2500.0), F::F32(120.0), F::F32(90.0), F::Raw(&[0x00, 0x00])]);
         f.extend([F::U8(0x01), F::V(self.hp), F::V(self.hp)]);
         let filler = vec![0u8; self.filler];
         f.push(F::Raw(&filler));
@@ -424,6 +424,16 @@ pub fn self_record(id: u32, name: &str, server: u16, class: u32, level: u32) -> 
     )
 }
 
+/// `49 36 <2 bytes> <count varint> (<stat u16> <value i32>)* <8 bytes>`: the whole stat sheet.
+pub fn stat_sheet(values: &[(u16, i32)]) -> Vec<u8> {
+    let mut f = vec![F::U16(0), F::V(values.len() as u32)];
+    for &(stat, value) in values {
+        f.extend([F::U16(stat), F::U32(value as u32)]);
+    }
+    f.push(F::Raw(&[0; 8]));
+    packet([0x49, 0x36], &f)
+}
+
 /// `45 36 <id> <mask1 u32> <mask2 u8> [mask2 & 1: <len> <name>]` and
 /// `rest`: another player's record.
 pub fn player_record(id: u32, name: Option<&str>, rest: &[u8]) -> Vec<u8> {
@@ -493,29 +503,151 @@ pub fn roster(key: u32, party_name: &str, dungeon: u32, leader: u64, slots: &[Sl
                 out.push(0x04);
                 out.extend([0u8; 11]);
             }
-            Slot::Member(m) => {
-                let world = (m.dbid >> 48) as u16;
-                out.extend(fields(&[
-                    F::U8(m.mask),
-                    F::U8(m.slot),
-                    F::Raw(&m.dbid.to_le_bytes()),
-                    F::Str(m.name),
-                    F::U32(m.class),
-                    F::U32(m.level),
-                    F::U32(m.gear),
-                    F::Raw(m.extra),
-                    F::U16(world),
-                    F::U16(0x1069),
-                    F::U8(m.tag),
-                    F::Raw(&m.combat_power.to_le_bytes()),
-                    F::Raw(m.tail),
-                ]));
-            }
+            Slot::Member(m) => out.extend(roster_member(m, (m.dbid >> 48) as u16)),
         }
     }
     let mut body = vec![0x02, 0x97];
     body.extend(out);
     frame(&body)
+}
+
+/// One member record of the roster's layout, on `world`: the account id's
+/// world, or another one for a character moved to another world.
+pub fn roster_member(m: &Member, world: u16) -> Vec<u8> {
+    fields(&[
+        F::U8(m.mask),
+        F::U8(m.slot),
+        F::Raw(&m.dbid.to_le_bytes()),
+        F::Str(m.name),
+        F::U32(m.class),
+        F::U32(m.level),
+        F::U32(m.gear),
+        F::Raw(m.extra),
+        F::U16(world),
+        F::U16(0x1069),
+        F::U8(m.tag),
+        F::Raw(&m.combat_power.to_le_bytes()),
+        F::Raw(m.tail),
+    ])
+}
+
+/// A party finder room list (`01 97`, see `capture::player_facts`) written the
+/// way the game lays it out: bools share a bit byte, low bit first, and a new
+/// byte goes where a bool finds the last one used up.
+#[derive(Default)]
+pub struct RoomWriter {
+    pub bytes: Vec<u8>,
+    bits_at: usize,
+    left: u8,
+}
+
+impl RoomWriter {
+    pub fn put(&mut self, bytes: &[u8]) {
+        self.bytes.extend(bytes);
+    }
+
+    fn text(&mut self, s: &str) {
+        self.bytes.push(s.len() as u8);
+        self.bytes.extend(s.as_bytes());
+    }
+
+    fn bit(&mut self, v: bool) {
+        if self.left == 0 {
+            self.bytes.push(0);
+            self.bits_at = self.bytes.len() - 1;
+            self.left = 8;
+        }
+        self.bytes[self.bits_at] |= u8::from(v) << (8 - self.left);
+        self.left -= 1;
+    }
+
+    /// A room's head up to its slot count; number 0 is the empty room the
+    /// list sends when you sit in none.
+    pub fn room(&mut self, number: u32, title: &str, leader: u64, join: u8, state: u8) {
+        self.put(&number.to_le_bytes());
+        self.text(title);
+        self.put(&[if number == 0 { 0 } else { 5 }]);
+        self.put(&(if number == 0 { 0u32 } else { 600_012 }).to_le_bytes());
+        self.put(&[0, if number == 0 { 0 } else { 3 }]);
+        self.put(&leader.to_le_bytes());
+        self.bit(number != 0);
+        self.put(&[join, state]);
+    }
+
+    /// A member's slot. mask: 0x02 ready, 0x04 home world, 0x08 current
+    /// world, 0x10 self-revive items.
+    #[allow(clippy::too_many_arguments)]
+    pub fn member(&mut self, slot: u8, mask: u8, account: u64, name: &str, class: u32, il: u32, home: u16, role: u8, cp: u64) {
+        self.put(&[mask, slot]);
+        self.put(&account.to_le_bytes());
+        self.text(name);
+        for v in [class, 45, il] {
+            self.put(&v.to_le_bytes());
+        }
+        if mask & 0x02 != 0 {
+            self.bit(true);
+        }
+        self.bit(true);
+        if mask & 0x04 != 0 {
+            self.put(&home.to_le_bytes());
+        }
+        if mask & 0x08 != 0 {
+            self.put(&home.to_le_bytes());
+        }
+        self.put(&[role]);
+        self.put(&cp.to_le_bytes());
+        self.put(&[0]);
+        if mask & 0x10 != 0 {
+            self.put(&3u64.to_le_bytes());
+        }
+        self.put(&[1, 1]);
+    }
+
+    /// An open slot asking for `role`.
+    pub fn open(&mut self, slot: u8, role: u8) {
+        self.put(&[0, slot]);
+        self.put(&[0; 8]);
+        self.text("");
+        self.put(&[0; 12]);
+        self.bit(false);
+        self.put(&[role]);
+        self.put(&[0; 8]);
+        self.put(&[0, 0, 0]);
+    }
+}
+
+/// An account id: a character number and the world it was made on.
+pub fn account(char_id: u64, made_on: u16) -> u64 {
+    char_id | u64::from(made_on) << 48
+}
+
+/// A room list, from its opcode on: a waiting room (a ready leader, a member
+/// who moved from 2201 to 2202, open slots asking for a healer and anyone)
+/// and a running room, whose members have no current world. 30 is a Cleric,
+/// 22 an Elementalist, 8 a Gladiator.
+pub fn two_rooms() -> Vec<u8> {
+    let mut w = RoomWriter::default();
+    w.put(&[0x01, 0x97, 0, 0]);
+    w.put(&600_012u32.to_le_bytes());
+    w.room(0, "", 0, 2, 0);
+    w.put(&[0, 0, 2]);
+    w.room(101, "75K+ 3B", account(0x3d60d, 2201), 1, 0);
+    w.put(&[5]);
+    w.member(1, 0x0e, account(0x3d60d, 2201), "Other", 30, 1913, 2201, 3, 81_398);
+    w.member(2, 0x0c, account(0x51a33, 2201), "Moved", 30, 1500, 2202, 2, 60_123);
+    w.open(3, 3);
+    w.open(4, 4);
+    w.open(5, 4);
+    w.put(&[0]);
+    w.room(102, "Leaving now.", account(0x50e09, 1201), 2, 2);
+    w.put(&[5]);
+    w.member(1, 0x14, account(0x50e09, 1201), "Third", 22, 861, 1201, 4, 45_961);
+    w.member(2, 0x04, account(0x4b002, 1201), "Fourth", 8, 1403, 1201, 1, 67_893);
+    for slot in 3..=5 {
+        w.open(slot, 4);
+    }
+    w.put(&[0]);
+    w.bytes
 }
 
 /// Grow a spawn's filler until its frame is `len` bytes long.

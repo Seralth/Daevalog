@@ -148,6 +148,7 @@ pub enum Key {
     HideFromTaskbar,
     ShowPing,
     ShowTotal,
+    FitRows,
     RoundDps,
     ShowSuspendButton,
     ShowLockButton,
@@ -177,7 +178,7 @@ pub enum Key {
 }
 
 impl Key {
-    pub const ALL: [Key; 52] = [
+    pub const ALL: [Key; 53] = [
         Key::Language,
         Key::TimeFormat,
         Key::DefaultMode,
@@ -204,6 +205,7 @@ impl Key {
         Key::HideFromTaskbar,
         Key::ShowPing,
         Key::ShowTotal,
+        Key::FitRows,
         Key::RoundDps,
         Key::ShowSuspendButton,
         Key::ShowLockButton,
@@ -232,32 +234,10 @@ impl Key {
         Key::TrayEdge,
     ];
 
-    /// The switches: "true" or "false".
-    const SWITCHES: [Key; 23] = [
-        Key::PinYou,
-        Key::ShowYou,
-        Key::HideOtherNames,
-        Key::Locked,
-        Key::LayerShell,
-        Key::SlimMode,
-        Key::SplitView,
-        Key::BoldNames,
-        Key::BoldDps,
-        Key::AutoHide,
-        Key::StartInTray,
-        Key::HideFromTaskbar,
-        Key::ShowPing,
-        Key::ShowTotal,
-        Key::RoundDps,
-        Key::ShowSuspendButton,
-        Key::ShowLockButton,
-        Key::DebugLogging,
-        Key::PacketLogging,
-        Key::ScreenshotWithMeter,
-        Key::ScreenshotToFolder,
-        Key::SpawnNotices,
-        Key::ShardWarning,
-    ];
+    /// A switch: "true" or "false". `Values::flag_mut` is the one list.
+    fn is_switch(self) -> bool {
+        Values::default().flag_mut(self).is_some()
+    }
 
     /// The key in settings.json; the 1.x meter's, except those of settings
     /// new in 2.0: "YOU", the accent, the split view, the bar strength and
@@ -291,6 +271,7 @@ impl Key {
             Key::HideFromTaskbar => "dpsMeter.hideFromTaskbar",
             Key::ShowPing => "dpsMeter.showPing",
             Key::ShowTotal => "dpsMeter.showTotalDps",
+            Key::FitRows => "dpsMeter.fitRows",
             Key::RoundDps => "dpsMeter.roundDps",
             Key::ShowSuspendButton => "dpsMeter.showSuspendBtn",
             Key::ShowLockButton => "dpsMeter.showLockBtn",
@@ -508,7 +489,7 @@ pub struct Values {
     /// Keep the app's windows out of the taskbar.
     pub hide_from_taskbar: bool,
     pub show_ping: bool,
-    /// Countdowns in the notice tray before each Field Boss and Spacetime Rift.
+    /// Countdowns in the notice tray before each Abyss Boss and Spacetime Rift.
     pub spawn_notices: bool,
     /// A notice in the tray when your hits stop using Power Shards.
     pub shard_warning: bool,
@@ -516,6 +497,9 @@ pub struct Values {
     pub server_time_zone: String,
     /// The group total in the footer.
     pub show_total: bool,
+    /// The meter's height follows its rows; dragging an edge sets only the
+    /// width. Off: the player sets the height.
+    pub fit_rows: bool,
     /// DPS in thousands ("19.5K"); off, the whole number ("19,512").
     pub round_dps: bool,
     /// Suspend and lock as header buttons instead of in the ⋯ menu.
@@ -576,9 +560,11 @@ impl Default for Values {
             hide_other_names: false,
             locked: false,
             layer_shell: false,
-            // The 2.0 default. A value saved in 1.x stays, except 1.x's
-            // default (see `LEGACY_DEFAULT_OPACITY`).
-            window_opacity: 60,
+            // The 2.0 default: white text on every class's bar (40% fill)
+            // keeps 3.7:1 or better over snow at 72%; at 60% Assassin and
+            // Cleric drop to about 3:1. A value saved in
+            // 1.x stays, except 1.x's default (see `LEGACY_DEFAULT_OPACITY`).
+            window_opacity: 72,
             // What the 1.x backend registered when none was saved.
             reload_hotkey: "Ctrl+Alt+R".into(),
             toggle_window_hotkey: "Ctrl+Alt+Up".into(),
@@ -602,6 +588,7 @@ impl Default for Values {
             shard_warning: true,
             server_time_zone: String::new(),
             show_total: true,
+            fit_rows: true,
             round_dps: true,
             show_suspend_button: false,
             show_lock_button: false,
@@ -690,9 +677,9 @@ impl Values {
                 Ok(n) if n >= 1 => self.player_limit = player_limit(n),
                 _ => return false,
             },
-            key if Key::SWITCHES.contains(&key) => {
+            key if key.is_switch() => {
                 let Some(on) = parse_bool(raw) else { return false };
-                *self.flag_mut(key) = on;
+                *self.flag_mut(key).expect("a switch") = on;
             }
             // 1.x rounds and keeps it within 0-100.
             Key::WindowOpacity => match raw.parse::<f64>() {
@@ -776,9 +763,9 @@ impl Values {
             Key::TimeFormat => self.clock_24h.map(|h24| if h24 { "24h" } else { "12h" }.to_string()),
             Key::DefaultMode => Some(self.default_mode.clone()),
             Key::PlayerLimit => Some(self.player_limit.to_string()),
-            key if Key::SWITCHES.contains(&key) => {
+            key if key.is_switch() => {
                 let mut values = self.clone();
-                Some(values.flag_mut(key).to_string())
+                values.flag_mut(key).map(|on| on.to_string())
             }
             Key::WindowOpacity => Some(self.window_opacity.to_string()),
             Key::ReloadHotkey | Key::ToggleWindowHotkey | Key::LockHotkey => {
@@ -810,8 +797,9 @@ impl Values {
         }
     }
 
-    fn flag_mut(&mut self, key: Key) -> &mut bool {
-        match key {
+    /// The switch `key` sets; None when it is no switch.
+    fn flag_mut(&mut self, key: Key) -> Option<&mut bool> {
+        Some(match key {
             Key::PinYou => &mut self.pin_you,
             Key::ShowYou => &mut self.show_you,
             Key::HideOtherNames => &mut self.hide_other_names,
@@ -826,6 +814,7 @@ impl Values {
             Key::HideFromTaskbar => &mut self.hide_from_taskbar,
             Key::ShowPing => &mut self.show_ping,
             Key::ShowTotal => &mut self.show_total,
+            Key::FitRows => &mut self.fit_rows,
             Key::RoundDps => &mut self.round_dps,
             Key::ShowSuspendButton => &mut self.show_suspend_button,
             Key::ShowLockButton => &mut self.show_lock_button,
@@ -835,8 +824,8 @@ impl Values {
             Key::ScreenshotToFolder => &mut self.screenshot_to_folder,
             Key::SpawnNotices => &mut self.spawn_notices,
             Key::ShardWarning => &mut self.shard_warning,
-            _ => unreachable!("{key:?} is not a switch"),
-        }
+            _ => return None,
+        })
     }
 
     fn hotkey_mut(&mut self, key: Key) -> &mut String {
@@ -1410,7 +1399,7 @@ mod tests {
             (Key::HideOtherNames, "true"),
             (Key::Locked, "true"),
             (Key::LayerShell, "true"),
-            (Key::WindowOpacity, "72"),
+            (Key::WindowOpacity, "85"),
             (Key::ReloadHotkey, "Ctrl+Shift+F5"),
             (Key::ToggleWindowHotkey, "Alt+Down"),
             (Key::LockHotkey, "Ctrl+K"),
@@ -1427,6 +1416,7 @@ mod tests {
             (Key::HideFromTaskbar, "true"),
             (Key::ShowPing, "false"),
             (Key::ShowTotal, "false"),
+            (Key::FitRows, "false"),
             (Key::RoundDps, "false"),
             (Key::ShowSuspendButton, "true"),
             (Key::ShowLockButton, "true"),
@@ -1473,7 +1463,7 @@ mod tests {
             hide_other_names: true,
             locked: true,
             layer_shell: true,
-            window_opacity: 72,
+            window_opacity: 85,
             reload_hotkey: "Ctrl+Shift+F5".into(),
             toggle_window_hotkey: "Alt+Down".into(),
             lock_hotkey: "Ctrl+K".into(),
@@ -1493,6 +1483,7 @@ mod tests {
             shard_warning: false,
             server_time_zone: "America/New_York".into(),
             show_total: false,
+            fit_rows: false,
             round_dps: false,
             show_suspend_button: true,
             show_lock_button: true,
@@ -1916,7 +1907,7 @@ mod tests {
                 locked: true,
                 layer_shell: false,
                 // 1.x's default, so the 2.0 one.
-                window_opacity: 60,
+                window_opacity: 72,
                 reload_hotkey: "Ctrl+Shift+F5".into(),
                 lock_hotkey: "Alt+K".into(),
                 show_ping: false,
@@ -1965,7 +1956,8 @@ mod tests {
 
     #[test]
     fn a_1x_opacity_other_than_its_default_is_taken_over() {
-        for (saved, wanted) in [("40", 60), ("40.2", 60), ("39.6", 60), ("41", 41), ("72", 72), ("0", 0), ("100", 100)] {
+        let default = Values::default().window_opacity;
+        for (saved, wanted) in [("40", default), ("40.2", default), ("39.6", default), ("41", 41), ("85", 85), ("0", 0), ("100", 100)] {
             let legacy = Folder::new();
             legacy.write(&[("dpsMeter.windowOpacity", saved)]);
             let folder = Folder::new();
@@ -1973,7 +1965,7 @@ mod tests {
             assert_eq!(store.values().window_opacity, wanted, "1.x saved {saved}");
             store.flush().unwrap();
             let file = folder.read();
-            let kept = (wanted != 60).then(|| wanted.to_string());
+            let kept = (wanted != default).then(|| wanted.to_string());
             assert_eq!(file.get("dpsMeter.windowOpacity"), kept.as_ref(), "1.x saved {saved}");
         }
     }

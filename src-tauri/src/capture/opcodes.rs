@@ -28,12 +28,21 @@ pub const PET_SOULS: [u8; 2] = [0x0D, 0x90];
 pub const PET_REGISTERED: [u8; 2] = [0x09, 0x90];
 /// A pet reached a new level.
 pub const PET_LEVEL: [u8; 2] = [0x14, 0x90];
+/// The world map's lists: field boss times, rifts (only while the map is open).
+pub const WORLD_MAP_LISTS: [u8; 2] = [0x01, 0x91];
 /// An item in your bag changed: its id and the count now.
 pub const BAG_ITEM: [u8; 2] = [0x1B, 0x56];
 /// Party roster.
 pub const PARTY_ROSTER: [u8; 2] = [0x02, 0x97];
 /// Out of a party: the key of the party you were in.
 pub const PARTY_LEAVE: [u8; 2] = [0x1B, 0x97];
+/// One member of your party, in the roster's member layout (two kinds).
+pub const PARTY_MEMBER_0B: [u8; 2] = [0x0B, 0x97];
+pub const PARTY_MEMBER_1F: [u8; 2] = [0x1F, 0x97];
+/// The party finder's room list (the Expedition window).
+pub const PARTY_FINDER: [u8; 2] = [0x01, 0x97];
+/// Your legion's members.
+pub const LEGION_MEMBERS: [u8; 2] = [0x05, 0x8A];
 /// Records about the local player only, led by their entity id, with how many
 /// bytes follow it (`None`: it varies). What they carry is not decoded.
 pub const OWN_RECORDS: [([u8; 2], Option<usize>); 4] =

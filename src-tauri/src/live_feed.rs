@@ -1,7 +1,8 @@
 //! The live meter without a window, for the Qt meter (src-qml): capture
 //! (through the capture helper where the OS has one), the dispatcher with
-//! its game-port detection, and the meter, wired together. Saves nothing
-//! and reads no settings.
+//! its game-port detection, the meter and your character's file
+//! (`character`), wired together. Saves nothing itself and reads no
+//! settings.
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -11,6 +12,7 @@ use parking_lot::Mutex;
 use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 
+use crate::capture::character_live::CharacterKeeper;
 use crate::capture::tcp_chunk::TcpChunk;
 use crate::capture::port_watch::PortWatch;
 use crate::capture::dispatcher::PacketRouter;
@@ -35,6 +37,8 @@ pub struct LiveFeed {
     pub meter: Mutex<DpsCalculator>,
     pub ping: Arc<PingTracker>,
     pub ports: Arc<PortWatch>,
+    /// Your character as the parsers read it; the front end saves its file.
+    pub character: Arc<CharacterKeeper>,
     /// The game's skill and monster names, and the folder they load from.
     skills: Arc<SkillLookup>,
     npcs: Arc<NpcLookup>,
@@ -85,8 +89,10 @@ impl LiveFeed {
         }
 
         let names = (skills.clone(), npcs.clone());
+        let character = CharacterKeeper::new();
         let mut dispatcher = PacketRouter::new(storage.clone(), skills, npcs, ports.clone(), ping.clone());
         dispatcher.use_tick_skills(dot_ids);
+        dispatcher.tap_packets(character.tap());
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -104,6 +110,7 @@ impl LiveFeed {
             meter: Mutex::new(meter),
             ping,
             ports,
+            character,
             skills: names.0,
             npcs: names.1,
             data: data.map(Path::to_path_buf),

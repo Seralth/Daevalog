@@ -3,6 +3,7 @@
 use cxx_qt_build::{CxxQtBuilder, QResource, QResources, QmlFile, QmlModule};
 
 fn main() {
+    gear_glyphs();
     // The QML files sit next to the module's qmldir. In a subfolder, Qt 6.4
     // takes Theme from the folder's implicit import and loses the singleton.
     let module = QmlModule::new("Daevalog").qml_files([
@@ -45,16 +46,26 @@ fn main() {
         QmlFile::from("Chevron.qml"),
         QmlFile::from("ConfirmStep.qml"),
         QmlFile::from("AutoHide.qml"),
+        QmlFile::from("Reopen.qml"),
         QmlFile::from("SkillOrder.qml"),
         QmlFile::from("NoData.qml"),
         QmlFile::from("HotkeyText.qml"),
         QmlFile::from("SkillIcon.qml"),
         QmlFile::from("NoticeTray.qml"),
         QmlFile::from("NoticeIcon.qml"),
+        QmlFile::from("GearGlyph.qml"),
+        QmlFile::from("UiTipCard.qml"),
+        QmlFile::from("CharacterWindow.qml"),
+        QmlFile::from("CharacterGear.qml"),
+        QmlFile::from("CharacterGearCard.qml"),
+        QmlFile::from("CharacterStats.qml"),
+        QmlFile::from("CharacterSkills.qml"),
+        QmlFile::from("CharacterBoards.qml"),
+        QmlFile::from("CharacterBoard.qml"),
     ]);
 
     let builder = CxxQtBuilder::new_qml_module(module)
-        .files(["src/meter.rs", "src/details.rs", "src/history.rs", "src/overlay.rs", "src/settings.rs", "src/i18n.rs", "src/shell.rs", "src/menus.rs", "src/system.rs", "src/capture.rs", "src/account.rs", "src/instance.rs", "src/windows.rs", "src/hotkey.rs", "src/skill_icons.rs", "src/notices.rs"])
+        .files(["src/meter.rs", "src/details.rs", "src/history.rs", "src/overlay.rs", "src/settings.rs", "src/i18n.rs", "src/shell.rs", "src/menus.rs", "src/system.rs", "src/capture.rs", "src/account.rs", "src/instance.rs", "src/windows.rs", "src/hotkey.rs", "src/skill_icons.rs", "src/notices.rs", "src/gear_glyphs.rs", "src/character.rs"])
         .cpp_file("cpp/shell.cpp")
         .cpp_file("cpp/menus.cpp")
         .cpp_file("cpp/instance.cpp")
@@ -123,4 +134,32 @@ fn skill_icons() -> QResources {
         .files(ids.iter().map(|id| format!("skill-icons/{id}.svg")))
         .files(generic.iter().map(|job| format!("skill-icons/generic/{job}.svg")));
     QResources::new().resource(icons)
+}
+
+/// The gear slot glyphs (icons/gear/): each SVG's path data, joined, for
+/// `src/gear_glyphs.rs`. QML draws it with a Shape in the item's grade
+/// colour, so a glyph may hold nothing but <path d="..."/> outlines.
+fn gear_glyphs() {
+    println!("cargo:rerun-if-changed=icons/gear");
+    let mut glyphs: Vec<(String, String)> = std::fs::read_dir("icons/gear")
+        .expect("icons/gear")
+        .filter_map(|e| e.ok()?.file_name().into_string().ok())
+        .filter_map(|n| n.strip_suffix(".svg").map(str::to_string))
+        .map(|name| {
+            let svg = std::fs::read_to_string(format!("icons/gear/{name}.svg")).unwrap();
+            let body = svg.split("-->").last().unwrap();
+            let mut paths = Vec::new();
+            for element in body.split('<').skip(1).filter(|e| !e.starts_with('/')) {
+                if let Some(rest) = element.strip_prefix("path d=\"") {
+                    paths.push(rest.split('"').next().unwrap().to_string());
+                } else {
+                    panic!("icons/gear/{name}.svg: only paths, found <{element}");
+                }
+            }
+            (name, paths.join(" "))
+        })
+        .collect();
+    glyphs.sort();
+    let out = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("gear_glyphs.rs");
+    std::fs::write(out, format!("const GLYPHS: &[(&str, &str)] = &{glyphs:?};\n")).unwrap();
 }

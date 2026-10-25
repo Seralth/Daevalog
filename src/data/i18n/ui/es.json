@@ -563,8 +563,8 @@
     "characterNameHint": "El nombre del juego lo reemplaza en la próxima carga.",
     "modeOnly": "Solo en {mode}.",
     "showTotalHint": "El total del grupo en el pie, en cada pestaña: DPS, Curación y Tanque.",
-    "spawnNotices": "Cuenta atrás de monstruos únicos de campo y Grietas Espacio-Tiempo",
-    "spawnNoticesHint": "En las notificaciones: 30, 15 y 5 minutos antes de un monstruo único de campo, 5 minutos antes de una Grieta Espacio-Tiempo.",
+    "spawnNotices": "Cuenta atrás de jefes y Grietas Espacio-Tiempo",
+    "spawnNoticesHint": "En las notificaciones: 30, 15 y 5 minutos antes de un Jefe del Abismo y de los jefes de campo Gartua, Dartan, Kashapa y Lagta, 5 minutos antes de una Grieta Espacio-Tiempo. Las horas de los jefes de campo llegan al abrir el Mapa.",
     "shardWarning": "Aviso de Fragmentos de poder",
     "shardWarningHint": "Un aviso cuando tus golpes dejan de usar Fragmentos de poder.",
     "serverTimeZone": "Zona horaria del servidor",
@@ -692,6 +692,8 @@
     "title": "Notificaciones",
     "clearAll": "Borrar todo",
     "none": "No hay notificaciones",
+    "more": "{count} más",
+    "top": "Volver arriba",
     "pet": {
       "soul": "Alma de {pet}",
       "souls": "{pet}: +{count} almas",
@@ -710,7 +712,9 @@
       "unnamed": "Mascota {id}"
     },
     "spawn": {
-      "at": "{name} a las {time}"
+      "at": "{name} a las {time}",
+      "abyssBoss": "Jefe del Abismo",
+      "fieldBoss": "Jefe de campo"
     },
     "shard": {
       "off": "Fragmentos de poder desactivados",
@@ -719,5 +723,46 @@
     },
     "countdown": "en {minutes} min",
     "now": "ahora"
+  },
+  "character": {
+    "title": "Personaje",
+    "tabs": {
+      "gear": "Armamento",
+      "sheet": "Hoja de personaje",
+      "skills": "Habilidades",
+      "boards": "Daevanion"
+    },
+    "level": "Nv. {n}",
+    "itemLevel": "Nivel de objeto",
+    "combatPower": "Poder de combate",
+    "highest": "máximo {n}",
+    "seen": "Datos del {date}",
+    "empty": "Aún no hay ningún personaje",
+    "emptyHint": "Entra con un personaje con el medidor abierto, o ve a Seleccionar personaje y vuelve.",
+    "unread": "Archivos de personaje sin leer: {n}",
+    "packFailed": "Los datos del juego para esta ventana no se cargaron.",
+    "notRead": "Aún sin leer: el juego lo envía al entrar.",
+    "gear": {
+      "empty": "Vacío",
+      "notRead": "Detalles del armamento sin leer",
+      "sockets": "Ranuras de piedra de maná: {n}",
+      "skillLevel": "Nv. +{n}",
+      "baseAt": "Atributos base a +{n}",
+      "base": "Atributos base"
+    },
+    "titles": "Título",
+    "titlesOwned": "{n} en posesión",
+    "none": "Ninguno",
+    "skills": {
+      "active": "Activas",
+      "passive": "Habilidad pasiva",
+      "stigma": "Estigma",
+      "specialty": "Especialización",
+      "daevanion": "Daevanion: Nv. +{n}",
+      "gear": "Equipado de armamento: Nv. +{n}"
+    },
+    "boards": {
+      "nodes": "{taken} de {total} nodos"
+    }
   }
 }

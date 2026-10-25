@@ -1,0 +1,47 @@
+{
+  "source": "Made-up sample for the contract tests",
+  "version": 1,
+  "groups": [
+    {
+      "key": "MainStat",
+      "stats": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "key": "Attack",
+      "stats": [
+        19,
+        31,
+        33,
+        128,
+        282,
+        425
+      ]
+    },
+    {
+      "key": "BookMark",
+      "stats": [
+        193,
+        52,
+        104
+      ]
+    },
+    {
+      "key": "Recovery",
+      "stats": [
+        220,
+        242
+      ]
+    }
+  ],
+  "units": {
+    "242": 100
+  }
+}

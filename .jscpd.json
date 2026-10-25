@@ -1,0 +1,9 @@
+{
+  "format": ["rust", "javascript"],
+  "formatsExts": { "javascript": ["qml"] },
+  "minTokens": 50,
+  "minLines": 5,
+  "mode": "mild",
+  "ignore": ["**/target/**", "**/tests/fixtures/**"],
+  "reporters": ["console"]
+}

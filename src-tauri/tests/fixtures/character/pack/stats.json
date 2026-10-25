@@ -1,0 +1,29 @@
+{
+  "source": "Made-up sample for the contract tests",
+  "stats": {
+    "1": "STR",
+    "2": "DEX",
+    "3": "INT",
+    "4": "CON",
+    "5": "AGI",
+    "6": "WIS",
+    "7": "Justice",
+    "19": "FixingDamage",
+    "31": "WeaponDamage",
+    "33": "WeaponMinDamage",
+    "52": "Defense",
+    "104": "Accuracy",
+    "128": "Critical",
+    "193": "HPMax",
+    "220": "HpPotionRate",
+    "242": "SPMax",
+    "282": "CombatSpeed",
+    "318": "WeaponAccuracy",
+    "425": "DamageRatio"
+  },
+  "percent": [
+    220,
+    282,
+    425
+  ]
+}

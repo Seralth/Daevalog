@@ -26,7 +26,7 @@ use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 
 use super::tcp_chunk::TcpChunk;
-use super::pcap_capturer::{log_line, to_payload, DropCounter};
+use super::in_process::{log_line, to_payload, DropCounter};
 
 /// How long the device list may take.
 const DEVICES_TIMEOUT: Duration = Duration::from_secs(3);

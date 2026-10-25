@@ -3527,7 +3527,7 @@
   "9598": "Test_Fot_Item_Recovers 100 per second, 100% stat ratio, total amount",
   "9599": "Test_FotRatio_Item_Recovers 10% per second, Capped at 300, 100%, per tick",
   "9600": "Test_FotRatio_Item_Recovers 10% per second, Capped at 300, 100%, total amount",
-  "9602": "For testing ConvertDamageToHpHeal_Test_no condition",
+  "9602": "For testing ConvertDamageToHpHeal_no condition",
   "9603": "For testing ConvertDamageToHpHeal_range condition_1000 / 500",
   "9604": "For testing ConvertDamageToHpHeal_abnormal id condition_9612(BlockJump)",
   "9605": "For testing ConvertDamageToHpHeal_abnormal group id condition_9612, 9613",

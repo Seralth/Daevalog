@@ -9,7 +9,7 @@ use tracing::error;
 
 use super::tcp_chunk::TcpChunk;
 use super::helper_process::Supervisor;
-use super::pcap_capturer::{self, LiveSniffer};
+use super::in_process::{self, LiveSniffer};
 use crate::platform;
 
 static SUPERVISOR: OnceLock<Arc<Supervisor>> = OnceLock::new();
@@ -63,7 +63,7 @@ pub fn set_filter_port(port: Option<u16>) {
                 supervisor.set_filter_port(port);
             }
         }
-        None => pcap_capturer::set_filter_port(port),
+        None => in_process::set_filter_port(port),
     }
 }
 
@@ -85,7 +85,7 @@ static WANTED: parking_lot::Mutex<Option<String>> = parking_lot::Mutex::new(None
 pub fn listed_devices() -> Option<Vec<String>> {
     match platform::pcap::HELPER {
         Some(_) => SUPERVISOR.get()?.listed_devices(),
-        None => pcap_capturer::listed_devices(),
+        None => in_process::listed_devices(),
     }
 }
 
@@ -97,7 +97,7 @@ pub fn list_device_labels() -> Result<Vec<String>, String> {
             Some(supervisor) => supervisor.list_device_labels(),
             None => Err("the capture helper is not running".to_string()),
         },
-        None => pcap_capturer::list_device_labels(),
+        None => in_process::list_device_labels(),
     }
 }
 

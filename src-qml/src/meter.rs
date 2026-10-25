@@ -36,6 +36,13 @@ pub fn lowest_first() -> bool {
     LOWEST_FIRST.load(Ordering::SeqCst)
 }
 
+/// Whether `show` keeps a reading back for later: the window is hidden in
+/// place. A replay's last reading and the readings of a --print-fights run
+/// go through.
+fn holds_back(hidden: bool, done: bool, printing: bool) -> bool {
+    hidden && !done && !printing
+}
+
 /// What the live loop and the replay order the rows by: the settings, and
 /// the ⋯ menu's Lowest first.
 pub fn view_options(values: &crate::settings_store::Values) -> ViewOptions {
@@ -86,6 +93,7 @@ pub mod qobject {
         #[qproperty(bool, replay_done)]
         #[qproperty(bool, lowest_first, READ, WRITE = change_lowest_first, NOTIFY)]
         #[qproperty(bool, party_shown, READ, WRITE = change_party_shown, NOTIFY)]
+        #[qproperty(bool, hidden, READ, WRITE = change_hidden, NOTIFY)]
         type Meter = super::MeterRust;
 
         /// Starts the live capture or the --replay feed, once.
@@ -115,6 +123,10 @@ pub mod qobject {
         /// The window shows the Heal or Tank tab or the split view's
         /// healers: only then does the live loop read Details for them.
         fn change_party_shown(self: Pin<&mut Meter>, value: bool);
+
+        /// The window is hidden in place: readings wait until it shows
+        /// again, so it draws nothing meanwhile.
+        fn change_hidden(self: Pin<&mut Meter>, value: bool);
     }
 
     unsafe extern "RustQt" {
@@ -273,6 +285,11 @@ pub struct MeterRust {
     replay_done: bool,
     lowest_first: bool,
     party_shown: bool,
+    hidden: bool,
+    /// The newest reading and ping that came while hidden, for the show.
+    held: Option<Snapshot>,
+    /// Some once a ping came while hidden; the ping itself may be none.
+    held_ping: Option<Option<i32>>,
     started: bool,
     /// The reading on screen.
     shown: Snapshot,
@@ -310,6 +327,9 @@ impl Default for MeterRust {
             replay_done: false,
             lowest_first: lowest_first(),
             party_shown: party_shown(),
+            hidden: false,
+            held: None,
+            held_ping: None,
             started: false,
             shown: Snapshot::default(),
             ticker: snapshot::FightTicker::default(),
@@ -355,6 +375,10 @@ impl qobject::Meter {
 
     /// The ping in the footer, and its band; empty when there is none.
     pub fn show_ping(mut self: Pin<&mut Self>, ping_ms: Option<i32>) {
+        if self.hidden {
+            self.as_mut().rust_mut().held_ping = Some(ping_ms);
+            return;
+        }
         let text = ping_ms.filter(|&ms| ms >= 0).map_or_else(String::new, |ms| format!("{ms}ms"));
         if self.ping().to_string() != text {
             self.as_mut().set_ping(QString::from(&text));
@@ -404,6 +428,27 @@ impl qobject::Meter {
         }
     }
 
+    fn change_hidden(mut self: Pin<&mut Self>, value: bool) {
+        if self.hidden == value {
+            return;
+        }
+        self.as_mut().rust_mut().hidden = value;
+        self.as_mut().hidden_changed();
+        if value {
+            return;
+        }
+        let (reading, ping) = {
+            let mut rust = self.as_mut().rust_mut();
+            (rust.held.take(), rust.held_ping.take())
+        };
+        if let Some(reading) = reading {
+            self.as_mut().show(reading, false);
+        }
+        if let Some(ping) = ping {
+            self.show_ping(ping);
+        }
+    }
+
     /// The settings the rows' texts follow, read once per reading.
     fn take_settings(mut self: Pin<&mut Self>) {
         let values = crate::settings_store::store().values();
@@ -436,13 +481,32 @@ impl qobject::Meter {
 
     /// Puts a reading on screen.
     pub fn show(mut self: Pin<&mut Self>, reading: Snapshot, done: bool) {
-        self.as_mut().take_settings();
         let printing = crate::options().print_fights;
+        if holds_back(self.hidden, done, printing) {
+            self.as_mut().rust_mut().held = Some(reading);
+            return;
+        }
+        // A reading that goes through is newer than any held one.
+        self.as_mut().rust_mut().held = None;
+        self.as_mut().take_settings();
         if printing && self.shown.target_id != 0 && reading.target_id != self.shown.target_id {
             print_fight(&self.shown);
         }
 
         let party_changed = self.shown.party != reading.party || self.shown.combat_powers != reading.combat_powers;
+        self.as_mut().apply_rows(reading);
+        self.as_mut().show_header(party_changed);
+
+        if done {
+            if printing {
+                print_fight(&self.shown);
+            }
+            self.as_mut().set_replay_done(true);
+        }
+    }
+
+    /// Moves the rows on screen to `reading`'s and makes it the one shown.
+    fn apply_rows(mut self: Pin<&mut Self>, reading: Snapshot) {
         // Each player keeps their row, as 1.x's meter.js keeps a row element
         // per id: rows that left go, rows that changed rank move, new ones
         // come in at their place, and only then the numbers change. A reset
@@ -492,7 +556,11 @@ impl qobject::Meter {
                 self.as_mut().end_reset_model();
             }
         }
+    }
 
+    /// The header, health, kill check and footer of the reading shown;
+    /// the party line only when it changed.
+    fn show_header(mut self: Pin<&mut Self>, party_changed: bool) {
         let (at, battle_ms, open) = (self.shown.at_ms, self.shown.battle_ms, self.shown.fight_open);
         let ticked = self.as_mut().rust_mut().ticker.update(at, battle_ms, open);
         let shown = &self.shown;
@@ -534,13 +602,6 @@ impl qobject::Meter {
         if party_changed {
             let party = self.party_text();
             self.as_mut().set_party(party);
-        }
-
-        if done {
-            if printing {
-                print_fight(&self.shown);
-            }
-            self.as_mut().set_replay_done(true);
         }
     }
 
@@ -736,7 +797,15 @@ fn row_steps(old: &[i32], new: &[i32]) -> Option<Vec<RowStep>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{row_steps, RowStep};
+    use super::{holds_back, row_steps, RowStep};
+
+    #[test]
+    fn a_meter_hidden_in_place_keeps_its_readings_back() {
+        assert!(holds_back(true, false, false));
+        assert!(!holds_back(false, false, false), "shown: every reading");
+        assert!(!holds_back(true, true, false), "a replay's last reading");
+        assert!(!holds_back(true, false, true), "a run that prints its fights");
+    }
 
     #[test]
     fn lowest_first_orders_the_rows() {

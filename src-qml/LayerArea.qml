@@ -16,9 +16,14 @@ QtObject {
         ? Qt.size(across.width, down.height) : Qt.size(0, 0)
 
     component Probe: Window {
+        id: probe
         width: 1
         height: 1
         visible: true
+        // Shown again after the compositor closed it (Reopen.qml).
+        readonly property Reopen reopen: Reopen {
+            window: probe
+        }
         color: "transparent"
         flags: Qt.FramelessWindowHint | Qt.WindowTransparentForInput
         LayerShell.Window.scope: "daevalog-area"

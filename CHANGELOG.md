@@ -1,5 +1,38 @@
 # Changelog
 
+## 2.0 r3 (2026-10-25)
+
+### Character window
+
+- A new Character window, in the meter's menu under History. It shows your character as the game last showed it to the meter:
+  - Gear: every item with its enhance level, manastones and stats, in its grade colour.
+  - Character sheet: your stats, grouped and ordered like the game's stat window.
+  - Skills: skill levels, Specialty picks and stigma tiers.
+  - Daevanion: each board with the nodes you have taken. Hover a node to see what it gives.
+- Play more than one character? Pick one by name, class, level and server.
+- Your characters are saved as small files in the meter's data folder, under `characters/`, and never leave your computer. Item and stat names come from the game's own data in all eight languages; anything the data cannot name shows as `#` and its number.
+
+### Meter
+
+- A steadier time to kill. In dungeons it now looks at the whole fight, so stagger bursts, cooldowns and untargetable phases no longer make it jump around. If your group's damage changes for good, say someone leaves, it starts over from there. On world bosses, in the Abyss and at field events, where players keep arriving, it follows the last 30 seconds instead.
+- Fit to rows now stays on. The meter's height grows and shrinks with its rows, so a player who joins or the healers under DPS are never cut off, and dragging an edge only changes the width. Turn it off in the meter's menu to set the height yourself; double-click an edge to turn it back on. It is on by default and remembered across restarts.
+- The meter is less see-through by default: 72% opacity instead of 60%, so names stay readable on every class's bar over bright ground like snow. An opacity you set yourself stays as it is.
+- Boss health works on the biggest bosses. Any boss over 100,000,000 HP showed 0 for most of the fight, dungeon bosses included.
+- Killing a boss no longer opens an empty 0:00 fight on the dead boss.
+- On KDE Plasma, Hyprland and Sway, the meter comes back after you unplug a monitor or switch to a text console. It used to stay gone. A hidden meter also stops redrawing.
+
+### Notice tray
+
+- Abyss Boss notices said "Field Boss" in r2. They now say "Abyss Boss", in red. Spacetime Rifts are purple now, and Gartua's and the commanders' countdowns have colours of their own.
+- Countdowns for Eternal Gartua and the commanders, 30, 15 and 5 minutes before they appear. The times come from the world map, so open it once after you log in.
+- A fourth notice no longer gets cut in half at the bottom of the meter. The tray shows up to three, and "N more" under them takes you to the next ones ("Back to top" returns). The mouse wheel moves one notice at a time, and the newest are always on the first page.
+- The tray grows with the Meter size setting.
+- Changing your server time zone moves the countdowns already in the tray right away, without a second notice for the same spawn.
+
+### Details
+
+- The timeline's stat tracks now get your full stat sheet. A full sheet has 132 stats, and the meter misread any sheet that long, so it never had a whole one.
+
 ## 2.0 r2 (2026-10-21)
 
 ### Meter

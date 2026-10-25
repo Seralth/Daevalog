@@ -275,13 +275,24 @@ fn npc_code_marker(packet: &[u8], kind_at: usize) -> Option<usize> {
     (at >= kind_at + 3).then_some(at)
 }
 
-/// `01 <hp> <max hp>` within 64 bytes of `from`, the first that reads as a
-/// live entity's HP. A pair past 31 bits is passed over: its low 32 bits
-/// would be a smaller, wrong max (a boss with 6,075,000,000 HP then gets
-/// none).
+/// `01 <hp> <max hp>` after the 18 bytes of the entity's place (three
+/// floats, its heading, two more bytes), where nearly every spawn has it.
+/// An `01` there is the HP: its pair, or no max when the pair does not read
+/// (no HP, or past 31 bits, whose low 32 bits would be a smaller, wrong
+/// max). Else the first pair within 64 bytes of `from` past the place; with
+/// none, the live HP records give the max.
+///
+/// A pair inside the place never counts: its floats can read as one (a
+/// world boss's x as a small HP far below its own), and a wrong max too
+/// large never comes down.
 fn max_hp_after(packet: &[u8], from: usize) -> Option<i32> {
+    const PLACE: usize = 18;
+    let at = from + PLACE;
     let stop = packet.len().saturating_sub(2).min(from + 64);
-    (from..stop).filter(|&h| packet[h] == 0x01).find_map(|h| {
+    let pair_at = |h: usize| {
+        if packet.get(h) != Some(&0x01) {
+            return None;
+        }
         let now = varint_at(packet, h + 1);
         if now.length < 0 || now.value <= 0 || past_i32(packet, h + 1, now) {
             return None;
@@ -289,7 +300,13 @@ fn max_hp_after(packet: &[u8], from: usize) -> Option<i32> {
         let max_at = h + 1 + now.length as usize;
         let max = varint_at(packet, max_at);
         (max.length > 0 && max.value >= now.value && !past_i32(packet, max_at, max)).then_some(max.value)
-    })
+    };
+    if packet.get(at) == Some(&0x01) {
+        return pair_at(at);
+    }
+    let found = (at..stop).find_map(pair_at);
+    tracing::debug!(?found, "spawn: no HP after the place");
+    found
 }
 
 /// Whether the varint read at `packet[at..]` held more than 31 bits.
@@ -612,8 +629,11 @@ mod tests {
         let (storage, mut p) = meter("");
         read(&mut p, &opened(&Spawn { id: 56_001, kind: 0x1C, code: 2_909_999, hp: 100, ..Spawn::default() }));
         assert_eq!((storage.enemy_code(56_001), storage.enemy_max_hp(56_001)), (Some(2_909_999), Some(100)));
-        // A made-up code, 2,909,999 (`2F 67 2C`).
-        read(&mut p, &spawn_bytes(56_002, &[0x0C, 0, 0, 0x2F, 0x67, 0x2C, 0, 0, 0x02, 0x01, 0x0A, 0x0A]));
+        // A made-up code, 2,909,999 (`2F 67 2C`), and an empty place.
+        let mut rest = vec![0x0C, 0, 0, 0x2F, 0x67, 0x2C, 0, 0, 0x02];
+        rest.extend([0; 18]);
+        rest.extend([0x01, 0x0A, 0x0A]);
+        read(&mut p, &spawn_bytes(56_002, &rest));
         assert_eq!((storage.enemy_code(56_002), storage.enemy_max_hp(56_002)), (Some(2_909_999), Some(10)));
     }
 
@@ -637,15 +657,54 @@ mod tests {
         }
     }
 
-    #[test]
-    fn max_hp_is_the_first_live_reading_after_the_code() {
-        // A zero HP, then an HP over its max, then a live one.
-        let hp = [0x01, 0x00, 0x00, 0x01, 0x64, 0x32, 0x01, 0x0A, 0x0A];
-        let mut rest = vec![0x0C, 0, 0, 0x2F, 0x67, 0x2C, 0x00, 0x40, 0x02];
-        rest.extend(hp);
+    /// A spawn of `code`, its marker and an 18-byte place, then `after`.
+    fn spawned(id: u32, code: [u8; 3], place: [u8; 18], after: &[u8]) -> Arc<DataStorage> {
+        let mut rest = vec![0x0C, 0, 0];
+        rest.extend(code);
+        rest.extend([0x00, 0x40, 0x02]);
+        rest.extend(place);
+        rest.extend(after);
         let (storage, mut p) = meter("");
-        read(&mut p, &spawn_bytes(56_005, &rest));
-        assert_eq!(storage.enemy_max_hp(56_005), Some(10));
+        read(&mut p, &spawn_bytes(id, &rest));
+        storage
+    }
+
+    /// Code 2,909,999, little-endian.
+    const CODE: [u8; 3] = [0x2F, 0x67, 0x2C];
+
+    /// The max HP read from `spawned` with `CODE`.
+    fn max_hp_of(id: u32, place: [u8; 18], after: &[u8]) -> Option<i32> {
+        spawned(id, CODE, place, after).enemy_max_hp(id as i32)
+    }
+
+    #[test]
+    fn with_no_hp_right_after_the_place_the_first_live_reading_past_it_counts() {
+        // A zero HP, then an HP over its max, then a live one.
+        assert_eq!(max_hp_of(56_005, [0; 18], &[0x00, 0x01, 0x00, 0x00, 0x01, 0x64, 0x32, 0x01, 0x0A, 0x0A]), Some(10));
+    }
+
+    #[test]
+    fn a_pair_inside_the_place_never_counts() {
+        let mut place = [0; 18];
+        place[..3].copy_from_slice(&[0x01, 0x0A, 0x0A]);
+        assert_eq!(max_hp_of(56_006, place, &[]), None);
+    }
+
+    #[test]
+    fn hp_right_after_the_place_that_does_not_read_gives_no_max() {
+        // No HP there, though a pair further on reads.
+        assert_eq!(max_hp_of(56_009, [0; 18], &[0x01, 0x00, 0x00, 0x01, 0x0A, 0x0A]), None);
+    }
+
+    /// A world boss's spawn whose place's x starts with `01`, which reads as
+    /// a small HP pair; its own HP follows the place.
+    #[test]
+    fn max_hp_follows_the_place_before_any_pair_inside_it() {
+        let place = [0x01, 0xA9, 0x19, 0xC7, 0x4C, 0x0E, 0x98, 0x46, 0x00, 0x9C, 0x1D, 0x46, 0xE9, 0x9A, 0xE2, 0x42, 0x81, 0xC9];
+        let hp = [0x01, 0xD9, 0xE0, 0xAB, 0x94, 0x02, 0xE0, 0x9F, 0x96, 0xBC, 0x03, 0x64];
+        let storage = spawned(23_430, [0x99, 0xAC, 0x27], place, &hp);
+        assert_eq!(storage.enemy_code(23_430), Some(2_600_089));
+        assert_eq!(storage.enemy_max_hp(23_430), Some(931_500_000));
     }
 
     /// HP past 31 bits gives no max: its low 32 bits would be a smaller,
@@ -662,11 +721,7 @@ mod tests {
             out
         };
         let max_after = |id: u32, hp: u64| {
-            let mut rest = vec![0x0C, 0, 0, 0x2F, 0x67, 0x2C, 0x00, 0x40, 0x02, 0x01];
-            rest.extend(wide(hp));
-            rest.extend(wide(hp));
-            let (storage, mut p) = meter("");
-            read(&mut p, &spawn_bytes(id, &rest));
+            let storage = spawned(id, CODE, [0; 18], &[&[0x01][..], &wide(hp), &wide(hp)].concat());
             (storage.is_mob(id as i32), storage.enemy_max_hp(id as i32))
         };
         assert_eq!(max_after(56_007, 2_000_000_000), (true, Some(2_000_000_000)));

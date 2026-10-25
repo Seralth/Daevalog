@@ -7,8 +7,8 @@
 //! <len> 2b 38 <entity> <flags u8> <instance> ... the same from <abnormal> on              changed
 //! <len> 2c 38 <entity> <n u8> (<kind u8> <instance> <reason u8>
 //!             [kind 7: <by entity> <skill u32> <skill effect u32>])*                      removed
-//! <len> 4a 36 <entity> <n u8> (<stat u16> <value i32>)* <8 bytes>                         stats changed
-//! <len> 49 36 <2 bytes> <n u8> (<stat u16> <value i32>)* <8 bytes>                        all stats
+//! <len> 4a 36 <entity> <n varint> (<stat u16> <value i32>)* <8 bytes>                     stats changed
+//! <len> 49 36 <2 bytes> <n varint> (<stat u16> <value i32>)* <8 bytes>                    all stats
 //! <len> 41 36 | 45 36 | 33 36 <entity> ... <n u8> (<entry>)* 07 02 | 0f ...              on at spawn
 //!   entry: <flags u8> <instance> <abnormal u32> <length i64> <end i64>
 //!          [flags & 1: <caster>] <level u8> [flags & 2: <skill u32>] [<u8>] <x f32> <y f32> <z f32>
@@ -192,7 +192,8 @@ pub fn parse(packet: &[u8]) -> Option<Record> {
                 r.bytes::<2>()?;
                 None
             };
-            let n = r.u8()?;
+            // A varint: a whole sheet holds 132 stats, written `84 01`.
+            let n = u32::try_from(r.varint()?).ok()?;
             let mut values = Vec::with_capacity(n as usize);
             for _ in 0..n {
                 let stat = u16::from_le_bytes(r.bytes()?);
@@ -864,6 +865,12 @@ mod tests {
             parse(&stats_off()),
             Some(Record::Stats { entity: Some(YOU as i32), values: vec![(65, 500), (76, 0), (379, 1000), (380, 0)] })
         );
+    }
+
+    #[test]
+    fn a_stat_sheet_past_127_stats_is_read() {
+        let values: Vec<(u16, i32)> = (1..=132).map(|stat| (stat, i32::from(stat) * 10)).collect();
+        assert_eq!(parse(&built::stats(YOU, &values)), Some(Record::Stats { entity: Some(YOU as i32), values }));
     }
 
     #[test]

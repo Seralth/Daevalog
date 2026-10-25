@@ -77,7 +77,7 @@ pub fn run(
     let train_all = settings.training_mode == "all";
     let mut view = MeterView::new();
     let mut party = PartyFeed::new(meter.details_source());
-    let mut trail = crate::snapshot::HpTrail::default();
+    let mut trail = crate::kill_time::HpTrail::default();
     // Locked as the live feed locks it, so both save through the same calls.
     let meter = Mutex::new(meter);
     let saving = if replay.save { crate::history::store() } else { None };
@@ -92,7 +92,7 @@ pub fn run(
         let mut snapshot = Snapshot::new(&reading, shown, at);
         // A replay reads them always: its views and screenshots open on any tab.
         snapshot.party = party.update(&reading, shown, at, last, train_all, &options, true);
-        snapshot.boss_eta = trail.update(at, snapshot.target_id, snapshot.boss_live_hp);
+        snapshot.boss_eta = trail.update(at, snapshot.target_id, snapshot.battle_ms, snapshot.boss_live_hp, crate::kill_time::crowd_map(reading.dungeon_id));
         snapshot
     };
 

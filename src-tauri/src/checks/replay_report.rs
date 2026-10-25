@@ -20,17 +20,15 @@
 //!                                  `hit_flags` and `dot_ticks` lines
 //! A2_REPLAY_TAKEN=1                print the damage players took in the window,
 //!                                  per player and skill (see `replay_taken`)
-//! A2_REPLAY_PLAYERS=1              print every player met, at the end: entity id,
-//!                                  server, class and where it came from, name;
-//!                                  then every Item Level and Combat Power a party,
-//!                                  party finder or legion list stated (`gear`
-//!                                  lines, capture ms and list first; see
-//!                                  `replay_players`)
 //! A2_REPLAY_PACKETS=1              print every framed packet (`pkt`) and every
 //!                                  bundle opened inside one (`bun`) as hex,
 //!                                  capture ms first, in the window
 //! A2_REPLAY_CHARACTER=1            print your own character's latest state as
-//!                                  JSON instead (see `replay_character`)
+//!                                  JSON instead (see `replay_character`; needs
+//!                                  `backend`): A2_REPLAY_FILE may name several
+//!                                  logs joined by ':', oldest first, and
+//!                                  A2_GAME_DATA=dir the game data folder for
+//!                                  names (without it the ids stay)
 //! A2_REPLAY_TICK_MS=100           read the meter that often instead of every 500 ms
 //! A2_REPLAY_MODE=encounter         run the meter in this mode (a mode id, as
 //!                                  `TargetScope::from_id` takes), read
@@ -47,7 +45,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
-use crate::capture::framing::{self, ChunkForm};
+use crate::capture::framing;
 use crate::capture::byte_queue::ByteQueue;
 use crate::capture::packet_log::{bytes_from_hex, LogLine, PacketLogReplay, RepeatFilter};
 use crate::capture::ping_tracker::PingTracker;
@@ -57,74 +55,12 @@ use crate::combat::dps_calculator::DpsCalculator;
 use crate::entity::owner_chain;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
 
-use super::replay_players::Players;
 use super::replay_timeline;
 
 fn env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.is_empty())
 }
 
-/// (raw actor, skill, is_dot) -> (hits, damage)
-type Counts = HashMap<(i32, i32, bool), (i64, i64)>;
-
-fn counts(t: &TargetTotals) -> Counts {
-    let mut out = Counts::new();
-    for (&actor, a) in &t.actors {
-        for (&(skill, dot), s) in &a.skills {
-            out.insert((actor, skill, dot), (s.hit_count as i64, s.total_damage as i64));
-        }
-    }
-    out
-}
-
-/// What changed from `before` to `after`. A segment reset (new first-damage
-/// time) starts from nothing.
-fn diff(before: Option<&TargetTotals>, after: Option<&TargetTotals>) -> Counts {
-    let Some(after) = after else { return Counts::new() };
-    let base = match before {
-        Some(b) if b.first_damage_time == after.first_damage_time => counts(b),
-        _ => Counts::new(),
-    };
-    let now = counts(after);
-    let mut out = Counts::new();
-    // Keys can vanish too: one actor's rows merged into another's.
-    for k in now.keys().chain(base.keys()) {
-        let (h, d) = now.get(k).copied().unwrap_or((0, 0));
-        let (bh, bd) = base.get(k).copied().unwrap_or((0, 0));
-        if h != bh || d != bd {
-            out.insert(*k, (h - bh, d - bd));
-        }
-    }
-    out
-}
-
-/// Packets inside a buffer, bundles opened, for the opcode dump, the timeline
-/// and the player list.
-pub(super) fn frames_of(buf: &[u8], top: bool, out: &mut Vec<Vec<u8>>, depth: usize) {
-    let walk = if top { framing::walk(buf) } else { framing::split_frames(buf) };
-    for f in &walk.frames {
-        match f.kind {
-            ChunkForm::Packet => out.push(f.bytes(buf).to_vec()),
-            ChunkForm::Bundle if depth < 4 => {
-                if let Some(inner) = framing::inflate_block(f.payload(buf)) {
-                    frames_of(&inner, false, out, depth + 1);
-                }
-            }
-            ChunkForm::Bundle => {}
-        }
-    }
-}
-
-/// Adds `bytes` to a stream's held bytes and takes out the whole packets
-/// they now hold, bundles opened.
-pub(super) fn whole_packets(acc: &mut ByteQueue, bytes: &[u8]) -> Vec<Vec<u8>> {
-    acc.append(bytes);
-    let whole = framing::walk(acc.snapshot()).consumed;
-    let mut out = Vec::new();
-    frames_of(&acc.snapshot()[..whole], true, &mut out, 0);
-    acc.drop_front(whole);
-    out
-}
 
 /// What to report, from the environment variables above.
 #[derive(Default)]
@@ -137,7 +73,6 @@ pub(crate) struct Options {
     pub dump_op: Option<[u8; 2]>,
     pub timeline: bool,
     pub taken: bool,
-    pub players: bool,
     pub packets: bool,
     pub mode: Option<String>,
 }
@@ -192,8 +127,8 @@ fn skill_label(skills: &SkillLookup, skill: i32, dot: bool) -> String {
     if dot { format!("{skill} {name} (DoT)") } else { format!("{skill} {name}") }
 }
 
-/// The packets one line adds to its stream, for the dump, the packet list,
-/// the timeline and the players. Kept apart from the replay's own framing.
+/// The packets one line adds to its stream, for the dump, the packet list
+/// and the timeline. Kept apart from the replay's own framing.
 #[derive(Default)]
 struct Packets {
     streams: HashMap<String, ByteQueue>,
@@ -207,7 +142,7 @@ impl Packets {
             return None;
         }
         let held = self.streams.entry(line.stream.to_string()).or_default();
-        Some(whole_packets(held, &line.bytes))
+        Some(framing::take_packets(held, &line.bytes))
     }
 }
 
@@ -248,8 +183,7 @@ impl Window {
         targets.sort();
         let mut out = Vec::new();
         for target in targets {
-            let mut changes: Vec<_> = diff(self.before.get(&target), now.get(&target)).into_iter().collect();
-            changes.sort();
+            let changes = now.get(&target).map(|t| t.row_changes(self.before.get(&target))).unwrap_or_default();
             for (key, (hits, damage)) in changes {
                 let sum = self.sums.entry(target).or_default().entry(key).or_default();
                 sum.0 += hits;
@@ -302,38 +236,16 @@ impl Meter {
     }
 }
 
-/// Hands one line's packets, and the bundles inside them, to the player list.
-fn scan_players(players: &mut Players, list: &[Vec<u8>], storage: &DataStorage, ms: i64) {
-    for p in list {
-        players.scan_spawns(p, ms);
-        players.scan_gear(p, ms);
-        for inner in framing::embedded_bundles(p) {
-            players.scan_spawns(&inner.data, ms);
-            let mut opened = Vec::new();
-            frames_of(&inner.data, false, &mut opened, 1);
-            for q in &opened {
-                players.scan_gear(q, ms);
-            }
-        }
-    }
-    players.roster_and_self(storage, ms);
-}
-
-/// Hands one line's packets to the player list and the timeline, and prints
+/// Hands one line's packets to the timeline, and prints
 /// the packet list and the opcode dump in the window.
 fn scan_line_packets(
     list: &[Vec<u8>],
     at: At,
     options: &Options,
-    players: Option<&mut Players>,
     mut timeline: Option<&mut replay_timeline::Gather>,
-    storage: &DataStorage,
     out: &mut dyn FnMut(String),
 ) {
     let ms = at.ms;
-    if let Some(players) = players {
-        scan_players(players, list, storage, ms);
-    }
     for p in list {
         if options.packets && at.in_window {
             out(format!("pkt {ms} {}", to_hex(p)));
@@ -428,7 +340,6 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let mut timeline = options.timeline.then(|| replay_timeline::Gather::new(&super::data_dir()));
     let _tap = timeline.as_ref().map(|g| g.tap.install());
     let mut taken = options.taken.then(super::replay_taken::Gather::default);
-    let mut players = options.players.then(Players::default);
     let mut deaths = super::replay_deaths::Gather::default();
 
     let mut packets = Packets::default();
@@ -436,7 +347,7 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let mut reset_at = options.reset_at.clone();
     let mut zone = None;
     let (mut lines, mut clean) = (0usize, 0usize);
-    let (mut first_ms, mut last_ms) = (None::<i64>, 0i64);
+    let mut last_ms = 0i64;
 
     for line in text.lines().filter_map(LogLine::parse) {
         if zone.is_none() {
@@ -469,11 +380,10 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             clean += 1;
         }
         last_ms = ms;
-        first_ms.get_or_insert(ms);
 
-        let wanted = (in_window && (options.dump_op.is_some() || options.packets)) || options.timeline || options.players;
+        let wanted = (in_window && (options.dump_op.is_some() || options.packets)) || options.timeline;
         if let Some(list) = packets.of_line(&line, wanted) {
-            scan_line_packets(&list, at, &options, players.as_mut(), timeline.as_mut(), &storage, out);
+            scan_line_packets(&list, at, &options, timeline.as_mut(), out);
         }
         if let Some(t) = taken.as_mut() {
             t.after_line(&storage);
@@ -483,7 +393,8 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             m.read(at, out);
         }
         if let Some(g) = timeline.as_mut() {
-            g.after_line(ms, storage.local_player_id().map(|id| id as i32), || storage.pet_owners());
+            let local = storage.local_player_id().map(|id| id as i32);
+            g.after_line(ms, local, |id| storage.enemy_code(id), || storage.pet_owners());
         }
 
         if window.open {
@@ -491,11 +402,6 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
             let now = storage.copy_targets_brief();
             deaths.note_fights(now.values());
             for (target, (actor, skill, dot), (hits, damage)) in window.add_window_changes(now, options.target) {
-                if hits > 0
-                    && let Some(players) = players.as_mut()
-                {
-                    players.hit(&storage, actor, skill, ms);
-                }
                 if options.show_hits {
                     let label = skill_label(&skills, skill, dot);
                     out(format!("hit {tod} target {target} actor {actor} skill {label} x{hits} {damage}"));
@@ -512,12 +418,6 @@ pub(crate) fn run(text: &str, options: Options, out: &mut dyn FnMut(String)) {
     let links = storage.pet_owners();
     for (target, sums) in &window.sums {
         target_summary(*target, sums, &links, &skills, out);
-    }
-    if let Some(players) = players {
-        out(String::new());
-        for line in players.lines(&storage, first_ms.unwrap_or(0), last_ms) {
-            out(line);
-        }
     }
     if let Some(target) = options.target {
         meter_segment(target, last_ms, &storage, &skills, &npcs, out);
@@ -542,6 +442,7 @@ fn replay_report() {
         eprintln!("set A2_REPLAY_FILE");
         return;
     };
+    #[cfg(feature = "backend")]
     if env("A2_REPLAY_CHARACTER").is_some() {
         println!("{}", super::replay_character::report(&path));
         return;
@@ -555,7 +456,6 @@ fn replay_report() {
         dump_op: env("A2_REPLAY_DUMP").and_then(|h| bytes_from_hex(&h)).and_then(|v| v.try_into().ok()),
         timeline: env("A2_REPLAY_TIMELINE").is_some(),
         taken: env("A2_REPLAY_TAKEN").is_some(),
-        players: env("A2_REPLAY_PLAYERS").is_some(),
         packets: env("A2_REPLAY_PACKETS").is_some(),
         mode: env("A2_REPLAY_MODE"),
     };

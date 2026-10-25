@@ -139,6 +139,7 @@ This section lists what Daevalog does differently from A2Tools DPS Meter.
 - **Notice tray** on the meter's top edge: an icon per kind of notice waiting, and a card that pulls up with the notices. Nothing opens over the game by itself.
 - **Pet soul notices:** each soul a pet takes says how many souls it holds toward its next level and how many it needs to the top, one line per pet.
 - **Power Shard warning:** a notice when your hits stop using Power Shards after using them, or when you ran out.
+- **Boss countdowns:** 30, 15 and 5 minutes before an Abyss Boss, and before Gartua and the commanders once you have opened the map (the game sends their times only then); 5 minutes before a Spacetime Rift.
 
 ### Linux desktop
 - **Qt Quick windows.** Daevalog 2.0 draws its windows with Qt 6 instead of WebKitGTK.
@@ -222,7 +223,7 @@ The community links of the A2Tools project are in the [A2Tools DPS Meter reposit
 
 ### Icons
 
-The Field Boss and Spacetime Rift notices use two [Lucide](https://lucide.dev) icons, "swords" and "orbit", under the ISC License (notice in [LICENSE](LICENSE)).
+The boss and Spacetime Rift notices use two [Lucide](https://lucide.dev) icons, "swords" and "orbit", and five gear slot icons are Lucide's "sword", "shield", "shirt", "hand" and "hexagon", under the ISC License (notice in [LICENSE](LICENSE)).
 
 ### Fonts
 

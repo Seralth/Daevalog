@@ -9688,7 +9688,7 @@
     "dungeonId": 600022
   },
   "2300313": {
-    "name": "Estátua Guardiã da Pedra de Flama",
+    "name": "Estátua Guardiã da Pedra das Chamas",
     "isBoss": false
   },
   "2300314": {
@@ -12579,7 +12579,7 @@
     "dungeonId": 600021
   },
   "2310313": {
-    "name": "Estátua Guardiã da Pedra de Flama",
+    "name": "Estátua Guardiã da Pedra das Chamas",
     "isBoss": false
   },
   "2310314": {
@@ -13519,7 +13519,7 @@
     "dungeonId": 600023
   },
   "2320313": {
-    "name": "Estátua Guardiã da Pedra de Flama",
+    "name": "Estátua Guardiã da Pedra das Chamas",
     "isBoss": false
   },
   "2320314": {
@@ -15125,7 +15125,7 @@
     "isBoss": true
   },
   "2330313": {
-    "name": "Estátua Guardiã da Pedra de Flama",
+    "name": "Estátua Guardiã da Pedra das Chamas",
     "isBoss": false
   },
   "2330314": {
@@ -28961,7 +28961,7 @@
     "isBoss": false
   },
   "2701145": {
-    "name": "Inseto Venenoso Sram",
+    "name": "Inseto Peçonhento Sram",
     "isBoss": true
   },
   "2701146": {

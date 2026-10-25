@@ -9,14 +9,19 @@
 
 mod account;
 mod capture;
+mod character;
+mod character_view;
+mod countdowns;
 mod details;
 mod display;
 mod enrage;
+mod gear_glyphs;
 mod history;
 mod hotkey;
 mod hyprland;
 mod i18n;
 mod instance;
+mod kill_time;
 mod layer_drag;
 mod live;
 mod menus;
@@ -26,6 +31,8 @@ mod overlay;
 mod party;
 mod pet_souls;
 mod power_shards;
+mod field_bosses;
+mod timed_notices;
 mod world_spawns;
 #[cfg(test)]
 mod qml_checks;
@@ -62,7 +69,7 @@ pub const CAPTURE_HELPER: &str = "daevalog-capture-dev";
 const USAGE_TOP: &str = "\
 Usage: daevalog-dps-meter [--layer-shell] [--locked] [--screenshot FILE.png]
                           [--open VIEW] [--width N] [--icon-size N] [--font-size N]
-                          [--meter-size N]
+                          [--meter-size N] [--character FILE]
                           [--mode MODE] [--you] [--players N] [--pin-you]
                           [--hide-names] [--language LANG] [--theme THEME] [--columns LIST]
                           [--capture-helper FILE]
@@ -85,7 +92,7 @@ for this run only.
 const USAGE_TOP: &str = "\
 Usage: daevalog-dps-meter [--locked] [--screenshot FILE.png]
                           [--open VIEW] [--width N] [--icon-size N] [--font-size N]
-                          [--meter-size N]
+                          [--meter-size N] [--character FILE]
                           [--mode MODE] [--you] [--players N] [--pin-you]
                           [--hide-names] [--language LANG] [--theme THEME] [--columns LIST]
                           [--replay FILE [--fast] [--until TIME] [--print-fights]
@@ -126,8 +133,13 @@ const USAGE_OPTIONS: &str = "  --locked            start locked: clicks go throu
                       history/record, history/player, settings, settings/PAGE
                       (connection, appearance, meter, meter-heal, account,
                       keybinds, diagnostics, report, advanced), and
-                      settings/PAGE-full (the window as tall as the page);
+                      settings/PAGE-full (the window as tall as the page),
+                      character, character/PAGE (stats, skills, boards,
+                      or base: the gear with the first item's base stats);
                       with --screenshot, that window is saved
+  --character FILE    the Character window shows this character file
+                      instead of the data folder's; more than one, each
+                      with its own --character
   --mode MODE         boss, target, all, train or enc (default: the Default
                       mode setting; boss with --replay)
   --you               show YOU on your own row instead of your name
@@ -164,7 +176,7 @@ const USAGE_REPLAY: &str = "  --replay FILE       feed a packet log (packets_*.t
 ";
 
 /// The windows --open knows; Main.qml reads the page after the slash.
-const WINDOWS: [&str; 4] = ["meter", "details", "history", "settings"];
+const WINDOWS: [&str; 5] = ["meter", "details", "history", "settings", "character"];
 
 /// --mode's names for the backend's modes, in `MODES`' order.
 const MODE_NAMES: [&str; 5] = ["boss", "target", "all", "train", "enc"];
@@ -183,6 +195,9 @@ pub struct Options {
     pub print_fights: bool,
     /// --ping: the ping a replay shows, for a screenshot.
     pub ping: Option<i32>,
+    /// --character: the files the Character window shows instead of the
+    /// data folder's.
+    pub characters: Vec<PathBuf>,
 }
 
 static OPTIONS: OnceLock<Options> = OnceLock::new();
@@ -333,6 +348,7 @@ fn parse_args(args: &[String]) -> Result<Command, String> {
                 let file = args.next().ok_or("--capture-helper needs a file")?;
                 options.capture_helper = Some(PathBuf::from(file));
             }
+            "--character" => options.characters.push(PathBuf::from(args.next().ok_or("--character needs a file")?)),
             "--replay" => file = Some(PathBuf::from(args.next().ok_or("--replay needs a file")?)),
             "--fast" => fast = true,
             "--until" => until = Some(args.next().ok_or("--until needs a time of day")?.clone()),
@@ -561,6 +577,16 @@ mod tests {
         }
         assert!(parse_args(&args(&["--open", "tray"])).is_err());
         assert!(parse_args(&args(&["--open"])).is_err());
+    }
+
+    #[test]
+    fn the_character_window_opens_on_named_files() {
+        let parsed = parse_args(&args(&["--open", "character/skills", "--character", "a.json", "--character", "b.json"]));
+        let Ok(Command::Run(options)) = parsed else { panic!("{parsed:?}") };
+        assert_eq!(options.open.as_deref(), Some("character/skills"));
+        assert_eq!(options.characters, vec![PathBuf::from("a.json"), PathBuf::from("b.json")]);
+        assert!(parse_args(&args(&["--character"])).is_err());
+        assert!(usage().contains("character/PAGE (stats, skills, boards,"));
     }
 
     #[test]

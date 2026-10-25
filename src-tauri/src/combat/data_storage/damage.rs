@@ -834,6 +834,39 @@ mod tests {
         assert_eq!(span(&s, 900), (300, 20_000, 25_000));
     }
 
+    /// A killed boss reads 0 HP, leaves combat and comes back in before its
+    /// death record: a hit then is still the kill's fight. A boss back to
+    /// full HP after a wipe starts the next fight as before.
+    #[test]
+    fn a_boss_at_zero_hp_starts_no_fight() {
+        // The boss's own HP record, then the entity HP scan.
+        let zeros: [fn(&DataStorage); 2] = [|s| s.note_hp(900, 0), |s| s.update_enemy_hp(900, 0)];
+        for zero in zeros {
+            let s = DataStorage::new();
+            s.register_boss(900);
+            rec(&s, 1000, 900, 11_010_000, 100, 0);
+            rec(&s, 1000, 900, 11_010_000, 100, 10_000);
+            zero(&s);
+            s.note_combat(900, false, None, 10_050);
+            s.note_combat(900, true, None, 10_100);
+            rec(&s, 1000, 900, 11_010_000, 100, 10_200);
+            rec(&s, 1000, 900, 11_010_000, 100, 13_000);
+            assert_eq!(span(&s, 900), (400, 0, 13_000));
+            assert!(s.take_ended_segments().is_empty());
+        }
+
+        let s = DataStorage::new();
+        s.register_boss(900);
+        rec(&s, 1000, 900, 11_010_000, 100, 0);
+        s.note_hp(900, 0);
+        s.note_hp(900, 5_000);
+        s.update_enemy_hp(900, 5_000);
+        s.note_combat(900, false, None, 10_050);
+        s.note_combat(900, true, None, 10_100);
+        rec(&s, 1000, 900, 11_010_000, 100, 10_200);
+        assert_eq!(span(&s, 900), (100, 10_200, 10_200));
+    }
+
     /// The encounter goes on through a wipe and the next pull, as before; a
     /// target that is no boss keeps one fight.
     #[test]

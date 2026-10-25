@@ -75,3 +75,8 @@ fn the_meter_size_keeps_100_percent_as_it_was_and_grows_every_size() {
 fn a_number_with_nothing_behind_it_shows_a_dash() {
     run("tst_no_data.qml");
 }
+
+#[test]
+fn a_layer_window_the_compositor_closed_shows_again() {
+    run("tst_reopen.qml");
+}

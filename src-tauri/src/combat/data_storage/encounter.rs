@@ -125,9 +125,11 @@ impl BossCombat {
 /// Whether a hit at `ts` on `target` starts the boss's next fight: the
 /// server ended its live fight and the boss is back in combat, or this
 /// direct hit comes `STRAGGLER_MS` after it left. Ticks of damage over time
-/// start none, nor does a dead boss.
+/// start none, nor does a dead boss, nor one at 0 HP: a killed boss leaves
+/// combat and comes back in before its death record, and the hits still
+/// landing then are the kill's.
 pub(super) fn server_restart(inner: &mut Inner, target: i32, ts: i64, tick: bool) -> bool {
-    if tick || inner.dead_entity_ids.contains(&target) {
+    if tick || inner.dead_entity_ids.contains(&target) || at_zero_hp(inner, target) {
         return false;
     }
     let Some(state) = inner.boss_combat.get_mut(&target) else { return false };
@@ -136,6 +138,13 @@ pub(super) fn server_restart(inner: &mut Inner, target: i32, ts: i64, tick: bool
         state.next_pull();
     }
     inner.target_combat.get(&target).is_some_and(|f| f.pull != state.pull)
+}
+
+/// Either source at 0 is enough: neither keeps when it read, so the newer
+/// is not known, and a boss alive again sends its own HP record, which
+/// fills both, so a 0 still in either is the kill's.
+fn at_zero_hp(inner: &Inner, target: i32) -> bool {
+    inner.hp_now.get(&target) == Some(&0) || inner.mob_current_hp.get(&target) == Some(&0)
 }
 
 /// A new fight on `target` from `ts`: a boss's is of its current pull.

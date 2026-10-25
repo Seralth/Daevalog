@@ -10,7 +10,7 @@
     "isDummy": true
   },
   "2000002": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2000004": {
@@ -935,7 +935,7 @@
     "isBoss": false
   },
   "2090026": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2090027": {
@@ -2524,7 +2524,7 @@
     "isBoss": false
   },
   "2090672": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2090673": {
@@ -3073,7 +3073,7 @@
     "isBoss": false
   },
   "2100205": {
-    "name": "Krall saetero del Río Ellun",
+    "name": "Krall arquero del Río Ellun",
     "isBoss": false
   },
   "2100206": {
@@ -3333,7 +3333,7 @@
     "isBoss": false
   },
   "2100468": {
-    "name": "Velador de Kantas",
+    "name": "Vigilante de Kantas",
     "isBoss": false
   },
   "2100469": {
@@ -3473,7 +3473,7 @@
     "isBoss": false
   },
   "2100570": {
-    "name": "Daeva velador renegado",
+    "name": "Daeva vigilante renegado",
     "isBoss": false
   },
   "2100571": {
@@ -4125,7 +4125,7 @@
     "isBoss": false
   },
   "2100905": {
-    "name": "Saetero errante de Sura",
+    "name": "Arquero errante de Sura",
     "isBoss": false
   },
   "2100906": {
@@ -4153,7 +4153,7 @@
     "isBoss": false
   },
   "2100912": {
-    "name": "Krall saetero modificado",
+    "name": "Krall arquero modificado",
     "isBoss": false
   },
   "2100913": {
@@ -4341,7 +4341,7 @@
     "isBoss": false
   },
   "2100994": {
-    "name": "Aprendiz de la aldea Aullaeu",
+    "name": "Recluta de la aldea Aullaeu",
     "isBoss": false
   },
   "2100995": {
@@ -4677,7 +4677,7 @@
     "isBoss": true
   },
   "2101107": {
-    "name": "Velador Sandha",
+    "name": "Vigilante Sandha",
     "isBoss": true
   },
   "2101108": {
@@ -5789,43 +5789,43 @@
     "isBoss": true
   },
   "2110301": {
-    "name": "Asaltante del patíbulo",
+    "name": "Asaltante del Patíbulo",
     "isBoss": false
   },
   "2110302": {
-    "name": "Hurtador del patíbulo",
+    "name": "Hurtador del Patíbulo",
     "isBoss": false
   },
   "2110303": {
-    "name": "Patrullero del patíbulo",
+    "name": "Patrullero del Patíbulo",
     "isBoss": false
   },
   "2110304": {
-    "name": "Zaif explorador del patíbulo",
+    "name": "Zaif explorador del Patíbulo",
     "isBoss": false
   },
   "2110305": {
-    "name": "Patrullero del patíbulo",
+    "name": "Patrullero del Patíbulo",
     "isBoss": false
   },
   "2110306": {
-    "name": "Jefe del patíbulo",
+    "name": "Jefe del Patíbulo",
     "isBoss": false
   },
   "2110307": {
-    "name": "Hurtador del patíbulo",
+    "name": "Hurtador del Patíbulo",
     "isBoss": false
   },
   "2110308": {
-    "name": "Patrullero del patíbulo",
+    "name": "Patrullero del Patíbulo",
     "isBoss": false
   },
   "2110309": {
-    "name": "Zaif explorador del patíbulo",
+    "name": "Zaif explorador del Patíbulo",
     "isBoss": false
   },
   "2110310": {
-    "name": "Jefe del patíbulo",
+    "name": "Jefe del Patíbulo",
     "isBoss": false
   },
   "2110311": {
@@ -6157,7 +6157,7 @@
     "isBoss": false
   },
   "2110420": {
-    "name": "Draconute saetero del Campo de Detención",
+    "name": "Draconute arquero del Campo de Detención",
     "isBoss": false
   },
   "2110421": {
@@ -6217,7 +6217,7 @@
     "isBoss": false
   },
   "2110439": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2110440": {
@@ -6237,7 +6237,7 @@
     "isBoss": false
   },
   "2110445": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2110446": {
@@ -6273,7 +6273,7 @@
     "isBoss": false
   },
   "2110455": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2110456": {
@@ -6637,7 +6637,7 @@
     "isBoss": false
   },
   "2110642": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2110643": {
@@ -6841,7 +6841,7 @@
     "isBoss": false
   },
   "2200030": {
-    "name": "Saetero bandido",
+    "name": "Arquero bandido",
     "isBoss": false
   },
   "2200031": {
@@ -7181,7 +7181,7 @@
     "isBoss": false
   },
   "2200123": {
-    "name": "Ectoplasma de saetero errante",
+    "name": "Ectoplasma de arquero errante",
     "isBoss": false
   },
   "2200124": {
@@ -7197,7 +7197,7 @@
     "isBoss": false
   },
   "2200127": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2200128": {
@@ -7205,23 +7205,23 @@
     "isBoss": false
   },
   "2200129": {
-    "name": "Capitán de escuadra convertido en Sura",
+    "name": "Comandante de escuadra convertido en Sura",
     "isBoss": false
   },
   "2200130": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2200131": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2200132": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2200133": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2200134": {
@@ -7277,7 +7277,7 @@
     "isBoss": true
   },
   "2200147": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2200148": {
@@ -7681,11 +7681,11 @@
     "isBoss": false
   },
   "2290047": {
-    "name": "Drakan soldado raso de la torre de energía",
+    "name": "Drakan soldado raso de la Torre de Energía",
     "isBoss": false
   },
   "2290048": {
-    "name": "Drakan celador de la torre de energía",
+    "name": "Drakan celador de la Torre de Energía",
     "isBoss": false
   },
   "2290049": {
@@ -10761,7 +10761,7 @@
     "isBoss": false
   },
   "2300576": {
-    "name": "Saetero protector de la isla",
+    "name": "Arquero protector de la isla",
     "isBoss": false
   },
   "2300577": {
@@ -11035,7 +11035,7 @@
     "isBoss": false
   },
   "2300806": {
-    "name": "Saetero protector de la isla",
+    "name": "Arquero protector de la isla",
     "isBoss": false
   },
   "2300807": {
@@ -11913,7 +11913,7 @@
     "isBoss": false
   },
   "2301412": {
-    "name": "Velador del corredor",
+    "name": "Vigilante del corredor",
     "isBoss": false
   },
   "2301413": {
@@ -12881,7 +12881,7 @@
     "isBoss": false
   },
   "2310806": {
-    "name": "Saetero protector de la isla",
+    "name": "Arquero protector de la isla",
     "isBoss": false
   },
   "2310807": {
@@ -13194,7 +13194,7 @@
     "isBoss": false
   },
   "2311412": {
-    "name": "Velador del corredor",
+    "name": "Vigilante del corredor",
     "isBoss": false
   },
   "2311413": {
@@ -13828,7 +13828,7 @@
     "isBoss": false
   },
   "2320806": {
-    "name": "Saetero protector de la isla",
+    "name": "Arquero protector de la isla",
     "isBoss": false
   },
   "2320807": {
@@ -14137,7 +14137,7 @@
     "isBoss": false
   },
   "2321412": {
-    "name": "Velador del corredor",
+    "name": "Vigilante del corredor",
     "isBoss": false
   },
   "2321413": {
@@ -16916,7 +16916,7 @@
     "isBoss": false
   },
   "2360107": {
-    "name": "Alma de Daeva saetero",
+    "name": "Alma de Daeva arquero",
     "isBoss": false
   },
   "2360108": {
@@ -17104,7 +17104,7 @@
     "isBoss": false
   },
   "2360169": {
-    "name": "Velador de la Legión de la Cuchilla",
+    "name": "Vigilante de la Legión de la Cuchilla",
     "isBoss": false
   },
   "2360170": {
@@ -17176,7 +17176,7 @@
     "isBoss": false
   },
   "2360187": {
-    "name": "Alma de Daeva saetero",
+    "name": "Alma de Daeva arquero",
     "isBoss": false
   },
   "2360188": {
@@ -17340,7 +17340,7 @@
     "isBoss": false
   },
   "2370007": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370008": {
@@ -17356,7 +17356,7 @@
     "isBoss": false
   },
   "2370011": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370012": {
@@ -17372,7 +17372,7 @@
     "isBoss": false
   },
   "2370015": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370016": {
@@ -17388,7 +17388,7 @@
     "isBoss": false
   },
   "2370019": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370020": {
@@ -17404,7 +17404,7 @@
     "isBoss": false
   },
   "2370023": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370024": {
@@ -17420,7 +17420,7 @@
     "isBoss": false
   },
   "2370027": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370028": {
@@ -17488,7 +17488,7 @@
     "isBoss": false
   },
   "2370044": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370045": {
@@ -17504,7 +17504,7 @@
     "isBoss": false
   },
   "2370048": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370049": {
@@ -17520,7 +17520,7 @@
     "isBoss": false
   },
   "2370052": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370053": {
@@ -17536,7 +17536,7 @@
     "isBoss": false
   },
   "2370056": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370057": {
@@ -17552,7 +17552,7 @@
     "isBoss": false
   },
   "2370060": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370061": {
@@ -17568,7 +17568,7 @@
     "isBoss": false
   },
   "2370064": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370065": {
@@ -17624,7 +17624,7 @@
     "isBoss": false
   },
   "2370078": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370079": {
@@ -17640,7 +17640,7 @@
     "isBoss": false
   },
   "2370082": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370083": {
@@ -17656,7 +17656,7 @@
     "isBoss": false
   },
   "2370086": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370087": {
@@ -17672,7 +17672,7 @@
     "isBoss": false
   },
   "2370090": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370091": {
@@ -17688,7 +17688,7 @@
     "isBoss": false
   },
   "2370094": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370095": {
@@ -17704,7 +17704,7 @@
     "isBoss": false
   },
   "2370098": {
-    "name": "Draconute saetero inferior",
+    "name": "Draconute arquero inferior",
     "isBoss": false
   },
   "2370099": {
@@ -19702,7 +19702,7 @@
     "isBoss": false
   },
   "2400106": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2400107": {
@@ -19722,7 +19722,7 @@
     "isBoss": false
   },
   "2400111": {
-    "name": "Drakan bestia armada",
+    "name": "Bestia armada Drakan",
     "isBoss": false
   },
   "2400112": {
@@ -19734,7 +19734,7 @@
     "isBoss": false
   },
   "2400114": {
-    "name": "Drakan bestia armada",
+    "name": "Bestia armada Drakan",
     "isBoss": false
   },
   "2400115": {
@@ -19958,7 +19958,7 @@
     "isBoss": false
   },
   "2400261": {
-    "name": "Velador de la Legión de la Cuchilla",
+    "name": "Vigilante de la Legión de la Cuchilla",
     "isBoss": false
   },
   "2400262": {
@@ -19986,7 +19986,7 @@
     "isBoss": false
   },
   "2400268": {
-    "name": "Saetero ancestral bajo control mental",
+    "name": "Arquero ancestral bajo control mental",
     "isBoss": false
   },
   "2400269": {
@@ -20162,7 +20162,7 @@
     "isBoss": false
   },
   "2400356": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2400358": {
@@ -20307,7 +20307,7 @@
     "isBoss": false
   },
   "2400406": {
-    "name": "Saqueador velador",
+    "name": "Saqueador vigilante",
     "isBoss": false
   },
   "2400407": {
@@ -20315,7 +20315,7 @@
     "isBoss": false
   },
   "2400408": {
-    "name": "Saqueadora saetera",
+    "name": "Arquero saqueador",
     "isBoss": false
   },
   "2400409": {
@@ -20471,7 +20471,7 @@
     "isBoss": false
   },
   "2400502": {
-    "name": "Velador del cuartel de la Legión de la Cuchilla",
+    "name": "Vigilante del cuartel de la Legión de la Cuchilla",
     "isBoss": false
   },
   "2400503": {
@@ -20479,7 +20479,7 @@
     "isBoss": false
   },
   "2400504": {
-    "name": "Barthien verdugo",
+    "name": "Verdugo Barthien",
     "isBoss": true
   },
   "2400505": {
@@ -20619,7 +20619,7 @@
     "isBoss": false
   },
   "2400591": {
-    "name": "Drakan velador de unidad de patrulla",
+    "name": "Drakan vigilante de unidad de patrulla",
     "isBoss": false
   },
   "2400592": {
@@ -21215,7 +21215,7 @@
     "isBoss": true
   },
   "2404006": {
-    "name": "Velador Brons",
+    "name": "Vigilante Brons",
     "isBoss": true
   },
   "2404007": {
@@ -21299,11 +21299,11 @@
     "isBoss": false
   },
   "2404111": {
-    "name": "Velador de Azrakar",
+    "name": "Vigilante de Azrakar",
     "isBoss": false
   },
   "2404112": {
-    "name": "Velador del Campo de Detención",
+    "name": "Vigilante del Campo de Detención",
     "isBoss": false
   },
   "2404113": {
@@ -21311,7 +21311,7 @@
     "isBoss": false
   },
   "2405001": {
-    "name": "Saetera de los bandoleros de Rubek",
+    "name": "Arquera de los bandoleros de Rubek",
     "isBoss": false
   },
   "2405002": {
@@ -21335,7 +21335,7 @@
     "isBoss": true
   },
   "2405007": {
-    "name": "Saetera de los bandoleros de Rubek",
+    "name": "Arquera de los bandoleros de Rubek",
     "isBoss": false
   },
   "2405008": {
@@ -21523,7 +21523,7 @@
     "isBoss": true
   },
   "2405086": {
-    "name": "Saetera bandida de las ruinas",
+    "name": "Arquera bandida de las ruinas",
     "isBoss": false
   },
   "2405087": {
@@ -21599,7 +21599,7 @@
     "isBoss": true
   },
   "2405121": {
-    "name": "Saqueadora saetera del bosque",
+    "name": "Saqueadora arquera del bosque",
     "isBoss": false
   },
   "2405122": {
@@ -21711,7 +21711,7 @@
     "isBoss": false
   },
   "2405172": {
-    "name": "Saetera contrabandista",
+    "name": "Arquera contrabandista",
     "isBoss": false
   },
   "2405173": {
@@ -21739,7 +21739,7 @@
     "isBoss": false
   },
   "2405179": {
-    "name": "Saetera contrabandista",
+    "name": "Arquera contrabandista",
     "isBoss": false
   },
   "2405180": {
@@ -21755,7 +21755,7 @@
     "isBoss": false
   },
   "2405183": {
-    "name": "Saetera contrabandista",
+    "name": "Arquera contrabandista",
     "isBoss": false
   },
   "2405184": {
@@ -21831,7 +21831,7 @@
     "isBoss": false
   },
   "2405231": {
-    "name": "Saetero de la Unidad de Exterminación",
+    "name": "Arquero de la Unidad de Exterminación",
     "isBoss": false
   },
   "2405232": {
@@ -21859,7 +21859,7 @@
     "isBoss": false
   },
   "2405251": {
-    "name": "Saetero vigilante de Amurahta",
+    "name": "Arquero vigilante de Amurahta",
     "isBoss": false
   },
   "2405252": {
@@ -21899,7 +21899,7 @@
     "isBoss": false
   },
   "2405261": {
-    "name": "Saetero vigilante de Amurahta",
+    "name": "Arquero vigilante de Amurahta",
     "isBoss": false
   },
   "2405262": {
@@ -22036,7 +22036,7 @@
     "isBoss": false
   },
   "2406024": {
-    "name": "Saetero del escuadrón de combate de la guarnición de Patamor",
+    "name": "Arquero del escuadrón de combate de la guarnición de Patamor",
     "isBoss": false
   },
   "2406025": {
@@ -22161,7 +22161,7 @@
     "isBoss": false
   },
   "2406055": {
-    "name": "Drakan saetero congelado",
+    "name": "Drakan arquero congelado",
     "isBoss": false
   },
   "2406056": {
@@ -22515,7 +22515,7 @@
     "isBoss": false
   },
   "2406153": {
-    "name": "Guardián espíritu de fuego iracundo",
+    "name": "Protector Espíritu de fuego iracundo",
     "isBoss": false
   },
   "2406154": {
@@ -22531,7 +22531,7 @@
     "isBoss": false
   },
   "2406157": {
-    "name": "Guardián espíritu de fuego violento",
+    "name": "Protector Espíritu de fuego violento",
     "isBoss": false
   },
   "2406158": {
@@ -22739,7 +22739,7 @@
     "isBoss": true
   },
   "2407002": {
-    "name": "Saetera forajida del campo nevado",
+    "name": "Arquera forajida del campo nevado",
     "isBoss": false
   },
   "2407003": {
@@ -23215,7 +23215,7 @@
     "isBoss": false
   },
   "2500000": {
-    "name": "Velador de los Bandoleros",
+    "name": "Vigilante de los Bandoleros",
     "isBoss": false
   },
   "2500001": {
@@ -23609,7 +23609,7 @@
     "isBoss": false
   },
   "2500106": {
-    "name": "Velador de la Legión de la Cuchilla",
+    "name": "Vigilante de la Legión de la Cuchilla",
     "isBoss": false
   },
   "2500107": {
@@ -23633,7 +23633,7 @@
     "isBoss": false
   },
   "2500112": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2500113": {
@@ -23649,7 +23649,7 @@
     "isBoss": false
   },
   "2500116": {
-    "name": "Saetero saqueador",
+    "name": "Arquero saqueador",
     "isBoss": false
   },
   "2500117": {
@@ -23785,7 +23785,7 @@
     "isBoss": false
   },
   "2500150": {
-    "name": "Draconute vigía",
+    "name": "Draconute vigilante",
     "isBoss": false
   },
   "2500151": {
@@ -23965,7 +23965,7 @@
     "isBoss": false
   },
   "2590021": {
-    "name": "Velador de la Legión de la Cuchilla",
+    "name": "Vigilante de la Legión de la Cuchilla",
     "isBoss": false
   },
   "2590022": {
@@ -24009,7 +24009,7 @@
     "isBoss": false
   },
   "2590034": {
-    "name": "Velador de la Legión de la Cuchilla",
+    "name": "Vigilante de la Legión de la Cuchilla",
     "isBoss": false
   },
   "2590035": {
@@ -24089,15 +24089,15 @@
     "isBoss": false
   },
   "2590057": {
-    "name": "Guarda del almacén de la Legión de la Cuchilla",
+    "name": "Guardia del almacén de la Legión de la Cuchilla",
     "isBoss": false
   },
   "2590058": {
-    "name": "Guarda del almacén de la Legión de la Cuchilla",
+    "name": "Guardia del almacén de la Legión de la Cuchilla",
     "isBoss": false
   },
   "2590059": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2590060": {
@@ -24737,7 +24737,7 @@
     "isBoss": false
   },
   "2600016": {
-    "name": "Krall saetero del escuadrón de reconocimiento del Abismo",
+    "name": "Krall arquero del escuadrón de reconocimiento del Abismo",
     "isBoss": false
   },
   "2600017": {
@@ -24933,7 +24933,7 @@
     "isBoss": false
   },
   "2600068": {
-    "name": "Rey Espíritu Agro",
+    "name": "Agro, el Rey Espíritu",
     "isBoss": true
   },
   "2600069": {
@@ -25017,7 +25017,7 @@
     "isBoss": false
   },
   "2600089": {
-    "name": "Velador Kaira",
+    "name": "Kaira, la Vigilante",
     "isBoss": true
   },
   "2600091": {
@@ -25617,7 +25617,7 @@
     "isBoss": false
   },
   "2600306": {
-    "name": "Krall saetero de Takshaka",
+    "name": "Krall arquero de Takshaka",
     "isBoss": false
   },
   "2600307": {
@@ -25653,7 +25653,7 @@
     "isBoss": false
   },
   "2600316": {
-    "name": "Krall saetero de Takshaka",
+    "name": "Krall arquero de Takshaka",
     "isBoss": false
   },
   "2600317": {
@@ -25849,7 +25849,7 @@
     "isBoss": false
   },
   "2600368": {
-    "name": "Rey Espíritu Agro",
+    "name": "Agro, el Rey Espíritu",
     "isBoss": true
   },
   "2600369": {
@@ -25877,7 +25877,7 @@
     "isBoss": false
   },
   "2600375": {
-    "name": "Drakan soldado élite Takshaka",
+    "name": "Drakan soldado de élite Takshaka",
     "isBoss": false
   },
   "2600376": {
@@ -25937,7 +25937,7 @@
     "isBoss": false
   },
   "2600406": {
-    "name": "Krall saetero del Abismo",
+    "name": "Krall arquero del Abismo",
     "isBoss": false
   },
   "2600407": {
@@ -25973,7 +25973,7 @@
     "isBoss": false
   },
   "2600416": {
-    "name": "Krall saetero del Abismo",
+    "name": "Krall arquero del Abismo",
     "isBoss": false
   },
   "2600417": {
@@ -26165,7 +26165,7 @@
     "isBoss": false
   },
   "2600468": {
-    "name": "Rey Espíritu Agro",
+    "name": "Agro, el Rey Espíritu",
     "isBoss": true
   },
   "2600469": {
@@ -26233,7 +26233,7 @@
     "isBoss": false
   },
   "2600485": {
-    "name": "Krall saetero del Abismo",
+    "name": "Krall arquero del Abismo",
     "isBoss": false
   },
   "2600486": {
@@ -26269,7 +26269,7 @@
     "isBoss": false
   },
   "2600495": {
-    "name": "Krall saetero del Abismo",
+    "name": "Krall arquero del Abismo",
     "isBoss": false
   },
   "2600496": {
@@ -26573,11 +26573,11 @@
     "isBoss": false
   },
   "2600610": {
-    "name": "Krall saetero de Chandala",
+    "name": "Krall arquero de Chandala",
     "isBoss": false
   },
   "2600611": {
-    "name": "Krall saetero de Chandala",
+    "name": "Krall arquero de Chandala",
     "isBoss": false
   },
   "2600612": {
@@ -26645,11 +26645,11 @@
     "isBoss": false
   },
   "2600630": {
-    "name": "Krall saetero de Chandala",
+    "name": "Krall arquero de Chandala",
     "isBoss": false
   },
   "2600631": {
-    "name": "Krall saetero de Chandala",
+    "name": "Krall arquero de Chandala",
     "isBoss": false
   },
   "2600632": {
@@ -26717,11 +26717,11 @@
     "isBoss": false
   },
   "2600650": {
-    "name": "Krall saetero de Makarah",
+    "name": "Krall arquero de Makarah",
     "isBoss": false
   },
   "2600651": {
-    "name": "Krall saetero de Makarah",
+    "name": "Krall arquero de Makarah",
     "isBoss": false
   },
   "2600652": {
@@ -26789,11 +26789,11 @@
     "isBoss": false
   },
   "2600670": {
-    "name": "Krall saetero de Makarah",
+    "name": "Krall arquero de Makarah",
     "isBoss": false
   },
   "2600671": {
-    "name": "Krall saetero de Makarah",
+    "name": "Krall arquero de Makarah",
     "isBoss": false
   },
   "2600672": {
@@ -26829,7 +26829,7 @@
     "isBoss": false
   },
   "2600682": {
-    "name": "Colonia de swarms del Abismo",
+    "name": "Colonia de Swarm del Abismo",
     "isBoss": false
   },
   "2600683": {
@@ -27565,7 +27565,7 @@
     "isBoss": false
   },
   "2700011": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2700012": {
@@ -28089,11 +28089,11 @@
     "isBoss": false
   },
   "2700852": {
-    "name": "Saetero de Sura de la Cueva de Odylium",
+    "name": "Arquero de Sura de la Cueva de Odylium",
     "isBoss": false
   },
   "2700853": {
-    "name": "Saetero de Sura de la Cueva de Odylium",
+    "name": "Arquero de Sura de la Cueva de Odylium",
     "isBoss": false
   },
   "2700854": {
@@ -28125,7 +28125,7 @@
     "isBoss": false
   },
   "2700863": {
-    "name": "Saetera de los bandoleros de Akilo",
+    "name": "Arquera de los bandoleros de Akilo",
     "isBoss": false
   },
   "2700864": {
@@ -28225,7 +28225,7 @@
     "isBoss": false
   },
   "2700894": {
-    "name": "Espectro de soldado élite Drakan",
+    "name": "Espectro de Drakan soldado de élite",
     "isBoss": false
   },
   "2700895": {
@@ -28261,7 +28261,7 @@
     "isBoss": false
   },
   "2700905": {
-    "name": "Saetera de los bandoleros de Akilo",
+    "name": "Arquera de los bandoleros de Akilo",
     "isBoss": false
   },
   "2700906": {
@@ -28301,7 +28301,7 @@
     "isBoss": false
   },
   "2700918": {
-    "name": "Saetera de los furtivos",
+    "name": "Arquera de los furtivos",
     "isBoss": false
   },
   "2700919": {
@@ -28621,7 +28621,7 @@
     "isBoss": true
   },
   "2701022": {
-    "name": "Balaur saetero Nartis",
+    "name": "Balaur arquero Nartis",
     "isBoss": false
   },
   "2701023": {
@@ -28705,7 +28705,7 @@
     "isBoss": true
   },
   "2701052": {
-    "name": "Saetero protector del santuario de Kaisinel",
+    "name": "Arquero protector del santuario de Kaisinel",
     "isBoss": false
   },
   "2701053": {
@@ -28865,7 +28865,7 @@
     "isBoss": false
   },
   "2701112": {
-    "name": "Karas saetero oculto",
+    "name": "Karas arquero oculto",
     "isBoss": false
   },
   "2701113": {
@@ -28945,7 +28945,7 @@
     "isBoss": true
   },
   "2701141": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2701142": {
@@ -28965,7 +28965,7 @@
     "isBoss": true
   },
   "2701146": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2701147": {
@@ -28977,11 +28977,11 @@
     "isBoss": true
   },
   "2701149": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2701150": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2701151": {
@@ -29177,7 +29177,7 @@
     "isBoss": false
   },
   "2701210": {
-    "name": "Alma de saetero errante",
+    "name": "Alma de arquero errante",
     "isBoss": false
   },
   "2701211": {
@@ -29245,7 +29245,7 @@
     "isBoss": false
   },
   "2701232": {
-    "name": "Saetero de la Legión de Forajidos",
+    "name": "Arquero de la Legión de Forajidos",
     "isBoss": false
   },
   "2701233": {
@@ -29277,7 +29277,7 @@
     "isBoss": false
   },
   "2701245": {
-    "name": "Alma de saetero retorcido",
+    "name": "Alma de arquero retorcido",
     "isBoss": false
   },
   "2701246": {
@@ -29381,7 +29381,7 @@
     "isBoss": false
   },
   "2701286": {
-    "name": "Saetera de los bandoleros de Moslan",
+    "name": "Arquera de los bandoleros de Moslan",
     "isBoss": false
   },
   "2701287": {
@@ -29433,7 +29433,7 @@
     "isBoss": false
   },
   "2701302": {
-    "name": "Karas saetero del escondite",
+    "name": "Karas arquero del escondite",
     "isBoss": false
   },
   "2701305": {
@@ -29485,11 +29485,11 @@
     "isBoss": false
   },
   "2701321": {
-    "name": "Kerubian velador del Archivo",
+    "name": "Kerubian vigilante del Archivo",
     "isBoss": false
   },
   "2701322": {
-    "name": "Kerubian velador del Archivo",
+    "name": "Kerubian vigilante del Archivo",
     "isBoss": false
   },
   "2701323": {
@@ -29782,7 +29782,7 @@
     "isBoss": false
   },
   "2701405": {
-    "name": "Daeva velador misterioso del almacén secreto",
+    "name": "Daeva vigilante misterioso del almacén secreto",
     "isBoss": false
   },
   "2701406": {
@@ -29798,7 +29798,7 @@
     "isBoss": true
   },
   "2701412": {
-    "name": "Daeva velador misterioso del almacén secreto",
+    "name": "Daeva vigilante misterioso del almacén secreto",
     "isBoss": false
   },
   "2701413": {
@@ -29962,7 +29962,7 @@
     "isBoss": true
   },
   "2701469": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2701470": {
@@ -30322,11 +30322,11 @@
     "isBoss": false
   },
   "2701566": {
-    "name": "Balaur saetero superior atento",
+    "name": "Balaur arquero superior atento",
     "isBoss": false
   },
   "2701567": {
-    "name": "Balaur saetero atento",
+    "name": "Balaur arquero atento",
     "isBoss": false
   },
   "2701568": {
@@ -30338,7 +30338,7 @@
     "isBoss": true
   },
   "2701570": {
-    "name": "Balaur saetero atento",
+    "name": "Balaur arquero atento",
     "isBoss": false
   },
   "2701571": {
@@ -30530,11 +30530,11 @@
     "isBoss": false
   },
   "2701622": {
-    "name": "Alma de saetero de tormento",
+    "name": "Alma de arquero de tormento",
     "isBoss": false
   },
   "2701623": {
-    "name": "Alma de saetero de tormento",
+    "name": "Alma de arquero de tormento",
     "isBoss": false
   },
   "2701624": {
@@ -30554,7 +30554,7 @@
     "isBoss": false
   },
   "2701628": {
-    "name": "Guarda del almacén",
+    "name": "Guardia del almacén",
     "isBoss": false
   },
   "2701629": {
@@ -30678,7 +30678,7 @@
     "isBoss": false
   },
   "2701659": {
-    "name": "Saetero cazador de tesoros errante",
+    "name": "Arquero cazador de tesoros errante",
     "isBoss": false
   },
   "2701660": {
@@ -30790,7 +30790,7 @@
     "isBoss": false
   },
   "2701687": {
-    "name": "Saetero cazador de tesoros errante",
+    "name": "Arquero cazador de tesoros errante",
     "isBoss": false
   },
   "2701688": {
@@ -31501,7 +31501,7 @@
     "isBoss": false
   },
   "2701901": {
-    "name": "Raptor saetero del Depósito",
+    "name": "Raptor arquero del Depósito",
     "isBoss": false
   },
   "2701902": {
@@ -31544,7 +31544,7 @@
     "isBoss": false
   },
   "2701922": {
-    "name": "Raptor saetero impetuoso",
+    "name": "Raptor arquero impetuoso",
     "isBoss": false
   },
   "2701923": {
@@ -31575,7 +31575,7 @@
     "isBoss": false
   },
   "2701939": {
-    "name": "Aullaeu saetero de los destinos",
+    "name": "Aullaeu arquero de los destinos",
     "isBoss": false
   },
   "2701940": {
@@ -31606,7 +31606,7 @@
     "isBoss": false
   },
   "2701956": {
-    "name": "Raptor saetero frenético",
+    "name": "Raptor arquero frenético",
     "isBoss": false
   },
   "2701957": {
@@ -31645,7 +31645,7 @@
     "isBoss": false
   },
   "2701969": {
-    "name": "Saetero muerto viviente del escondite",
+    "name": "Arquero muerto viviente del escondite",
     "isBoss": false
   },
   "2701970": {
@@ -31657,7 +31657,7 @@
     "isBoss": false
   },
   "2701972": {
-    "name": "Espectro de saetero del escondite",
+    "name": "Espectro de arquero del escondite",
     "isBoss": false
   },
   "2701973": {
@@ -31689,7 +31689,7 @@
     "isBoss": false
   },
   "2701983": {
-    "name": "Aullaeu saetero de los destinos",
+    "name": "Aullaeu arquero de los destinos",
     "isBoss": false
   },
   "2701986": {
@@ -31728,7 +31728,7 @@
     "isBoss": false
   },
   "2701995": {
-    "name": "Saetero muerto viviente ascendido",
+    "name": "Arquero muerto viviente ascendido",
     "isBoss": false
   },
   "2701996": {
@@ -31740,7 +31740,7 @@
     "isBoss": false
   },
   "2701998": {
-    "name": "Espectro de saetero ascendido",
+    "name": "Espectro de arquero ascendido",
     "isBoss": false
   },
   "2701999": {
@@ -31775,7 +31775,7 @@
     "isBoss": false
   },
   "2702006": {
-    "name": "Saetero muerto viviente del tirano",
+    "name": "Arquero muerto viviente del tirano",
     "isBoss": false
   },
   "2702007": {
@@ -31787,7 +31787,7 @@
     "isBoss": false
   },
   "2702009": {
-    "name": "Espectro de saetero del tirano",
+    "name": "Espectro de arquero del tirano",
     "isBoss": false
   },
   "2702010": {
@@ -31822,7 +31822,7 @@
     "isBoss": false
   },
   "2702017": {
-    "name": "Saetero muerto viviente frenético",
+    "name": "Arquero muerto viviente frenético",
     "isBoss": false
   },
   "2702018": {
@@ -31834,7 +31834,7 @@
     "isBoss": false
   },
   "2702020": {
-    "name": "Espectro de saetero frenético",
+    "name": "Espectro de arquero frenético",
     "isBoss": false
   },
   "2702021": {
@@ -32070,7 +32070,7 @@
     "isBoss": false
   },
   "2702079": {
-    "name": "Akan velador del destino",
+    "name": "Akan vigilante del destino",
     "isBoss": false
   },
   "2702080": {
@@ -32122,7 +32122,7 @@
     "isBoss": false
   },
   "2702092": {
-    "name": "Drakan saetero",
+    "name": "Drakan arquero",
     "isBoss": false
   },
   "2702093": {
@@ -32146,11 +32146,11 @@
     "isBoss": false
   },
   "2702098": {
-    "name": "Drakan velador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2702099": {
-    "name": "Drakan velador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2702100": {
@@ -32254,11 +32254,11 @@
     "isBoss": false
   },
   "2702126": {
-    "name": "Daeva velador del destino corrupto",
+    "name": "Daeva vigilante del destino corrupto",
     "isBoss": false
   },
   "2702127": {
-    "name": "Daeva velador del destino corrupto",
+    "name": "Daeva vigilante del destino corrupto",
     "isBoss": false
   },
   "2702128": {
@@ -32326,11 +32326,11 @@
     "isBoss": false
   },
   "2702145": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2702146": {
-    "name": "Derrumbe",
+    "name": "Derrumbe de Rocas",
     "isBoss": false
   },
   "2702147": {
@@ -32402,7 +32402,7 @@
     "isBoss": false
   },
   "2702168": {
-    "name": "Draconute alcaide de élite",
+    "name": "Draconute administrador élite",
     "isBoss": false
   },
   "2702169": {
@@ -32418,7 +32418,7 @@
     "isBoss": false
   },
   "2702173": {
-    "name": "Draconute saetero de élite",
+    "name": "Draconute arquero de élite",
     "isBoss": false
   },
   "2702174": {
@@ -32514,7 +32514,7 @@
     "isBoss": false
   },
   "2702200": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2702201": {
@@ -32626,11 +32626,11 @@
     "isBoss": false
   },
   "2702228": {
-    "name": "Saetera de los bandoleros de Eiron",
+    "name": "Arquera de los bandoleros de Eiron",
     "isBoss": false
   },
   "2702229": {
-    "name": "Saetera de los bandoleros de Eiron",
+    "name": "Arquera de los bandoleros de Eiron",
     "isBoss": false
   },
   "2702230": {
@@ -32678,7 +32678,7 @@
     "isBoss": false
   },
   "2702247": {
-    "name": "Drakan guardia",
+    "name": "Drakan guarda",
     "isBoss": false
   },
   "2702248": {
@@ -32729,7 +32729,7 @@
     "isBoss": false
   },
   "2702279": {
-    "name": "Saetero muerto viviente de desesperación",
+    "name": "Arquero muerto viviente de desesperación",
     "isBoss": false
   },
   "2702280": {
@@ -32741,7 +32741,7 @@
     "isBoss": false
   },
   "2702282": {
-    "name": "Espectro de saetero de desesperación",
+    "name": "Espectro de arquero de desesperación",
     "isBoss": false
   },
   "2702283": {
@@ -32780,7 +32780,7 @@
     "isBoss": false
   },
   "2702291": {
-    "name": "Saetero muerto viviente de perdición",
+    "name": "Arquero muerto viviente de perdición",
     "isBoss": false
   },
   "2702292": {
@@ -32792,7 +32792,7 @@
     "isBoss": false
   },
   "2702294": {
-    "name": "Espectro de saetero de perdición",
+    "name": "Espectro de arquero de perdición",
     "isBoss": false
   },
   "2702295": {
@@ -32823,7 +32823,7 @@
     "isBoss": false
   },
   "2702301": {
-    "name": "Raptor saetero de desesperación",
+    "name": "Raptor arquero de desesperación",
     "isBoss": false
   },
   "2702302": {
@@ -32862,7 +32862,7 @@
     "isBoss": false
   },
   "2702312": {
-    "name": "Raptor saetero de perdición",
+    "name": "Raptor arquero de perdición",
     "isBoss": false
   },
   "2702313": {
@@ -32918,7 +32918,7 @@
     "isBoss": true
   },
   "2702330": {
-    "name": "Aparición de Daeva de la vida saetero",
+    "name": "Aparición de Daeva de la vida arquero",
     "isBoss": false
   },
   "2702331": {
@@ -33157,7 +33157,7 @@
     "isBoss": false
   },
   "2702395": {
-    "name": "Velador élite de perdición",
+    "name": "Vigilante élite de perdición",
     "isBoss": false
   },
   "2702396": {
@@ -33754,7 +33754,7 @@
     "isBoss": false
   },
   "2702576": {
-    "name": "Alma de saetero Daeva perdida",
+    "name": "Alma de arquero Daeva perdida",
     "isBoss": false
   },
   "2702577": {
@@ -33794,11 +33794,11 @@
     "isBoss": false
   },
   "2702588": {
-    "name": "Saetero de la Unidad de Operaciones Especiales Kurpak",
+    "name": "Arquero de la Unidad de Operaciones Especiales Kurpak",
     "isBoss": false
   },
   "2702589": {
-    "name": "Saetero de la Unidad de Operaciones Especiales Kurpak",
+    "name": "Arquero de la Unidad de Operaciones Especiales Kurpak",
     "isBoss": false
   },
   "2702590": {
@@ -41250,7 +41250,7 @@
     "isBoss": false
   },
   "2930561": {
-    "name": "Aullaeu aprendiz",
+    "name": "Aullaeu recluta",
     "isBoss": false
   },
   "2930571": {
@@ -42298,7 +42298,7 @@
     "isBoss": false
   },
   "2930992": {
-    "name": "Drakan celador",
+    "name": "Drakan vigilante",
     "isBoss": false
   },
   "2930993": {
@@ -46130,7 +46130,7 @@
     "isBoss": false
   },
   "2950537": {
-    "name": "Draconute saetero",
+    "name": "Draconute arquero",
     "isBoss": false
   },
   "2950538": {
@@ -46206,7 +46206,7 @@
     "isBoss": false
   },
   "2950568": {
-    "name": "Velador de la patrulla de la Garra Negra",
+    "name": "Vigilante de la patrulla de la Garra Negra",
     "isBoss": false
   },
   "2950569": {
@@ -50434,7 +50434,7 @@
     "isBoss": false
   },
   "2970238": {
-    "name": "Aldeana secuestrada",
+    "name": "Aldeano secuestrado",
     "isBoss": false
   },
   "2970239": {
@@ -50446,7 +50446,7 @@
     "isBoss": false
   },
   "2970241": {
-    "name": "Aldeana secuestrada",
+    "name": "Aldeano secuestrado",
     "isBoss": false
   },
   "2970242": {
@@ -53850,11 +53850,11 @@
     "isBoss": false
   },
   "2990046": {
-    "name": "Grupo vigilante de la Aldea de Patamor",
+    "name": "Vigilante de la aldea de Patamor",
     "isBoss": false
   },
   "2990047": {
-    "name": "Grupo vigilante de la Aldea de Patamor",
+    "name": "Vigilante de la aldea de Patamor",
     "isBoss": false
   },
   "2990048": {
@@ -55306,11 +55306,11 @@
     "isBoss": false
   },
   "2990489": {
-    "name": "Velador del cónclave",
+    "name": "Vigilante del cónclave",
     "isBoss": false
   },
   "2990490": {
-    "name": "Velador del cónclave",
+    "name": "Vigilante del cónclave",
     "isBoss": false
   },
   "2990492": {
@@ -56498,7 +56498,7 @@
     "isBoss": false
   },
   "2990886": {
-    "name": "Margareta",
+    "name": "Margarita",
     "isBoss": false
   },
   "2990887": {

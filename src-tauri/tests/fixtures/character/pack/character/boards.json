@@ -1,0 +1,120 @@
+{
+  "source": "Made-up sample for the contract tests",
+  "version": 1,
+  "boards": {
+    "51": {
+      "class": "Elementalist",
+      "order": 1,
+      "nodes": {
+        "510113": {
+          "row": 8,
+          "col": 8,
+          "kind": "Start",
+          "grade": "None",
+          "cost": 0,
+          "title": "SAMPLE_NODE_START_51",
+          "stat": null,
+          "skill": null
+        },
+        "510033": {
+          "row": 7,
+          "col": 8,
+          "kind": "Stat",
+          "grade": "Common",
+          "cost": 1,
+          "title": "SAMPLE_NODE_COMBAT_SPEED",
+          "stat": [
+            282,
+            150
+          ],
+          "skill": null
+        },
+        "510052": {
+          "row": 8,
+          "col": 9,
+          "kind": "Stat",
+          "grade": "Rare",
+          "cost": 2,
+          "title": "SAMPLE_NODE_MAX_ATTACK",
+          "stat": [
+            31,
+            40
+          ],
+          "skill": null
+        },
+        "510037": {
+          "row": 7,
+          "col": 9,
+          "kind": "SkillLevel",
+          "grade": "Legend",
+          "cost": 3,
+          "title": "SAMPLE_NODE_SKILL_UP",
+          "stat": null,
+          "skill": [
+            16010000,
+            1
+          ]
+        },
+        "510040": {
+          "row": 6,
+          "col": 9,
+          "kind": "Stat",
+          "grade": "Common",
+          "cost": 1,
+          "title": "SAMPLE_NODE_MAX_ATTACK",
+          "stat": [
+            31,
+            20
+          ],
+          "skill": null
+        }
+      }
+    },
+    "56": {
+      "class": "Elementalist",
+      "order": 6,
+      "nodes": {
+        "560113": {
+          "row": 8,
+          "col": 8,
+          "kind": "Start",
+          "grade": "None",
+          "cost": 0,
+          "title": "SAMPLE_NODE_START_56",
+          "stat": null,
+          "skill": null
+        },
+        "560020": {
+          "row": 7,
+          "col": 8,
+          "kind": "Stat",
+          "grade": "Unique",
+          "cost": 4,
+          "title": "SAMPLE_NODE_CRITICAL",
+          "stat": [
+            128,
+            30
+          ],
+          "skill": null
+        },
+        "560021": {
+          "row": 7,
+          "col": 9,
+          "kind": "Stat",
+          "grade": "Rare",
+          "cost": 2,
+          "title": "SAMPLE_NODE_ACCURACY_DEFENSE",
+          "stat": [
+            104,
+            5
+          ],
+          "second_stat": [
+            52,
+            30
+          ],
+          "skill": null
+        }
+      }
+    }
+  }
+}

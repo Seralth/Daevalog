@@ -563,8 +563,8 @@
     "characterNameHint": "次のロード時にゲームの名前に置き換わります。",
     "modeOnly": "{mode}でのみ有効。",
     "showTotalHint": "フッターのグループ合計です。DPS・回復・タンカーのすべてのタブに表示されます。",
-    "spawnNotices": "フィールド ネームドと時空の亀裂のカウントダウン",
-    "spawnNoticesHint": "通知に表示：フィールド ネームドの30分・15分・5分前、時空の亀裂の5分前。",
+    "spawnNotices": "ボスと時空の亀裂のカウントダウン",
+    "spawnNoticesHint": "通知に表示：アビス ボスとフィールド ボス(ガルトゥア、タルタン、カシャパ、ラグタ)の30分・15分・5分前、時空の亀裂の5分前。フィールド ボスの時刻はマップを開くと届きます。",
     "shardWarning": "封魂石の警告",
     "shardWarningHint": "攻撃が封魂石を使わなくなったときに通知します。",
     "serverTimeZone": "サーバーのタイムゾーン",
@@ -692,6 +692,8 @@
     "title": "通知",
     "clearAll": "すべて消去",
     "none": "通知はありません",
+    "more": "他{count}件",
+    "top": "先頭に戻る",
     "pet": {
       "soul": "{pet}の魂",
       "souls": "{pet}の魂 +{count}",
@@ -710,7 +712,9 @@
       "unnamed": "ペット {id}"
     },
     "spawn": {
-      "at": "{time} {name}"
+      "at": "{time} {name}",
+      "abyssBoss": "アビス ボス",
+      "fieldBoss": "フィールド ボス"
     },
     "shard": {
       "off": "封魂石オフ",
@@ -719,5 +723,46 @@
     },
     "countdown": "あと{minutes}分",
     "now": "今"
+  },
+  "character": {
+    "title": "キャラクター",
+    "tabs": {
+      "gear": "装備",
+      "sheet": "キャラクターシート",
+      "skills": "スキル",
+      "boards": "ディーヴァニオン"
+    },
+    "level": "Lv.{n}",
+    "itemLevel": "アイテム レベル",
+    "combatPower": "戦闘力",
+    "highest": "最高 {n}",
+    "seen": "{date} 時点",
+    "empty": "キャラクターはまだありません",
+    "emptyHint": "メーターを起動したままキャラクターでログインするか、キャラクター選択に移動してから戻ってください。",
+    "unread": "読み込めなかったキャラクターファイル: {n}",
+    "packFailed": "このウィンドウのゲームデータを読み込めませんでした。",
+    "notRead": "まだ読み込まれていません。ログイン時にゲームから送られます。",
+    "gear": {
+      "empty": "空き",
+      "notRead": "装備の詳細は未読み込み",
+      "sockets": "魔石スロット: {n}",
+      "skillLevel": "Lv.+{n}",
+      "baseAt": "+{n} の基本ステータス",
+      "base": "基本ステータス"
+    },
+    "titles": "タイトル",
+    "titlesOwned": "保有 {n}",
+    "none": "なし",
+    "skills": {
+      "active": "アクティブ",
+      "passive": "パッシブ",
+      "stigma": "スティグマ",
+      "specialty": "特化",
+      "daevanion": "ディーヴァニオン：Lv.+{n}",
+      "gear": "装備装着：Lv.+{n}"
+    },
+    "boards": {
+      "nodes": "ノード {taken}/{total}"
+    }
   }
 }

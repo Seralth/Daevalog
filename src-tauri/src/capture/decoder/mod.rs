@@ -12,9 +12,16 @@ mod roster;
 mod spawn;
 mod ticks;
 mod world;
+mod world_map;
 
 pub use pet_collection::{PetCollectionEvent, PetCount};
 pub use power_shards::ShardEvent;
+pub use world_map::{FieldBossTime, WorldMapList};
+// The census readers (`capture::player_facts`) read player records and list
+// members as the decoder does.
+pub(crate) use identity::{listed_server, player_spawn_at, PlayerSpawn};
+pub(crate) use roster::{home_world, member_at, COMBAT_POWER_TOP};
+pub(crate) use world::body_after;
 pub(crate) use spawn::embedded_spawns;
 pub(crate) use ticks::compact_record_in;
 
@@ -71,6 +78,11 @@ impl HitKeys {
     }
 }
 
+/// Gets every whole packet a decoder reads (length varint included), with
+/// the time it is filed under: your character's records for the character
+/// file are read from them (`capture::character_report`).
+pub type PacketTap = Arc<dyn Fn(i64, &[u8]) + Send + Sync>;
+
 /// Reads the server's stream into a `DataStorage`: frames, bundles and the
 /// records that sit loose between or inside them.
 pub struct PacketDecoder {
@@ -82,6 +94,7 @@ pub struct PacketDecoder {
     unknown_dot_skills: HashSet<i32>,
     pending_compact_skill_context: Option<HeldTickSkill>,
     override_timestamp: Option<i64>,
+    tap: Option<PacketTap>,
 }
 
 /// A record pass run on one region at a time.
@@ -98,7 +111,13 @@ impl PacketDecoder {
             unknown_dot_skills: HashSet::new(),
             pending_compact_skill_context: None,
             override_timestamp: None,
+            tap: None,
         }
+    }
+
+    /// Every whole packet read from now on also goes to `tap`.
+    pub fn tap_packets(&mut self, tap: PacketTap) {
+        self.tap = Some(tap);
     }
 
     /// Pins the time records are filed under, and "now" on this thread, to a
@@ -175,6 +194,9 @@ impl PacketDecoder {
             return;
         }
         let when = self.record_time();
+        if let Some(tap) = &self.tap {
+            tap(when, frame);
+        }
         self.data_storage.note_abnormal(when, frame);
         // `|=` does not short-circuit, so every reader runs; only the name
         // chain stops at its first hit.
@@ -192,6 +214,7 @@ impl PacketDecoder {
         self.read_zone_change(frame);
         self.read_map_load(frame);
         self.read_pet_collection(frame);
+        self.read_world_map(frame);
         self.read_shard_count(frame);
         if !taken {
             self.read_tick_record(frame);

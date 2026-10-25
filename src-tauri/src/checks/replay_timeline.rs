@@ -112,6 +112,10 @@ pub(crate) struct Gather {
     /// from the snapshot before it up to this one.
     links: Vec<(i64, HashMap<i32, i32>)>,
     map_loads: usize,
+    /// (ms, NPC code) per target, at its first hit and each time the code
+    /// changed: the game hands a dead monster's id to a later spawn, so the
+    /// code at the end of the capture can be another NPC's.
+    codes: HashMap<i32, Vec<(i64, i32)>>,
 }
 
 impl Gather {
@@ -141,10 +145,25 @@ impl Gather {
         }
     }
 
-    /// After each capture line: the hits it made, who you are, and the
-    /// summon links before a map load makes the entities anew.
-    pub(crate) fn after_line(&mut self, ms: i64, local: Option<i32>, links: impl FnOnce() -> HashMap<i32, i32>) {
+    /// After each capture line: the hits it made and the NPC code of each
+    /// one's target then (`code`), who you are, and the summon links before
+    /// a map load makes the entities anew.
+    pub(crate) fn after_line(
+        &mut self,
+        ms: i64,
+        local: Option<i32>,
+        code: impl Fn(i32) -> Option<i32>,
+        links: impl FnOnce() -> HashMap<i32, i32>,
+    ) {
+        let seen = self.hits.len();
         self.take_lines();
+        for h in &self.hits[seen..] {
+            let Some(c) = code(h.target) else { continue };
+            let list = self.codes.entry(h.target).or_default();
+            if list.last().is_none_or(|l| l.1 != c) {
+                list.push((h.ms, c));
+            }
+        }
         if let Some(id) = local
             && self.local.last().is_none_or(|l| l.1 != id)
         {
@@ -270,7 +289,9 @@ impl Gather {
             .cloned()
             .collect();
         let tracks = abnormal::tracks(&near, owner);
-        let target_name = mobs.get(&target).map(|&c| npcs.npc_title(c)).unwrap_or_default();
+        // The code the target had by the fight's end, else the last one seen.
+        let then = self.codes.get(&target).and_then(|list| list.iter().rev().find(|(at, _)| *at <= end)).map(|l| l.1);
+        let target_name = then.or_else(|| mobs.get(&target).copied()).map(|c| npcs.npc_title(c)).unwrap_or_default();
         let length = (end - start).max(1);
         let tod = |ms: i64| {
             chrono::DateTime::from_timestamp_millis(ms)
@@ -479,6 +500,37 @@ mod tests {
             (Some("summon"), Some(SPIRIT as i64), Some(12), Some(true))
         );
         assert_eq!(passive["name"], "Fire Spirit");
+    }
+
+    /// `TARGET` spawns as Phantasmal Lakshmi and is fought, then the game
+    /// gives its id to Transcendent Bakarma: each fight keeps the name its
+    /// target had then.
+    #[test]
+    fn a_fight_is_named_by_the_npc_its_target_was_then() {
+        let spawn = |code: u32| {
+            built::Spawn { id: TARGET, kind: 0x04, code, hp: 119_700, filler: 50, ..built::Spawn::default() }.packet()
+        };
+        let lines = [
+            ("12:00:00.000", stats_off()),
+            ("12:00:06.100", stats_off()),
+            ("12:00:07.000", spawn(2_310_401)),
+            ("12:00:08.000", hit(16_370_001, 0x41, &[11_000, 1_200, 1, 0]).packet()),
+            ("12:01:00.000", spawn(2_310_471)),
+            ("12:01:01.000", hit(16_370_001, 0x42, &[11_000, 1_200, 1, 0]).packet()),
+        ];
+        let text: String = lines
+            .iter()
+            .map(|(t, bytes)| format!("2026-01-02T{t}000000+00:00|Client:40000:13328|{}\n", built::to_hex(bytes)))
+            .collect();
+        let mut out = Vec::new();
+        run(&text, Options { timeline: true, ..Default::default() }, &mut |l| out.push(l));
+        let fight = format!("fight target {TARGET} ");
+        let names: Vec<&str> = out
+            .iter()
+            .filter_map(|l| l.trim_start().strip_prefix(&fight))
+            .map(|l| l.split(" 12:").next().unwrap_or_default())
+            .collect();
+        assert_eq!(names, ["Phantasmal Lakshmi", "Transcendent Bakarma"], "{out:#?}");
     }
 
     /// The timeline JSON of each fight in `lines`, replayed

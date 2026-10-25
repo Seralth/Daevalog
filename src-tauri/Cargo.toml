@@ -84,3 +84,17 @@ flate2 = "1"
 name = "a2t-inspect"
 path = "tools/a2t_inspect.rs"
 required-features = ["backend"]
+
+# What the packets state about the players met, for a census of classes and
+# gear (a separate program that reads only this tool's output). A tool, so it
+# lives in tools/.
+[[bin]]
+name = "census-replay"
+path = "tools/census_replay.rs"
+
+# Your own character's latest state, for a character file (a separate program
+# that reads only this tool's output). Reads the game's tables: needs backend.
+[[bin]]
+name = "character-replay"
+path = "tools/character_replay.rs"
+required-features = ["backend"]

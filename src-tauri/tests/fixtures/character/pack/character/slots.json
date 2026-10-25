@@ -1,0 +1,106 @@
+{
+  "source": "Made-up sample for the contract tests",
+  "version": 1,
+  "slots": [
+    {
+      "id": 1,
+      "key": "MainHand",
+      "group": "weapon"
+    },
+    {
+      "id": 2,
+      "key": "SubHand",
+      "group": "weapon"
+    },
+    {
+      "id": 3,
+      "key": "Helmet",
+      "group": "armor"
+    },
+    {
+      "id": 4,
+      "key": "Shoulder",
+      "group": "armor"
+    },
+    {
+      "id": 5,
+      "key": "Torso",
+      "group": "armor"
+    },
+    {
+      "id": 6,
+      "key": "Pants",
+      "group": "armor"
+    },
+    {
+      "id": 7,
+      "key": "Gloves",
+      "group": "armor"
+    },
+    {
+      "id": 8,
+      "key": "Boots",
+      "group": "armor"
+    },
+    {
+      "id": 19,
+      "key": "Cape",
+      "group": "armor"
+    },
+    {
+      "id": 17,
+      "key": "Belt",
+      "group": "armor"
+    },
+    {
+      "id": 10,
+      "key": "Necklace",
+      "group": "accessory"
+    },
+    {
+      "id": 11,
+      "key": "Earring1",
+      "group": "accessory"
+    },
+    {
+      "id": 12,
+      "key": "Earring2",
+      "group": "accessory"
+    },
+    {
+      "id": 13,
+      "key": "Ring1",
+      "group": "accessory"
+    },
+    {
+      "id": 14,
+      "key": "Ring2",
+      "group": "accessory"
+    },
+    {
+      "id": 15,
+      "key": "Bracelet1",
+      "group": "accessory"
+    },
+    {
+      "id": 16,
+      "key": "Bracelet2",
+      "group": "accessory"
+    },
+    {
+      "id": 22,
+      "key": "Amulet",
+      "group": "accessory"
+    },
+    {
+      "id": 23,
+      "key": "Rune1",
+      "group": "rune"
+    },
+    {
+      "id": 24,
+      "key": "Rune2",
+      "group": "rune"
+    }
+  ]
+}

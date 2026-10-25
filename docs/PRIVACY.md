@@ -106,7 +106,7 @@ The meter writes into one data folder:
 - Linux: `~/.local/share/daevalog-dps-meter/`, or `$XDG_DATA_HOME/daevalog-dps-meter/` when `XDG_DATA_HOME` is set.
 - Windows: `%APPDATA%\daevalog-dps-meter\`.
 
-On Linux the data folder is `0700`, so only your user can open anything inside it. The folders the meter makes in it (`history/`, `slices/`, `share-preview/`) are `0700`, and the meter creates its files `0600`. On Windows the folder and its files take the access of `%APPDATA%`, which belongs to your user alone.
+On Linux the data folder is `0700`, so only your user can open anything inside it. The folders the meter makes in it (`characters/`, `history/`, `slices/`, `share-preview/`) are `0700`, and the meter creates its files `0600`. On Windows the folder and its files take the access of `%APPDATA%`, which belongs to your user alone.
 
 | File or folder | Content |
 |---|---|
@@ -114,6 +114,7 @@ On Linux the data folder is `0700`, so only your user can open anything inside i
 | `credentials.dat` | Only while you are signed in: the name of the keyring entry that holds the token, not the token. |
 | `history/` | Battle History: one file per saved fight. See [Battle History](#battle-history). |
 | `slices/` | Each saved fight's Evidence Slice and upload state. See [Evidence Slices on disk](#evidence-slices-on-disk). |
+| `characters/` | One file per character you play: its name, server, class, level, Item Level, Combat Power, gear, stat sheet, skill levels, Specialty picks, Daevanion nodes and titles, as the game sent them. The name inside tells apart characters of the same class and level; the file itself is named with a code made from the server and the character's name. No other player's name is in it. Always written, never sent. |
 | `debug.log` | Only while **Settings > Diagnostics > Enable debug logging** is on, which it is not by default. It stops growing at 5 MB. It holds the names of the players the meter met and the path of your home folder. |
 | `packets_*.txt` | Only while **Enable packet logging** is on, which it is not by default. See [Packet logs](#packet-logs). |
 | `report_debug.log` | Written by **Report a problem > Prepare debug log**: a copy of `debug.log` with every character name, your home folder and your user name replaced. |

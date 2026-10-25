@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "items": {
+    "110600101": "Musterkugel"
+  },
+  "servers": {
+    "1001": "Musterserver"
+  },
+  "slots": {
+    "MainHand": "Haupthand"
+  }
+}

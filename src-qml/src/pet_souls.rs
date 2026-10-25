@@ -7,9 +7,10 @@
 //! party dungeon or the Abyss) and follow every soul, registration and level
 //! after it. They are kept in the data folder; counts kept from an earlier
 //! run say they may be behind until the next collection, since souls taken
-//! while the meter was off were never seen.
+//! while the meter was off were never seen; that collection brings the
+//! notices already up to date.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -157,15 +158,19 @@ pub struct PetSouls {
     behind: bool,
     /// Changed since the last save.
     dirty: bool,
+    /// The pets with a notice this run, which a new collection brings up to
+    /// date.
+    noticed: BTreeSet<u32>,
 }
 
 impl PetSouls {
     /// One record; the notices it makes. `now` is Unix seconds.
     pub fn apply(&mut self, table: &PetTable, words: &Words, event: PetCollectionEvent, now: i64) -> Vec<Notice> {
-        let today = Local.timestamp_opt(now, 0).single().map(|t| t.date_naive()).unwrap_or_default();
+        let date = today(now);
         match event {
             PetCollectionEvent::Collection(pets) => {
-                *self = PetSouls { pets: Some(pets), as_of: now, behind: false, dirty: true };
+                let noticed = std::mem::take(&mut self.noticed);
+                *self = PetSouls { pets: Some(pets), as_of: now, behind: false, dirty: true, noticed };
                 Vec::new()
             }
             PetCollectionEvent::Souls(added) => added
@@ -177,8 +182,9 @@ impl PetSouls {
                     } else {
                         words.say(SOULS, &[("pet", &name), ("count", &n.to_string())])
                     };
+                    self.noticed.insert(pet);
                     let reached = self.add(table, pet, n);
-                    let status = self.status(table, words, pet, today);
+                    let status = self.status(table, words, pet, date);
                     let text = match reached {
                         Some(level) => words.say(REACHED, &[("level", &level.to_string()), ("status", &status)]),
                         None => status,
@@ -191,6 +197,7 @@ impl PetSouls {
                     pets.entry(pet).or_default().level = level;
                     self.dirty = true;
                 }
+                self.noticed.insert(pet);
                 let name = words.pet(pet);
                 let title = if level == 1 {
                     words.say(REGISTERED, &[("pet", &name)])
@@ -198,10 +205,18 @@ impl PetSouls {
                     words.say(LEVEL, &[("pet", &name), ("level", &level.to_string())])
                 };
                 let insight = insight_text(table, words, pet, level, insight_level, insight_exp);
-                let status = self.status(table, words, pet, today);
+                let status = self.status(table, words, pet, date);
                 vec![(key(pet), title, format!("{insight}. {status}"))]
             }
         }
+    }
+
+    /// After a collection: the text for each pet with a notice this run, from
+    /// the new counts, for the notice where it is (an older one may say the
+    /// count was unknown or behind).
+    pub fn refreshed(&self, table: &PetTable, words: &Words, now: i64) -> Vec<(String, String)> {
+        let date = today(now);
+        self.noticed.iter().map(|&pet| (key(pet), self.status(table, words, pet, date))).collect()
     }
 
     /// Souls in; the game spends them on levels at once. The level reached,
@@ -267,8 +282,13 @@ impl PetSouls {
                 .collect()
         });
         let behind = pets.is_some();
-        PetSouls { pets, as_of: json["asOf"].as_i64().unwrap_or(0), behind, dirty: false }
+        PetSouls { pets, as_of: json["asOf"].as_i64().unwrap_or(0), behind, dirty: false, noticed: BTreeSet::new() }
     }
+}
+
+/// The local date at unix second `now`.
+fn today(now: i64) -> chrono::NaiveDate {
+    Local.timestamp_opt(now, 0).single().map(|t| t.date_naive()).unwrap_or_default()
 }
 
 fn key(pet: u32) -> String {
@@ -343,8 +363,14 @@ pub fn tick(storage: &daevalog::combat::data_storage::DataStorage, language: &st
         let words = Words { language, names, hour24 };
         let now = Local::now().timestamp();
         for event in events {
+            let collection = matches!(event, PetCollectionEvent::Collection(_));
             for (key, title, text) in live.souls.apply(&live.table, &words, event, now) {
                 crate::notices::post(&key, "pet", &title, &text);
+            }
+            if collection {
+                for (key, text) in live.souls.refreshed(&live.table, &words, now) {
+                    crate::notices::update(&key, &text);
+                }
             }
         }
     }
@@ -450,6 +476,27 @@ mod tests {
         kept.apply(&table, &words(&names), collection(&[(1003, 1, 12)]), NOW + 120);
         let fresh = kept.apply(&table, &words(&names), PetCollectionEvent::Souls(vec![(1003, 1)]), NOW + 180);
         assert_eq!(fresh[0].2, "13/25 (12 to level 2), 87 to max");
+    }
+
+    #[test]
+    fn a_collection_brings_the_notices_up_to_date() {
+        let (table, names) = (table(), names());
+        let mut first = PetSouls::default();
+        first.apply(&table, &words(&names), collection(&[(1003, 1, 10)]), NOW);
+        let mut kept = PetSouls::from_json(&first.to_json());
+        assert!(kept.refreshed(&table, &words(&names), NOW).is_empty(), "no notices yet");
+        let behind = kept.apply(&table, &words(&names), PetCollectionEvent::Souls(vec![(1003, 1)]), NOW + 60);
+        assert!(behind[0].2.contains("(pet list from "));
+        kept.apply(&table, &words(&names), collection(&[(1003, 1, 12)]), NOW + 120);
+        assert_eq!(
+            kept.refreshed(&table, &words(&names), NOW + 120),
+            vec![("pet:1003".to_string(), "12/25 (13 to level 2), 88 to max".to_string())]
+        );
+        // Before any collection the count was unknown.
+        let mut fresh = PetSouls::default();
+        fresh.apply(&table, &words(&names), PetCollectionEvent::Souls(vec![(1003, 1)]), NOW);
+        fresh.apply(&table, &words(&names), collection(&[(1003, 3, 0)]), NOW + 60);
+        assert_eq!(fresh.refreshed(&table, &words(&names), NOW + 60)[0].1, "Level 3, max");
     }
 
     /// The notices a packet log makes, one line each, for a compare by hand:

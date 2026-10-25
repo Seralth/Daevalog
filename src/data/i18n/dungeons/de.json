@@ -856,7 +856,7 @@
     "type": "quest"
   },
   "220021": {
-    "name": "Lufttempel Arkanis",
+    "name": "Lufttempel von Arkanis",
     "type": "quest"
   },
   "220022": {
@@ -1950,8 +1950,9 @@
   "600004": {
     "name": "Kraohöhle",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Eroberung (Rang 1)"
+    "label": "Eroberung (Rang 1) · Schwer"
   },
   "600011": {
     "name": "Uruguguschlucht",
@@ -2013,8 +2014,9 @@
   "600033": {
     "name": "Draupnir",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Eroberung (Rang 1)"
+    "label": "Eroberung (Rang 1) · Schwer"
   },
   "600034": {
     "name": "Draupnir"
@@ -2777,7 +2779,7 @@
     "type": "quest"
   },
   "840031": {
-    "name": "Beutekammer (Hillsroter)",
+    "name": "Hillsroter-Beutekammer",
     "type": "quest"
   },
   "840032": {

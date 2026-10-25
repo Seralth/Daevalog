@@ -2753,7 +2753,7 @@
     "isBoss": false
   },
   "2100040": {
-    "name": "Kutar le Putréfié",
+    "name": "Kutar le putréfié",
     "isBoss": true
   },
   "2100041": {
@@ -4725,7 +4725,7 @@
     "isBoss": true
   },
   "2101120": {
-    "name": "Dartan la Silencieuse",
+    "name": "Dartan la silencieuse",
     "isBoss": true
   },
   "2101122": {
@@ -10307,7 +10307,7 @@
     "isBoss": false
   },
   "2300466": {
-    "name": "Guérisseur Mau de la Corne abyssale",
+    "name": "Soigneur Mau de la Corne abyssale",
     "isBoss": false
   },
   "2300467": {
@@ -10389,7 +10389,7 @@
     "isBoss": false
   },
   "2300486": {
-    "name": "Guérisseur Mau de la Corne abyssale",
+    "name": "Soigneur Mau de la Corne abyssale",
     "isBoss": false
   },
   "2300487": {
@@ -10547,7 +10547,7 @@
     "isBoss": false
   },
   "2300522": {
-    "name": "Guérisseur Mau de la Corne abyssale",
+    "name": "Soigneur Mau de la Corne abyssale",
     "isBoss": false
   },
   "2300523": {
@@ -10611,7 +10611,7 @@
     "isBoss": false
   },
   "2300539": {
-    "name": "Guérisseur Mau de la Corne abyssale",
+    "name": "Soigneur Mau de la Corne abyssale",
     "isBoss": false
   },
   "2300540": {
@@ -15562,7 +15562,7 @@
     "isBoss": false
   },
   "2340162": {
-    "name": "Parasite du Marais Contaminé",
+    "name": "Parasite du Marais contaminé",
     "isBoss": false
   },
   "2340163": {
@@ -15570,7 +15570,7 @@
     "isBoss": false
   },
   "2340164": {
-    "name": "Gardien du Marais Contaminé",
+    "name": "Gardien du Marais contaminé",
     "isBoss": false
   },
   "2340165": {
@@ -19998,7 +19998,7 @@
     "isBoss": false
   },
   "2400274": {
-    "name": "Trid la Trompeuse",
+    "name": "Trid la trompeuse",
     "isBoss": true
   },
   "2400275": {
@@ -20106,7 +20106,7 @@
     "isBoss": false
   },
   "2400335": {
-    "name": "Kelpina la Vague bleue",
+    "name": "Kelpina la vague bleue",
     "isBoss": true
   },
   "2400336": {
@@ -20150,7 +20150,7 @@
     "isBoss": false
   },
   "2400353": {
-    "name": "Nutah le Chef superviseur",
+    "name": "Nutah le chef superviseur",
     "isBoss": true
   },
   "2400354": {
@@ -20166,7 +20166,7 @@
     "isBoss": false
   },
   "2400358": {
-    "name": "Resana le Conseiller",
+    "name": "Resana le conseiller",
     "isBoss": true
   },
   "2400359": {
@@ -20359,7 +20359,7 @@
     "isBoss": false
   },
   "2400419": {
-    "name": "Linx le Chef des opérations spéciales",
+    "name": "Linx le chef des opérations spéciales",
     "isBoss": true
   },
   "2400420": {
@@ -20375,11 +20375,11 @@
     "isBoss": false
   },
   "2400424": {
-    "name": "Newbold le Profanateur",
+    "name": "Newbold le profanateur",
     "isBoss": true
   },
   "2400425": {
-    "name": "Axios l'Archon des âmes égarées",
+    "name": "Axios l'archon des âmes égarées",
     "isBoss": true
   },
   "2400426": {
@@ -20479,7 +20479,7 @@
     "isBoss": false
   },
   "2400504": {
-    "name": "Barthien le Bourreau",
+    "name": "Barthien le bourreau",
     "isBoss": true
   },
   "2400505": {
@@ -20659,7 +20659,7 @@
     "isBoss": false
   },
   "2400607": {
-    "name": "Shujakan le Vétéran",
+    "name": "Shujakan le vétéran",
     "isBoss": true
   },
   "2400608": {
@@ -20735,7 +20735,7 @@
     "isBoss": false
   },
   "2400659": {
-    "name": "Vishwada le Ténébreux",
+    "name": "Vishwada le ténébreux",
     "isBoss": true
   },
   "2400701": {
@@ -20771,7 +20771,7 @@
     "isBoss": false
   },
   "2400709": {
-    "name": "Shylak l'Acéré",
+    "name": "Shylak l'acéré",
     "isBoss": true
   },
   "2400710": {
@@ -21023,7 +21023,7 @@
     "isBoss": true
   },
   "2400855": {
-    "name": "Dartan la Silencieuse",
+    "name": "Dartan la silencieuse",
     "isBoss": true
   },
   "2400900": {
@@ -32034,7 +32034,7 @@
     "isBoss": false
   },
   "2702070": {
-    "name": "Guérisseur Mau",
+    "name": "Soigneur Mau",
     "isBoss": false
   },
   "2702071": {
@@ -32106,11 +32106,11 @@
     "isBoss": false
   },
   "2702088": {
-    "name": "Guérisseur Mau",
+    "name": "Soigneur Mau",
     "isBoss": false
   },
   "2702089": {
-    "name": "Guérisseur Mau",
+    "name": "Soigneur Mau",
     "isBoss": false
   },
   "2702090": {
@@ -49330,7 +49330,7 @@
     "isBoss": false
   },
   "2959491": {
-    "name": "Marchand d'échange de pièces citrouille d’Halloween",
+    "name": "Marchand d'échange de pièces citrouille d'Halloween",
     "isBoss": false
   },
   "2960001": {
@@ -53714,7 +53714,7 @@
     "isBoss": false
   },
   "2989661": {
-    "name": "Marchand d'échange de pièces citrouille d’Halloween",
+    "name": "Marchand d'échange de pièces citrouille d'Halloween",
     "isBoss": false
   },
   "2990000": {
@@ -56286,7 +56286,7 @@
     "isBoss": false
   },
   "2990818": {
-    "name": "Sculpture de Schentya",
+    "name": "Statue de Schentya",
     "isBoss": false
   },
   "2990819": {
@@ -56498,7 +56498,7 @@
     "isBoss": false
   },
   "2990886": {
-    "name": "Margareta",
+    "name": "Margaretha",
     "isBoss": false
   },
   "2990887": {

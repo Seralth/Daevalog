@@ -3,6 +3,7 @@
 //! names the credential, so signing out can delete it for good.
 
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 
 use windows::core::{PCWSTR, PWSTR};
 use windows::Win32::Foundation::{ERROR_NOT_FOUND, FILETIME};
@@ -22,6 +23,15 @@ const MAX_SECRET: usize = 5 * 512;
 
 /// Saves made by this process, so two in the same instant still differ.
 static SAVES: AtomicU64 = AtomicU64::new(0);
+
+/// Credential Manager calls from two threads of one process at once lose
+/// deletes: a forgotten credential could still be read afterwards. Every
+/// call below takes it.
+static STORE: Mutex<()> = Mutex::new(());
+
+fn store_lock() -> std::sync::MutexGuard<'static, ()> {
+    STORE.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
 
 /// The credential's name for a purpose and an id.
 fn target(purpose: &str, id: &str) -> Vec<u16> {
@@ -45,6 +55,7 @@ fn new_id() -> String {
 
 /// Reads one credential's secret.
 fn read(name: &[u16]) -> windows::core::Result<Vec<u8>> {
+    let _store = store_lock();
     let mut found: *mut CREDENTIALW = std::ptr::null_mut();
     // SAFETY: a NUL-terminated name; on success `found` points at a
     // credential that CredFree releases after the copy.
@@ -96,8 +107,12 @@ pub fn protect(token: &[u8], entropy: &[u8]) -> Result<Vec<u8>, String> {
         TargetAlias: PWSTR::null(),
         UserName: PWSTR(user.as_mut_ptr()),
     };
-    // SAFETY: every pointer in `credential` points at a live buffer above.
-    match unsafe { CredWriteW(&credential, 0) } {
+    let written = {
+        let _store = store_lock();
+        // SAFETY: every pointer in `credential` points at a live buffer above.
+        unsafe { CredWriteW(&credential, 0) }
+    };
+    match written {
         Ok(()) => Ok([PREFIX, &id].concat().into_bytes()),
         Err(e) => {
             tracing::warn!("Credential Manager save failed: {e}");
@@ -123,6 +138,7 @@ pub fn unprotect(sealed: &[u8], entropy: &[u8]) -> Result<Vec<u8>, UnsealError> 
 /// name, so every purpose the meter uses is tried.
 pub fn forget(sealed: &[u8]) {
     let Some(id) = item_id(sealed) else { return };
+    let _store = store_lock();
     for purpose in PURPOSES {
         let name = target(purpose, id);
         // SAFETY: a NUL-terminated name that lives for the call.

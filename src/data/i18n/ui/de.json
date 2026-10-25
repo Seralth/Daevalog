@@ -563,8 +563,8 @@
     "characterNameHint": "Beim nächsten Laden ersetzt der Name aus dem Spiel diesen.",
     "modeOnly": "Nur in {mode}.",
     "showTotalHint": "Die Gruppensumme in der Fußzeile, auf jedem Tab: DPS, Heilung und Verteidiger.",
-    "spawnNotices": "Countdown für Berüchtigte Feld-Monster und Raumzeit-Risse",
-    "spawnNoticesHint": "In den Benachrichtigungen: 30, 15 und 5 Minuten vor einem Berüchtigten Feld-Monster, 5 Minuten vor einem Raumzeit-Riss.",
+    "spawnNotices": "Countdown für Bosse und Raumzeit-Risse",
+    "spawnNoticesHint": "In den Benachrichtigungen: 30, 15 und 5 Minuten vor einem Abyss-Boss und vor den Feld-Bossen Gartua, Dartan, Kashapa und Lagta, 5 Minuten vor einem Raumzeit-Riss. Die Zeiten der Feld-Bosse kommen, wenn du die Karte öffnest.",
     "shardWarning": "Siegelstein-Warnung",
     "shardWarningHint": "Eine Benachrichtigung, wenn deine Treffer keine Siegelsteine mehr nutzen.",
     "serverTimeZone": "Zeitzone des Servers",
@@ -692,6 +692,8 @@
     "title": "Benachrichtigungen",
     "clearAll": "Alle löschen",
     "none": "Keine Benachrichtigungen",
+    "more": "{count} weitere",
+    "top": "Zurück nach oben",
     "pet": {
       "soul": "{pet}: Seele",
       "souls": "{pet}: +{count} Seelen",
@@ -710,7 +712,9 @@
       "unnamed": "Pet {id}"
     },
     "spawn": {
-      "at": "{name} um {time}"
+      "at": "{name} um {time}",
+      "abyssBoss": "Abyss-Boss",
+      "fieldBoss": "Feld-Boss"
     },
     "shard": {
       "off": "Siegelsteine aus",
@@ -719,5 +723,46 @@
     },
     "countdown": "in {minutes} Min.",
     "now": "jetzt"
+  },
+  "character": {
+    "title": "Charakter",
+    "tabs": {
+      "gear": "Ausrüstung",
+      "sheet": "Charakterbogen",
+      "skills": "Fähigkeiten",
+      "boards": "Daevanion"
+    },
+    "level": "St. {n}",
+    "itemLevel": "Gegenstandsstufe",
+    "combatPower": "Kampfkraft",
+    "highest": "höchste {n}",
+    "seen": "Stand: {date}",
+    "empty": "Noch kein Charakter",
+    "emptyHint": "Logge dich bei laufendem Meter mit einem Charakter ein oder gehe zur Charakterauswahl und zurück.",
+    "unread": "Nicht gelesene Charakterdateien: {n}",
+    "packFailed": "Die Spieldaten für dieses Fenster wurden nicht geladen.",
+    "notRead": "Noch nicht gelesen: Das Spiel sendet dies beim Einloggen.",
+    "gear": {
+      "empty": "Leer",
+      "notRead": "Ausrüstungsdetails nicht gelesen",
+      "sockets": "Manastein-Plätze: {n}",
+      "skillLevel": "St. +{n}",
+      "baseAt": "Grundwerte bei +{n}",
+      "base": "Grundwerte"
+    },
+    "titles": "Titel",
+    "titlesOwned": "{n} im Besitz",
+    "none": "Keine",
+    "skills": {
+      "active": "Aktiv",
+      "passive": "Passiv",
+      "stigma": "Stigma",
+      "specialty": "Spezial",
+      "daevanion": "Daevanion: St. +{n}",
+      "gear": "Ausrüstung: St. +{n}"
+    },
+    "boards": {
+      "nodes": "{taken} von {total} Knoten"
+    }
   }
 }

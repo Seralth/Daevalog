@@ -4,7 +4,7 @@ import Qt.labs.platform as Platform
 import Daevalog
 
 // Starts the meter window and the tray icon, and opens the other windows
-// (Details, History, Settings) when asked. With --screenshot it saves the
+// (Details, History, Settings, Character) when asked. With --screenshot it saves the
 // window --open names (the meter by default) as a PNG and quits instead.
 QtObject {
     id: app
@@ -15,6 +15,7 @@ QtObject {
     property var details: null
     property var history: null
     property var settings: null
+    property var character: null
     property var card: null
     // A locked meter can be unlocked again: from its own ⋯ or lock button,
     // which the input region keeps clickable, from the tray, or with the
@@ -131,7 +132,7 @@ QtObject {
     readonly property Connections taskbar: Connections {
         target: Settings
         function onHideFromTaskbarChanged() {
-            for (const window of [app.meter, app.details, app.history, app.settings]) {
+            for (const window of [app.meter, app.details, app.history, app.settings, app.character]) {
                 if (window)
                     app.keepOffTaskbar(window)
             }
@@ -249,6 +250,13 @@ QtObject {
         return settings
     }
 
+    function openCharacter(page) {
+        if (!character)
+            character = make("CharacterWindow.qml")
+        character.present(page)
+        return character
+    }
+
     // The card of a row's top skills, beside the meter while the pointer
     // rests on the row.
     function showCard(player, row) {
@@ -340,6 +348,8 @@ QtObject {
             return openHistory(page)
         case "settings":
             return openSettings(page || "appearance")
+        case "character":
+            return openCharacter(page)
         }
         // meter/split and meter/slim are settings, on for this run (main.rs).
         if (page === "heal")
@@ -356,10 +366,14 @@ QtObject {
             Notices.add("", "info", "Sample notice with no text", "")
             Notices.add("pet:1003", "pet", "Forest Specter soul", "22/25 (3 to level 2), 78 to max")
             const now = Math.floor(Date.now() / 1000)
+            const at = (name, time) => I18n.tr("notices.spawn.at").replace("{name}", name).replace("{time}", time)
             Notices.addUntil("spawn:rift:1", "rift", "Spacetime Rift at 05:00", "", now + 4 * 60)
-            Notices.addUntil("spawn:boss:1", "boss", "Field Boss at 21:30",
+            Notices.addUntil("spawn:abyss:1", "abyss", at(I18n.tr("notices.spawn.abyssBoss"), "21:30"),
                              "Executor Tamasa, Executor Argo, Executor Kaira (Chaotic Lower Reshanta)\nExecutioner Dramos, Turncoat Ducal, Ravager Marakha (Chaotic Middle Reshanta)",
                              now + 12 * 60)
+            const field = I18n.tr("notices.spawn.fieldBoss")
+            Notices.addUntil("fieldboss:101024", "commander", at(field, "05:05"), "High Commander Lagta (Verteron)", now + 15 * 60)
+            Notices.addUntil("fieldboss:101021", "gartua", at(field, "05:04"), "Eternal Gartua (Verteron)", now + 29 * 60)
             makeNoticeTray()
             noticeTray.open = page === "tray"
             return noticeTray
@@ -407,10 +421,13 @@ QtObject {
             text: I18n.tr("details.screenshot.ariaLabel")
             onTriggered: app.meter.screenshot()
         }
-        // The height fits the rows again, as a double-click on an edge does.
+        // The height follows the rows (kept across restarts); off, an edge
+        // sets the height too. A double-click on an edge turns it on.
         UiMenuItem {
+            checkable: true
+            checked: Settings.fitRows
             text: I18n.tr("meter.fitToRows")
-            onTriggered: app.meter.fitToRows()
+            onTriggered: Settings.fitRows ? Settings.fitRows = false : app.meter.fitToRows()
         }
         UiMenuItem {
             checkable: true
@@ -422,6 +439,10 @@ QtObject {
         UiMenuItem {
             text: I18n.tr("tray.history")
             onTriggered: app.openHistory()
+        }
+        UiMenuItem {
+            text: I18n.tr("character.title")
+            onTriggered: app.openCharacter()
         }
         UiMenuItem {
             text: I18n.tr("tray.settings")
@@ -510,13 +531,15 @@ QtObject {
     }
 
     // With --replay, the screenshot waits for the replay's end, Details for
-    // its view of that end, and History for its fights. Live, Settings waits
+    // its view of that end, History for its fights and the Character window
+    // for its first reading. Live, Settings waits
     // for the capture's device list and, while the game runs, the port lock,
     // 10 s at most.
     readonly property Timer screenshot: Timer {
         interval: 400
         running: app.screenshotMode && app.shown !== null && (!Meter.replaying || Meter.replayDone)
             && (app.shown !== app.details || Details.ready) && (app.shown !== app.history || app.history.settled)
+            && (app.shown !== app.character || app.character.settled)
             && (app.shown !== app.card || app.card.view !== null)
             && (app.shown !== app.settings || Meter.replaying || app.devicesWaited
                 || (Capture.devices !== "[]" && (Capture.port > 0 || !Capture.gameRunning)))

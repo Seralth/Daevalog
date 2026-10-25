@@ -44,6 +44,18 @@ Window {
         if (active && !shown)
             shown = true
     }
+    // A layer surface the compositor closed shows again (Reopen.qml).
+    readonly property Reopen reopen: Reopen {
+        window: meter.layerSurface ? meter : null
+        wanted: meter.shown || meter.hidesInPlace
+    }
+    // Hidden in place, the readings wait, so the meter draws nothing; the
+    // newest shows when it is shown again.
+    Binding {
+        target: Meter
+        property: "hidden"
+        value: meter.hiddenInPlace
+    }
 
     // The lock lives in the ⋯ menu, or on its own button when "Show lock
     // button" is on; that one control still takes clicks while the meter is
@@ -64,9 +76,9 @@ Window {
     // The tab: 0 DPS, 1 Heal, 2 Tank. Tabs pick the numbers, the mode picks
     // the fight; every tab lists every player.
     property int tab: 0
-    // Set once the user resizes; until then the window fits its rows.
-    // A double-click on an edge clears it (fitToRows).
-    property bool userSized: false
+    // Settings.fitRows: the height follows the rows and an edge sets only
+    // the width; off, the height is the player's. A double-click on an edge
+    // turns it on again (fitToRows).
     // Armed at the start; the first height change the meter did not make
     // is set back, then it is off (see onHeightChanged).
     property bool restoreHeight: false
@@ -243,7 +255,7 @@ Window {
             const k = Theme.meter.scale / meter.sizedAt
             meter.sizedAt = Theme.meter.scale
             meter.width = Math.max(meter.minimumWidth, Math.round(meter.width * k))
-            if (meter.userSized)
+            if (!Settings.fitRows)
                 meter.height = Math.max(meter.minimumHeight, Math.round(meter.height * k))
         }
     }
@@ -272,18 +284,18 @@ Window {
         shapeInput()
     }
     onNaturalHeightChanged: {
-        if (!userSized)
+        if (Settings.fitRows)
             height = naturalHeight
     }
     // A compositor's first configure can carry the height from before the
     // rows came (KWin, COSMIC): the rows' height goes back, once, so a
     // compositor that keeps its own size is not fought.
     onHeightChanged: {
-        if (userSized || !restoreHeight || height === naturalHeight)
+        if (!Settings.fitRows || !restoreHeight || height === naturalHeight)
             return
         restoreHeight = false
         Qt.callLater(() => {
-            if (!userSized)
+            if (Settings.fitRows)
                 height = naturalHeight
         })
     }
@@ -433,7 +445,10 @@ Window {
     component ResizeGrip: Item {
         id: grip
         required property int edges
-        readonly property bool growsOnly: !(edges & (Qt.LeftEdge | Qt.TopEdge))
+        // The edges it moves: the left and right only while the height fits
+        // the rows, so a corner sets the width and the top and bottom rest.
+        readonly property int sizes: Settings.fitRows ? edges & (Qt.LeftEdge | Qt.RightEdge) : edges
+        readonly property bool growsOnly: !(sizes & (Qt.LeftEdge | Qt.TopEdge))
         // Where the window and the pointer were at the start, for a meter
         // that sizes itself.
         property rect startRect
@@ -441,11 +456,11 @@ Window {
 
         visible: meter.shown
         // A layer surface grows from its top-left corner only.
-        enabled: !Settings.locked && (!meter.layerSurface || growsOnly)
+        enabled: !Settings.locked && sizes !== 0 && (!meter.layerSurface || growsOnly)
 
         HoverHandler {
             cursorShape: {
-                const e = grip.edges
+                const e = grip.sizes
                 if (e === (Qt.LeftEdge | Qt.TopEdge) || e === (Qt.RightEdge | Qt.BottomEdge))
                     return Qt.SizeFDiagCursor
                 if (e === (Qt.RightEdge | Qt.TopEdge) || e === (Qt.LeftEdge | Qt.BottomEdge))
@@ -461,14 +476,13 @@ Window {
             onActiveChanged: {
                 if (!active)
                     return
-                meter.userSized = true
                 if (meter.placesItself) {
                     grip.startRect = Qt.rect(meter.x, meter.y, meter.width, meter.height)
                     // The press, on the screen: the window has not moved yet.
                     const at = Overlay.pointerOnScreen()
                     grip.startPointer = Qt.point(at.x - centroid.scenePosition.x + centroid.scenePressPosition.x,
                                                  at.y - centroid.scenePosition.y + centroid.scenePressPosition.y)
-                } else if (meter.startSystemResize(grip.edges)) {
+                } else if (meter.startSystemResize(grip.sizes)) {
                     Overlay.releasePointer(meter)
                 }
             }
@@ -476,7 +490,7 @@ Window {
             // travel in the window is the size change.
             onTranslationChanged: {
                 if (active && meter.layerSurface)
-                    meter.resizeFrom(grip.startRect, grip.edges, translation)
+                    meter.resizeFrom(grip.startRect, grip.sizes, translation)
             }
             // An unmanaged window's left and top edges move it under the
             // pointer, so there the travel is measured on the screen.
@@ -484,7 +498,7 @@ Window {
                 if (!active || !meter.unmanaged)
                     return
                 const at = Overlay.pointerOnScreen()
-                meter.resizeFrom(grip.startRect, grip.edges,
+                meter.resizeFrom(grip.startRect, grip.sizes,
                                  Qt.point(at.x - grip.startPointer.x, at.y - grip.startPointer.y))
             }
         }
@@ -494,10 +508,9 @@ Window {
         }
     }
 
-    // The height fits the rows and follows them again, as before the first
-    // resize; the width stays.
+    // The height fits the rows and follows them again; the width stays.
     function fitToRows() {
-        userSized = false
+        Settings.fitRows = true
         height = naturalHeight
     }
 

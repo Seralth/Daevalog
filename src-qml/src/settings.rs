@@ -59,6 +59,7 @@ pub mod qobject {
         #[qproperty(bool, shard_warning, READ, WRITE = change_shard_warning, NOTIFY)]
         #[qproperty(QString, server_time_zone, READ, WRITE = change_server_time_zone, NOTIFY)]
         #[qproperty(bool, show_total, READ, WRITE = change_show_total, NOTIFY)]
+        #[qproperty(bool, fit_rows, READ, WRITE = change_fit_rows, NOTIFY)]
         #[qproperty(bool, round_dps, READ, WRITE = change_round_dps, NOTIFY)]
         #[qproperty(bool, show_suspend_button, READ, WRITE = change_show_suspend_button, NOTIFY)]
         #[qproperty(bool, show_lock_button, READ, WRITE = change_show_lock_button, NOTIFY)]
@@ -121,6 +122,7 @@ pub mod qobject {
         #[qinvokable]
         fn zone_regions(self: &Settings, language: &QString) -> QString;
         fn change_show_total(self: Pin<&mut Settings>, value: bool);
+        fn change_fit_rows(self: Pin<&mut Settings>, value: bool);
         fn change_round_dps(self: Pin<&mut Settings>, value: bool);
         fn change_show_suspend_button(self: Pin<&mut Settings>, value: bool);
         fn change_show_lock_button(self: Pin<&mut Settings>, value: bool);
@@ -192,6 +194,7 @@ pub struct SettingsRust {
     shard_warning: bool,
     server_time_zone: QString,
     show_total: bool,
+    fit_rows: bool,
     round_dps: bool,
     show_suspend_button: bool,
     show_lock_button: bool,
@@ -260,6 +263,7 @@ impl SettingsRust {
             shard_warning: v.shard_warning,
             server_time_zone: QString::from(&v.server_time_zone),
             show_total: v.show_total,
+            fit_rows: v.fit_rows,
             round_dps: v.round_dps,
             show_suspend_button: v.show_suspend_button,
             show_lock_button: v.show_lock_button,
@@ -456,6 +460,10 @@ impl qobject::Settings {
         QString::from(&crate::world_spawns::regions_json(&language.to_string()))
     }
 
+    fn change_fit_rows(self: Pin<&mut Self>, value: bool) {
+        self.change(Key::FitRows, value.to_string());
+    }
+
     fn change_show_total(self: Pin<&mut Self>, value: bool) {
         self.change(Key::ShowTotal, value.to_string());
     }
@@ -576,6 +584,7 @@ impl qobject::Settings {
             Key::ShardWarning => self.shard_warning_changed(),
             Key::ServerTimeZone => self.server_time_zone_changed(),
             Key::ShowTotal => self.show_total_changed(),
+            Key::FitRows => self.fit_rows_changed(),
             Key::RoundDps => self.round_dps_changed(),
             Key::ShowSuspendButton => self.show_suspend_button_changed(),
             Key::ShowLockButton => self.show_lock_button_changed(),
@@ -634,6 +643,7 @@ impl qobject::Settings {
         show!(self, shard_warning, shard_warning_changed, v.shard_warning);
         show!(self, server_time_zone, server_time_zone_changed, v.server_time_zone);
         show!(self, show_total, show_total_changed, v.show_total);
+        show!(self, fit_rows, fit_rows_changed, v.fit_rows);
         show!(self, round_dps, round_dps_changed, v.round_dps);
         show!(self, show_suspend_button, show_suspend_button_changed, v.show_suspend_button);
         show!(self, show_lock_button, show_lock_button_changed, v.show_lock_button);

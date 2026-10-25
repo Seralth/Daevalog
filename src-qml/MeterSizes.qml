@@ -4,8 +4,8 @@ import QtQuick
 // The meter window's sizes (Theme.meter), at Settings > Appearance > Meter
 // size. At 100% each is the meter's own; the others grow every one of them
 // alike, so the meter keeps its proportions, and its text is set in the
-// larger size, not drawn larger, so it stays sharp. The other windows keep
-// Theme's sizes.
+// larger size, not drawn larger, so it stays sharp. The notice tray on the
+// meter's edge grows with it; the other windows keep Theme's sizes.
 QtObject {
     // 1 is 100%.
     property real scale: 1

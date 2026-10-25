@@ -4,10 +4,10 @@ mod format_report;
 #[cfg(feature = "backend")]
 mod history_report;
 mod ping_report;
+#[cfg(feature = "backend")]
 mod replay_character;
 mod replay_deaths;
 pub(crate) mod replay_report;
-mod replay_players;
 mod replay_taken;
 pub(crate) mod replay_timeline;
 mod view_report;

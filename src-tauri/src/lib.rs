@@ -7,6 +7,7 @@
 //! HTTP, the keyring, settings and the fight history.
 
 pub mod capture;
+pub mod character;
 pub mod clock;
 pub mod combat;
 pub mod entity;

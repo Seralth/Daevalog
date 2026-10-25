@@ -5,7 +5,7 @@ use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering::Relaxed};
 
-use crate::capture::decoder::{PetCollectionEvent, ShardEvent};
+use crate::capture::decoder::{PetCollectionEvent, ShardEvent, WorldMapList};
 use crate::entity::job_class::JobClass;
 
 /// A fight segment nobody has hit for longer than this is over.
@@ -32,6 +32,7 @@ mod pet_collection;
 mod power_shards;
 mod roster;
 mod taken;
+mod world_map;
 pub use aggregates::{
     ActorTotals, Encounter, EndedSegment, HealTotals, HealTick, SelfCard, NoDamageHit, RosterEntry, SecondStats,
     SegmentIdentity, SkillTotals, TargetTotals,
@@ -96,6 +97,8 @@ pub struct DataStorage {
     pet_collection: Mutex<VecDeque<PetCollectionEvent>>,
     /// Your shard hits and counts for the shard notice; no fight clears them.
     shards: Mutex<VecDeque<ShardEvent>>,
+    /// The world map's lists for the field boss notices; no fight clears them.
+    world_map: Mutex<VecDeque<WorldMapList>>,
 }
 
 type Ids = HashSet<i32>;
@@ -267,6 +270,7 @@ impl DataStorage {
             before_zone_change: Mutex::default(),
             pet_collection: Mutex::default(),
             shards: Mutex::default(),
+            world_map: Mutex::default(),
         }
     }
 
@@ -286,6 +290,7 @@ impl DataStorage {
             before_zone_change: Mutex::default(),
             pet_collection: Mutex::default(),
             shards: Mutex::default(),
+            world_map: Mutex::default(),
         }
     }
 

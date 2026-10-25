@@ -15,7 +15,7 @@ use super::port_watch::PortWatch;
 use super::device_follow::{same_device, Follow, Next};
 use super::ping_tracker::PingTracker;
 use super::reassembly::Reassembler;
-use super::decoder::PacketDecoder;
+use super::decoder::{PacketDecoder, PacketTap};
 use super::tcp_order::TcpOrder;
 use crate::combat::data_storage::DataStorage;
 use crate::i18n::lookup::{NpcLookup, SkillLookup};
@@ -208,6 +208,8 @@ pub struct PacketRouter {
     npcs: Arc<NpcLookup>,
     ports: Arc<PortWatch>,
     ping: Arc<PingTracker>,
+    /// Gets every packet each parser reads.
+    tap: Option<PacketTap>,
 }
 
 impl PacketRouter {
@@ -225,7 +227,13 @@ impl PacketRouter {
             npcs: npc_lookup,
             skills: skill_lookup,
             storage: data_storage,
+            tap: None,
         }
+    }
+
+    /// Every packet each parser made from now on reads also goes to `tap`.
+    pub fn tap_packets(&mut self, tap: PacketTap) {
+        self.tap = Some(tap);
     }
 
     /// The skills whose damage comes over time, for every parser made.
@@ -479,6 +487,9 @@ impl<'a> DispatchState<'a> {
             let mut processor =
                 PacketDecoder::new(dispatcher.storage.clone(), dispatcher.skills.clone(), dispatcher.npcs.clone());
             processor.use_tick_skills(dispatcher.dot_ids.clone());
+            if let Some(tap) = &dispatcher.tap {
+                processor.tap_packets(tap.clone());
+            }
             (Reassembler::new(), processor)
         });
         if assembler.push_bytes(&cap.data, processor) {

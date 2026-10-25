@@ -29,7 +29,7 @@ fn behind_its_length(region: &[u8], i: usize, end: usize) -> bool {
 
 /// The bytes after a frame's opcode, when the frame opens with `opcode`
 /// behind a length varint that reads.
-pub(super) fn body_after(frame: &[u8], opcode: [u8; 2]) -> Option<&[u8]> {
+pub(crate) fn body_after(frame: &[u8], opcode: [u8; 2]) -> Option<&[u8]> {
     let head = varint_at(frame, 0);
     if head.length <= 0 {
         return None;
@@ -126,7 +126,9 @@ impl PacketDecoder {
     }
 
     /// `00 8D` records in one region, each behind its own length varint of
-    /// one or two bytes that matches it exactly.
+    /// one or two bytes that matches it exactly. Read whole, its HP needs no
+    /// ceiling: HP past 100,000,000 counts, where the loose search in
+    /// `read_entity_hp` takes it for stray bytes.
     pub(super) fn read_hp_records(&self, region: &[u8]) {
         let mut from = 0;
         while let Some(i) = index_of_bytes(region, from, &[0x00, 0x8D]) {
@@ -135,6 +137,7 @@ impl PacketDecoder {
                 Some(record) => {
                     if let Some(hp) = record.current_hp {
                         self.data_storage.note_hp(record.id, hp);
+                        self.data_storage.update_enemy_hp(record.id, hp as i32);
                     }
                     from = i + record.end;
                 }
@@ -162,8 +165,9 @@ impl PacketDecoder {
             }
             let hp = le_u32_at(data, after + 3);
             // A match past 100,000,000 can be LZ4 literals read as a record,
-            // so it counts only up to the max HP the entity's spawn gave:
-            // world bosses have more (810,000,000 on some).
+            // so it counts only up to the max HP known (from the spawn or a
+            // whole `00 8D` record): world bosses have more (810,000,000 on
+            // some).
             let spawned_max = || self.data_storage.enemy_max_hp(id.value).is_some_and(|max| i64::from(hp) <= i64::from(max));
             if hp <= 100_000_000 || spawned_max() {
                 self.data_storage.update_enemy_hp(id.value, hp as i32);
@@ -363,9 +367,10 @@ mod tests {
     }
 
     /// A world boss whose spawn gave 810,000,000 max HP: its readings past
-    /// 100,000,000 count, one past its max does not.
+    /// 100,000,000 count; loose bytes past its max do not, a whole record
+    /// past it raises the max.
     #[test]
-    fn entity_hp_past_one_hundred_million_counts_up_to_the_spawned_max() {
+    fn entity_hp_past_one_hundred_million_counts_up_to_the_known_max() {
         const BOSS: u32 = 40_000;
         let (storage, mut p) = processor();
         let spawn = built::Spawn { id: BOSS, kind: 0x04, code: 2_900_001, hp: 810_000_000, ..built::Spawn::default() };
@@ -373,9 +378,18 @@ mod tests {
         assert_eq!(storage.enemy_max_hp(BOSS as i32), Some(810_000_000));
         p.decode_buffer(&hp(BOSS, 400_000_000));
         assert_eq!(storage.enemy_hp_now(BOSS as i32), Some(400_000_000));
-        p.decode_buffer(&hp(BOSS, 810_000_001));
+        // Loose bytes past the max, as LZ4 literals can read: left out.
+        let mut body = vec![0x7E, 0x7E, 0x8D, 0xC0, 0xB8, 0x02, 0x02, 0x01, 0x00];
+        body.extend(810_000_001u32.to_le_bytes());
+        body.extend([0; 4]);
+        p.decode_buffer(&pk(&body));
         assert_eq!(storage.enemy_hp_now(BOSS as i32), Some(400_000_000));
         assert_eq!(storage.enemy_max_hp(BOSS as i32), Some(810_000_000));
+        // A whole `00 8D` record past it: the spawn's max was short, so the
+        // max rises to it.
+        p.decode_buffer(&hp(BOSS, 810_000_001));
+        assert_eq!(storage.enemy_hp_now(BOSS as i32), Some(810_000_001));
+        assert_eq!(storage.enemy_max_hp(BOSS as i32), Some(810_000_001));
     }
 
     /// The dungeon the storage files the fight under after each map load.

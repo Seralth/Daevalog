@@ -70,8 +70,8 @@ pub struct Snapshot {
     /// The target's HP as its own `00 8D` records last gave it, for the time
     /// to kill; -1 with none.
     pub boss_live_hp: i64,
-    /// The time to kill in whole seconds (`HpTrail`), set by the reading
-    /// loop; `None` before there is one.
+    /// The time to kill in whole seconds (`kill_time::HpTrail`), set by the
+    /// reading loop; `None` before there is one.
     pub boss_eta: Option<i64>,
     /// In display order.
     pub rows: Vec<Row>,
@@ -280,64 +280,6 @@ fn boss_hp(meter: &DpsData) -> Option<(i64, i64)> {
     })
 }
 
-/// The time to kill at the pace of the pull so far, from the target's own HP
-/// records, so damage the meter does not count (other players', unknown
-/// damage over time) counts too: whole seconds, or none before `ETA_MIN_MS`
-/// of readings or while the HP is not below where the pull began. The pace of
-/// the whole pull rather than of the last 20 s: on long boss pulls it jumps
-/// far less often and is closer to the real kill time.
-pub const ETA_MIN_MS: i64 = 5_000;
-
-/// A rise in HP of more than this share of the pull's first HP (a reset, a
-/// wipe, a new pull on the same id) starts the pull again; smaller heals do
-/// not.
-const ETA_NEW_PULL_RISE: f64 = 0.02;
-
-/// The pull's first HP reading and its latest (time, HP), kept by the
-/// reading loop, which sees every reading (a fast replay sends the window
-/// only some).
-#[derive(Debug, Default)]
-pub struct HpTrail {
-    target: i32,
-    first: Option<(i64, i64)>,
-    last: Option<(i64, i64)>,
-}
-
-impl HpTrail {
-    /// The time to kill after the reading at `at`: `hp` is the target's HP
-    /// from its records, -1 with none.
-    pub fn update(&mut self, at: i64, target: i32, hp: i64) -> Option<i64> {
-        if self.target != target || hp < 0 || self.last.is_some_and(|(t, _)| at < t) {
-            (self.first, self.last) = (None, None);
-            self.target = target;
-        }
-        if hp >= 0 {
-            let new_pull = match (self.first, self.last) {
-                (Some((_, start)), Some((_, before))) => (hp - before) as f64 > ETA_NEW_PULL_RISE * start as f64,
-                _ => true,
-            };
-            if new_pull {
-                self.first = Some((at, hp));
-            }
-            self.last = Some((at, hp));
-        }
-        time_to_kill(self.first, self.last)
-    }
-}
-
-/// The HP left over the HP lost per second from the pull's first reading to
-/// its last.
-pub fn time_to_kill(first: Option<(i64, i64)>, last: Option<(i64, i64)>) -> Option<i64> {
-    let (Some((t0, hp0)), Some((t1, hp1))) = (first, last) else {
-        return None;
-    };
-    if t1 - t0 < ETA_MIN_MS || hp1 >= hp0 {
-        return None;
-    }
-    let per_ms = (hp0 - hp1) as f64 / (t1 - t0) as f64;
-    Some((hp1 as f64 / per_ms / 1_000.0).round() as i64)
-}
-
 /// Whole seconds as m:ss, for the time to kill and the enrage countdown.
 pub fn clock(secs: i64) -> String {
     format!("{}:{:02}", secs / 60, secs % 60)
@@ -515,39 +457,7 @@ mod tests {
     }
 
     #[test]
-    fn the_time_to_kill_follows_the_pace_of_the_pull() {
-        let mut trail = HpTrail::default();
-        // 10,000 HP a second from 1,000,000.
-        let hp = |s: i64| 1_000_000 - 10_000 * s;
-        for s in 0..5 {
-            assert_eq!(trail.update(s * 1_000, 7, hp(s)), None, "under 5 s of readings");
-        }
-        assert_eq!(trail.update(5_000, 7, hp(5)), Some(95), "950,000 left at 10,000 a second");
-        for s in 6..=30 {
-            trail.update(s * 1_000, 7, hp(s));
-        }
-        // The pace doubles: the whole pull's pace follows, slower.
-        for s in 31..=50 {
-            trail.update(s * 1_000, 7, hp(30) - 20_000 * (s - 30));
-        }
-        let left = hp(30) - 20_000 * 21;
-        assert_eq!(trail.update(51_000, 7, left), Some(20), "280,000 left at 720,000 over 51 s");
-        // A phase the boss cannot be hurt in: the time stays up and grows.
-        for s in 52..=72 {
-            trail.update(s * 1_000, 7, 260_000);
-        }
-        assert_eq!(trail.update(73_000, 7, 260_000), Some(26), "740,000 over 73 s");
-        // A small heal (under 2% of where the pull began) keeps the pull.
-        assert_eq!(trail.update(74_000, 7, 270_000), Some(27));
-        // A reset: a new pull, 5 s of readings first.
-        assert_eq!(trail.update(75_000, 7, 1_000_000), None);
-        assert_eq!(trail.update(80_000, 7, 900_000), Some(45), "100,000 over 5 s");
-        // Another target, or no HP records: start again.
-        assert_eq!(trail.update(81_000, 8, 500_000), None);
-        assert_eq!(trail.update(82_000, 8, -1), None);
-        assert_eq!(trail.update(87_000, 8, 400_000), None, "the 5 s start again");
-        assert_eq!(trail.update(87_000, 8, 0), None, "still under 5 s");
-        assert_eq!(trail.update(92_000, 8, 0), Some(0));
+    fn the_clock_reads_as_m_ss() {
         assert_eq!((clock(95), clock(0), clock(600)), ("1:35".into(), "0:00".into(), "10:00".into()), "as m:ss");
     }
 

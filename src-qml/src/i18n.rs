@@ -172,12 +172,14 @@ const TERM_USES: [(&str, &str); 5] = [
 /// - Max HP, the game's stat name.
 /// - The class names, the training dummy's name, Damage, Total Damage,
 ///   History and Delete: the game's words for each.
+/// - The Character window's words the game has: its title, the tabs, Item
+///   Level, Combat Power, the skill kinds, Specialty and None.
 /// - The Details overview's Total Hits and battle time, the Skill head, the
 ///   target list's All and the Reset button: the game's words. English keeps
 ///   "Combat Time".
 /// Strings from one game string say the same in every language but English.
 #[cfg(test)]
-const GAME_STRINGS: [(&str, &str); 38] = [
+const GAME_STRINGS: [(&str, &str); 50] = [
     ("details.stats.hits", "String_UI_DAMAGEANALYZER_TOTAL_DAMAGE_COUNT_body"),
     ("details.stats.combatTime", "String_UI_DAMAGEANALYZER_BATTLE_TIME_body"),
     ("details.skills.skill", "String_UI_HUD_EDIT_M_DETAILED_TITLE_SKILL_body"),
@@ -216,6 +218,29 @@ const GAME_STRINGS: [(&str, &str); 38] = [
     ("details.stats.totalDamage", "String_UI_DAMAGEANALYZER_SKILL_TOTAL_DAMAGE_body"),
     ("details.historyBtn", "String_UI_DAMAGEANALYZER_BUTTON_RECORD_body"),
     ("history.delete", "String_UI_DELETE_BTN_DELETE_body"),
+    ("character.title", "String_UI_RANKING_COMMON_CATEGORY_CHARACTER_body"),
+    ("character.tabs.gear", "String_UI_PRESET_EQUIP_TITLE_body"),
+    ("character.tabs.skills", "String_UI_HUD_MAINMENU_BUTTON_SKILL_body"),
+    ("character.tabs.boards", "String_UI_HUD_MAINMENU_BUTTON_DAEVANION_body"),
+    ("character.itemLevel", "String_UI_ABYSS_ENTRY_COND_ITEMLEVEL_TITLE_body"),
+    ("character.combatPower", "String_UI_LEGION_MEMBER_COMBAT_POWER_body"),
+    ("character.titles", "String_UI_HUD_MAINMENU_BUTTON_TITLE_body"),
+    ("character.none", "String_UI_CHARACTERSTATUS_CHARACTER_INFO_TEXT_NONE_body"),
+    ("character.skills.active", "String_UI_SKILL_LIST_CATEGORY_ACTIVE_body"),
+    ("character.skills.passive", "String_UI_SKILL_LIST_CATEGORY_PASSIVE_body"),
+    ("character.skills.stigma", "String_UI_SKILL_TAB_STIGMA_body"),
+    ("character.skills.specialty", "String_STR_ITEM_TOOLTIP_SpecializedSkill_body"),
+];
+
+/// Strings that are a game template whole, its `{0}` written `{n}`: the
+/// level as the character window, an item's skill line and a skill's
+/// tooltip write them.
+#[cfg(test)]
+const GAME_TEMPLATES: [(&str, &str); 4] = [
+    ("character.level", "String_UI_CHARACTERSTATUS_CHARACTER_INFO_LEVEL_body"),
+    ("character.gear.skillLevel", "String_UI_ITEM_SUBSTAT_SKILL_LEVEL_UPGRADE_VALUE_body"),
+    ("character.skills.daevanion", "String_UI_SKILLINFO_ADD_LEVEL_DAEVANION_body"),
+    ("character.skills.gear", "String_UI_SKILLINFO_ADD_LEVEL_EQUIP_body"),
 ];
 
 /// Our languages that the game has, with the game's folder for each.
@@ -241,7 +266,9 @@ fn rust_keys() -> Vec<&'static str> {
     keys.extend(CLASS_KEYS.iter().map(|(_, key)| *key));
     keys.extend(crate::pet_souls::KEYS);
     keys.extend(crate::power_shards::KEYS);
+    keys.extend(crate::timed_notices::KEYS);
     keys.extend(crate::world_spawns::KEYS);
+    keys.extend(crate::field_bosses::KEYS);
     keys
 }
 
@@ -362,6 +389,12 @@ pub fn clock(language: &str, hour: u32, minute: u32, hour24: bool) -> String {
     Clock::new(hour24, language).text(&time, false)
 }
 
+/// The name of the class with theme key `job` ("cleric") in `language`;
+/// `None` for an unknown key.
+pub fn class_name(language: &str, job: &str) -> Option<String> {
+    CLASS_KEYS.iter().find(|(key, _)| *key == job).map(|(_, name)| text(language, name))
+}
+
 /// One meter row, for naming its player.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Player<'a> {
@@ -395,8 +428,7 @@ pub fn player_name(language: &str, player: Player, hide_others: bool, show_you: 
         };
     }
     let n = player.number.to_string();
-    let class = CLASS_KEYS.iter().find(|(job, _)| *job == player.job).map(|(_, key)| text(language, key));
-    match class {
+    match class_name(language, player.job) {
         // The backend numbers every other player; without one the class
         // alone still names no one.
         Some(class) if player.number == 0 => class,
@@ -620,6 +652,13 @@ mod tests {
                 let ours = text(language, key);
                 if !said.to_lowercase().contains(&ours.to_lowercase()) {
                     wrong.push(format!("{language} {key}: {ours:?} is not in {source} {said:?}"));
+                }
+            }
+            for (key, source) in GAME_TEMPLATES {
+                let said = game["Entries"][source].as_str().unwrap_or_else(|| panic!("{locale}: no {source}"));
+                let ours = text(language, key);
+                if said.replace("{0}", "{n}") != ours {
+                    wrong.push(format!("{language} {key}: {ours:?} is not {source} {said:?}"));
                 }
             }
         }

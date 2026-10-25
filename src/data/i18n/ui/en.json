@@ -563,8 +563,8 @@
     "characterNameHint": "The game's name replaces this when you next load in.",
     "modeOnly": "Only in {mode}.",
     "showTotalHint": "The group's total in the footer, on every tab: DPS, Heal and Tank.",
-    "spawnNotices": "Field Boss and Spacetime Rift countdowns",
-    "spawnNoticesHint": "In the notifications: 30, 15 and 5 minutes before a Field Boss, 5 minutes before a Spacetime Rift.",
+    "spawnNotices": "Boss and Spacetime Rift countdowns",
+    "spawnNoticesHint": "In the notifications: 30, 15 and 5 minutes before an Abyss Boss and before the Field Bosses Gartua, Dartan, Kashapa and Lagta, 5 minutes before a Spacetime Rift. The Field Boss times come when you open the Map.",
     "shardWarning": "Power Shard warning",
     "shardWarningHint": "A notice when your hits stop using Power Shards.",
     "serverTimeZone": "Server time zone",
@@ -692,6 +692,8 @@
     "title": "Notifications",
     "clearAll": "Clear all",
     "none": "No notifications",
+    "more": "{count} more",
+    "top": "Back to top",
     "pet": {
       "soul": "{pet} soul",
       "souls": "{pet} +{count} souls",
@@ -710,7 +712,9 @@
       "unnamed": "Pet {id}"
     },
     "spawn": {
-      "at": "{name} at {time}"
+      "at": "{name} at {time}",
+      "abyssBoss": "Abyss Boss",
+      "fieldBoss": "Field Boss"
     },
     "shard": {
       "off": "Power Shards off",
@@ -719,5 +723,46 @@
     },
     "countdown": "in {minutes} min",
     "now": "now"
+  },
+  "character": {
+    "title": "Character",
+    "tabs": {
+      "gear": "Gear",
+      "sheet": "Character sheet",
+      "skills": "Skills",
+      "boards": "Daevanion"
+    },
+    "level": "Lv. {n}",
+    "itemLevel": "Item Level",
+    "combatPower": "Combat Power",
+    "highest": "highest {n}",
+    "seen": "Last seen {date}",
+    "empty": "No character yet",
+    "emptyHint": "Log in to a character with the meter running, or go to Select Character and back.",
+    "unread": "Character files not read: {n}",
+    "packFailed": "The game data for this window did not load.",
+    "notRead": "Not read yet: the game sends this when you log in.",
+    "gear": {
+      "empty": "Empty",
+      "notRead": "Gear details not read",
+      "sockets": "Manastone slots: {n}",
+      "skillLevel": "Lv. +{n}",
+      "baseAt": "Base stats at +{n}",
+      "base": "Base stats"
+    },
+    "titles": "Title",
+    "titlesOwned": "{n} owned",
+    "none": "None",
+    "skills": {
+      "active": "Active",
+      "passive": "Passive",
+      "stigma": "Stigma",
+      "specialty": "Specialty",
+      "daevanion": "Daevanion: Lv. +{n}",
+      "gear": "Equipped Gear: Lv. +{n}"
+    },
+    "boards": {
+      "nodes": "{taken} of {total} nodes"
+    }
   }
 }

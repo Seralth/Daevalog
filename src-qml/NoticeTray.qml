@@ -9,7 +9,7 @@ import Daevalog
 // waiting (Notices) and a chevron; open, the card lists them, newest first,
 // each with its own dismiss, and a "Clear all". A new notice only adds its
 // icon: nothing opens over the game by itself. A notice with a time to count
-// down to (a Field Boss or a Spacetime Rift) shows the minutes left where
+// down to (a boss or a Spacetime Rift) shows the minutes left where
 // others show the time they came.
 //
 // Its own window, as the hover card, so the meter keeps its place and
@@ -49,15 +49,53 @@ Window {
         return out
     }
 
-    // Narrower than the meter, so it reads as a card behind it.
-    readonly property int inset: 10
-    readonly property int barHeight: 24
-    readonly property int listMax: 260
-    // The list's height at most: listMax, or less where the screen has less
-    // room on the tray's side (set by place()).
-    property int listRoom: listMax
-    readonly property int listHeight: items.length > 0 ? Math.min(list.contentHeight, listRoom) : empty.implicitHeight + 12
-    readonly property int wantedHeight: barHeight + (open ? listHeight + 4 : 0)
+    // Narrower than the meter, so it reads as a card behind it. Its sizes
+    // follow the Meter size setting, as the meter's do (Theme.meter).
+    readonly property int inset: Theme.meter.px(10)
+    readonly property int barHeight: Theme.meter.px(24)
+    // The open card shows a page of notices, whole: at most this many, from
+    // the one at `first`. A line under them pages on (fit()).
+    readonly property int maxRows: 3
+    readonly property int moreHeight: Theme.meter.px(20)
+    // A notice is at least this tall, and so is the list where the screen
+    // has little room.
+    readonly property int rowMin: Theme.meter.px(38)
+    // A notice's text runs to this many lines at most: a countdown's (an
+    // Abyss Boss notice holds a line per map, and a line may wrap) and any
+    // other's (a pet's is three).
+    readonly property int countdownLines: 6
+    readonly property int textLines: 3
+    // The open card's list at about its tallest, for picking the tray's
+    // side: each notice a title and its text in the row font, with the
+    // row's 10 px of margin; one countdown at its most lines and the others
+    // at a pet's. Only an Abyss Boss notice runs that long, and two are
+    // never on the tray at once: the game's bosses on both Reshanta maps
+    // come at 21:00 and at 21:30, on different days. The titles are
+    // DemiBold, which Pretendard sets as tall as the regular weight at every
+    // Meter size (15.5, 17.9, 20.3 and 23.8 px), so the regular weight
+    // measures both.
+    FontMetrics {
+        id: rowFont
+        font.family: Theme.font
+        font.pixelSize: Theme.meter.sizeRow
+    }
+    readonly property int listMax: (1 + countdownLines + (maxRows - 1) * (1 + textLines)) * Math.ceil(rowFont.height)
+        + maxRows * Theme.meter.px(10) + moreHeight
+    // The room for the list on the tray's side of the meter, where the
+    // screen is known (set by place()); `noLimit` where it is not.
+    readonly property int noLimit: 100000
+    property int listRoom: noLimit
+    property int first: 0
+    // The notice at `first`, kept there as notices come and go.
+    property int firstId: -1
+    readonly property var page: items.slice(first, first + maxRows)
+    // How many of the page fit (fit()).
+    property int shown: 0
+    readonly property int later: Math.max(0, items.length - first - shown)
+    readonly property bool paged: first > 0 || later > 0
+    readonly property int listHeight: items.length === 0 ? empty.implicitHeight + Theme.meter.px(12)
+        : rowsBox.height + (paged ? moreHeight : 0)
+    readonly property int wantedHeight: barHeight + (open ? listHeight + Theme.meter.px(4) : 0)
     readonly property bool wanted: meter !== null && meter.visible && meter.shown
     readonly property bool locked: Settings.locked
     readonly property bool wayland: Qt.platform.pluginName.startsWith("wayland")
@@ -68,7 +106,7 @@ Window {
     // no room there and the bottom has more. The side is picked for the
     // largest card, so it does not change when the card opens.
     readonly property string edge: Settings.trayEdge
-    readonly property int fullHeight: barHeight + listMax + 4
+    readonly property int fullHeight: barHeight + listMax + Theme.meter.px(4)
     // On the meter's bottom edge, pulling down.
     property bool below: false
     // What place() last asked for, so a Wayland popup is shown again only
@@ -119,7 +157,7 @@ Window {
             || (edge === "auto" && (room ? room.above < fullHeight && room.below > room.above : !open && below))
         if (!flip)
             below = wantsBelow
-        listRoom = room ? Math.max(38, Math.min(listMax, (below ? room.below : room.above) - barHeight - 4)) : listMax
+        listRoom = room ? Math.max(rowMin, (below ? room.below : room.above) - barHeight - Theme.meter.px(4)) : noLimit
         const at = meter.contentItem.mapToGlobal(inset, wantsBelow ? meter.height : 0)
         const w = Math.max(0, meter.width - 2 * inset)
         const h = wantedHeight
@@ -200,7 +238,10 @@ Window {
         if (Overlay.inputRegion && visible)
             Overlay.shapeInput(tray, locked ? chevron.mapToItem(null, 0, 0, chevron.width, chevron.height) : Qt.rect(0, 0, 0, 0))
     }
-    onLockedChanged: shapeInput()
+    onLockedChanged: {
+        shapeInput()
+        showFrom(0)
+    }
 
     function toggle() {
         open = !open
@@ -208,20 +249,20 @@ Window {
 
     component Cross: Item {
         property color color: Theme.hudSub
-        implicitWidth: 8
-        implicitHeight: 8
+        implicitWidth: Theme.meter.part(8)
+        implicitHeight: Theme.meter.part(8)
         Rectangle {
             anchors.centerIn: parent
-            width: 9
-            height: 1.5
+            width: Theme.meter.part(9)
+            height: Theme.meter.part(1.5)
             rotation: 45
             antialiasing: true
             color: parent.color
         }
         Rectangle {
             anchors.centerIn: parent
-            width: 9
-            height: 1.5
+            width: Theme.meter.part(9)
+            height: Theme.meter.part(1.5)
             rotation: -45
             antialiasing: true
             color: parent.color
@@ -233,7 +274,7 @@ Window {
         anchors.fill: parent
         anchors.topMargin: tray.below ? -radius : 0
         anchors.bottomMargin: tray.below ? 0 : -radius
-        radius: 6
+        radius: Theme.meter.part(6)
         color: Theme.panel
         border.color: Theme.panelEdge
         border.width: 1
@@ -253,7 +294,7 @@ Window {
         // The bar pulls the card up and down, as the chevron does; "Clear
         // all" and the chevron keep their own clicks.
         Item {
-            width: (clearAll.visible ? clearAll.x - 4 : chevron.x)
+            width: (clearAll.visible ? clearAll.x - Theme.meter.px(4) : chevron.x)
             height: parent.height
             TapHandler {
                 enabled: !tray.locked
@@ -263,26 +304,26 @@ Window {
 
         Row {
             visible: !tray.open
-            x: 8
+            x: Theme.meter.px(8)
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 6
+            spacing: Theme.meter.px(6)
             Repeater {
                 model: tray.kinds
                 Row {
                     id: kindMark
                     required property var modelData
-                    spacing: 3
+                    spacing: Theme.meter.px(3)
                     NoticeIcon {
                         kind: kindMark.modelData.kind
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 18
-                        height: 18
+                        width: Theme.meter.px(18)
+                        height: Theme.meter.px(18)
                     }
                     HudText {
                         visible: kindMark.modelData.count > 1
                         text: kindMark.modelData.count
                         numeric: true
-                        font.pixelSize: Theme.sizeRow
+                        font.pixelSize: Theme.meter.sizeRow
                         color: Theme.hudSub
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -292,11 +333,11 @@ Window {
 
         HudText {
             visible: tray.open
-            x: 8
+            x: Theme.meter.px(8)
             anchors.verticalCenter: parent.verticalCenter
-            width: clearAll.x - x - 8
+            width: clearAll.x - x - Theme.meter.px(8)
             text: I18n.tr("notices.title")
-            font.pixelSize: Theme.sizeRow
+            font.pixelSize: Theme.meter.sizeRow
             color: Theme.hudSub
         }
 
@@ -304,10 +345,10 @@ Window {
             id: clearAll
             visible: tray.open && tray.items.length > 0
             anchors.right: chevron.left
-            anchors.rightMargin: 10
+            anchors.rightMargin: Theme.meter.px(10)
             anchors.verticalCenter: parent.verticalCenter
             text: I18n.tr("notices.clearAll")
-            font.pixelSize: Theme.sizeRow
+            font.pixelSize: Theme.meter.sizeRow
             color: clearHover.hovered ? Theme.hudName : Theme.hudSub
             HoverHandler { id: clearHover }
             TapHandler { onTapped: Notices.clear() }
@@ -316,13 +357,14 @@ Window {
         Item {
             id: chevron
             anchors.right: parent.right
-            width: 26
+            width: Theme.meter.px(26)
             height: parent.height
             HoverHandler { id: chevronHover }
             // Locked too: the input region keeps it clickable.
             TapHandler { onTapped: tray.toggle() }
             Chevron {
                 anchors.centerIn: parent
+                scale: Theme.meter.scale
                 // Away from the meter to pull the card out, towards it to
                 // put it away.
                 turn: tray.open !== tray.below ? 0 : 180
@@ -343,89 +385,179 @@ Window {
     HudText {
         id: empty
         visible: tray.open && tray.items.length === 0
-        y: tray.below ? 8 : tray.barHeight + 8
-        x: 8
-        width: parent.width - 16
+        y: tray.below ? Theme.meter.px(8) : tray.barHeight + Theme.meter.px(8)
+        x: Theme.meter.px(8)
+        width: parent.width - Theme.meter.px(16)
         text: I18n.tr("notices.none")
-        font.pixelSize: Theme.sizeRow
+        font.pixelSize: Theme.meter.sizeRow
         color: Theme.meterNote
     }
 
-    ListView {
-        id: list
+    // How many notices of the page fit: all where they do, else as many as
+    // fit above the line that pages on; at least one, cut where the screen
+    // has no room for it.
+    function fit() {
+        const heights = []
+        for (let i = 0; i < rows.count; i++) {
+            const row = rows.itemAt(i)
+            // Not built yet: its own onItemAdded calls fit() again.
+            if (!row)
+                return
+            heights.push(row.height)
+        }
+        const fitting = room => {
+            let n = 0
+            let height = 0
+            while (n < heights.length && height + heights[n] <= room)
+                height += heights[n++]
+            return n
+        }
+        let n = fitting(listRoom)
+        // Not `paged`: that reads `shown`, which this sets.
+        if (first > 0 || first + n < items.length)
+            n = fitting(listRoom - moreHeight)
+        shown = Math.max(1, n)
+    }
+    function fitSoon() {
+        Qt.callLater(fit)
+    }
+    onListRoomChanged: fitSoon()
+
+    function showFrom(index) {
+        first = Math.max(0, Math.min(index, items.length - 1))
+        firstId = first < items.length ? items[first].id : -1
+    }
+    // The first page stays on the newest notices; a later one keeps its top
+    // notice as notices come, go or move to the top. The card opens, and the
+    // meter locks, on the newest.
+    onItemsChanged: {
+        const at = first > 0 ? items.findIndex(n => n.id === firstId) : 0
+        showFrom(at >= 0 ? at : first)
+    }
+    onOpenChanged: showFrom(0)
+
+    Item {
+        id: rowsBox
         visible: tray.open
-        y: tray.below ? 2 : tray.barHeight + 2
+        y: tray.below ? Theme.meter.px(2) : tray.barHeight + Theme.meter.px(2)
         width: parent.width
-        height: tray.listHeight
+        // Cut only where the screen has no room for a single notice.
+        height: Math.min(column.implicitHeight, tray.listRoom)
         clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        model: tray.items
 
-        delegate: Item {
-            id: line
-            required property var modelData
-            width: ListView.view.width
-            height: Math.max(38, words.implicitHeight + 10)
+        // The wheel steps a notice at a time.
+        property real turned: 0
+        // One notch of a mouse wheel, in its eighths of a degree.
+        readonly property int notch: 120
+        WheelHandler {
+            enabled: !tray.locked
+            onWheel: event => {
+                rowsBox.turned += event.angleDelta.y
+                while (rowsBox.turned <= -rowsBox.notch) {
+                    rowsBox.turned += rowsBox.notch
+                    if (tray.later > 0)
+                        tray.showFrom(tray.first + 1)
+                }
+                while (rowsBox.turned >= rowsBox.notch) {
+                    rowsBox.turned -= rowsBox.notch
+                    tray.showFrom(tray.first - 1)
+                }
+            }
+        }
 
-            // Centred on the whole notice, title and text, about two lines tall.
-            NoticeIcon {
-                id: mark
-                x: 8
-                anchors.verticalCenter: parent.verticalCenter
-                width: 28
-                height: 28
-                kind: line.modelData.kind
-            }
-            Column {
-                id: words
-                x: mark.x + mark.width + 8
-                y: 5
-                width: time.x - x - 8
-                HudText {
-                    width: parent.width
-                    text: line.modelData.title
-                    font.pixelSize: Theme.sizeRow
-                    font.weight: Font.DemiBold
-                    color: Theme.hudName
+        Column {
+            id: column
+            width: parent.width
+            Repeater {
+                id: rows
+                model: tray.page
+                onItemAdded: tray.fitSoon()
+                onItemRemoved: tray.fitSoon()
+                Item {
+                    id: line
+                    required property var modelData
+                    required property int index
+                    width: column.width
+                    height: Math.max(tray.rowMin, words.implicitHeight + Theme.meter.px(10))
+                    visible: index < tray.shown
+                    onHeightChanged: tray.fitSoon()
+
+                    // Centred on the whole notice, title and text, about two lines tall.
+                    NoticeIcon {
+                        id: mark
+                        x: Theme.meter.px(8)
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: Theme.meter.px(28)
+                        height: Theme.meter.px(28)
+                        kind: line.modelData.kind
+                    }
+                    Column {
+                        id: words
+                        x: mark.x + mark.width + Theme.meter.px(8)
+                        y: Theme.meter.px(5)
+                        width: time.x - x - Theme.meter.px(8)
+                        HudText {
+                            width: parent.width
+                            text: line.modelData.title
+                            font.pixelSize: Theme.meter.sizeRow
+                            font.weight: Font.DemiBold
+                            color: Theme.hudName
+                        }
+                        HudText {
+                            visible: text !== ""
+                            width: parent.width
+                            text: line.modelData.text
+                            font.pixelSize: Theme.meter.sizeRow
+                            color: Theme.hudShare
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: line.modelData.until > 0 ? tray.countdownLines : tray.textLines
+                        }
+                    }
+                    HudText {
+                        id: time
+                        anchors.right: dismiss.left
+                        anchors.rightMargin: Theme.meter.px(6)
+                        y: Theme.meter.px(5)
+                        text: line.modelData.until > 0
+                            ? tray.countdown(line.modelData.until)
+                            : I18n.clock(line.modelData.hour, line.modelData.minute, Settings.hour24)
+                        font.pixelSize: Theme.meter.sizeRow
+                        color: Theme.meterNote
+                    }
+                    Item {
+                        id: dismiss
+                        anchors.right: parent.right
+                        y: Theme.meter.px(2)
+                        width: Theme.meter.px(26)
+                        height: Theme.meter.px(20)
+                        HoverHandler { id: dismissHover }
+                        TapHandler {
+                            enabled: !tray.locked
+                            onTapped: Notices.dismiss(line.modelData.id)
+                        }
+                        Cross {
+                            anchors.centerIn: parent
+                            color: dismissHover.hovered ? Theme.hudName : Theme.hudSub
+                        }
+                    }
                 }
-                HudText {
-                    visible: text !== ""
-                    width: parent.width
-                    text: line.modelData.text
-                    font.pixelSize: Theme.sizeRow
-                    color: Theme.hudShare
-                    wrapMode: Text.WordWrap
-                    // A Field Boss notice holds a line per map.
-                    maximumLineCount: line.modelData.until > 0 ? 6 : 3
-                }
             }
-            HudText {
-                id: time
-                anchors.right: dismiss.left
-                anchors.rightMargin: 6
-                y: 5
-                text: line.modelData.until > 0
-                    ? tray.countdown(line.modelData.until)
-                    : I18n.clock(line.modelData.hour, line.modelData.minute, Settings.hour24)
-                font.pixelSize: Theme.sizeRow
-                color: Theme.meterNote
-            }
-            Item {
-                id: dismiss
-                anchors.right: parent.right
-                y: 2
-                width: 26
-                height: 20
-                HoverHandler { id: dismissHover }
-                TapHandler {
-                    enabled: !tray.locked
-                    onTapped: Notices.dismiss(line.modelData.id)
-                }
-                Cross {
-                    anchors.centerIn: parent
-                    color: dismissHover.hovered ? Theme.hudName : Theme.hudSub
-                }
-            }
+        }
+    }
+
+    // "3 more" pages down to them; on the last page, back to the top.
+    HudText {
+        visible: tray.open && tray.paged
+        y: rowsBox.y + rowsBox.height + (tray.moreHeight - height) / 2
+        x: Theme.meter.px(8)
+        width: parent.width - Theme.meter.px(16)
+        text: tray.later > 0 ? I18n.tr("notices.more").replace("{count}", tray.later) : I18n.tr("notices.top")
+        font.pixelSize: Theme.meter.sizeRow
+        color: moreHover.hovered ? Theme.hudName : Theme.meterNote
+        HoverHandler { id: moreHover }
+        TapHandler {
+            enabled: !tray.locked
+            onTapped: tray.showFrom(tray.later > 0 ? tray.first + tray.shown : 0)
         }
     }
 }

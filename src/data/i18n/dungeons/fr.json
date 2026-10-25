@@ -749,7 +749,7 @@
     "type": "quest"
   },
   "210013": {
-    "name": "Champ de Bataille Oublié",
+    "name": "Champ de bataille oublié",
     "type": "ascension"
   },
   "210014": {
@@ -757,7 +757,7 @@
     "type": "ascension"
   },
   "210015": {
-    "name": "Rêve Déformé de Zikel",
+    "name": "Rêve déformé de Zikel",
     "type": "ascension"
   },
   "210016": {
@@ -824,7 +824,7 @@
     "type": "quest"
   },
   "220013": {
-    "name": "Champ de Bataille Oublié",
+    "name": "Champ de bataille oublié",
     "type": "ascension"
   },
   "220014": {
@@ -1160,7 +1160,7 @@
     "type": "seal"
   },
   "310071": {
-    "name": "Centre de recherche des opérations spéciales lépharistes",
+    "name": "Centre de recherches des opérations spéciales lépharistes",
     "type": "seal"
   },
   "310072": {
@@ -1552,11 +1552,11 @@
     "type": "personalagit"
   },
   "500001": {
-    "name": "Attaque Aérienne de Beritra",
+    "name": "Attaque aérienne de Beritra",
     "type": "fieldevent"
   },
   "500002": {
-    "name": "Épée Maudite",
+    "name": "Épée maudite",
     "type": "fieldevent"
   },
   "500003": {
@@ -1568,11 +1568,11 @@
     "type": "fieldevent"
   },
   "500005": {
-    "name": "Attaque des Esprits",
+    "name": "Attaque des esprits",
     "type": "fieldevent"
   },
   "500006": {
-    "name": "Attaque des Esprits",
+    "name": "Attaque des esprits",
     "type": "fieldevent"
   },
   "500007": {
@@ -1612,23 +1612,23 @@
     "type": "fieldevent"
   },
   "500017": {
-    "name": "Attaque Aérienne de Beritra",
+    "name": "Attaque aérienne de Beritra",
     "type": "fieldevent"
   },
   "500018": {
-    "name": "Attaque Aérienne de Beritra",
+    "name": "Attaque aérienne de Beritra",
     "type": "fieldevent"
   },
   "500019": {
-    "name": "Épée Maudite",
+    "name": "Épée maudite",
     "type": "fieldevent"
   },
   "500020": {
-    "name": "Épée Maudite",
+    "name": "Épée maudite",
     "type": "fieldevent"
   },
   "500021": {
-    "name": "Attaque des Esprits",
+    "name": "Attaque des esprits",
     "type": "fieldevent"
   },
   "500022": {
@@ -1668,15 +1668,15 @@
     "type": "fieldevent"
   },
   "500031": {
-    "name": "Épée Maudite",
+    "name": "Épée maudite",
     "type": "fieldevent"
   },
   "500032": {
-    "name": "Attaque Aérienne de Beritra",
+    "name": "Attaque aérienne de Beritra",
     "type": "fieldevent"
   },
   "500033": {
-    "name": "Attaque des Esprits",
+    "name": "Attaque des esprits",
     "type": "fieldevent"
   },
   "500034": {
@@ -1720,7 +1720,7 @@
     "type": "fieldevent"
   },
   "502001": {
-    "name": "Épée Maudite",
+    "name": "Épée maudite",
     "type": "fieldevent"
   },
   "503001": {
@@ -1780,7 +1780,7 @@
     "type": "fieldevent"
   },
   "510002": {
-    "name": "Attaque Aérienne de Beritra",
+    "name": "Attaque aérienne de Beritra",
     "type": "fieldevent"
   },
   "510003": {
@@ -1804,11 +1804,11 @@
     "type": "fieldevent"
   },
   "510008": {
-    "name": "Attaque Aérienne de Beritra",
+    "name": "Attaque aérienne de Beritra",
     "type": "fieldevent"
   },
   "510009": {
-    "name": "Attaque Aérienne de Beritra",
+    "name": "Attaque aérienne de Beritra",
     "type": "fieldevent"
   },
   "510010": {
@@ -1824,15 +1824,15 @@
     "type": "fieldevent"
   },
   "510013": {
-    "name": "Épée Maudite",
+    "name": "Épée maudite",
     "type": "fieldevent"
   },
   "510014": {
-    "name": "Épée Maudite",
+    "name": "Épée maudite",
     "type": "fieldevent"
   },
   "510015": {
-    "name": "Attaque des Esprits",
+    "name": "Attaque des esprits",
     "type": "fieldevent"
   },
   "510016": {
@@ -1876,15 +1876,15 @@
     "type": "fieldevent"
   },
   "510026": {
-    "name": "Épée Maudite",
+    "name": "Épée maudite",
     "type": "fieldevent"
   },
   "510027": {
-    "name": "Attaque Aérienne de Beritra",
+    "name": "Attaque aérienne de Beritra",
     "type": "fieldevent"
   },
   "510028": {
-    "name": "Attaque des Esprits",
+    "name": "Attaque des esprits",
     "type": "fieldevent"
   },
   "510029": {
@@ -1950,8 +1950,9 @@
   "600004": {
     "name": "Grotte de Krao",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Conquête de rang 1"
+    "label": "Conquête de rang 1 · Difficile"
   },
   "600011": {
     "name": "Canyon Urugugu",
@@ -2013,8 +2014,9 @@
   "600033": {
     "name": "Draupnir",
     "type": "party",
+    "difficulty": "advanced",
     "tier": 1,
-    "label": "Conquête de rang 1"
+    "label": "Conquête de rang 1 · Difficile"
   },
   "600034": {
     "name": "Draupnir"
@@ -2489,11 +2491,11 @@
     "type": "matching"
   },
   "76": {
-    "name": "Attaque des Esprits",
+    "name": "Attaque des esprits",
     "type": "fieldevent"
   },
   "77": {
-    "name": "Attaque des Esprits",
+    "name": "Attaque des esprits",
     "type": "fieldevent"
   },
   "78": {
@@ -2777,7 +2779,7 @@
     "type": "quest"
   },
   "840031": {
-    "name": "Dépôt de butin de Hillslothir",
+    "name": "Dépôt de butin d'Hillslothir",
     "type": "quest"
   },
   "840032": {
@@ -2897,7 +2899,7 @@
     "type": "instancelayer"
   },
   "850011": {
-    "name": "Ancienne Maison",
+    "name": "Vieille maison",
     "type": "instancelayer"
   },
   "850012": {
@@ -2909,7 +2911,7 @@
     "type": "instancelayer"
   },
   "850014": {
-    "name": "Petite Maison",
+    "name": "Petite maison",
     "type": "instancelayer"
   },
   "86": {

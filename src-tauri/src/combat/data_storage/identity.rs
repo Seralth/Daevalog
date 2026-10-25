@@ -126,8 +126,8 @@ impl DataStorage {
         self.inner.read().local_player_id
     }
 
-    #[cfg(test)]
-    pub(crate) fn player_servers(&self) -> HashMap<String, u16> {
+    /// Every player's server a name's record gave (loot and summon records), by name.
+    pub fn player_servers(&self) -> HashMap<String, u16> {
         self.inner.read().player_servers.clone()
     }
 

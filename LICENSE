@@ -254,6 +254,11 @@ Parts of this repository under other licences:
   with its own LICENSE file.
 - src-qml/NoticeIcon.qml draws two Lucide icons, "swords" and "orbit"
   (lucide-static 0.460.0), under the ISC License (notice below).
+- src-qml/icons/gear/main-hand.svg, src-qml/icons/gear/off-hand.svg,
+  src-qml/icons/gear/torso.svg, src-qml/icons/gear/gloves.svg and
+  src-qml/icons/gear/rune.svg are the Lucide icons "sword", "shield",
+  "shirt", "hand" and "hexagon" (lucide-static 0.460.0), the last with a
+  mark added, under the ISC License (notice below).
 
 ---
 

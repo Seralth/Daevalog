@@ -3,16 +3,19 @@ import QtQuick
 import QtQuick.Shapes
 import Daevalog
 
-// A notice's kind as a small mark: "pet" a soul wisp, "boss" crossed swords
-// (a Field Boss), "rift" an orbit in red (a Spacetime Rift), "warning" an
-// exclamation mark in the warning colour in a ring, anything else an "i".
-// The swords and the orbit are Lucide's outline icons (ISC licence, see
-// LICENSE), drawn in the theme's colours.
+// A notice's kind as a small mark: "pet" a soul wisp; crossed swords for a
+// boss: "abyss" in red (an Abyss Boss), "gartua" and "commander" in their
+// field boss tier's colour, "boss" in the meter's ink; "rift" an orbit
+// in purple (a Spacetime Rift); "warning" an exclamation mark in the warning
+// colour in a ring; anything else an "i". The swords and the orbit are
+// Lucide's outline icons (ISC licence, see LICENSE), drawn in the theme's
+// colours.
 Item {
     id: icon
     property string kind: "info"
     readonly property bool pet: kind === "pet"
     readonly property bool warning: kind === "warning"
+    readonly property string shape: ["abyss", "gartua", "commander"].includes(kind) ? "boss" : kind
     // Lucide's paths on its 24 px grid, as SVG path data.
     readonly property var outlines: ({
         "boss": "M14.5 17.5 L3 6 L3 3 L6 3 L17.5 14.5 M13 19 L19 13 M16 16 L20 20 M19 21 L21 19 "
@@ -21,8 +24,15 @@ Item {
                 + "M7 19 A2 2 0 1 1 3 19 A2 2 0 1 1 7 19 M10.4 21.9 a10 10 0 0 0 9.941 -15.416 "
                 + "M13.5 2.1 a10 10 0 0 0 -9.841 15.416"
     })
-    readonly property bool outlined: outlines[kind] !== undefined
-    readonly property color ink: warning ? Theme.warning : kind === "rift" ? Theme.rift : Theme.hudSub
+    readonly property bool outlined: outlines[shape] !== undefined
+    readonly property var inks: ({
+        "abyss": Theme.abyssBoss,
+        "gartua": Theme.gartua,
+        "commander": Theme.commander,
+        "rift": Theme.rift,
+        "warning": Theme.warning
+    })
+    readonly property color ink: inks[kind] || Theme.hudSub
 
     implicitWidth: 14
     implicitHeight: 14
@@ -50,7 +60,7 @@ Item {
             fillColor: "transparent"
             capStyle: ShapePath.RoundCap
             joinStyle: ShapePath.RoundJoin
-            PathSvg { path: icon.outlined ? icon.outlines[icon.kind] : "" }
+            PathSvg { path: icon.outlined ? icon.outlines[icon.shape] : "" }
         }
     }
 
